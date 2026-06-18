@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import './styles/page.css';
 
-const LOCAL_API = typeof window !== 'undefined' ? `${window.location.origin}/api` : 'http://localhost:3000/api';
+const LOCAL_API = 'http://localhost:3001';
 
 type Mode = 'login' | 'register';
 
@@ -40,6 +40,8 @@ const LoginPage = () => {
         password,
       }),
     });
+
+    console.log(res)
 
     const body = await res.json();
 
