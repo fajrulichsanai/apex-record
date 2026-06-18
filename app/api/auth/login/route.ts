@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, password } = body;
 
+    // Validation
     if (!email || !password) {
       return corsResponse(
         NextResponse.json(
@@ -33,35 +34,54 @@ export async function POST(request: NextRequest) {
     }
 
     // TODO: Implement actual login logic
-    // - Check if user exists
-    // - Verify password
+    // - Query database to find user by email
+    // - Verify password hash
     // - Generate JWT token
     // - Return token
 
-    return corsResponse(
-      NextResponse.json(
-        {
-          success: true,
-          data: {
-            message: 'Login berhasil',
-            user: {
-              email,
+    // Temporary mock: accept any email/password combination
+    if (email && password.length > 0) {
+      return corsResponse(
+        NextResponse.json(
+          {
+            success: true,
+            data: {
+              message: 'Login berhasil',
+              user: {
+                email,
+              },
+              token: 'jwt-token-here',
             },
-            token: 'jwt-token-here',
           },
-        },
-        { status: 200 }
-      ),
-      { origin: '*' }
-    );
-  } catch (error) {
-    console.error('Login error:', error);
+          { status: 200 }
+        ),
+        { origin: '*' }
+      );
+    }
+
     return corsResponse(
       NextResponse.json(
         {
           success: false,
           error: {
-            message: 'Terjadi kesalahan saat login',
+            message: 'Email atau password salah',
+          },
+        },
+        { status: 401 }
+      ),
+      { origin: '*' }
+    );
+  } catch (error) {
+    console.error('Login error:', error);
+
+    const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat login';
+
+    return corsResponse(
+      NextResponse.json(
+        {
+          success: false,
+          error: {
+            message: errorMessage,
           },
         },
         { status: 500 }

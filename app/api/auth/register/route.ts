@@ -73,12 +73,15 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('Register error:', error);
+
+    const errorMessage = error instanceof Error ? error.message : 'Terjadi kesalahan saat registrasi';
+
     return corsResponse(
       NextResponse.json(
         {
           success: false,
           error: {
-            message: 'Terjadi kesalahan saat registrasi',
+            message: errorMessage,
           },
         },
         { status: 500 }

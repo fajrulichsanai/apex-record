@@ -30,6 +30,26 @@ const LoginPage = () => {
     setSuccessMsg('');
   };
 
+  const handleLogin = async () => {
+    const endpoint = `${LOCAL_API}/auth/login`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+
+    const body = await res.json();
+
+    if (!res.ok || !body.success) {
+      throw new Error(body?.error?.message || 'Login gagal');
+    }
+
+    return body.data;
+  };
+
   const handleRegister = async () => {
     const endpoint = `${LOCAL_API}/auth/register`;
     const res = await fetch(endpoint, {
@@ -65,8 +85,11 @@ const LoginPage = () => {
         setMode('login');
         setPassword('');
       } else {
-        // Login flow is not yet wired to a backend endpoint.
-        setErrorMsg('Login belum terhubung ke API. Silakan hubungi admin.');
+        const data = await handleLogin();
+        setSuccessMsg(data?.message || 'Login berhasil');
+        // TODO: Store token and redirect to dashboard
+        // localStorage.setItem('token', data.token);
+        // router.push('/dashboard');
       }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Terjadi kesalahan');
