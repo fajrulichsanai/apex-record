@@ -1,0 +1,70 @@
+:root {
+  --primary: #4f5bd5;
+  --primary-light: #6f7bea;
+  --primary-dark: #3f3fb0;
+  --green: #1aa260;
+  --green-light: #2ecc8f;
+  --blue: #0ea5e9;
+  --blue-light: #38bdf8;
+  --orange: #f5a623;
+  --orange-light: #fbbf3f;
+  --bg: #f5f6fb;
+  --sidebar-bg: #ffffff;
+  --border: #ececf3;
+  --text-dark: #1f2233;
+  --text-muted: #8b8da3;
+  --text-light: #b3b4c4;
+  --radius-lg: 18px;
+  --radius-md: 12px;
+  --shadow-soft: 0 4px 18px rgba(31, 34, 51, 0.04);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.dashboard-wrapper {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  display: flex;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-dark);
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 21, 38, 0.45);
+  z-index: 40;
+}
+
+.sidebar-overlay.show {
+  display: block;
+}
+
+.main-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.content {
+  padding: 32px 36px 40px;
+  flex: 1;
+}
+
+@media (max-width: 860px) {
+  .content {
+    padding: 20px 18px 32px;
+  }
+}
+
+@media (max-width: 520px) {
+  .content {
+    padding: 20px;
+  }
+}

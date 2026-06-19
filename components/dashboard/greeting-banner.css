@@ -1,0 +1,62 @@
+/* ---------- GREETING BANNER ---------- */
+.greeting-banner {
+  background: linear-gradient(120deg, #5258de 0%, #6a4fd8 100%);
+  border-radius: var(--radius-lg);
+  padding: 34px 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #fff;
+  margin-bottom: 24px;
+}
+
+.greeting-title {
+  font-size: 25px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.greeting-date {
+  font-size: 14.5px;
+  opacity: 0.85;
+  font-weight: 500;
+}
+
+.owner-badge {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 8px 18px;
+  border-radius: 30px;
+}
+
+@media (max-width: 860px) {
+  .greeting-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 26px 24px;
+  }
+
+  .greeting-title {
+    font-size: 21px;
+  }
+}
+
+@media (max-width: 520px) {
+  .greeting-banner {
+    padding: 22px 20px;
+  }
+
+  .greeting-title {
+    font-size: 19px;
+  }
+
+  .owner-badge {
+    font-size: 11px;
+    padding: 6px 14px;
+  }
+}
