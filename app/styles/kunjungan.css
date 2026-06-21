@@ -1,0 +1,515 @@
+.kunjungan-page {
+  --primary:      #4F7EF8;
+  --primary-dk:   #3B6CE6;
+  --green:        #2DCB8A;
+  --bg:           #F5F6FA;
+  --surface:      #FFFFFF;
+  --text-main:    #1A2340;
+  --text-sub:     #6B7A99;
+  --text-muted:   #A0AEC0;
+  --border:       #E8ECF4;
+  --tag-pending:  #F5A623;
+  --tag-done:     #2DCB8A;
+  --tag-cancel:   #FF4D4F;
+  --radius-sm:    8px;
+  --radius-md:    14px;
+  --radius-lg:    20px;
+  --transition:   0.2s ease;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* PAGE HEADER */
+.kunjungan-page .page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.kunjungan-page .page-title-block { flex: 1; }
+
+.kunjungan-page .page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.kunjungan-page .page-title h1 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text-main);
+}
+
+.kunjungan-page .badge-count {
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 20px;
+}
+
+.kunjungan-page .page-subtitle { font-size: 13.5px; color: var(--text-sub); margin-top: 4px; }
+
+.kunjungan-page .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+  box-shadow: 0 4px 14px rgba(79,126,248,.35);
+  white-space: nowrap;
+}
+
+.kunjungan-page .btn-primary:hover {
+  background: var(--primary-dk);
+  box-shadow: 0 6px 20px rgba(79,126,248,.45);
+  transform: translateY(-1px);
+}
+
+/* STAT CARDS */
+.kunjungan-page .stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kunjungan-page .stat-card {
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.kunjungan-page .stat-card:hover { transform: translateY(-3px); }
+
+.kunjungan-page .stat-card::before {
+  content: '';
+  position: absolute;
+  top: -20px; right: -20px;
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.12);
+}
+
+.kunjungan-page .stat-card::after {
+  content: '';
+  position: absolute;
+  bottom: -30px; right: 20px;
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+}
+
+.kunjungan-page .stat-card.total    { background: linear-gradient(135deg,#4F7EF8,#7B5CFA); box-shadow: 0 6px 20px rgba(79,126,248,.3); }
+.kunjungan-page .stat-card.pending  { background: linear-gradient(135deg,#F5A623,#E8831A); box-shadow: 0 6px 20px rgba(245,166,35,.3); }
+.kunjungan-page .stat-card.done     { background: linear-gradient(135deg,#2DCB8A,#1BA876); box-shadow: 0 6px 20px rgba(45,203,138,.3); }
+.kunjungan-page .stat-card.cancel   { background: linear-gradient(135deg,#FF6B6B,#E84393); box-shadow: 0 6px 20px rgba(255,107,107,.3); }
+
+.kunjungan-page .stat-icon {
+  width: 46px; height: 46px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.22);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  position: relative; z-index: 1;
+}
+
+.kunjungan-page .stat-info { position: relative; z-index: 1; }
+.kunjungan-page .stat-value { font-size: 28px; font-weight: 800; line-height: 1; }
+.kunjungan-page .stat-label { font-size: 12px; font-weight: 500; opacity: .85; margin-top: 3px; }
+
+/* CONTENT AREA */
+.kunjungan-page .content-area {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 20px;
+  flex: 1;
+}
+
+.kunjungan-page .panel {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.kunjungan-page .panel-toolbar {
+  padding: 16px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.kunjungan-page .search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 13px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.kunjungan-page .search-box:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+}
+
+.kunjungan-page .search-box .material-symbols-rounded { font-size: 18px; color: var(--text-muted); }
+
+.kunjungan-page .search-box input {
+  border: none;
+  background: none;
+  outline: none;
+  flex: 1;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-main);
+}
+
+.kunjungan-page .search-box input::placeholder { color: var(--text-muted); }
+
+.kunjungan-page .filter-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.kunjungan-page .filter-tab {
+  padding: 6px 13px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: none;
+  color: var(--text-sub);
+  transition: all var(--transition);
+}
+
+.kunjungan-page .filter-tab:hover { border-color: var(--primary); color: var(--primary); }
+.kunjungan-page .filter-tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+.kunjungan-page .panel-sort {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.kunjungan-page .sort-label { font-size: 12px; color: var(--text-muted); }
+
+.kunjungan-page .visit-list { flex: 1; overflow-y: auto; }
+
+.kunjungan-page .visit-row-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background var(--transition);
+  position: relative;
+}
+
+.kunjungan-page .visit-row-item:last-child { border-bottom: none; }
+.kunjungan-page .visit-row-item:hover { background: #F8F9FE; }
+.kunjungan-page .visit-row-item.selected { background: rgba(79,126,248,.06); border-right: 3px solid var(--primary); }
+
+.kunjungan-page .visit-avatar {
+  width: 42px; height: 42px;
+  border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+  background: linear-gradient(135deg,#4F7EF8,#3B6CE6);
+}
+
+.kunjungan-page .visit-row-info { flex: 1; min-width: 0; }
+
+.kunjungan-page .visit-row-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kunjungan-page .visit-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.kunjungan-page .tag {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.kunjungan-page .tag.pending { background: rgba(245,166,35,.12); color: var(--tag-pending); }
+.kunjungan-page .tag.done    { background: rgba(45,203,138,.12); color: var(--tag-done); }
+.kunjungan-page .tag.cancel  { background: rgba(255,77,79,.12); color: var(--tag-cancel); }
+.kunjungan-page .tag.primary { background: rgba(79,126,248,.12); color: var(--primary); }
+
+.kunjungan-page .visit-row-sub { font-size: 11.5px; color: var(--text-muted); }
+
+.kunjungan-page .chevron-icon { font-size: 16px; color: var(--text-muted); }
+
+/* DETAIL PANEL */
+.kunjungan-page .detail-panel {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.kunjungan-page .detail-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px;
+}
+
+.kunjungan-page .empty-icon-wrap {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px dashed var(--border);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.kunjungan-page .empty-icon-wrap .material-symbols-rounded { font-size: 36px; color: var(--text-muted); }
+.kunjungan-page .empty-title { font-size: 15px; font-weight: 600; color: var(--text-sub); }
+
+.kunjungan-page .empty-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 200px;
+  line-height: 1.5;
+}
+
+.kunjungan-page .detail-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.kunjungan-page .detail-avatar {
+  width: 64px; height: 64px;
+  border-radius: 18px;
+  background: linear-gradient(135deg,#4F7EF8,#3B6CE6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+
+.kunjungan-page .detail-name-block { flex: 1; min-width: 140px; }
+.kunjungan-page .detail-name { font-size: 20px; font-weight: 700; color: var(--text-main); }
+.kunjungan-page .detail-rm   { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+.kunjungan-page .detail-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+
+.kunjungan-page .detail-actions { display: flex; gap: 8px; }
+
+.kunjungan-page .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1.5px solid var(--border);
+  background: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.kunjungan-page .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.kunjungan-page .btn-outline .material-symbols-rounded { font-size: 16px; }
+.kunjungan-page .btn-outline.danger:hover { border-color: #FF4D4F; color: #FF4D4F; }
+
+.kunjungan-page .detail-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+}
+
+.kunjungan-page .info-cell { background: var(--surface); padding: 16px 20px; }
+.kunjungan-page .info-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.kunjungan-page .info-value { font-size: 14px; font-weight: 600; color: var(--text-main); margin-top: 4px; }
+
+.kunjungan-page .detail-section { padding: 20px 24px; border-top: 1px solid var(--border); }
+
+.kunjungan-page .section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kunjungan-page .section-title .material-symbols-rounded { font-size: 16px; color: var(--primary); }
+
+.kunjungan-page .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* RESPONSIVE */
+@media (max-width: 1100px) {
+  .kunjungan-page .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .kunjungan-page .content-area { grid-template-columns: 320px 1fr; }
+}
+
+@media (max-width: 900px) {
+  .kunjungan-page .content-area { grid-template-columns: 1fr; }
+  .kunjungan-page .detail-panel { display: none; }
+  .kunjungan-page .detail-panel.show { display: flex; }
+}
+
+@media (max-width: 600px) {
+  .kunjungan-page .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .kunjungan-page .page-title h1 { font-size: 20px; }
+  .kunjungan-page .detail-info-grid { grid-template-columns: 1fr; }
+  .kunjungan-page .detail-actions { flex-wrap: wrap; }
+}
+
+/* ADD VISIT MODAL */
+.kunjungan-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 200;
+}
+
+.kunjungan-modal-overlay .modal-box {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 12px 50px rgba(0,0,0,.25);
+}
+
+.kunjungan-modal-overlay .modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.kunjungan-modal-overlay .modal-header h2 { font-size: 17px; font-weight: 700; color: var(--text-main); }
+
+.kunjungan-modal-overlay .modal-close {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition), color var(--transition);
+}
+
+.kunjungan-modal-overlay .modal-close:hover { background: var(--bg); color: var(--text-main); }
+
+.kunjungan-modal-overlay .modal-body {
+  padding: 22px 24px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.kunjungan-modal-overlay .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.kunjungan-modal-overlay .form-field { display: flex; flex-direction: column; gap: 6px; }
+.kunjungan-modal-overlay .form-field.full { grid-column: 1 / -1; }
+
+.kunjungan-modal-overlay .form-field label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+
+.kunjungan-modal-overlay .form-field input,
+.kunjungan-modal-overlay .form-field select,
+.kunjungan-modal-overlay .form-field textarea {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.kunjungan-modal-overlay .form-field textarea { resize: vertical; min-height: 64px; }
+
+.kunjungan-modal-overlay .form-field input:focus,
+.kunjungan-modal-overlay .form-field select:focus,
+.kunjungan-modal-overlay .form-field textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+}
+
+.kunjungan-modal-overlay .modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 600px) {
+  .kunjungan-modal-overlay .form-row { grid-template-columns: 1fr; }
+}

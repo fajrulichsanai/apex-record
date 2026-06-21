@@ -4,7 +4,7 @@ const statsData = [
   {
     id: 1,
     title: 'Total Pasien',
-    value: '—',
+    value: '5',
     color: 'purple',
     icon: (
       <svg viewBox="0 0 24 24" fill="none">
@@ -28,7 +28,7 @@ const statsData = [
   {
     id: 2,
     title: 'Pendapatan Bulan Ini',
-    value: '—',
+    value: 'Rp 9.500.000',
     color: 'green',
     icon: (
       <svg viewBox="0 0 24 24" fill="none">
@@ -49,7 +49,7 @@ const statsData = [
   {
     id: 3,
     title: 'Kunjungan Hari Ini',
-    value: '—',
+    value: '4',
     color: 'blue',
     icon: (
       <svg viewBox="0 0 24 24" fill="none">
@@ -74,7 +74,7 @@ const statsData = [
   {
     id: 4,
     title: 'Dokter Aktif',
-    value: '—',
+    value: '1',
     color: 'orange',
     icon: (
       <svg viewBox="0 0 24 24" fill="none">

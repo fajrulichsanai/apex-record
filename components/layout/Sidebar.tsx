@@ -1,6 +1,34 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  FiGrid,
+  FiUsers,
+  FiClock,
+  FiMonitor,
+  FiCalendar,
+  FiClipboard,
+  FiEdit3,
+  FiPackage,
+  FiFileText,
+  FiBox,
+  FiCreditCard,
+  FiFile,
+  FiDollarSign,
+  FiBarChart2,
+  FiActivity,
+  FiTrendingUp,
+  FiRefreshCw,
+  FiSettings,
+  FiHome,
+  FiUserCheck,
+  FiUser,
+  FiSliders,
+  FiChevronLeft,
+  FiChevronRight,
+} from 'react-icons/fi';
 import './sidebar.css';
 
 interface SidebarProps {
@@ -9,6 +37,7 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const pathname = usePathname();
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
   const toggleGroup = (group: string) => {
@@ -28,67 +57,24 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="logo">
           <div className="logo-icon">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M9 2C7 2 6 3.5 6 5.5V7H5C3.34 7 2 8.34 2 10v9c0 1.66 1.34 3 3 3h14c1.66 0 3-1.34 3-3v-9c0-1.66-1.34-3-3-3h-1V5.5C18 3.5 17 2 15 2H9zm0 2h6c.55 0 1 .67 1 1.5V7H8V5.5C8 4.67 8.45 4 9 4zm2 8h2v2h2v2h-2v2h-2v-2H9v-2h2v-2z"
-                fill="currentColor"
-              />
-            </svg>
+            <FiActivity />
           </div>
           <span className="logo-text">ApexRecord</span>
         </div>
 
         <nav className="nav">
-          <a
-            className="nav-item active"
+          <Link
+            href="/dashboard"
+            className={`nav-item ${pathname === '/dashboard' ? 'active' : ''}`}
             onClick={handleNavItemClick}
-            role="button"
-            tabIndex={0}
           >
             <div className="nav-item-left">
               <span className="nav-icon">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <rect
-                    x="3"
-                    y="3"
-                    width="7"
-                    height="7"
-                    rx="1.5"
-                    fill="currentColor"
-                  />
-                  <rect
-                    x="14"
-                    y="3"
-                    width="7"
-                    height="7"
-                    rx="1.5"
-                    fill="currentColor"
-                  />
-                  <rect
-                    x="3"
-                    y="14"
-                    width="7"
-                    height="7"
-                    rx="1.5"
-                    fill="currentColor"
-                  />
-                  <rect
-                    x="14"
-                    y="14"
-                    width="7"
-                    height="7"
-                    rx="1.5"
-                    fill="currentColor"
-                  />
-                </svg>
+                <FiGrid />
               </span>
               Dashboard
             </div>
-          </a>
+          </Link>
 
           <NavGroup
             title="Pasien"
@@ -96,27 +82,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             isExpanded={expandedGroups.includes('pasien')}
             onToggle={() => toggleGroup('pasien')}
             onItemClick={handleNavItemClick}
-            icon={
-              <svg viewBox="0 0 24 24" fill="none">
-                <circle cx="9" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.8" />
-                <path
-                  d="M3.5 19c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-                <circle cx="17" cy="9" r="2.4" stroke="currentColor" strokeWidth="1.8" />
-                <path
-                  d="M15.5 13.6c2.3.3 4 2.1 4 4.4"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
-            }
+            pathname={pathname}
+            icon={<FiUsers />}
             items={[
-              { label: 'Daftar Pasien', icon: '📋' },
-              { label: 'Tambah Pasien', icon: '➕' },
+              { label: 'Daftar & Tambah Pasien', icon: <FiEdit3 />, href: '/list-pasien' },
             ]}
           />
 
@@ -126,20 +95,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             isExpanded={expandedGroups.includes('antrian')}
             onToggle={() => toggleGroup('antrian')}
             onItemClick={handleNavItemClick}
-            icon={
-              <svg viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M4 6h16M4 12h10M4 18h13"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
-            }
+            pathname={pathname}
+            icon={<FiClock />}
             items={[
-              { label: 'Antrian Pasien', icon: '⏳' },
-              { label: 'Monitor Panggilan', icon: '📺' },
-              { label: 'Jadwal Dokter', icon: '📅' },
+              { label: 'Antrian Pasien', icon: <FiClock /> },
+              { label: 'Monitor Panggilan', icon: <FiMonitor /> },
+              { label: 'Jadwal Dokter', icon: <FiCalendar /> },
             ]}
           />
 
@@ -149,28 +110,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             isExpanded={expandedGroups.includes('kunjungan')}
             onToggle={() => toggleGroup('kunjungan')}
             onItemClick={handleNavItemClick}
-            icon={
-              <svg viewBox="0 0 24 24" fill="none">
-                <rect
-                  x="3.5"
-                  y="4"
-                  width="17"
-                  height="16"
-                  rx="2"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                />
-                <path
-                  d="M12 9v6M9 12h6"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
-            }
+            pathname={pathname}
+            icon={<FiClipboard />}
             items={[
-              { label: 'Daftar Kunjungan', icon: '📝' },
-              { label: 'Buat Kunjungan', icon: '➕' },
+              { label: 'Daftar & Buat Kunjungan', icon: <FiEdit3 />, href: '/list-kunjungan' },
             ]}
           />
 
@@ -180,28 +123,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             isExpanded={expandedGroups.includes('farmasi')}
             onToggle={() => toggleGroup('farmasi')}
             onItemClick={handleNavItemClick}
-            icon={
-              <svg viewBox="0 0 24 24" fill="none">
-                <rect
-                  x="3.5"
-                  y="3.5"
-                  width="17"
-                  height="17"
-                  rx="2"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                />
-                <path
-                  d="M8 8h8M8 12h8M8 16h5"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
-            }
+            pathname={pathname}
+            icon={<FiPackage />}
             items={[
-              { label: 'Resep', icon: '📄' },
-              { label: 'Pengeluaran Obat', icon: '💊' },
+              { label: 'Resep', icon: <FiFileText /> },
+              { label: 'Pengeluaran Obat', icon: <FiBox /> },
             ]}
           />
 
@@ -211,57 +137,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             isExpanded={expandedGroups.includes('billing')}
             onToggle={() => toggleGroup('billing')}
             onItemClick={handleNavItemClick}
-            icon={
-              <svg viewBox="0 0 24 24" fill="none">
-                <rect
-                  x="3"
-                  y="6"
-                  width="18"
-                  height="13"
-                  rx="2"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                />
-                <path
-                  d="M3 10h18"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                />
-              </svg>
-            }
+            pathname={pathname}
+            icon={<FiCreditCard />}
             items={[
-              { label: 'Input Pembayaran', icon: '💰' },
-              { label: 'Invoice', icon: '🧾' },
-              { label: 'Riwayat Transaksi', icon: '⏱️' },
+              { label: 'Riwayat Transaksi', icon: <FiClock />, href: '/transaksi' },
+              { label: 'Invoice', icon: <FiFile /> },
             ]}
           />
 
-          <a
-            className="nav-item"
-            onClick={handleNavItemClick}
-            role="button"
-            tabIndex={0}
-          >
+          <a className="nav-item disabled" aria-disabled="true">
             <div className="nav-item-left">
               <span className="nav-icon">
-                <svg viewBox="0 0 24 24" fill="none">
-                  <rect
-                    x="3"
-                    y="5"
-                    width="18"
-                    height="14"
-                    rx="2"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  />
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="2.6"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                  />
-                </svg>
+                <FiDollarSign />
               </span>
               Payroll
             </div>
@@ -273,20 +160,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             isExpanded={expandedGroups.includes('laporan')}
             onToggle={() => toggleGroup('laporan')}
             onItemClick={handleNavItemClick}
-            icon={
-              <svg viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M4 19V11M10 19V5M16 19v-7M20 19V9"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
-            }
+            pathname={pathname}
+            icon={<FiBarChart2 />}
             items={[
-              { label: 'Kunjungan', icon: '📊' },
-              { label: 'Keuangan', icon: '📈' },
-              { label: 'SATUSEHAT', icon: '🔄' },
+              { label: 'Kunjungan', icon: <FiActivity />, href: '/laporan-kunjungan' },
+              { label: 'Keuangan', icon: <FiTrendingUp />, href: '/laporan-keuangan' },
+              { label: 'SATUSEHAT', icon: <FiRefreshCw /> },
             ]}
           />
 
@@ -296,44 +175,22 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             isExpanded={expandedGroups.includes('pengaturan')}
             onToggle={() => toggleGroup('pengaturan')}
             onItemClick={handleNavItemClick}
-            icon={
-              <svg viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8" />
-                <path
-                  d="M19.4 13.5c.1-.5.1-1 0-1.5l1.5-1.2-1.5-2.6-1.8.5c-.4-.3-.8-.6-1.3-.8L16 5.5h-3l-.3 2.4c-.5.2-.9.5-1.3.8l-1.8-.5-1.5 2.6 1.5 1.2c-.1.5-.1 1 0 1.5L7.1 14.7l1.5 2.6 1.8-.5c.4.3.8.6 1.3.8l.3 2.4h3l.3-2.4c.5-.2.9-.5 1.3-.8l1.8.5 1.5-2.6-1.5-1.2z"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            }
+            pathname={pathname}
+            icon={<FiSettings />}
             items={[
-              { label: 'Info Klinik', icon: '🏥' },
-              { label: 'User Management', icon: '👥' },
-              { label: 'Practitioner', icon: '👨‍⚕️' },
-              { label: 'Tarif & Tindakan', icon: '💵' },
-              { label: 'Template SOAP', icon: '📋' },
-              { label: 'SATUSEHAT Config', icon: '⚙️' },
+              { label: 'Info Klinik', icon: <FiHome />, href: '/info-klinik' },
+              { label: 'User Management', icon: <FiUserCheck />, href: '/user-management' },
+              { label: 'Tarif & Tindakan', icon: <FiDollarSign />, href: '/tarif' },
+              { label: 'Practitioner', icon: <FiUser /> },
+              { label: 'Template SOAP', icon: <FiFileText /> },
+              { label: 'SATUSEHAT Config', icon: <FiSliders /> },
             ]}
           />
         </nav>
 
         <div className="sidebar-collapse">
           <div className="collapse-btn">
-            <svg
-              viewBox="0 0 24 24"
-              width="16"
-              height="16"
-              fill="none"
-            >
-              <path
-                d="M15 6l-6 6 6 6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <FiChevronLeft />
           </div>
         </div>
       </aside>
@@ -347,8 +204,9 @@ interface NavGroupProps {
   isExpanded: boolean;
   onToggle: () => void;
   onItemClick: () => void;
+  pathname: string;
   icon: React.ReactNode;
-  items: { label: string; icon: string }[];
+  items: { label: string; icon: React.ReactNode; href?: string }[];
 }
 
 function NavGroup({
@@ -357,13 +215,16 @@ function NavGroup({
   isExpanded,
   onToggle,
   onItemClick,
+  pathname,
   icon,
   items,
 }: NavGroupProps) {
+  const hasActiveItem = items.some((item) => item.href === pathname);
+
   return (
     <div className="nav-group">
       <a
-        className={`nav-item nav-toggle ${isExpanded ? 'expanded' : ''}`}
+        className={`nav-item nav-toggle ${isExpanded ? 'expanded' : ''} ${hasActiveItem ? 'active' : ''}`}
         onClick={onToggle}
         role="button"
         tabIndex={0}
@@ -373,30 +234,28 @@ function NavGroup({
           {title}
         </div>
         <span className="chevron">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path
-              d="M9 6l6 6-6 6"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <FiChevronRight />
         </span>
       </a>
       <div className={`submenu ${isExpanded ? 'open' : ''}`}>
-        {items.map((item) => (
-          <a
-            key={item.label}
-            className="sub-item"
-            onClick={onItemClick}
-            role="button"
-            tabIndex={0}
-          >
-            <span className="sub-icon">{item.icon}</span>
-            {item.label}
-          </a>
-        ))}
+        {items.map((item) =>
+          item.href ? (
+            <Link
+              key={item.label}
+              href={item.href}
+              className={`sub-item ${pathname === item.href ? 'active' : ''}`}
+              onClick={onItemClick}
+            >
+              <span className="sub-icon">{item.icon}</span>
+              {item.label}
+            </Link>
+          ) : (
+            <a key={item.label} className="sub-item disabled" aria-disabled="true">
+              <span className="sub-icon">{item.icon}</span>
+              {item.label}
+            </a>
+          )
+        )}
       </div>
     </div>
   );

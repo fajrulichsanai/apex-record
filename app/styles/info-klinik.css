@@ -1,0 +1,248 @@
+.info-klinik-page {
+  --primary:       #4F7EF8;
+  --primary-dark:  #3B6CE6;
+  --primary-light: #EEF1FE;
+  --card-bg:       #FFFFFF;
+  --border:        #E8ECF4;
+  --input-bg:      #F7F9FC;
+  --input-dis:     #F0F2F7;
+  --text-dark:     #1A1F36;
+  --text-mid:      #4A5578;
+  --text-light:    #8A93B0;
+  --toggle-off:    #C8CDD8;
+  --info-bg:       #EBF1FD;
+  --info-text:     #3B6CE6;
+  --save-bg:       #22C55E;
+  --save-dark:     #16A34A;
+}
+
+.info-klinik-page .page-content { padding: 28px; }
+
+/* Page title row */
+.info-klinik-page .page-title-row {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.info-klinik-page .page-title-group { display: flex; align-items: center; gap: 14px; }
+.info-klinik-page .page-title-icon {
+  width: 48px; height: 48px;
+  background: var(--primary);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+}
+.info-klinik-page .page-title-icon svg { width: 24px; height: 24px; fill: #fff; }
+.info-klinik-page .page-title-text h1 { font-size: 20px; font-weight: 700; margin: 0; }
+.info-klinik-page .page-title-text p { font-size: 13px; color: var(--text-mid); margin-top: 2px; }
+
+/* Edit / Save button */
+.info-klinik-page .main-btn {
+  display: flex; align-items: center; gap: 7px;
+  border: none; border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.info-klinik-page .main-btn:active { transform: scale(.97); }
+.info-klinik-page .main-btn.mode-edit { background: var(--primary); color: #fff; }
+.info-klinik-page .main-btn.mode-edit:hover { background: var(--primary-dark); }
+.info-klinik-page .main-btn.mode-save { background: var(--save-bg); color: #fff; }
+.info-klinik-page .main-btn.mode-save:hover { background: var(--save-dark); }
+.info-klinik-page .main-btn svg { width: 15px; height: 15px; }
+
+/* Two-column layout */
+.info-klinik-page .grid-two {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 20px;
+  align-items: start;
+}
+
+/* Card */
+.info-klinik-page .card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.info-klinik-page .card:last-child { margin-bottom: 0; }
+.info-klinik-page .card-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 14.5px; font-weight: 700;
+  color: var(--text-dark);
+}
+.info-klinik-page .card-header svg { width: 18px; height: 18px; color: var(--primary); }
+.info-klinik-page .card-body { padding: 20px 22px; }
+
+/* Form fields */
+.info-klinik-page .field { margin-bottom: 18px; }
+.info-klinik-page .field:last-child { margin-bottom: 0; }
+.info-klinik-page .field-label {
+  font-size: 12.5px; font-weight: 600;
+  color: var(--text-mid);
+  margin-bottom: 7px; display: block;
+}
+
+.info-klinik-page .field-display {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--text-dark);
+  display: flex; align-items: center; gap: 10px;
+  min-height: 46px;
+  box-sizing: border-box;
+}
+.info-klinik-page .field-display.textarea-display { align-items: flex-start; min-height: 72px; }
+.info-klinik-page .field-display svg { width: 16px; height: 16px; color: var(--text-light); flex-shrink: 0; }
+.info-klinik-page .field-display.placeholder-val span { color: var(--text-light); }
+
+.info-klinik-page .field-input-real {
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid var(--primary);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-dark);
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  box-sizing: border-box;
+}
+.info-klinik-page .field-input-real:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79,110,247,.12);
+}
+.info-klinik-page .field-input-real.textarea-real {
+  resize: vertical; min-height: 72px;
+}
+.info-klinik-page .field-input-real:disabled {
+  background: var(--input-dis);
+  border-color: var(--border);
+  color: var(--text-dark);
+  cursor: default;
+}
+
+/* Operating hours */
+.info-klinik-page .info-banner {
+  background: var(--info-bg);
+  border-radius: 10px;
+  padding: 11px 14px;
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 22px 18px;
+  font-size: 13px; color: var(--info-text); font-weight: 500;
+}
+.info-klinik-page .info-banner svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+.info-klinik-page .hours-list { padding: 0 22px 18px; }
+.info-klinik-page .hours-row {
+  display: grid;
+  grid-template-columns: 52px 1fr 16px 1fr;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.info-klinik-page .hours-row:last-child { margin-bottom: 0; }
+
+.info-klinik-page .day-label {
+  font-size: 13px; font-weight: 500;
+  color: var(--text-mid);
+  display: flex; align-items: center; gap: 6px;
+}
+
+/* Toggle */
+.info-klinik-page .toggle { display: inline-flex; align-items: center; cursor: pointer; }
+.info-klinik-page .toggle input { display: none; }
+.info-klinik-page .toggle-track {
+  width: 34px; height: 20px;
+  background: var(--toggle-off);
+  border-radius: 10px; position: relative;
+  transition: background .2s; flex-shrink: 0;
+}
+.info-klinik-page .toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  background: #fff; border-radius: 50%;
+  top: 3px; left: 3px;
+  transition: transform .2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+.info-klinik-page .toggle input:checked + .toggle-track { background: var(--primary); }
+.info-klinik-page .toggle input:checked + .toggle-track::after { transform: translateX(14px); }
+.info-klinik-page .toggle.locked { pointer-events: none; }
+
+/* Time picker */
+.info-klinik-page .time-picker {
+  display: flex;
+  align-items: center;
+  background: var(--input-dis);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  transition: border-color .15s, background .15s;
+}
+.info-klinik-page .time-picker.active {
+  background: #fff;
+  border-color: var(--primary);
+}
+.info-klinik-page .time-picker.active:focus-within {
+  box-shadow: 0 0 0 3px rgba(79,110,247,.12);
+}
+
+.info-klinik-page .tp-select {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-dark);
+  padding: 7px 4px 7px 8px;
+  cursor: default;
+  pointer-events: none;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 1;
+  min-width: 0;
+}
+.info-klinik-page .tp-select:disabled { color: var(--text-light); }
+.info-klinik-page .time-picker.active .tp-select {
+  cursor: pointer;
+  pointer-events: all;
+}
+.info-klinik-page .tp-colon {
+  font-size: 13px; font-weight: 600;
+  color: var(--text-mid); padding: 0 1px;
+  user-select: none;
+}
+.info-klinik-page .tp-select-min {
+  padding-right: 6px;
+}
+
+.info-klinik-page .hours-row.day-off .time-picker {
+  opacity: .45;
+  pointer-events: none;
+}
+.info-klinik-page .hours-row.day-off .toggle { pointer-events: none; }
+.info-klinik-page .hours-row.day-off.can-toggle .toggle { pointer-events: all; }
+
+.info-klinik-page .hours-sep { font-size: 13px; color: var(--text-light); text-align: center; }
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .info-klinik-page .grid-two { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .info-klinik-page .page-content { padding: 16px; }
+  .info-klinik-page .page-title-row { flex-wrap: wrap; gap: 12px; }
+  .info-klinik-page .page-title-text h1 { font-size: 17px; }
+}

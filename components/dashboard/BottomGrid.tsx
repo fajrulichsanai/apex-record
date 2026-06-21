@@ -92,6 +92,37 @@ const quickActions = [
   },
 ];
 
+const recentActivities = [
+  {
+    id: 1,
+    title: 'Mu** Da** Sa** menyelesaikan kunjungan',
+    detail: 'Pembersihan Karang Gigi · drg. Daffa Safra',
+    time: '10 menit lalu',
+    color: 'green',
+  },
+  {
+    id: 2,
+    title: 'Transaksi baru tercatat',
+    detail: 'Rp 1.450.000 · Tunai',
+    time: '42 menit lalu',
+    color: 'blue',
+  },
+  {
+    id: 3,
+    title: 'Ahmad Ri** menunggu kunjungan',
+    detail: 'Konsultasi Awal · belum dimulai',
+    time: '1 jam lalu',
+    color: 'orange',
+  },
+  {
+    id: 4,
+    title: 'Tarif baru ditambahkan',
+    detail: 'Cabut Gigi · Rp 200.000 – Rp 300.000',
+    time: 'Kemarin',
+    color: 'purple',
+  },
+];
+
 export default function BottomGrid() {
   return (
     <div className="bottom-grid">
@@ -102,20 +133,17 @@ export default function BottomGrid() {
             Lihat semua
           </a>
         </div>
-        <div className="empty-state">
-          <div className="empty-icon-wrap">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path
-                d="M3 12h4l3 8 4-16 3 8h4"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <div className="empty-title">Belum ada aktivitas hari ini</div>
-          <div className="empty-sub">Aktivitas klinik akan muncul di sini</div>
+        <div className="activity-list">
+          {recentActivities.map((activity) => (
+            <div key={activity.id} className="activity-item">
+              <span className={`activity-dot ${activity.color}`} />
+              <div className="activity-info">
+                <div className="activity-title">{activity.title}</div>
+                <div className="activity-detail">{activity.detail}</div>
+              </div>
+              <span className="activity-time">{activity.time}</span>
+            </div>
+          ))}
         </div>
       </div>
 

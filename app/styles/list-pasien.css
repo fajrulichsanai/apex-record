@@ -1,0 +1,844 @@
+.list-pasien-page {
+  --primary:      #4F7EF8;
+  --primary-dk:   #3B6CE6;
+  --green:        #2DCB8A;
+  --bg:           #F5F6FA;
+  --surface:      #FFFFFF;
+  --text-main:    #1A2340;
+  --text-sub:     #6B7A99;
+  --text-muted:   #A0AEC0;
+  --border:       #E8ECF4;
+  --tag-female:   #FF6B9D;
+  --tag-male:     #4F7EF8;
+  --tag-baby:     #F5A623;
+  --radius-sm:    8px;
+  --radius-md:    14px;
+  --radius-lg:    20px;
+  --transition:   0.2s ease;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* PAGE HEADER */
+.list-pasien-page .page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.list-pasien-page .page-title-block { flex: 1; }
+
+.list-pasien-page .page-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.list-pasien-page .page-title h1 {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text-main);
+}
+
+.list-pasien-page .badge-count {
+  background: var(--primary);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 20px;
+}
+
+.list-pasien-page .page-subtitle { font-size: 13.5px; color: var(--text-sub); margin-top: 4px; }
+
+.list-pasien-page .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 11px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+  box-shadow: 0 4px 14px rgba(79,126,248,.35);
+  white-space: nowrap;
+}
+
+.list-pasien-page .btn-primary:hover {
+  background: var(--primary-dk);
+  box-shadow: 0 6px 20px rgba(79,126,248,.45);
+  transform: translateY(-1px);
+}
+
+/* STAT CARDS */
+.list-pasien-page .stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.list-pasien-page .stat-card {
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+
+.list-pasien-page .stat-card:hover { transform: translateY(-3px); }
+
+.list-pasien-page .stat-card::before {
+  content: '';
+  position: absolute;
+  top: -20px; right: -20px;
+  width: 90px; height: 90px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.12);
+}
+
+.list-pasien-page .stat-card::after {
+  content: '';
+  position: absolute;
+  bottom: -30px; right: 20px;
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.08);
+}
+
+.list-pasien-page .stat-card.total  { background: linear-gradient(135deg,#4F7EF8,#7B5CFA); box-shadow: 0 6px 20px rgba(79,126,248,.3); }
+.list-pasien-page .stat-card.male   { background: linear-gradient(135deg,#38C9C0,#2BA3CA); box-shadow: 0 6px 20px rgba(56,201,192,.3); }
+.list-pasien-page .stat-card.female { background: linear-gradient(135deg,#2DCB8A,#1BA876); box-shadow: 0 6px 20px rgba(45,203,138,.3); }
+.list-pasien-page .stat-card.baby   { background: linear-gradient(135deg,#F5A623,#E8831A); box-shadow: 0 6px 20px rgba(245,166,35,.3); }
+
+.list-pasien-page .stat-icon {
+  width: 46px; height: 46px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.22);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  position: relative; z-index: 1;
+}
+
+.list-pasien-page .stat-info { position: relative; z-index: 1; }
+.list-pasien-page .stat-value { font-size: 28px; font-weight: 800; line-height: 1; }
+.list-pasien-page .stat-label { font-size: 12px; font-weight: 500; opacity: .85; margin-top: 3px; }
+
+/* CONTENT AREA */
+.list-pasien-page .content-area {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 20px;
+  flex: 1;
+}
+
+.list-pasien-page .panel {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.list-pasien-page .panel-toolbar {
+  padding: 16px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.list-pasien-page .search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 13px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.list-pasien-page .search-box:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+}
+
+.list-pasien-page .search-box .material-symbols-rounded { font-size: 18px; color: var(--text-muted); }
+
+.list-pasien-page .search-box input {
+  border: none;
+  background: none;
+  outline: none;
+  flex: 1;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-main);
+}
+
+.list-pasien-page .search-box input::placeholder { color: var(--text-muted); }
+
+.list-pasien-page .filter-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.list-pasien-page .filter-tab {
+  padding: 6px 13px;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1.5px solid var(--border);
+  background: none;
+  color: var(--text-sub);
+  transition: all var(--transition);
+}
+
+.list-pasien-page .filter-tab:hover { border-color: var(--primary); color: var(--primary); }
+.list-pasien-page .filter-tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+.list-pasien-page .panel-sort {
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+
+.list-pasien-page .sort-label { font-size: 12px; color: var(--text-muted); }
+
+.list-pasien-page .sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.list-pasien-page .sort-btn .material-symbols-rounded { font-size: 15px; }
+
+.list-pasien-page .patient-list { flex: 1; overflow-y: auto; }
+
+.list-pasien-page .patient-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background var(--transition);
+  position: relative;
+}
+
+.list-pasien-page .patient-item:last-child { border-bottom: none; }
+.list-pasien-page .patient-item:hover { background: #F8F9FE; }
+.list-pasien-page .patient-item.selected { background: rgba(79,126,248,.06); border-right: 3px solid var(--primary); }
+
+.list-pasien-page .patient-avatar {
+  width: 42px; height: 42px;
+  border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+
+.list-pasien-page .patient-avatar.female { background: linear-gradient(135deg,#FF6B9D,#E84393); }
+.list-pasien-page .patient-avatar.male   { background: linear-gradient(135deg,#4F7EF8,#3B6CE6); }
+.list-pasien-page .patient-avatar.baby   { background: linear-gradient(135deg,#F5A623,#E8831A); }
+
+.list-pasien-page .patient-info { flex: 1; min-width: 0; }
+
+.list-pasien-page .patient-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list-pasien-page .patient-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.list-pasien-page .tag {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+
+.list-pasien-page .tag.female { background: rgba(255,107,157,.12); color: var(--tag-female); }
+.list-pasien-page .tag.male   { background: rgba(79,126,248,.12);  color: var(--tag-male); }
+.list-pasien-page .tag.baby   { background: rgba(245,166,35,.12);  color: var(--tag-baby); }
+.list-pasien-page .tag.active { background: rgba(45,203,138,.12);  color: var(--green); }
+.list-pasien-page .tag.primary { background: rgba(79,126,248,.12); color: var(--primary); }
+
+.list-pasien-page .patient-rm { font-size: 11.5px; color: var(--text-muted); }
+
+.list-pasien-page .patient-status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+}
+
+.list-pasien-page .status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 3px rgba(45,203,138,.2);
+}
+
+.list-pasien-page .status-dot.inactive { background: var(--text-muted); box-shadow: none; }
+.list-pasien-page .chevron-icon { font-size: 16px; color: var(--text-muted); }
+
+/* DETAIL PANEL */
+.list-pasien-page .detail-panel {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.list-pasien-page .detail-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 40px;
+}
+
+.list-pasien-page .empty-icon-wrap {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px dashed var(--border);
+  display: flex; align-items: center; justify-content: center;
+}
+
+.list-pasien-page .empty-icon-wrap .material-symbols-rounded { font-size: 36px; color: var(--text-muted); }
+.list-pasien-page .empty-title { font-size: 15px; font-weight: 600; color: var(--text-sub); }
+
+.list-pasien-page .empty-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  max-width: 200px;
+  line-height: 1.5;
+}
+
+.list-pasien-page .detail-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.list-pasien-page .detail-avatar {
+  width: 64px; height: 64px;
+  border-radius: 18px;
+  background: linear-gradient(135deg,#FF6B9D,#E84393);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 700; color: #fff;
+  flex-shrink: 0;
+}
+
+.list-pasien-page .detail-name-block { flex: 1; min-width: 140px; }
+.list-pasien-page .detail-name { font-size: 20px; font-weight: 700; color: var(--text-main); }
+.list-pasien-page .detail-rm   { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+
+.list-pasien-page .detail-tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+
+.list-pasien-page .detail-actions { display: flex; gap: 8px; }
+
+.list-pasien-page .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1.5px solid var(--border);
+  background: none;
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.list-pasien-page .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.list-pasien-page .btn-outline .material-symbols-rounded { font-size: 16px; }
+.list-pasien-page .btn-outline.danger:hover { border-color: #FF4D4F; color: #FF4D4F; }
+
+.list-pasien-page .detail-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+}
+
+.list-pasien-page .info-cell { background: var(--surface); padding: 16px 20px; }
+.list-pasien-page .info-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.list-pasien-page .info-value { font-size: 14px; font-weight: 600; color: var(--text-main); margin-top: 4px; }
+
+.list-pasien-page .detail-section { padding: 20px 24px; border-top: 1px solid var(--border); }
+
+.list-pasien-page .section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.list-pasien-page .section-title .material-symbols-rounded { font-size: 16px; color: var(--primary); }
+
+.list-pasien-page .visit-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.list-pasien-page .visit-item:last-child { border-bottom: none; }
+
+.list-pasien-page .visit-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--primary);
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.list-pasien-page .visit-info { flex: 1; }
+.list-pasien-page .visit-type  { font-size: 13px; font-weight: 600; color: var(--text-main); }
+.list-pasien-page .visit-date  { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.list-pasien-page .visit-price { font-size: 13px; font-weight: 700; color: var(--green); }
+
+.list-pasien-page .quick-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.list-pasien-page .hidden { display: none !important; }
+
+/* RESPONSIVE */
+@media (max-width: 1100px) {
+  .list-pasien-page .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .list-pasien-page .content-area { grid-template-columns: 320px 1fr; }
+}
+
+@media (max-width: 900px) {
+  .list-pasien-page .content-area { grid-template-columns: 1fr; }
+  .list-pasien-page .detail-panel { display: none; }
+  .list-pasien-page .detail-panel.show { display: flex; }
+}
+
+/* ADD PATIENT MODAL */
+.list-pasien-modal-overlay {
+  --primary:      #4F7EF8;
+  --primary-dk:   #3B6CE6;
+  --surface:      #FFFFFF;
+  --text-main:    #1A2340;
+  --text-sub:     #6B7A99;
+  --text-muted:   #A0AEC0;
+  --border:       #E8ECF4;
+  --bg:           #F5F6FA;
+  --radius-sm:    8px;
+  --radius-md:    14px;
+  --radius-lg:    20px;
+  --transition:   0.2s ease;
+
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 200;
+}
+
+.list-pasien-modal-overlay .modal-box {
+  background: var(--surface, #FFFFFF);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 660px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 70px rgba(15,23,42,.3);
+  animation: list-pasien-modal-pop .22s ease;
+}
+
+@keyframes list-pasien-modal-pop {
+  from { opacity: 0; transform: translateY(8px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.list-pasien-modal-overlay .modal-header {
+  padding: 22px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(180deg, #FAFBFF, var(--surface));
+}
+
+.list-pasien-modal-overlay .modal-header-title { display: flex; align-items: flex-start; gap: 14px; }
+
+.list-pasien-modal-overlay .modal-header-icon {
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dk));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 6px 16px rgba(79,126,248,.35);
+}
+
+.list-pasien-modal-overlay .modal-header-icon .material-symbols-rounded { font-size: 21px; }
+
+.list-pasien-modal-overlay .modal-header h2 { font-size: 17px; font-weight: 700; color: var(--text-main); letter-spacing: -.2px; }
+.list-pasien-modal-overlay .modal-header p { font-size: 12.5px; color: var(--text-sub); margin-top: 3px; }
+
+.list-pasien-modal-overlay .modal-close {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--transition), color var(--transition);
+}
+
+.list-pasien-modal-overlay .modal-close:hover { background: var(--bg); color: var(--text-main); }
+
+.list-pasien-modal-overlay .modal-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 10px 24px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.list-pasien-modal-overlay .modal-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-sub);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.list-pasien-modal-overlay .modal-tab .material-symbols-rounded { font-size: 17px; }
+.list-pasien-modal-overlay .modal-tab:hover { color: var(--primary); }
+.list-pasien-modal-overlay .modal-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.list-pasien-modal-overlay .modal-body {
+  padding: 22px 24px 24px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg);
+}
+
+.list-pasien-modal-overlay .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+}
+
+.list-pasien-modal-overlay .form-field { display: flex; flex-direction: column; gap: 6px; }
+.list-pasien-modal-overlay .form-field.full { grid-column: 1 / -1; }
+
+.list-pasien-modal-overlay .form-field label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+
+.list-pasien-modal-overlay .form-field input,
+.list-pasien-modal-overlay .form-field select,
+.list-pasien-modal-overlay .form-field textarea {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.list-pasien-modal-overlay .form-field input::placeholder,
+.list-pasien-modal-overlay .form-field textarea::placeholder { color: var(--text-muted); }
+
+.list-pasien-modal-overlay .form-field textarea { resize: vertical; min-height: 64px; }
+
+.list-pasien-modal-overlay .form-field input:focus,
+.list-pasien-modal-overlay .form-field select:focus,
+.list-pasien-modal-overlay .form-field textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+}
+
+.list-pasien-modal-overlay .modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: var(--surface);
+}
+
+.list-pasien-modal-overlay .modal-footer .btn-primary:disabled { opacity: .65; cursor: not-allowed; transform: none; }
+.list-pasien-modal-overlay .btn-primary,
+.list-pasien-modal-overlay .btn-outline {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: var(--radius-md);
+  padding: 10px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition), color var(--transition);
+}
+.list-pasien-modal-overlay .btn-primary { background: var(--primary); color: #fff; border: none; }
+.list-pasien-modal-overlay .btn-primary:hover { background: var(--primary-dk); }
+.list-pasien-modal-overlay .btn-outline { background: none; border: 1.5px solid var(--border); color: var(--text-sub); }
+.list-pasien-modal-overlay .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+.satusehat-search-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px 6px 6px 14px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.satusehat-search-box:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+}
+
+.satusehat-search-box .search-icon { font-size: 19px; color: var(--text-muted); flex-shrink: 0; }
+
+.satusehat-search-box input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: none;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-main);
+  padding: 9px 0;
+}
+
+.satusehat-search-box input::placeholder { color: var(--text-muted); }
+
+.satusehat-search-box .btn-primary { padding: 10px 18px; white-space: nowrap; }
+
+.satusehat-hint {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text-sub);
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: rgba(79,126,248,.07);
+  border: 1px solid rgba(79,126,248,.18);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+}
+
+.satusehat-hint .material-symbols-rounded { font-size: 16px; color: var(--primary); flex-shrink: 0; margin-top: 1px; }
+
+.satusehat-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  padding: 26px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-sub);
+}
+
+.spinner {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--primary);
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.satusehat-result-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.satusehat-result-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 0 2px;
+}
+
+.satusehat-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 14px;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition), transform var(--transition);
+}
+
+.satusehat-result-item:hover {
+  border-color: var(--primary);
+  background: #F8F9FE;
+  transform: translateY(-1px);
+}
+
+.satusehat-result-avatar {
+  width: 40px; height: 40px;
+  border-radius: 11px;
+  background: linear-gradient(135deg,#4F7EF8,#3B6CE6);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.satusehat-result-info { flex: 1; min-width: 0; }
+
+.satusehat-result-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-main);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.tag-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  background: rgba(45,203,138,.12);
+  padding: 2px 7px 2px 5px;
+  border-radius: 20px;
+}
+
+.tag-verified .material-symbols-rounded { font-size: 12px; }
+
+.satusehat-result-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+
+.satusehat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 34px 16px;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+}
+
+.satusehat-empty .material-symbols-rounded { font-size: 30px; color: var(--text-muted); margin-bottom: 4px; }
+.satusehat-empty .empty-title { font-size: 13.5px; font-weight: 600; color: var(--text-sub); }
+.satusehat-empty .empty-sub { font-size: 12px; color: var(--text-muted); max-width: 320px; line-height: 1.5; }
+
+.form-section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-section-title:not(:first-child) { margin-top: 2px; }
+
+@media (max-width: 600px) {
+  .list-pasien-modal-overlay .form-row { grid-template-columns: 1fr; }
+  .list-pasien-modal-overlay .modal-header-title { gap: 10px; }
+  .list-pasien-modal-overlay .modal-tabs { overflow-x: auto; }
+}
+
+@media (max-width: 600px) {
+  .list-pasien-page .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .list-pasien-page .page-title h1 { font-size: 20px; }
+  .list-pasien-page .detail-info-grid { grid-template-columns: 1fr; }
+  .list-pasien-page .detail-actions { flex-wrap: wrap; }
+}
