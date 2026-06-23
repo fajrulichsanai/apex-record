@@ -1,13 +1,17 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 import './styles/page.css';
 
-const LOCAL_API = 'http://localhost:3001';
+const LOCAL_API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 type Mode = 'login' | 'register';
 
 const LoginPage = () => {
+  const router = useRouter();
+  const { login } = useAuth();
   const [mode, setMode] = useState<Mode>('login');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -88,10 +92,9 @@ const LoginPage = () => {
         setPassword('');
       } else {
         const data = await handleLogin();
-        setSuccessMsg(data?.message || 'Login berhasil');
-        // TODO: Store token and redirect to dashboard
-        // localStorage.setItem('token', data.token);
-        // router.push('/dashboard');
+        setSuccessMsg('Login berhasil');
+        login(data.accessToken, data.user);
+        router.push('/dashboard');
       }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Terjadi kesalahan');

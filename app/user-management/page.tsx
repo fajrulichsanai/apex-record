@@ -1,43 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import { useAuth } from '@/lib/auth-context';
+import { apiClient, ApiError } from '@/lib/api-client';
+import type { User, RoleOption } from '@/types/user';
+import type { Clinic } from '@/types/clinic';
 import '../styles/user-management.css';
 
-type UserRole = 'admin' | 'dokter';
-type UserStatus = 'aktif' | 'nonaktif' | 'menunggu';
-
-interface ManagedUser {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  status: UserStatus;
-  registeredDaysAgo: number;
-  lastLogin?: string;
-  ihs?: string;
-}
-
-const USERS: ManagedUser[] = [
-  {
-    id: 'biim',
-    name: 'biim',
-    email: 'silent***@gmail.com',
-    role: 'admin',
-    status: 'aktif',
-    registeredDaysAgo: 25,
-    lastLogin: 'hari ini',
-  },
-  {
-    id: 'daffa',
-    name: 'drg Daffa Safra',
-    email: 'daffasa***@gmail.com',
-    role: 'dokter',
-    status: 'aktif',
-    registeredDaysAgo: 25,
-    ihs: '13229303626',
-  },
-];
+const ROLE_LABEL: Record<string, string> = {
+  super_admin: 'Super Admin',
+  owner: 'Owner',
+  admin: 'Admin',
+  dokter: 'Dokter',
+  pending: 'Pending',
+};
 
 interface ClinicPractitioner {
   id: string;
@@ -69,14 +46,35 @@ const CLINIC_PRACTITIONERS: ClinicPractitioner[] = [
 type MainTab = 'users' | 'practitioner';
 type PTab = 'search' | 'list';
 type SearchMethod = 'nik' | 'nama' | 'id';
-type UserFilter = 'semua' | 'menunggu' | 'aktif' | 'nonaktif';
-type InviteRole = 'admin' | 'dokter' | 'staff';
-type EditRole = 'admin2' | 'dokter2' | 'staff2';
-type AddClinicRole = 'admin3' | 'dokter3';
+type UserFilter = 'semua' | 'pending' | 'aktif' | 'nonaktif';
+
+function statusOf(u: User): 'aktif' | 'nonaktif' | 'pending' {
+  if (u.role === 'pending') return 'pending';
+  return u.isActive ? 'aktif' : 'nonaktif';
+}
+
+function initialsOf(name: string) {
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase();
+}
 
 export default function UserManagementPage() {
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === 'super_admin';
+
   const [mainTab, setMainTab] = useState<MainTab>('users');
   const [pTab, setPTab] = useState<PTab>('search');
+
+  const [users, setUsers] = useState<User[]>([]);
+  const [roleOptions, setRoleOptions] = useState<RoleOption[]>([]);
+  const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [actionError, setActionError] = useState('');
 
   const [userFilter, setUserFilter] = useState<UserFilter>('semua');
   const [userSearch, setUserSearch] = useState('');
@@ -90,9 +88,45 @@ export default function UserManagementPage() {
   const [searchMethod, setSearchMethod] = useState<SearchMethod>('nik');
   const [showSearchResult, setShowSearchResult] = useState(false);
 
-  const [inviteRole, setInviteRole] = useState<InviteRole>('admin');
-  const [editRole, setEditRole] = useState<EditRole>('admin2');
-  const [addClinicRole, setAddClinicRole] = useState<AddClinicRole>('dokter3');
+  const [inviteForm, setInviteForm] = useState({ email: '', name: '', role: '', clinicId: '' });
+  const [inviteSubmitting, setInviteSubmitting] = useState(false);
+  const [tempPasswordNotice, setTempPasswordNotice] = useState('');
+
+  const [editTarget, setEditTarget] = useState<User | null>(null);
+  const [editRole, setEditRole] = useState('');
+  const [editSubmitting, setEditSubmitting] = useState(false);
+
+  const loadUsers = async () => {
+    try {
+      const data = await apiClient.get<User[]>('/users');
+      setUsers(data);
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Gagal memuat data user');
+    }
+  };
+
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      try {
+        const [usersData, rolesData] = await Promise.all([
+          apiClient.get<User[]>('/users'),
+          apiClient.get<RoleOption[]>('/users/roles'),
+        ]);
+        setUsers(usersData);
+        setRoleOptions(rolesData);
+        setInviteForm((f) => (f.role ? f : { ...f, role: rolesData[0]?.value || '' }));
+        if (isSuperAdmin) {
+          const clinicsData = await apiClient.get<Clinic[]>('/clinics');
+          setClinics(clinicsData);
+        }
+      } catch (err) {
+        setActionError(err instanceof ApiError ? err.message : 'Gagal memuat data');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [isSuperAdmin]);
 
   const switchMainTab = (tab: MainTab) => {
     setMainTab(tab);
@@ -103,18 +137,98 @@ export default function UserManagementPage() {
     setOpenMenuId((prev) => (prev === id ? null : id));
   };
 
-  const totalUsers = USERS.length;
-  const aktifCount = USERS.filter((u) => u.status === 'aktif').length;
-  const dokterCount = USERS.filter((u) => u.role === 'dokter').length;
-  const adminCount = USERS.filter((u) => u.role === 'admin').length;
+  const totalUsers = users.length;
+  const aktifCount = users.filter((u) => statusOf(u) === 'aktif').length;
+  const dokterCount = users.filter((u) => u.role === 'dokter').length;
+  const adminCount = users.filter((u) => u.role === 'admin').length;
 
-  const filteredUsers = USERS.filter((u) => {
-    const matchesFilter = userFilter === 'semua' || u.status === userFilter;
+  const filteredUsers = users.filter((u) => {
+    const matchesFilter = userFilter === 'semua' || statusOf(u) === userFilter;
     const q = userSearch.toLowerCase();
     const matchesSearch =
       q === '' || u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
     return matchesFilter && matchesSearch;
   });
+
+  const openEditRole = (u: User) => {
+    setEditTarget(u);
+    setEditRole(roleOptions.find((r) => r.value === u.role)?.value || roleOptions[0]?.value || '');
+    setEditRoleModalOpen(true);
+    setOpenMenuId(null);
+  };
+
+  const submitInvite = async () => {
+    setActionError('');
+    setInviteSubmitting(true);
+    try {
+      const payload: Record<string, unknown> = {
+        email: inviteForm.email,
+        name: inviteForm.name,
+        role: inviteForm.role,
+      };
+      if (isSuperAdmin && inviteForm.clinicId) {
+        payload.clinicId = Number(inviteForm.clinicId);
+      }
+      const created = await apiClient.post<{ temporaryPassword: string; email: string }>('/users/invite', payload);
+      setTempPasswordNotice(`User ${created.email} dibuat. Password sementara: ${created.temporaryPassword}`);
+      setInviteForm({ email: '', name: '', role: roleOptions[0]?.value || '', clinicId: '' });
+      setInviteModalOpen(false);
+      await loadUsers();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Gagal membuat user');
+    } finally {
+      setInviteSubmitting(false);
+    }
+  };
+
+  const submitEditRole = async () => {
+    if (!editTarget) return;
+    setActionError('');
+    setEditSubmitting(true);
+    try {
+      if (editTarget.role === 'pending') {
+        await apiClient.patch(`/users/${editTarget.id}/role`, { role: editRole });
+      } else {
+        await apiClient.patch(`/users/${editTarget.id}/assign-role`, { role: editRole });
+      }
+      setEditRoleModalOpen(false);
+      setEditTarget(null);
+      await loadUsers();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Gagal mengubah peran');
+    } finally {
+      setEditSubmitting(false);
+    }
+  };
+
+  const handleToggleActive = async (u: User) => {
+    setActionError('');
+    setOpenMenuId(null);
+    try {
+      if (u.role === 'pending') {
+        await apiClient.post(`/users/${u.id}/activate`);
+      } else if (u.isActive) {
+        await apiClient.post(`/users/${u.id}/deactivate`);
+      } else {
+        await apiClient.post(`/users/${u.id}/activate`);
+      }
+      await loadUsers();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Gagal mengubah status user');
+    }
+  };
+
+  const handleDelete = async (u: User) => {
+    setOpenMenuId(null);
+    if (!confirm(`Hapus user ${u.name}? Tindakan ini tidak bisa dibatalkan.`)) return;
+    setActionError('');
+    try {
+      await apiClient.delete(`/users/${u.id}`);
+      await loadUsers();
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Gagal menghapus user');
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -135,28 +249,27 @@ export default function UserManagementPage() {
             <p>Kelola akses, peran, dan data tenaga kesehatan klinik Anda</p>
           </div>
           <div className="page-header-actions">
-            <button className="btn-outline" onClick={() => setInviteModalOpen(true)}>
+            <button className="btn-primary" onClick={() => setInviteModalOpen(true)}>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              Undang via Email
-            </button>
-            <button className="btn-primary" onClick={() => switchMainTab('practitioner')}>
-              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-              Cari SATUSEHAT
+              Tambah User
             </button>
           </div>
         </div>
+
+        {(actionError || tempPasswordNotice) && (
+          <div
+            className="form-message form-message-error"
+            style={{ marginBottom: 16, cursor: 'pointer' }}
+            onClick={() => {
+              setActionError('');
+              setTempPasswordNotice('');
+            }}
+          >
+            {actionError || tempPasswordNotice}
+          </div>
+        )}
 
         {/* Main Tabs */}
         <div className="tabs">
@@ -164,13 +277,7 @@ export default function UserManagementPage() {
             className={`tab-btn ${mainTab === 'users' ? 'active' : ''}`}
             onClick={() => switchMainTab('users')}
           >
-            <svg
-              className="tab-icon"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
+            <svg className="tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -183,13 +290,7 @@ export default function UserManagementPage() {
             className={`tab-btn ${mainTab === 'practitioner' ? 'active' : ''}`}
             onClick={() => switchMainTab('practitioner')}
           >
-            <svg
-              className="tab-icon"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
+            <svg className="tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -241,7 +342,7 @@ export default function UserManagementPage() {
                 />
               </div>
               <div className="filter-btns">
-                {(['semua', 'menunggu', 'aktif', 'nonaktif'] as UserFilter[]).map((f) => (
+                {(['semua', 'pending', 'aktif', 'nonaktif'] as UserFilter[]).map((f) => (
                   <button
                     key={f}
                     className={`filter-btn ${userFilter === f ? 'active' : ''}`}
@@ -255,20 +356,20 @@ export default function UserManagementPage() {
 
             {/* User list */}
             <div id="user-list">
+              {loading && <p>Memuat data…</p>}
+              {!loading && filteredUsers.length === 0 && <p>Tidak ada user ditemukan.</p>}
               {filteredUsers.map((u) => {
                 const menuId = `menu-${u.id}`;
-                const initials = u.name
-                  .split(' ')
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((p) => p[0])
-                  .join('')
-                  .toUpperCase();
+                const status = statusOf(u);
+                const initials = initialsOf(u.name);
+                const isSelf = u.id === currentUser?.id;
                 return (
                   <div className="user-card" key={u.id} style={{ position: 'relative' }}>
                     <div className={`user-avatar ${u.role === 'admin' ? 'avatar-admin' : 'avatar-doc'}`}>
                       {initials}
-                      <span className={`status-dot status-${u.status === 'aktif' ? 'active' : u.status === 'nonaktif' ? 'inactive' : 'pending'}`} />
+                      <span
+                        className={`status-dot status-${status === 'aktif' ? 'active' : status === 'nonaktif' ? 'inactive' : 'pending'}`}
+                      />
                     </div>
                     <div className="user-info">
                       <div className="user-name">{u.name}</div>
@@ -282,9 +383,9 @@ export default function UserManagementPage() {
                               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                             />
                           </svg>
-                          Daftar {u.registeredDaysAgo} hari lalu
+                          Dibuat {new Date(u.createdAt).toLocaleDateString('id-ID')}
                         </span>
-                        {u.lastLogin && (
+                        {u.lastLoginAt && (
                           <span className="meta-item">
                             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                               <path
@@ -293,102 +394,69 @@ export default function UserManagementPage() {
                                 d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                               />
                             </svg>
-                            Login terakhir {u.lastLogin}
-                          </span>
-                        )}
-                        {u.ihs && (
-                          <span className="meta-item">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                              />
-                            </svg>
-                            IHS: {u.ihs}
+                            Login terakhir {new Date(u.lastLoginAt).toLocaleDateString('id-ID')}
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="user-badges">
                       <span className={`badge ${u.role === 'admin' ? 'badge-admin' : 'badge-dokter'}`}>
-                        {u.role === 'admin' ? 'Admin' : 'Dokter'}
+                        {ROLE_LABEL[u.role] || u.role}
                       </span>
-                      <span className={`badge badge-${u.status}`}>
-                        ● {u.status.charAt(0).toUpperCase() + u.status.slice(1)}
+                      <span className={`badge badge-${status}`}>
+                        ● {status.charAt(0).toUpperCase() + status.slice(1)}
                       </span>
                     </div>
-                    <button
-                      className="action-menu-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleDropdown(menuId);
-                      }}
-                    >
-                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="5" r="1" />
-                        <circle cx="12" cy="12" r="1" />
-                        <circle cx="12" cy="19" r="1" />
-                      </svg>
-                    </button>
-                    <div className={`dropdown-menu ${openMenuId === menuId ? 'open' : ''}`}>
-                      <div
-                        className="dropdown-item"
-                        onClick={() => {
-                          setEditRoleModalOpen(true);
-                          setOpenMenuId(null);
-                        }}
-                      >
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                          />
-                        </svg>
-                        Ubah Peran
-                      </div>
-                      {u.role === 'admin' ? (
-                        <div className="dropdown-item">
-                          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"
-                            />
-                          </svg>
-                          Reset Password
-                        </div>
-                      ) : (
-                        <div
-                          className="dropdown-item"
-                          onClick={() => {
-                            switchMainTab('practitioner');
-                            setOpenMenuId(null);
+                    {!isSelf && (
+                      <>
+                        <button
+                          className="action-menu-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleDropdown(menuId);
                           }}
                         >
                           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                            />
+                            <circle cx="12" cy="5" r="1" />
+                            <circle cx="12" cy="12" r="1" />
+                            <circle cx="12" cy="19" r="1" />
                           </svg>
-                          Lihat Data SATUSEHAT
+                        </button>
+                        <div className={`dropdown-menu ${openMenuId === menuId ? 'open' : ''}`}>
+                          <div className="dropdown-item" onClick={() => openEditRole(u)}>
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                              />
+                            </svg>
+                            Ubah Peran
+                          </div>
+                          <div className="dropdown-item" onClick={() => handleToggleActive(u)}>
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            {status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan'}
+                          </div>
+                          <div className="dropdown-divider" />
+                          <div className="dropdown-item danger" onClick={() => handleDelete(u)}>
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                              />
+                            </svg>
+                            Hapus
+                          </div>
                         </div>
-                      )}
-                      <div className="dropdown-divider" />
-                      <div className="dropdown-item danger">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                          />
-                        </svg>
-                        Nonaktifkan
-                      </div>
-                    </div>
+                      </>
+                    )}
                   </div>
                 );
               })}
@@ -396,22 +464,15 @@ export default function UserManagementPage() {
           </div>
         )}
 
-        {/* VIEW: PRACTITIONER / SATUSEHAT */}
+        {/* VIEW: PRACTITIONER / SATUSEHAT (not yet backed by API — out of scope for this change) */}
         {mainTab === 'practitioner' && (
           <div className="view-section visible">
-            {/* Inner tabs */}
             <div className="inner-tabs">
               <button
                 className={`tab-btn ${pTab === 'search' ? 'active' : ''}`}
                 onClick={() => setPTab('search')}
               >
-                <svg
-                  className="tab-icon"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
+                <svg className="tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -424,13 +485,7 @@ export default function UserManagementPage() {
                 className={`tab-btn ${pTab === 'list' ? 'active' : ''}`}
                 onClick={() => setPTab('list')}
               >
-                <svg
-                  className="tab-icon"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
+                <svg className="tab-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -441,11 +496,9 @@ export default function UserManagementPage() {
               </button>
             </div>
 
-            {/* SEARCH PANEL */}
             {pTab === 'search' && (
               <div className="view-section visible">
                 <div className="satusehat-grid">
-                  {/* Left: Search Form */}
                   <div className="satusehat-panel">
                     <div className="satusehat-header">
                       <div className="satusehat-logo">
@@ -469,147 +522,32 @@ export default function UserManagementPage() {
                         className={`method-btn ${searchMethod === 'nik' ? 'active' : ''}`}
                         onClick={() => setSearchMethod('nik')}
                       >
-                        <div className="method-btn-label">
-                          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"
-                            />
-                          </svg>
-                          NIK
-                        </div>
+                        <div className="method-btn-label">NIK</div>
                         <div className="method-btn-sub">16 digit KTP</div>
                       </div>
                       <div
                         className={`method-btn ${searchMethod === 'nama' ? 'active' : ''}`}
                         onClick={() => setSearchMethod('nama')}
                       >
-                        <div className="method-btn-label">
-                          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                            />
-                          </svg>
-                          Nama
-                        </div>
+                        <div className="method-btn-label">Nama</div>
                         <div className="method-btn-sub">Nama + TTL</div>
                       </div>
                       <div
                         className={`method-btn ${searchMethod === 'id' ? 'active' : ''}`}
                         onClick={() => setSearchMethod('id')}
                       >
-                        <div className="method-btn-label">
-                          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14"
-                            />
-                          </svg>
-                          ID
-                        </div>
+                        <div className="method-btn-label">ID</div>
                         <div className="method-btn-sub">ID Practitioner</div>
                       </div>
                     </div>
 
-                    {searchMethod === 'nik' && (
-                      <div className="search-form">
-                        <div className="form-group">
-                          <label className="form-label">NIK Practitioner</label>
-                          <input
-                            className="form-input"
-                            type="text"
-                            placeholder="Masukkan 16 digit NIK…"
-                            maxLength={16}
-                            onInput={(e) => {
-                              const target = e.currentTarget;
-                              target.value = target.value.replace(/\D/g, '');
-                            }}
-                          />
-                        </div>
-                        <button
-                          className="btn-primary btn-search-full"
-                          onClick={() => setShowSearchResult(true)}
-                        >
-                          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                            />
-                          </svg>
-                          Cari Practitioner
-                        </button>
-                      </div>
-                    )}
-
-                    {searchMethod === 'nama' && (
-                      <div className="search-form">
-                        <div className="form-row">
-                          <div className="form-group">
-                            <label className="form-label">Nama</label>
-                            <input className="form-input" type="text" placeholder="Nama lengkap…" />
-                          </div>
-                          <div className="form-group">
-                            <label className="form-label">Gender</label>
-                            <select className="form-input" style={{ cursor: 'pointer' }}>
-                              <option value="">Pilih gender</option>
-                              <option>Laki-laki</option>
-                              <option>Perempuan</option>
-                            </select>
-                          </div>
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label">Tanggal Lahir</label>
-                          <input className="form-input" type="date" />
-                        </div>
-                        <button
-                          className="btn-primary btn-search-full"
-                          onClick={() => setShowSearchResult(true)}
-                        >
-                          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                            />
-                          </svg>
-                          Cari Practitioner
-                        </button>
-                      </div>
-                    )}
-
-                    {searchMethod === 'id' && (
-                      <div className="search-form">
-                        <div className="form-group">
-                          <label className="form-label">ID Practitioner SATUSEHAT</label>
-                          <input
-                            className="form-input"
-                            type="text"
-                            placeholder="Masukkan ID Practitioner…"
-                          />
-                        </div>
-                        <button
-                          className="btn-primary btn-search-full"
-                          onClick={() => setShowSearchResult(true)}
-                        >
-                          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                            />
-                          </svg>
-                          Cari Practitioner
-                        </button>
-                      </div>
-                    )}
+                    <div className="search-form">
+                      <button className="btn-primary btn-search-full" onClick={() => setShowSearchResult(true)}>
+                        Cari Practitioner
+                      </button>
+                    </div>
                   </div>
 
-                  {/* Right: Result */}
                   <div className="search-result-panel">
                     {showSearchResult ? (
                       <div style={{ width: '100%' }}>
@@ -622,62 +560,18 @@ export default function UserManagementPage() {
                           <div className="result-info">
                             <div className="result-name">drg Daffa Safra</div>
                             <div className="result-tags">
-                              <span className="result-tag">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                                  />
-                                </svg>
-                                IHS: 13229303626
-                              </span>
-                              <span className="result-tag">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"
-                                  />
-                                </svg>
-                                NIK: 13070***
-                              </span>
-                              <span className="result-tag">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                                  />
-                                </svg>
-                                Perempuan · 1990-06-12
-                              </span>
+                              <span className="result-tag">IHS: 13229303626</span>
+                              <span className="result-tag">NIK: 13070***</span>
+                              <span className="result-tag">Perempuan · 1990-06-12</span>
                             </div>
                           </div>
-                          <button
-                            className="btn-add-to-clinic"
-                            onClick={() => setAddClinicModalOpen(true)}
-                          >
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                              />
-                            </svg>
+                          <button className="btn-add-to-clinic" onClick={() => setAddClinicModalOpen(true)}>
                             Tambah ke Klinik
                           </button>
                         </div>
                       </div>
                     ) : (
                       <div className="empty-state">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                          />
-                        </svg>
                         <p>Mulai Pencarian</p>
                         <span>Pilih metode dan isi data di panel kiri</span>
                       </div>
@@ -687,29 +581,8 @@ export default function UserManagementPage() {
               </div>
             )}
 
-            {/* DAFTAR KLINIK */}
             {pTab === 'list' && (
               <div className="view-section visible">
-                <div className="toolbar">
-                  <div className="search-box">
-                    <span className="search-icon">
-                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                        />
-                      </svg>
-                    </span>
-                    <input type="text" placeholder="Cari nama atau NIK…" />
-                  </div>
-                  <div className="filter-btns">
-                    <button className="filter-btn active">Semua</button>
-                    <button className="filter-btn">Aktif</button>
-                    <button className="filter-btn">Nonaktif</button>
-                  </div>
-                </div>
-
                 {CLINIC_PRACTITIONERS.map((p) => (
                   <div className="user-card" key={p.id} style={{ position: 'relative' }}>
                     <div className={`user-avatar ${p.avatarVariant === 'doc' ? 'avatar-doc' : 'avatar-default'}`}>
@@ -718,73 +591,11 @@ export default function UserManagementPage() {
                     <div className="user-info">
                       <div className="user-name">{p.name}</div>
                       <div className="user-meta">
-                        {p.ihs && (
-                          <span className="meta-item">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                              />
-                            </svg>
-                            IHS: {p.ihs}
-                          </span>
-                        )}
-                        {p.nik && (
-                          <span className="meta-item">
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"
-                              />
-                            </svg>
-                            NIK: {p.nik}
-                          </span>
-                        )}
+                        {p.ihs && <span className="meta-item">IHS: {p.ihs}</span>}
+                        {p.nik && <span className="meta-item">NIK: {p.nik}</span>}
                       </div>
                     </div>
                     <span className="badge badge-aktif">● Aktif</span>
-                    <button
-                      className="action-menu-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleDropdown(p.id);
-                      }}
-                    >
-                      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="5" r="1" />
-                        <circle cx="12" cy="12" r="1" />
-                        <circle cx="12" cy="19" r="1" />
-                      </svg>
-                    </button>
-                    <div className={`dropdown-menu ${openMenuId === p.id ? 'open' : ''}`}>
-                      <div className="dropdown-item">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                          />
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                          />
-                        </svg>
-                        Lihat Detail
-                      </div>
-                      <div className="dropdown-item danger">
-                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                          />
-                        </svg>
-                        Nonaktifkan
-                      </div>
-                    </div>
                   </div>
                 ))}
               </div>
@@ -792,24 +603,23 @@ export default function UserManagementPage() {
           </div>
         )}
 
-        {/* MODALS */}
-
-        {/* Invite via email */}
-        <div className={`modal-overlay ${inviteModalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setInviteModalOpen(false); }}>
+        {/* MODAL: Tambah User */}
+        <div
+          className={`modal-overlay ${inviteModalOpen ? 'open' : ''}`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setInviteModalOpen(false);
+          }}
+        >
           <div className="modal">
             <div className="modal-header">
               <div className="page-header-icon modal-icon">
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
               </div>
               <div>
-                <div className="modal-title">Undang Anggota Baru</div>
-                <div className="modal-subtitle">Kirim undangan ke email staf klinik</div>
+                <div className="modal-title">Tambah User Baru</div>
+                <div className="modal-subtitle">Buat akun staf klinik secara langsung</div>
               </div>
               <button className="modal-close" onClick={() => setInviteModalOpen(false)}>
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -817,77 +627,81 @@ export default function UserManagementPage() {
                 </svg>
               </button>
             </div>
+
+            <div className="form-group modal-form-group">
+              <label className="form-label">Nama</label>
+              <input
+                className="form-input modal-form-input"
+                type="text"
+                placeholder="Nama lengkap"
+                value={inviteForm.name}
+                onChange={(e) => setInviteForm((f) => ({ ...f, name: e.target.value }))}
+              />
+            </div>
             <div className="form-group modal-form-group">
               <label className="form-label">Alamat Email</label>
-              <input className="form-input modal-form-input" type="email" placeholder="nama@email.com" />
+              <input
+                className="form-input modal-form-input"
+                type="email"
+                placeholder="nama@email.com"
+                value={inviteForm.email}
+                onChange={(e) => setInviteForm((f) => ({ ...f, email: e.target.value }))}
+              />
             </div>
+
+            {isSuperAdmin && (
+              <div className="form-group modal-form-group">
+                <label className="form-label">Klinik</label>
+                <select
+                  className="form-input"
+                  value={inviteForm.clinicId}
+                  onChange={(e) => setInviteForm((f) => ({ ...f, clinicId: e.target.value }))}
+                >
+                  <option value="">Pilih klinik…</option>
+                  {clinics.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="modal-section-label">Pilih Peran</div>
             <div className="role-selector">
-              <div
-                className={`role-card ${inviteRole === 'admin' ? 'selected' : ''}`}
-                onClick={() => setInviteRole('admin')}
-              >
-                <div className="role-card-icon">
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                    />
-                  </svg>
+              {roleOptions.map((r) => (
+                <div
+                  key={r.value}
+                  className={`role-card ${inviteForm.role === r.value ? 'selected' : ''}`}
+                  onClick={() => setInviteForm((f) => ({ ...f, role: r.value }))}
+                >
+                  <div className="role-card-label">{r.label}</div>
                 </div>
-                <div className="role-card-label">Admin</div>
-                <div className="role-card-desc">Akses penuh klinik</div>
-              </div>
-              <div
-                className={`role-card ${inviteRole === 'dokter' ? 'selected' : ''}`}
-                onClick={() => setInviteRole('dokter')}
-              >
-                <div className="role-card-icon">
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </div>
-                <div className="role-card-label">Dokter</div>
-                <div className="role-card-desc">Akses rekam medis</div>
-              </div>
-              <div
-                className={`role-card ${inviteRole === 'staff' ? 'selected' : ''}`}
-                onClick={() => setInviteRole('staff')}
-              >
-                <div className="role-card-icon">
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
-                <div className="role-card-label">Staf</div>
-                <div className="role-card-desc">Akses terbatas</div>
-              </div>
+              ))}
             </div>
+
             <div className="modal-footer">
               <button className="btn-outline" onClick={() => setInviteModalOpen(false)}>
                 Batal
               </button>
-              <button className="btn-primary">
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-                Kirim Undangan
+              <button
+                className="btn-primary"
+                disabled={inviteSubmitting || !inviteForm.email || !inviteForm.name || !inviteForm.role}
+                onClick={submitInvite}
+              >
+                {inviteSubmitting ? 'Menyimpan…' : 'Buat User'}
               </button>
             </div>
           </div>
         </div>
 
-        {/* Edit Role */}
-        <div className={`modal-overlay ${editRoleModalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setEditRoleModalOpen(false); }}>
+        {/* MODAL: Ubah Peran */}
+        <div
+          className={`modal-overlay ${editRoleModalOpen ? 'open' : ''}`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditRoleModalOpen(false);
+          }}
+        >
           <div className="modal">
             <div className="modal-header">
               <div className="page-header-icon modal-icon">
@@ -901,7 +715,7 @@ export default function UserManagementPage() {
               </div>
               <div>
                 <div className="modal-title">Ubah Peran</div>
-                <div className="modal-subtitle">Ganti hak akses pengguna ini</div>
+                <div className="modal-subtitle">{editTarget?.name}</div>
               </div>
               <button className="modal-close" onClick={() => setEditRoleModalOpen(false)}>
                 <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -911,66 +725,34 @@ export default function UserManagementPage() {
             </div>
             <div className="modal-section-label">Peran Baru</div>
             <div className="role-selector">
-              <div
-                className={`role-card ${editRole === 'admin2' ? 'selected' : ''}`}
-                onClick={() => setEditRole('admin2')}
-              >
-                <div className="role-card-icon">
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                    />
-                  </svg>
+              {roleOptions.map((r) => (
+                <div
+                  key={r.value}
+                  className={`role-card ${editRole === r.value ? 'selected' : ''}`}
+                  onClick={() => setEditRole(r.value)}
+                >
+                  <div className="role-card-label">{r.label}</div>
                 </div>
-                <div className="role-card-label">Admin</div>
-                <div className="role-card-desc">Akses penuh klinik</div>
-              </div>
-              <div
-                className={`role-card ${editRole === 'dokter2' ? 'selected' : ''}`}
-                onClick={() => setEditRole('dokter2')}
-              >
-                <div className="role-card-icon">
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </div>
-                <div className="role-card-label">Dokter</div>
-                <div className="role-card-desc">Akses rekam medis</div>
-              </div>
-              <div
-                className={`role-card ${editRole === 'staff2' ? 'selected' : ''}`}
-                onClick={() => setEditRole('staff2')}
-              >
-                <div className="role-card-icon">
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
-                <div className="role-card-label">Staf</div>
-                <div className="role-card-desc">Akses terbatas</div>
-              </div>
+              ))}
             </div>
             <div className="modal-footer">
               <button className="btn-outline" onClick={() => setEditRoleModalOpen(false)}>
                 Batal
               </button>
-              <button className="btn-primary">Simpan Perubahan</button>
+              <button className="btn-primary" disabled={editSubmitting || !editRole} onClick={submitEditRole}>
+                {editSubmitting ? 'Menyimpan…' : 'Simpan Perubahan'}
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Add to Clinic (from SATUSEHAT) */}
-        <div className={`modal-overlay ${addClinicModalOpen ? 'open' : ''}`} onClick={(e) => { if (e.target === e.currentTarget) setAddClinicModalOpen(false); }}>
+        {/* MODAL: Add to Clinic (SATUSEHAT — UI only, no backend yet) */}
+        <div
+          className={`modal-overlay ${addClinicModalOpen ? 'open' : ''}`}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setAddClinicModalOpen(false);
+          }}
+        >
           <div className="modal">
             <div className="modal-header">
               <div className="page-header-icon modal-icon modal-icon-satusehat">
@@ -988,61 +770,10 @@ export default function UserManagementPage() {
                 </svg>
               </button>
             </div>
-            <div className="modal-section-label">Tetapkan Peran</div>
-            <div className="role-selector" style={{ marginBottom: '16px' }}>
-              <div
-                className={`role-card ${addClinicRole === 'admin3' ? 'selected' : ''}`}
-                onClick={() => setAddClinicRole('admin3')}
-              >
-                <div className="role-card-icon">
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                    />
-                  </svg>
-                </div>
-                <div className="role-card-label">Admin</div>
-                <div className="role-card-desc">Akses penuh</div>
-              </div>
-              <div
-                className={`role-card ${addClinicRole === 'dokter3' ? 'selected' : ''}`}
-                onClick={() => setAddClinicRole('dokter3')}
-              >
-                <div className="role-card-icon">
-                  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                </div>
-                <div className="role-card-label">Dokter</div>
-                <div className="role-card-desc">Akses rekam medis</div>
-              </div>
-            </div>
-            <div className="form-group" style={{ marginBottom: '4px' }}>
-              <label className="form-label">Email Akun (opsional)</label>
-              <input
-                className="form-input modal-form-input"
-                type="email"
-                placeholder="Hubungkan ke akun email staf…"
-              />
-            </div>
-            <div className="modal-hint">
-              Jika dikosongkan, akun dibuat tanpa login (hanya data tenaga kesehatan)
-            </div>
+            <div className="modal-hint">Integrasi SATUSEHAT belum tersedia di backend.</div>
             <div className="modal-footer">
               <button className="btn-outline" onClick={() => setAddClinicModalOpen(false)}>
-                Batal
-              </button>
-              <button className="btn-primary">
-                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Tambahkan ke Klinik
+                Tutup
               </button>
             </div>
           </div>

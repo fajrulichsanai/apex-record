@@ -16,17 +16,17 @@ const defaultOptions: CorsOptions = {
   maxAge: 86400,
 };
 
-export function corsHeaders(options: CorsOptions = {}) {
+export function corsHeaders(options: CorsOptions = {}): Record<string, string> {
   const opts = { ...defaultOptions, ...options };
 
   return {
-    'Access-Control-Allow-Origin': Array.isArray(opts.origin)
+    'Access-Control-Allow-Origin': (Array.isArray(opts.origin)
       ? opts.origin.join(', ')
-      : opts.origin,
-    'Access-Control-Allow-Methods': opts.methods?.join(', '),
-    'Access-Control-Allow-Headers': opts.allowedHeaders?.join(', '),
+      : opts.origin) || '*',
+    'Access-Control-Allow-Methods': opts.methods?.join(', ') || '',
+    'Access-Control-Allow-Headers': opts.allowedHeaders?.join(', ') || '',
     'Access-Control-Allow-Credentials': opts.credentials ? 'true' : 'false',
-    'Access-Control-Max-Age': opts.maxAge?.toString(),
+    'Access-Control-Max-Age': opts.maxAge?.toString() || '86400',
   };
 }
 

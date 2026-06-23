@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 import {
   FiGrid,
   FiUsers,
@@ -38,6 +39,8 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const canManageUsers = user?.role === 'owner' || user?.role === 'super_admin';
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
 
   const toggleGroup = (group: string) => {
@@ -179,7 +182,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             icon={<FiSettings />}
             items={[
               { label: 'Info Klinik', icon: <FiHome />, href: '/info-klinik' },
-              { label: 'User Management', icon: <FiUserCheck />, href: '/user-management' },
+              ...(canManageUsers
+                ? [{ label: 'User Management', icon: <FiUserCheck />, href: '/user-management' }]
+                : []),
               { label: 'Tarif & Tindakan', icon: <FiDollarSign />, href: '/tarif' },
               { label: 'Practitioner', icon: <FiUser /> },
               { label: 'Template SOAP', icon: <FiFileText /> },

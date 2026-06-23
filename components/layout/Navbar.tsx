@@ -1,12 +1,40 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 import './navbar.css';
 
 interface NavbarProps {
   onMenuClick: () => void;
 }
 
+const ROLE_LABEL: Record<string, string> = {
+  super_admin: 'Super Admin',
+  owner: 'Owner',
+  admin: 'Admin',
+  dokter: 'Dokter',
+  pending: 'Pending',
+};
+
 export default function Navbar({ onMenuClick }: NavbarProps) {
+  const router = useRouter();
+  const { user, logout } = useAuth();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const initials = (user?.name || '?')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0])
+    .join('')
+    .toUpperCase();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/');
+  };
+
   return (
     <header className="topbar">
       <div className="topbar-left">
@@ -25,7 +53,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           </svg>
         </button>
         <div>
-          <div className="topbar-title">Zanak Dental Care</div>
+          <div className="topbar-title">ApexRecord</div>
           <div className="topbar-subtitle">Dashboard</div>
         </div>
       </div>
@@ -56,9 +84,12 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             />
           </svg>
         </button>
-        <div className="user-chip">
-          <div className="avatar">ZD</div>
-          <span className="user-name">Zanak Dental</span>
+        <div className="user-chip" onClick={() => setMenuOpen((v) => !v)} style={{ position: 'relative', cursor: 'pointer' }}>
+          <div className="avatar">{initials}</div>
+          <span className="user-name">
+            {user?.name || 'User'}
+            {user?.role && <small style={{ display: 'block', opacity: 0.6, fontSize: '11px' }}>{ROLE_LABEL[user.role] || user.role}</small>}
+          </span>
           <span className="chip-chevron">
             <svg viewBox="0 0 24 24" fill="none">
               <path
@@ -70,6 +101,28 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
               />
             </svg>
           </span>
+          {menuOpen && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '100%',
+                right: 0,
+                background: '#fff',
+                border: '1px solid #e5e7eb',
+                borderRadius: 8,
+                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                minWidth: 140,
+                zIndex: 50,
+              }}
+            >
+              <div
+                onClick={handleLogout}
+                style={{ padding: '10px 14px', cursor: 'pointer', color: '#dc2626' }}
+              >
+                Logout
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
