@@ -1,161 +1,139 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeedbackModal from '@/components/feedback/FeedbackModal';
+import ConfirmationModal from '@/components/feedback/ConfirmationModal';
+import CustomSelect from '@/components/form/CustomSelect';
+import { apiClient, ApiError } from '@/lib/api-client';
+import { tarifApi, type Tarif } from '@/lib/tarif';
+import { formatCurrencyInput, parseCurrency } from '@/lib/format';
 import '../styles/tarif.css';
 
-type Tarif = {
-  name: string;
-  code: string;
-  cat: 'Bedah Mulut' | 'Konservasi';
-  catClass: 'cat-bedah' | 'cat-konservasi';
-  tipe: 'Add-on' | 'Paket' | 'Range';
-  tipeClass: 'tipe-addon' | 'tipe-paket' | 'tipe-range';
-  extraBadge?: string;
-  icon: string;
-  durationMnt: number;
-  price: string;
-  unit: string;
-  margin: number;
+// Simple function to export CSV (Excel compatible)
+const exportToExcel = (tarifs: Tarif[]) => {
+  const headers = ['Kode', 'Nama Tindakan', 'Kategori', 'Harga Pokok (Rp)', 'Harga Jual (Rp)', 'Diskon Maksimal (Rp)', 'Margin (%)'];
+
+  const rows = tarifs.map(item => {
+    const margin = item.hargaPokok > 0 ? ((item.hargaJual - item.hargaPokok) / item.hargaJual * 100).toFixed(0) : '0';
+    return [
+      item.kodeIcd9 || `ID-${item.id}`,
+      item.name,
+      item.kategori,
+      (item.hargaPokok || 0).toString(),
+      (item.hargaJual || 0).toString(),
+      (item.diskonMaksimal || 0).toString(),
+      margin
+    ];
+  });
+
+  // Create CSV content
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => {
+      // Escape cells that contain commas or quotes
+      if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"'))) {
+        return `"${cell.replace(/"/g, '""')}"`;
+      }
+      return cell;
+    }).join(','))
+  ].join('\n');
+
+  // Create blob and download
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+
+  link.setAttribute('href', url);
+  link.setAttribute('download', `tarif-${new Date().toISOString().split('T')[0]}.csv`);
+  link.style.visibility = 'hidden';
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 };
 
-const TARIF_DATA: Tarif[] = [
-  {
-    name: 'Cabut Gigi',
-    code: 'CBT-001',
-    cat: 'Bedah Mulut',
-    catClass: 'cat-bedah',
-    tipe: 'Range',
-    tipeClass: 'tipe-range',
-    icon: 'dentistry',
-    durationMnt: 30,
-    price: 'Rp 200.000 – Rp 300.000',
-    unit: 'per visit',
-    margin: 99,
-  },
-  {
-    name: 'Odontektomi M3',
-    code: 'ODO-M3',
-    cat: 'Bedah Mulut',
-    catClass: 'cat-bedah',
-    tipe: 'Add-on',
-    tipeClass: 'tipe-addon',
-    icon: 'dentistry',
-    durationMnt: 90,
-    price: 'Rp 1.000.000',
-    unit: 'per tindakan',
-    margin: 90,
-  },
-  {
-    name: 'PSA - Devitalisasi',
-    code: 'PSA-DEV',
-    cat: 'Konservasi',
-    catClass: 'cat-konservasi',
-    tipe: 'Add-on',
-    tipeClass: 'tipe-addon',
-    icon: 'medical_services',
-    durationMnt: 60,
-    price: 'Rp 300.000',
-    unit: 'per visit',
-    margin: 92,
-  },
-  {
-    name: 'PSA - Obturasi',
-    code: 'PSA-OBT',
-    cat: 'Konservasi',
-    catClass: 'cat-konservasi',
-    tipe: 'Add-on',
-    tipeClass: 'tipe-addon',
-    icon: 'medical_services',
-    durationMnt: 60,
-    price: 'Rp 300.000',
-    unit: 'per visit',
-    margin: 83,
-  },
-  {
-    name: 'PSA - Open Access',
-    code: 'PSA-OA',
-    cat: 'Konservasi',
-    catClass: 'cat-konservasi',
-    tipe: 'Add-on',
-    tipeClass: 'tipe-addon',
-    icon: 'medical_services',
-    durationMnt: 60,
-    price: 'Rp 200.000',
-    unit: 'per visit',
-    margin: 88,
-  },
-  {
-    name: 'PSA - Preparasi Saluran Akar',
-    code: 'PSA-PREP',
-    cat: 'Konservasi',
-    catClass: 'cat-konservasi',
-    tipe: 'Add-on',
-    tipeClass: 'tipe-addon',
-    icon: 'medical_services',
-    durationMnt: 60,
-    price: 'Rp 200.000',
-    unit: 'per visit',
-    margin: 75,
-  },
-  {
-    name: 'Tambal GIC',
-    code: 'TBL-GIC',
-    cat: 'Konservasi',
-    catClass: 'cat-konservasi',
-    tipe: 'Paket',
-    tipeClass: 'tipe-paket',
-    extraBadge: '2 paket',
-    icon: 'medical_services',
-    durationMnt: 30,
-    price: 'Rp 150.000 – Rp 170.000',
-    unit: 'per visit',
-    margin: 90,
-  },
-  {
-    name: 'Tambal RK Anterior',
-    code: 'TBL-RKA',
-    cat: 'Konservasi',
-    catClass: 'cat-konservasi',
-    tipe: 'Paket',
-    tipeClass: 'tipe-paket',
-    extraBadge: '2 paket',
-    icon: 'medical_services',
-    durationMnt: 45,
-    price: 'Rp 300.000 – Rp 400.000',
-    unit: 'per visit',
-    margin: 87,
-  },
-];
-
-const PRICING_TYPES: { key: 'Add-on' | 'Paket' | 'Range'; name: string; desc: string; icon: string }[] = [
-  { key: 'Add-on', name: 'Add-on', desc: 'Harga dasar + opsional', icon: 'add_circle' },
-  { key: 'Paket', name: 'Paket', desc: 'Tier: Basic / Gold / Premium', icon: 'inventory_2' },
-  { key: 'Range', name: 'Range', desc: 'Min – Max tergantung kondisi', icon: 'trending_up' },
-];
-
-const RADIO_OPTIONS = ['30%', '40%', '50%'];
-
+const KATEGORI_ICON: Record<string, string> = {
+  'Bedah Mulut': 'dentistry',
+  'Konservasi': 'medical_services',
+  'Konsultasi': 'chat_bubble',
+  'Ortho': 'straighten',
+};
 export default function TarifPage() {
+  const [tarifs, setTarifs] = useState<Tarif[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [pricingType, setPricingType] = useState<'Add-on' | 'Paket' | 'Range'>('Add-on');
-  const [radioValue, setRadioValue] = useState('40%');
+  const [submitting, setSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+
+  const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [filterKategori, setFilterKategori] = useState('');
-  const [filterTipe, setFilterTipe] = useState('');
 
   const [inputNama, setInputNama] = useState('');
-  const [inputHarga, setInputHarga] = useState('');
+  const [inputHargaPokok, setInputHargaPokok] = useState('');
+  const [inputHargaJual, setInputHargaJual] = useState('');
   const [inputKategori, setInputKategori] = useState('Konsultasi');
-  const [inputSatuan, setInputSatuan] = useState('per visit');
+  const [inputKodeIcd9, setInputKodeIcd9] = useState('');
+  const [inputDiskonMaksimal, setInputDiskonMaksimal] = useState('');
+
+  const [feedback, setFeedback] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    message: string;
+    onOkAction?: () => void;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
+
+  const loadTarifs = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await tarifApi.list();
+      setTarifs(response.data);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Gagal memuat data tarif';
+      setFeedback({
+        isOpen: true,
+        type: 'error',
+        title: 'Gagal Memuat Data',
+        message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadTarifs();
+  }, [loadTarifs]);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setIsModalOpen(false);
+      if (e.key === 'Escape') {
+        setIsModalOpen(false);
+        setOpenMenuId(null);
+      }
+    };
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.tarif-more') && !target.closest('.tarif-menu')) {
+        setOpenMenuId(null);
+      }
     };
     document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   useEffect(() => {
@@ -167,26 +145,139 @@ export default function TarifPage() {
 
   const filteredTarif = useMemo(() => {
     const q = searchQuery.toLowerCase();
-    return TARIF_DATA.filter((item) => {
-      const matchQ = !q || item.name.toLowerCase().includes(q) || item.code.toLowerCase().includes(q);
-      const matchCat = !filterKategori || item.cat === filterKategori;
-      const matchTipe = !filterTipe || item.tipe === filterTipe;
-      return matchQ && matchCat && matchTipe;
+    return tarifs.filter((item) => {
+      const matchQ = !q || item.name.toLowerCase().includes(q) || (item.kodeIcd9?.toLowerCase().includes(q) ?? false);
+      const matchCat = !filterKategori || item.kategori === filterKategori;
+      return matchQ && matchCat;
     });
-  }, [searchQuery, filterKategori, filterTipe]);
+  }, [tarifs, searchQuery, filterKategori]);
 
-  const totalCount = TARIF_DATA.length;
-  const avgMargin = Math.round(TARIF_DATA.reduce((s, t) => s + t.margin, 0) / TARIF_DATA.length);
-  const avgDurasi = Math.round(TARIF_DATA.reduce((s, t) => s + t.durationMnt, 0) / TARIF_DATA.length);
-  const maxPriceOf = (price: string) => {
-    const numbers = price.match(/[\d.]+/g)?.map((n) => parseInt(n.replace(/\./g, ''), 10)) ?? [0];
-    return Math.max(...numbers);
+  const totalCount = tarifs.length;
+  const avgMarginMargin = tarifs.length > 0
+    ? Math.round(tarifs.reduce((s, t) => {
+        const hargaPokok = t.hargaPokok || 0;
+        const hargaJual = t.hargaJual || 0;
+        return s + (hargaJual > 0 ? ((hargaJual - hargaPokok) / hargaJual * 100) : 0);
+      }, 0) / tarifs.length)
+    : 0;
+  const termahal = tarifs.length > 0 ? tarifs.reduce((a, b) => ((b.hargaJual || 0) > (a.hargaJual || 0) ? b : a)) : null;
+  const kategoriCount = tarifs.length > 0 ? new Set(tarifs.map((t) => t.kategori)).size : 0;
+
+  const openModal = (tarifToEdit?: Tarif) => {
+    if (tarifToEdit) {
+      setEditingId(tarifToEdit.id);
+      setInputNama(tarifToEdit.name);
+      setInputHargaPokok((tarifToEdit.hargaPokok || 0).toString());
+      setInputHargaJual((tarifToEdit.hargaJual || 0).toString());
+      setInputKategori(tarifToEdit.kategori);
+      setInputKodeIcd9(tarifToEdit.kodeIcd9 || '');
+      setInputDiskonMaksimal((tarifToEdit.diskonMaksimal || 0).toString());
+    } else {
+      setEditingId(null);
+      setInputNama('');
+      setInputHargaPokok('');
+      setInputHargaJual('');
+      setInputKategori('Konsultasi');
+      setInputKodeIcd9('');
+      setInputDiskonMaksimal('');
+    }
+    setIsModalOpen(true);
   };
-  const termahal = TARIF_DATA.reduce((a, b) => (maxPriceOf(a.price) >= maxPriceOf(b.price) ? a : b));
-  const kategoriCount = new Set(TARIF_DATA.map((t) => t.cat)).size;
 
-  const hargaNumber = parseInt(inputHarga, 10) || 0;
-  const previewPrice = hargaNumber > 0 ? `Rp ${hargaNumber.toLocaleString('id-ID')}` : 'Rp 0';
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setEditingId(null);
+  };
+
+  const handleSubmit = async () => {
+    if (!inputNama.trim() || !inputHargaJual.trim()) {
+      setFeedback({
+        isOpen: true,
+        type: 'warning',
+        title: 'Data Tidak Lengkap',
+        message: 'Nama dan Harga Jual harus diisi',
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        name: inputNama,
+        kategori: inputKategori,
+        kodeIcd9: inputKodeIcd9 || undefined,
+        hargaPokok: parseCurrency(inputHargaPokok),
+        hargaJual: parseCurrency(inputHargaJual),
+        diskonMaksimal: parseCurrency(inputDiskonMaksimal),
+      };
+
+      if (editingId) {
+        await tarifApi.update(editingId, payload);
+        setFeedback({
+          isOpen: true,
+          type: 'success',
+          title: 'Tarif Berhasil Diperbarui',
+          message: `Tarif "${inputNama}" telah diperbarui.`,
+          onOkAction: () => {
+            closeModal();
+            loadTarifs();
+            setFeedback((prev) => ({ ...prev, isOpen: false }));
+          },
+        });
+      } else {
+        await tarifApi.create(payload);
+        setFeedback({
+          isOpen: true,
+          type: 'success',
+          title: 'Tarif Berhasil Ditambahkan',
+          message: `Tarif "${inputNama}" telah ditambahkan ke daftar.`,
+          onOkAction: () => {
+            closeModal();
+            loadTarifs();
+            setFeedback((prev) => ({ ...prev, isOpen: false }));
+          },
+        });
+      }
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : `Gagal menyimpan tarif`;
+      setFeedback({
+        isOpen: true,
+        type: 'error',
+        title: 'Gagal Menyimpan Tarif',
+        message,
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDelete = async (id: number, name: string) => {
+    setConfirmDelete({ id, name });
+  };
+
+  const confirmDeleteTarif = async () => {
+    if (!confirmDelete) return;
+
+    try {
+      await tarifApi.delete(confirmDelete.id);
+      setFeedback({
+        isOpen: true,
+        type: 'success',
+        title: 'Tarif Berhasil Dihapus',
+        message: `Tarif "${confirmDelete.name}" telah dihapus dari daftar.`,
+      });
+      setConfirmDelete(null);
+      await loadTarifs();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Gagal menghapus tarif';
+      setFeedback({
+        isOpen: true,
+        type: 'error',
+        title: 'Gagal Menghapus Tarif',
+        message,
+      });
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -201,11 +292,28 @@ export default function TarifPage() {
             <p className="page-subtitle">Kelola daftar tarif dan tindakan klinik Anda</p>
           </div>
           <div className="page-header-actions">
-            <button className="btn-outline" type="button">
+            <button className="btn-outline" type="button" onClick={() => {
+              if (filteredTarif.length === 0) {
+                setFeedback({
+                  isOpen: true,
+                  type: 'warning',
+                  title: 'Tidak ada data',
+                  message: 'Tidak ada data tarif untuk diekspor',
+                });
+                return;
+              }
+              exportToExcel(filteredTarif);
+              setFeedback({
+                isOpen: true,
+                type: 'success',
+                title: 'Ekspor Berhasil',
+                message: `${filteredTarif.length} tarif telah diekspor ke Excel`,
+              });
+            }}>
               <span className="material-symbols-rounded">download</span>
               Ekspor
             </button>
-            <button className="btn-primary" type="button" onClick={() => setIsModalOpen(true)}>
+            <button className="btn-primary" type="button" onClick={() => openModal()} disabled={loading}>
               <span className="material-symbols-rounded">add</span>
               Tambah Tarif
             </button>
@@ -233,9 +341,9 @@ export default function TarifPage() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{avgMargin}%</div>
+              <div className="stat-value">{avgMarginMargin}%</div>
               <div className="stat-label">Rata-rata Margin</div>
-              <div className="stat-sub">↑ 2% dari bulan lalu</div>
+              <div className="stat-sub">dari harga pokok</div>
             </div>
           </div>
           <div className="stat-card termahal">
@@ -245,21 +353,21 @@ export default function TarifPage() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{termahal.price}</div>
+              <div className="stat-value">Rp {termahal ? (termahal.hargaJual || 0).toLocaleString('id-ID') : '0'}</div>
               <div className="stat-label">Tindakan Termahal</div>
-              <div className="stat-sub">{termahal.name}</div>
+              <div className="stat-sub">{termahal?.name || '-'}</div>
             </div>
           </div>
           <div className="stat-card durasi">
             <div className="stat-icon">
               <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-                schedule
+                category
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{avgDurasi} mnt</div>
-              <div className="stat-label">Avg. Durasi</div>
-              <div className="stat-sub">per tindakan</div>
+              <div className="stat-value">{kategoriCount}</div>
+              <div className="stat-label">Kategori Aktif</div>
+              <div className="stat-sub">dari {totalCount} tindakan</div>
             </div>
           </div>
         </div>
@@ -272,17 +380,11 @@ export default function TarifPage() {
                 <span className="material-symbols-rounded">search</span>
                 <input
                   type="text"
-                  placeholder="Cari tarif atau kode tindakan…"
+                  placeholder="Cari tarif atau kode ICD9…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <select className="select-pill" value={filterTipe} onChange={(e) => setFilterTipe(e.target.value)}>
-                <option value="">Semua Tipe</option>
-                <option value="Add-on">Add-on</option>
-                <option value="Paket">Paket</option>
-                <option value="Range">Range</option>
-              </select>
             </div>
             <div className="filter-tabs">
               <button
@@ -292,20 +394,16 @@ export default function TarifPage() {
               >
                 Semua
               </button>
-              <button
-                className={`filter-tab ${filterKategori === 'Bedah Mulut' ? 'active' : ''}`}
-                onClick={() => setFilterKategori('Bedah Mulut')}
-                type="button"
-              >
-                Bedah Mulut
-              </button>
-              <button
-                className={`filter-tab ${filterKategori === 'Konservasi' ? 'active' : ''}`}
-                onClick={() => setFilterKategori('Konservasi')}
-                type="button"
-              >
-                Konservasi
-              </button>
+              {Array.from(new Set(tarifs.map((t) => t.kategori))).map((kat) => (
+                <button
+                  key={kat}
+                  className={`filter-tab ${filterKategori === kat ? 'active' : ''}`}
+                  onClick={() => setFilterKategori(kat)}
+                  type="button"
+                >
+                  {kat}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -313,7 +411,14 @@ export default function TarifPage() {
             <span className="sort-label">{filteredTarif.length} tindakan ditemukan</span>
           </div>
 
-          {filteredTarif.length === 0 ? (
+          {loading ? (
+            <div className="empty-list">
+              <div className="empty-icon-wrap">
+                <span className="material-symbols-rounded">hourglass_empty</span>
+              </div>
+              <div className="empty-title">Memuat data tarif...</div>
+            </div>
+          ) : filteredTarif.length === 0 ? (
             <div className="empty-list">
               <div className="empty-icon-wrap">
                 <span className="material-symbols-rounded">search_off</span>
@@ -323,39 +428,61 @@ export default function TarifPage() {
             </div>
           ) : (
             <div className="tarif-list">
-              {filteredTarif.map((item) => (
-                <div key={item.code} className="tarif-item">
-                  <div className={`tarif-icon ${item.catClass}`}>
-                    <span className="material-symbols-rounded">{item.icon}</span>
-                  </div>
-                  <div className="tarif-info">
-                    <div className="tarif-top">
-                      <span className="tarif-code">{item.code}</span>
-                      <span className="tarif-name">{item.name}</span>
+              {filteredTarif.map((item) => {
+                const margin = item.hargaPokok > 0 ? ((item.hargaJual - item.hargaPokok) / item.hargaJual * 100).toFixed(0) : 0;
+                return (
+                  <div key={item.id} className="tarif-item">
+                    <div className="tarif-icon" style={{
+                      background: item.kategori === 'Bedah Mulut' ? 'linear-gradient(135deg,#FF6B9D,#E84393)'
+                        : item.kategori === 'Konservasi' ? 'linear-gradient(135deg,#F5A623,#E8831A)'
+                        : 'linear-gradient(135deg,#4F7EF8,#7B5CFA)',
+                    }}>
+                      <span className="material-symbols-rounded">{KATEGORI_ICON[item.kategori] || 'medical_services'}</span>
                     </div>
-                    <div className="tarif-badges">
-                      <span className={`tag ${item.catClass}`}>{item.cat}</span>
-                      <span className={`tag ${item.tipeClass}`}>{item.tipe}</span>
-                      {item.extraBadge && <span className="tag multi">{item.extraBadge}</span>}
-                      <span className="tarif-meta">
-                        <span className="material-symbols-rounded">schedule</span>
-                        {item.durationMnt} mnt
+                    <div className="tarif-info">
+                      <div className="tarif-top">
+                        <span className="tarif-code">{item.kodeIcd9 || `ID-${item.id}`}</span>
+                        <span className="tarif-name">{item.name}</span>
+                      </div>
+                      <div className="tarif-badges">
+                        <span className="tag">{item.kategori}</span>
+                        {item.diskonMaksimal > 0 && <span className="tag multi">Diskon {item.diskonMaksimal}%</span>}
+                      </div>
+                    </div>
+                    <div className="tarif-right">
+                      <div className="tarif-price">Rp {(item.hargaJual || 0).toLocaleString('id-ID')}</div>
+                      <div className="tarif-unit">harga jual</div>
+                      <span className="tarif-margin">
+                        <span className="material-symbols-rounded">trending_up</span>
+                        Margin {margin}%
                       </span>
                     </div>
+                    <div style={{ position: 'relative' }}>
+                      <button className="tarif-more" type="button" onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}>
+                        <span className="material-symbols-rounded">more_vert</span>
+                      </button>
+                      {openMenuId === item.id && (
+                        <div className="tarif-menu">
+                          <button type="button" className="tarif-menu-item" onClick={() => {
+                            openModal(item);
+                            setOpenMenuId(null);
+                          }}>
+                            <span className="material-symbols-rounded">edit</span>
+                            Edit
+                          </button>
+                          <button type="button" className="tarif-menu-item delete" onClick={() => {
+                            handleDelete(item.id, item.name);
+                            setOpenMenuId(null);
+                          }}>
+                            <span className="material-symbols-rounded">delete</span>
+                            Hapus
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="tarif-right">
-                    <div className="tarif-price">{item.price}</div>
-                    <div className="tarif-unit">{item.unit}</div>
-                    <span className="tarif-margin">
-                      <span className="material-symbols-rounded">trending_up</span>
-                      Margin {item.margin}%
-                    </span>
-                  </div>
-                  <button className="tarif-more" type="button">
-                    <span className="material-symbols-rounded">more_vert</span>
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -365,7 +492,7 @@ export default function TarifPage() {
           <div
             className="tarif-page-modal-overlay"
             onClick={(e) => {
-              if (e.target === e.currentTarget) setIsModalOpen(false);
+              if (e.target === e.currentTarget) closeModal();
             }}
           >
             <div className="tarif-page-modal-box">
@@ -375,11 +502,11 @@ export default function TarifPage() {
                     <span className="material-symbols-rounded">sell</span>
                   </div>
                   <div>
-                    <h2>Tambah Tarif Baru</h2>
-                    <p>Lengkapi detail tindakan dan struktur harganya</p>
+                    <h2>{editingId ? 'Edit Tarif' : 'Tambah Tarif Baru'}</h2>
+                    <p>{editingId ? 'Perbarui detail tindakan' : 'Lengkapi detail tindakan dan struktur harganya'}</p>
                   </div>
                 </div>
-                <button className="modal-close" type="button" onClick={() => setIsModalOpen(false)} aria-label="Tutup">
+                <button className="modal-close" type="button" onClick={closeModal} aria-label="Tutup">
                   <span className="material-symbols-rounded">close</span>
                 </button>
               </div>
@@ -388,12 +515,12 @@ export default function TarifPage() {
                 <div className="preview-card">
                   <div className="preview-badges">
                     <span className="preview-badge">{inputKategori}</span>
-                    <span className="preview-badge">{pricingType}</span>
                   </div>
                   <div className="preview-name">{inputNama || 'Nama tindakan…'}</div>
                   <div>
-                    <span className="preview-price">{previewPrice}</span>
-                    <span className="preview-unit"> / {inputSatuan}</span>
+                    <span className="preview-price">
+                      Rp {(parseInt(inputHargaJual) || 0).toLocaleString('id-ID')}
+                    </span>
                   </div>
                 </div>
 
@@ -408,137 +535,99 @@ export default function TarifPage() {
                     />
                   </div>
                   <div className="form-field">
-                    <label>Kode</label>
-                    <input type="text" placeholder="SCL-001" />
+                    <label>Kode ICD9 (opsional)</label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: J06.9"
+                      value={inputKodeIcd9}
+                      onChange={(e) => setInputKodeIcd9(e.target.value)}
+                    />
                   </div>
                   <div className="form-field">
                     <label>Kategori</label>
-                    <select value={inputKategori} onChange={(e) => setInputKategori(e.target.value)}>
-                      <option>Konsultasi</option>
-                      <option>Bedah Mulut</option>
-                      <option>Konservasi</option>
-                      <option>Ortho</option>
-                    </select>
+                    <CustomSelect
+                      value={inputKategori}
+                      onChange={setInputKategori}
+                      options={[
+                        { value: 'Konsultasi', label: 'Konsultasi' },
+                        { value: 'Bedah Mulut', label: 'Bedah Mulut' },
+                        { value: 'Konservasi', label: 'Konservasi' },
+                        { value: 'Ortho', label: 'Ortho' },
+                      ]}
+                    />
                   </div>
                 </div>
 
                 <div className="form-section-title">
                   <span className="material-symbols-rounded">payments</span>
-                  Tipe Pricing
-                </div>
-                <div className="pricing-types">
-                  {PRICING_TYPES.map((pt) => (
-                    <div
-                      key={pt.key}
-                      className={`pricing-type ${pricingType === pt.key ? 'active' : ''}`}
-                      onClick={() => setPricingType(pt.key)}
-                    >
-                      <span className="material-symbols-rounded">{pt.icon}</span>
-                      <div className="pricing-type-name">{pt.name}</div>
-                      <div className="pricing-type-desc">{pt.desc}</div>
-                    </div>
-                  ))}
+                  Harga & Biaya
                 </div>
 
-                <div className="form-row">
+                <div className="split-row">
                   <div className="form-field">
-                    <label>Harga Dasar (Rp)</label>
+                    <label>Harga Pokok (Rp)</label>
                     <input
-                      type="number"
-                      placeholder="150000"
-                      value={inputHarga}
-                      onChange={(e) => setInputHarga(e.target.value)}
+                      type="text"
+                      placeholder="0"
+                      value={formatCurrencyInput(inputHargaPokok)}
+                      onChange={(e) => setInputHargaPokok(e.target.value.replace(/\D/g, ''))}
                     />
                   </div>
                   <div className="form-field">
-                    <label>Satuan</label>
-                    <select value={inputSatuan} onChange={(e) => setInputSatuan(e.target.value)}>
-                      <option>per visit</option>
-                      <option>per tindakan</option>
-                      <option>per sesi</option>
-                      <option>per bulan</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="section-block">
-                  <div className="section-block-header">
-                    <span className="material-symbols-rounded">inventory_2</span>
-                    Paket / Tier
-                  </div>
-                  <div className="section-block-body">
-                    <p className="empty-state">Belum ada paket. Tambahkan paket di bawah.</p>
-                    <button className="add-link" type="button">
-                      <span className="material-symbols-rounded">add_circle</span>
-                      Tambah Paket
-                    </button>
-                  </div>
-                </div>
-
-                <div className="section-block">
-                  <div className="section-block-header">
-                    <span className="material-symbols-rounded">shopping_bag</span>
-                    Add-on / Layanan Tambahan
-                  </div>
-                  <div className="section-block-body">
-                    <p className="empty-state">Belum ada add-on.</p>
-                    <button className="add-link" type="button">
-                      <span className="material-symbols-rounded">add_circle</span>
-                      Tambah Add-on
-                    </button>
+                    <label>Harga Jual (Rp) *</label>
+                    <input
+                      type="text"
+                      placeholder="150.000"
+                      value={formatCurrencyInput(inputHargaJual)}
+                      onChange={(e) => setInputHargaJual(e.target.value.replace(/\D/g, ''))}
+                    />
                   </div>
                 </div>
 
                 <div className="split-row">
                   <div className="form-field">
-                    <label>Durasi (mnt)</label>
-                    <input type="number" placeholder="30" />
-                  </div>
-                  <div className="form-field">
-                    <label>Deskripsi (opsional)</label>
-                    <input type="text" placeholder="Detail tindakan…" />
-                  </div>
-                </div>
-
-                <div className="form-section-title">
-                  <span className="material-symbols-rounded">credit_card</span>
-                  Biaya Bahan &amp; Bagi Hasil
-                </div>
-
-                <div className="split-row">
-                  <div className="form-field">
-                    <label>Biaya Bahan (Rp)</label>
-                    <input type="number" placeholder="0" />
-                  </div>
-                  <div className="form-field">
-                    <label>Bagi Hasil Dokter (%)</label>
-                    <div className="radio-group">
-                      {RADIO_OPTIONS.map((opt) => (
-                        <div
-                          key={opt}
-                          className={`radio-option ${radioValue === opt ? 'active' : ''}`}
-                          onClick={() => setRadioValue(opt)}
-                        >
-                          {opt}
-                        </div>
-                      ))}
-                    </div>
+                    <label>Diskon Maksimal (Rp)</label>
+                    <input
+                      type="text"
+                      placeholder="0"
+                      value={formatCurrencyInput(inputDiskonMaksimal)}
+                      onChange={(e) => setInputDiskonMaksimal(e.target.value.replace(/\D/g, ''))}
+                    />
                   </div>
                 </div>
               </div>
 
               <div className="modal-footer">
-                <button className="btn-outline" type="button" onClick={() => setIsModalOpen(false)}>
+                <button className="btn-outline" type="button" onClick={closeModal} disabled={submitting}>
                   Batal
                 </button>
-                <button className="btn-primary" type="button">
+                <button className="btn-primary" type="button" onClick={handleSubmit} disabled={submitting}>
                   <span className="material-symbols-rounded">save</span>
-                  Tambah Tarif
+                  {submitting ? 'Menyimpan...' : editingId ? 'Simpan Perubahan' : 'Tambah Tarif'}
                 </button>
               </div>
             </div>
           </div>
         )}
+
+        <ConfirmationModal
+          isOpen={!!confirmDelete}
+          title="Hapus Tarif?"
+          message={`Apakah Anda yakin ingin menghapus tarif "${confirmDelete?.name}"? Tindakan ini tidak dapat dibatalkan.`}
+          confirmLabel="Ya, Hapus"
+          cancelLabel="Batal"
+          isDangerous
+          onConfirm={confirmDeleteTarif}
+          onCancel={() => setConfirmDelete(null)}
+        />
+
+        <FeedbackModal
+          isOpen={feedback.isOpen}
+          type={feedback.type}
+          title={feedback.title}
+          message={feedback.message}
+          onOkAction={feedback.onOkAction || (() => setFeedback({ ...feedback, isOpen: false }))}
+        />
       </main>
     </DashboardLayout>
   );

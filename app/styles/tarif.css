@@ -366,6 +366,64 @@
 .tarif-page .tarif-more:hover { background: var(--bg); color: var(--text-main); }
 .tarif-page .tarif-more .material-symbols-rounded { font-size: 18px; }
 
+.tarif-page .tarif-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(15,23,42,.15);
+  min-width: 140px;
+  margin-top: 4px;
+  z-index: 9999;
+  overflow: hidden;
+  animation: slideDown 0.15s ease;
+}
+
+.tarif-page .tarif-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: background var(--transition);
+  text-align: left;
+  font-family: inherit;
+}
+
+.tarif-page .tarif-menu-item:hover {
+  background: var(--bg);
+}
+
+.tarif-page .tarif-menu-item.delete {
+  color: #E74C3C;
+}
+
+.tarif-page .tarif-menu-item.delete:hover {
+  background: rgba(231,76,60,.08);
+}
+
+.tarif-page .tarif-menu-item .material-symbols-rounded {
+  font-size: 16px;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .tarif-page .empty-list {
   display: flex;
   flex-direction: column;
