@@ -577,14 +577,23 @@
 .list-pasien-modal-overlay .modal-tab:hover { color: var(--primary); }
 .list-pasien-modal-overlay .modal-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
 
+.list-pasien-modal-overlay .modal-box > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
 .list-pasien-modal-overlay .modal-body {
   padding: 22px 24px 24px;
   overflow-y: auto;
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
   background: var(--bg);
+  overscroll-behavior: contain;
 }
 
 .list-pasien-modal-overlay .form-row {
