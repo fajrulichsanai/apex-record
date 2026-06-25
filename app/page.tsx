@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import FeedbackModal from '@/components/feedback/FeedbackModal';
 import { useAuth } from '@/lib/auth-context';
 import './styles/page.css';
 
@@ -21,8 +22,17 @@ const LoginPage = () => {
   const [ownerCode, setOwnerCode] = useState('');
 
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
+  const [feedback, setFeedback] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
+  });
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -30,8 +40,7 @@ const LoginPage = () => {
 
   const switchMode = (next: Mode) => {
     setMode(next);
-    setErrorMsg('');
-    setSuccessMsg('');
+    setFeedback({ ...feedback, isOpen: false });
   };
 
   const handleLogin = async () => {
@@ -80,24 +89,45 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setErrorMsg('');
-    setSuccessMsg('');
     setLoading(true);
 
     try {
       if (mode === 'register') {
         const data = await handleRegister();
-        setSuccessMsg(data?.message || 'Registrasi berhasil. Silakan cek email Anda.');
-        setMode('login');
-        setPassword('');
+        setFeedback({
+          isOpen: true,
+          type: 'success',
+          title: 'Registrasi Berhasil',
+          message: data?.message || 'Registrasi berhasil. Silakan cek email Anda untuk verifikasi.',
+        });
+        setTimeout(() => {
+          setMode('login');
+          setPassword('');
+          setEmail('');
+          setName('');
+          setOwnerCode('');
+          setFeedback({ isOpen: false, type: 'info', title: '', message: '' });
+        }, 2000);
       } else {
         const data = await handleLogin();
-        setSuccessMsg('Login berhasil');
-        login(data.accessToken, data.user);
-        router.push('/dashboard');
+        setFeedback({
+          isOpen: true,
+          type: 'success',
+          title: 'Login Berhasil',
+          message: 'Selamat datang! Anda akan diarahkan ke dashboard...',
+        });
+        setTimeout(() => {
+          login(data.accessToken, data.user);
+          router.push('/dashboard');
+        }, 1500);
       }
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Terjadi kesalahan');
+      setFeedback({
+        isOpen: true,
+        type: 'error',
+        title: mode === 'register' ? 'Registrasi Gagal' : 'Login Gagal',
+        message: err instanceof Error ? err.message : 'Terjadi kesalahan',
+      });
     } finally {
       setLoading(false);
     }
@@ -181,8 +211,6 @@ const LoginPage = () => {
             </>
           )}
 
-          {errorMsg && <p className="form-message form-message-error">{errorMsg}</p>}
-          {successMsg && <p className="form-message form-message-success">{successMsg}</p>}
 
           <form onSubmit={handleSubmit}>
             {mode === 'register' && (
@@ -297,6 +325,17 @@ const LoginPage = () => {
           <p className="version-text">ApexRecord v1.0.0</p>
         </div>
       </div>
+
+      <FeedbackModal
+        isOpen={feedback.isOpen}
+        type={feedback.type}
+        title={feedback.title}
+        message={feedback.message}
+        actionButton={{
+          label: feedback.type === 'error' ? 'Coba Lagi' : 'Lanjutkan',
+          onClick: () => setFeedback({ ...feedback, isOpen: false }),
+        }}
+      />
     </div>
   );
 };

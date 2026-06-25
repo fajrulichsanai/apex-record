@@ -1,0 +1,115 @@
+.confirmation-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 500;
+}
+
+.confirmation-modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 14px;
+  width: 90%;
+  max-width: 420px;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
+  z-index: 501;
+  animation: confirmation-pop 0.22s ease;
+}
+
+@keyframes confirmation-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+.confirmation-modal-header {
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid #E8ECF4;
+}
+
+.confirmation-modal-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1A2340;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.confirmation-modal-body {
+  padding: 16px 24px;
+  color: #6B7A99;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.confirmation-modal-body p {
+  margin: 0;
+}
+
+.confirmation-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #E8ECF4;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  background: #FFFFFF;
+}
+
+.confirmation-modal-footer .btn-outline,
+.confirmation-modal-footer .btn-primary,
+.confirmation-modal-footer .btn-danger {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirmation-modal-footer .btn-outline {
+  background: none;
+  border: 1.5px solid #E8ECF4;
+  color: #6B7A99;
+}
+
+.confirmation-modal-footer .btn-outline:hover {
+  border-color: #4F7EF8;
+  color: #4F7EF8;
+}
+
+.confirmation-modal-footer .btn-primary {
+  background: #4F7EF8;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(79, 126, 248, 0.35);
+}
+
+.confirmation-modal-footer .btn-primary:hover {
+  background: #3B6CE6;
+  box-shadow: 0 6px 20px rgba(79, 126, 248, 0.45);
+  transform: translateY(-1px);
+}
+
+.confirmation-modal-footer .btn-danger {
+  background: #E74C3C;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(231, 76, 60, 0.35);
+}
+
+.confirmation-modal-footer .btn-danger:hover {
+  background: #C0392B;
+  box-shadow: 0 6px 20px rgba(231, 76, 60, 0.45);
+  transform: translateY(-1px);
+}

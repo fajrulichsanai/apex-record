@@ -1,7 +1,15 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeedbackModal from '@/components/feedback/FeedbackModal';
+import { ApiError } from '@/lib/api-client';
+import {
+  clinicApi,
+  daysToOperationalHours,
+  operationalHoursToDays,
+  type ClinicDayHours,
+} from '@/lib/clinic';
 import '../../styles/info-klinik.css';
 
 interface ClinicInfo {
@@ -10,30 +18,28 @@ interface ClinicInfo {
   email: string;
   website: string;
   alamat: string;
+  kota: string;
+  provinsi: string;
+  kodePos: string;
+  nomorSip: string;
 }
 
-interface DayHours {
-  id: string;
-  label: string;
-  active: boolean;
-  buka: string;
-  bukaM: string;
-  tutup: string;
-  tutupM: string;
-}
+type DayHours = ClinicDayHours;
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 const MINUTES = ['00', '15', '30', '45'];
 
-const INITIAL_DAYS: DayHours[] = [
-  { id: 'sen', label: 'Sen', active: true, buka: '08', bukaM: '00', tutup: '', tutupM: '' },
-  { id: 'sel', label: 'Sel', active: false, buka: '', bukaM: '00', tutup: '', tutupM: '' },
-  { id: 'rab', label: 'Rab', active: false, buka: '', bukaM: '00', tutup: '', tutupM: '' },
-  { id: 'kam', label: 'Kam', active: false, buka: '', bukaM: '00', tutup: '', tutupM: '' },
-  { id: 'jum', label: 'Jum', active: false, buka: '', bukaM: '00', tutup: '', tutupM: '' },
-  { id: 'sab', label: 'Sab', active: false, buka: '', bukaM: '00', tutup: '', tutupM: '' },
-  { id: 'min', label: 'Min', active: false, buka: '', bukaM: '00', tutup: '', tutupM: '' },
-];
+const EMPTY_INFO: ClinicInfo = {
+  nama: '',
+  telepon: '',
+  email: '',
+  website: '',
+  alamat: '',
+  kota: '',
+  provinsi: '',
+  kodePos: '',
+  nomorSip: '',
+};
 
 function FieldEditWrap({
   isEditing,
@@ -132,14 +138,52 @@ function TimePicker({
 
 export default function InfoKlinikPage() {
   const [isEditing, setIsEditing] = useState(false);
-  const [info, setInfo] = useState<ClinicInfo>({
-    nama: 'Zanak Dental Care',
-    telepon: '082387696487',
-    email: 'zanakdeveloper@gmail.com',
-    website: '',
-    alamat: 'Simpang 4, Kaning Bukik, Kec. Payakumbuh Utara, Kota Payakumbuh, Sumatera Barat 26216',
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [info, setInfo] = useState<ClinicInfo>(EMPTY_INFO);
+  const [days, setDays] = useState<DayHours[]>(operationalHoursToDays());
+
+  const [feedback, setFeedback] = useState<{
+    isOpen: boolean;
+    type: 'success' | 'error' | 'warning' | 'info';
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: 'info',
+    title: '',
+    message: '',
   });
-  const [days, setDays] = useState<DayHours[]>(INITIAL_DAYS);
+
+  const closeFeedback = () => setFeedback((prev) => ({ ...prev, isOpen: false }));
+
+  const loadClinic = useCallback(async () => {
+    try {
+      setLoading(true);
+      const clinic = await clinicApi.get();
+      setInfo({
+        nama: clinic.name ?? '',
+        telepon: clinic.phone ?? '',
+        email: clinic.email ?? '',
+        website: clinic.website ?? '',
+        alamat: clinic.address ?? '',
+        kota: clinic.city ?? '',
+        provinsi: clinic.province ?? '',
+        kodePos: clinic.postalCode ?? '',
+        nomorSip: clinic.sipNumber ?? '',
+      });
+      setDays(operationalHoursToDays(clinic.operationalHours));
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Gagal memuat info klinik';
+      setFeedback({ isOpen: true, type: 'error', title: 'Gagal Memuat Data', message });
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadClinic();
+  }, [loadClinic]);
 
   function updateInfo(field: keyof ClinicInfo, value: string) {
     setInfo((prev) => ({ ...prev, [field]: value }));
@@ -147,6 +191,41 @@ export default function InfoKlinikPage() {
 
   function updateDay(id: string, patch: Partial<DayHours>) {
     setDays((prev) => prev.map((d) => (d.id === id ? { ...d, ...patch } : d)));
+  }
+
+  async function handleToggleEdit() {
+    if (!isEditing) {
+      setIsEditing(true);
+      return;
+    }
+
+    try {
+      setSaving(true);
+      await clinicApi.update({
+        name: info.nama,
+        address: info.alamat,
+        city: info.kota,
+        province: info.provinsi,
+        postalCode: info.kodePos || undefined,
+        phone: info.telepon,
+        email: info.email || undefined,
+        website: info.website || undefined,
+        sipNumber: info.nomorSip || undefined,
+        operationalHours: daysToOperationalHours(days),
+      });
+      setFeedback({
+        isOpen: true,
+        type: 'success',
+        title: 'Berhasil',
+        message: 'Profil klinik berhasil diperbarui',
+      });
+      setIsEditing(false);
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Gagal menyimpan info klinik';
+      setFeedback({ isOpen: true, type: 'error', title: 'Gagal Menyimpan', message });
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -168,7 +247,8 @@ export default function InfoKlinikPage() {
               </div>
               <button
                 className={`main-btn ${isEditing ? 'mode-save' : 'mode-edit'}`}
-                onClick={() => setIsEditing((prev) => !prev)}
+                onClick={handleToggleEdit}
+                disabled={loading || saving}
               >
                 {isEditing ? (
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
@@ -180,7 +260,7 @@ export default function InfoKlinikPage() {
                     <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
                 )}
-                <span>{isEditing ? 'Simpan' : 'Edit'}</span>
+                <span>{saving ? 'Menyimpan...' : isEditing ? 'Simpan' : 'Edit'}</span>
               </button>
             </div>
 
@@ -262,17 +342,33 @@ export default function InfoKlinikPage() {
                         onChange={(v) => updateInfo('website', v)}
                       />
                     </div>
+
+                    <div className="field">
+                      <label className="field-label">Nomor SIP (opsional)</label>
+                      <FieldEditWrap
+                        isEditing={isEditing}
+                        icon={
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                          </svg>
+                        }
+                        value={info.nomorSip}
+                        placeholder="Nomor Surat Izin Praktik"
+                        onChange={(v) => updateInfo('nomorSip', v)}
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Alamat & SIP */}
+                {/* Alamat */}
                 <div className="card">
                   <div className="card-header">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
                       <circle cx="12" cy="10" r="3" />
                     </svg>
-                    Alamat &amp; SIP
+                    Alamat
                   </div>
                   <div className="card-body">
                     <div className="field">
@@ -296,6 +392,51 @@ export default function InfoKlinikPage() {
                         }
                         value={info.alamat}
                         onChange={(v) => updateInfo('alamat', v)}
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label className="field-label">Kota</label>
+                      <FieldEditWrap
+                        isEditing={isEditing}
+                        icon={
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                        }
+                        value={info.kota}
+                        onChange={(v) => updateInfo('kota', v)}
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label className="field-label">Provinsi</label>
+                      <FieldEditWrap
+                        isEditing={isEditing}
+                        icon={
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                        }
+                        value={info.provinsi}
+                        onChange={(v) => updateInfo('provinsi', v)}
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label className="field-label">Kode Pos (opsional)</label>
+                      <FieldEditWrap
+                        isEditing={isEditing}
+                        icon={
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                        }
+                        value={info.kodePos}
+                        onChange={(v) => updateInfo('kodePos', v)}
                       />
                     </div>
                   </div>
@@ -335,6 +476,7 @@ export default function InfoKlinikPage() {
                               <input
                                 type="checkbox"
                                 checked={d.active}
+                                disabled={!isEditing}
                                 onChange={(e) => updateDay(d.id, { active: e.target.checked })}
                               />
                               <span className="toggle-track" />
@@ -369,6 +511,14 @@ export default function InfoKlinikPage() {
           </div>
         </div>
       </main>
+
+      <FeedbackModal
+        isOpen={feedback.isOpen}
+        type={feedback.type}
+        title={feedback.title}
+        message={feedback.message}
+        actionButton={{ label: 'OK', onClick: closeFeedback }}
+      />
     </DashboardLayout>
   );
 }

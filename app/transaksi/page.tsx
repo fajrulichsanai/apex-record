@@ -1,157 +1,229 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import '../styles/transaksi.css';
+import { ApiError } from '@/lib/api-client';
+import {
+  billingApi,
+  BillingListItem,
+  BillingStatus,
+  CreateBillingItemPayload,
+  DiscountType,
+} from '@/lib/billing';
+import { encounterApi, EncounterListItem } from '@/lib/encounter';
+import { tarifApi, Tarif } from '@/lib/tarif';
 
-type Status = 'lunas' | 'pending' | 'belum';
-type FilterValue = 'semua' | Status;
+type FilterValue = 'semua' | BillingStatus;
 
-interface Transaksi {
-  id: number;
-  invoiceNo: string;
-  patientName: string;
-  tindakan: string;
-  metode: string;
-  amount: number;
-  status: Status;
-  date: string;
+interface ItemRow {
+  key: number;
+  tarifId: number | '';
+  name: string;
+  unitPrice: number;
+  quantity: number;
+  discount: number;
+  discountType: DiscountType;
 }
 
-const PASIEN_OPTIONS = [
-  'Mu** Da** Sa**',
-  'Ahmad Ri**',
-  'By. Ny. Sa**',
-  'Budi Su**',
-  'Siti Ra**',
-];
-
-const TINDAKAN_OPTIONS: { name: string; price: number }[] = [
-  { name: 'Konsultasi Awal', price: 75000 },
-  { name: 'Pembersihan Karang Gigi', price: 150000 },
-  { name: 'Cabut Gigi', price: 250000 },
-  { name: 'Tambal GIC', price: 160000 },
-  { name: 'PSA - Obturasi', price: 300000 },
-];
-
-const METODE_OPTIONS = ['Tunai', 'Transfer Bank', 'Kartu Debit/Kredit', 'QRIS'];
-
-const INITIAL_TRANSAKSI: Transaksi[] = [
-  {
-    id: 1,
-    invoiceNo: 'INV-000005',
-    patientName: 'Siti Ra**',
-    tindakan: 'PSA - Obturasi',
-    metode: 'QRIS',
-    amount: 300000,
-    status: 'lunas',
-    date: '20 Jun 2026',
-  },
-  {
-    id: 2,
-    invoiceNo: 'INV-000004',
-    patientName: 'Budi Su**',
-    tindakan: 'Cabut Gigi',
-    metode: 'Tunai',
-    amount: 250000,
-    status: 'lunas',
-    date: '19 Jun 2026',
-  },
-  {
-    id: 3,
-    invoiceNo: 'INV-000003',
-    patientName: 'Ahmad Ri**',
-    tindakan: 'Tambal GIC',
-    metode: 'Transfer Bank',
-    amount: 160000,
-    status: 'pending',
-    date: '18 Jun 2026',
-  },
-  {
-    id: 4,
-    invoiceNo: 'INV-000002',
-    patientName: 'Mu** Da** Sa**',
-    tindakan: 'Pembersihan Karang Gigi',
-    metode: 'Kartu Debit/Kredit',
-    amount: 150000,
-    status: 'belum',
-    date: '16 Jun 2026',
-  },
-  {
-    id: 5,
-    invoiceNo: 'INV-000001',
-    patientName: 'By. Ny. Sa**',
-    tindakan: 'Konsultasi Awal',
-    metode: 'Tunai',
-    amount: 75000,
-    status: 'lunas',
-    date: '14 Jun 2026',
-  },
-];
-
-function statusLabel(status: Status) {
-  if (status === 'lunas') return 'Lunas';
-  if (status === 'pending') return 'Menunggu';
-  return 'Belum Bayar';
+function statusTag(status: BillingStatus): { tag: string; label: string } {
+  switch (status) {
+    case 'paid':
+      return { tag: 'lunas', label: 'Lunas' };
+    case 'partial':
+      return { tag: 'pending', label: 'Sebagian' };
+    case 'cancelled':
+      return { tag: 'belum', label: 'Dibatalkan' };
+    case 'refunded':
+      return { tag: 'belum', label: 'Refund' };
+    default:
+      return { tag: 'belum', label: 'Belum Bayar' };
+  }
 }
 
 function formatRupiah(value: number) {
-  return `Rp ${value.toLocaleString('id-ID')}`;
+  return `Rp ${Number(value || 0).toLocaleString('id-ID')}`;
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+let rowKeySeq = 0;
+function emptyRow(): ItemRow {
+  return { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal' };
 }
 
 export default function TransaksiPage() {
-  const [transaksiList, setTransaksiList] = useState<Transaksi[]>(INITIAL_TRANSAKSI);
+  return (
+    <Suspense fallback={null}>
+      <TransaksiPageInner />
+    </Suspense>
+  );
+}
+
+function TransaksiPageInner() {
+  const searchParams = useSearchParams();
+  const [billings, setBillings] = useState<BillingListItem[]>([]);
+  const [meta, setMeta] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
+  const [loadingList, setLoadingList] = useState(true);
+  const [listError, setListError] = useState<string | null>(null);
+
   const [currentFilter, setCurrentFilter] = useState<FilterValue>('semua');
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [selectedPasien, setSelectedPasien] = useState(PASIEN_OPTIONS[0]);
-  const [selectedTindakan, setSelectedTindakan] = useState(TINDAKAN_OPTIONS[0].name);
-  const [diskon, setDiskon] = useState('0');
-  const [metode, setMetode] = useState(METODE_OPTIONS[0]);
-  const [status, setStatus] = useState<Status>('lunas');
+  const [encounters, setEncounters] = useState<EncounterListItem[]>([]);
+  const [tarifs, setTarifs] = useState<Tarif[]>([]);
+  const [selectedEncounterId, setSelectedEncounterId] = useState<number | ''>('');
+  const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
+  const [notes, setNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const tindakanPrice = TINDAKAN_OPTIONS.find((t) => t.name === selectedTindakan)?.price ?? 0;
-  const diskonValue = Math.min(Math.max(parseInt(diskon, 10) || 0, 0), 100);
-  const totalAfterDiskon = Math.round(tindakanPrice * (1 - diskonValue / 100));
+  const [payingId, setPayingId] = useState<number | null>(null);
 
-  const filteredTransaksi = transaksiList.filter((t) => {
-    const matchStatus = currentFilter === 'semua' || t.status === currentFilter;
+  const loadBillings = useCallback(async () => {
+    setLoadingList(true);
+    setListError(null);
+    try {
+      const res = await billingApi.list({
+        status: currentFilter === 'semua' ? undefined : currentFilter,
+        page: 1,
+        limit: 50,
+      });
+      setBillings(res.data);
+      setMeta(res.meta);
+    } catch (err) {
+      setListError(err instanceof ApiError ? err.message : 'Gagal memuat riwayat transaksi');
+    } finally {
+      setLoadingList(false);
+    }
+  }, [currentFilter]);
+
+  useEffect(() => {
+    loadBillings();
+  }, [loadBillings]);
+
+  useEffect(() => {
+    encounterApi
+      .list({ status: 'finished', limit: 100 })
+      .then((res) => {
+        setEncounters(res.data);
+        const fromQuery = searchParams.get('encounterId');
+        if (fromQuery && res.data.some((e) => e.encounterId === Number(fromQuery))) {
+          setSelectedEncounterId(Number(fromQuery));
+        }
+      })
+      .catch(() => setEncounters([]));
+    tarifApi
+      .list({ limit: 200 })
+      .then((res) => setTarifs(res.data.filter((t) => t.isActive)))
+      .catch(() => setTarifs([]));
+  }, [searchParams]);
+
+  const filteredBillings = useMemo(() => {
     const q = searchQuery.toLowerCase();
-    const matchSearch =
-      t.patientName.toLowerCase().includes(q) ||
-      t.invoiceNo.toLowerCase().includes(q) ||
-      t.tindakan.toLowerCase().includes(q);
-    return matchStatus && matchSearch;
-  });
+    if (!q) return billings;
+    return billings.filter(
+      (b) =>
+        (b.patientName || '').toLowerCase().includes(q) ||
+        b.invoiceNumber.toLowerCase().includes(q),
+    );
+  }, [billings, searchQuery]);
 
-  const totalCount = transaksiList.length;
+  const totalCount = meta.total;
   const totalIncome = useMemo(
-    () => transaksiList.filter((t) => t.status === 'lunas').reduce((sum, t) => sum + t.amount, 0),
-    [transaksiList]
+    () => billings.reduce((sum, b) => sum + Number(b.paidAmount || 0), 0),
+    [billings],
   );
-  const pendingCount = transaksiList.filter((t) => t.status === 'pending').length;
-  const lunasCount = transaksiList.filter((t) => t.status === 'lunas').length;
+  const pendingCount = billings.filter((b) => b.status === 'partial' || b.status === 'unpaid').length;
+  const lunasCount = billings.filter((b) => b.status === 'paid').length;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  function updateRow(key: number, patch: Partial<ItemRow>) {
+    setItems((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  }
+
+  function handleTarifSelect(key: number, tarifId: string) {
+    const tarif = tarifs.find((t) => t.id === Number(tarifId));
+    updateRow(key, {
+      tarifId: tarif ? tarif.id : '',
+      name: tarif ? tarif.name : '',
+      unitPrice: tarif ? tarif.hargaJual : 0,
+    });
+  }
+
+  const grandTotal = useMemo(() => {
+    return items.reduce((sum, r) => {
+      const discNominal = r.discountType === 'percent' ? (r.unitPrice * r.discount) / 100 : r.discount;
+      return sum + (r.unitPrice - discNominal) * r.quantity;
+    }, 0);
+  }, [items]);
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const nextInvoice = `INV-${String(transaksiList.length + 1).padStart(6, '0')}`;
-    const newTransaksi: Transaksi = {
-      id: Math.max(0, ...transaksiList.map((t) => t.id)) + 1,
-      invoiceNo: nextInvoice,
-      patientName: selectedPasien,
-      tindakan: selectedTindakan,
-      metode,
-      amount: totalAfterDiskon,
-      status,
-      date: new Date().toLocaleDateString('id-ID', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      }),
-    };
-    setTransaksiList((prev) => [newTransaksi, ...prev]);
-    setDiskon('0');
-  };
+    setSubmitError(null);
+
+    if (!selectedEncounterId) {
+      setSubmitError('Pilih kunjungan terlebih dahulu');
+      return;
+    }
+    const validItems = items.filter((r) => r.name && r.unitPrice > 0);
+    if (validItems.length === 0) {
+      setSubmitError('Tambahkan minimal satu tindakan dengan harga');
+      return;
+    }
+
+    const payloadItems: CreateBillingItemPayload[] = validItems.map((r) => ({
+      tarifId: r.tarifId || undefined,
+      name: r.name,
+      quantity: r.quantity,
+      unitPrice: r.unitPrice,
+      discount: r.discount,
+      discountType: r.discountType,
+    }));
+
+    setSubmitting(true);
+    try {
+      await billingApi.create({
+        encounterId: Number(selectedEncounterId),
+        items: payloadItems,
+        notes: notes || undefined,
+      });
+      setSelectedEncounterId('');
+      setItems([emptyRow()]);
+      setNotes('');
+      await loadBillings();
+    } catch (err) {
+      setSubmitError(err instanceof ApiError ? err.message : 'Gagal membuat transaksi');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleRecordPayment(billing: BillingListItem) {
+    const amountStr = window.prompt(
+      `Jumlah pembayaran untuk ${billing.invoiceNumber} (sisa ${formatRupiah(billing.outstandingAmount)})`,
+      String(billing.outstandingAmount),
+    );
+    if (!amountStr) return;
+    const amount = Number(amountStr);
+    if (!amount || amount <= 0) return;
+
+    setPayingId(billing.billingId);
+    try {
+      await billingApi.createPayment(billing.billingId, { method: 'cash', amount });
+      await loadBillings();
+    } catch (err) {
+      window.alert(err instanceof ApiError ? err.message : 'Gagal mencatat pembayaran');
+    } finally {
+      setPayingId(null);
+    }
+  }
 
   return (
     <DashboardLayout>
@@ -226,81 +298,87 @@ export default function TransaksiPage() {
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               <div className="form-body">
                 <div className="form-field">
-                  <label>Pasien</label>
-                  <select value={selectedPasien} onChange={(e) => setSelectedPasien(e.target.value)}>
-                    {PASIEN_OPTIONS.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
+                  <label>Kunjungan</label>
+                  <select
+                    value={selectedEncounterId}
+                    onChange={(e) => setSelectedEncounterId(e.target.value ? Number(e.target.value) : '')}
+                  >
+                    <option value="">Pilih kunjungan selesai…</option>
+                    {encounters.map((enc) => (
+                      <option key={enc.encounterId} value={enc.encounterId}>
+                        {enc.patientName || `Pasien #${enc.patientId}`} · {enc.noRM || '-'}
                       </option>
                     ))}
                   </select>
+                  {encounters.length === 0 && (
+                    <span className="form-hint">Tidak ada kunjungan selesai hari ini</span>
+                  )}
                 </div>
 
                 <div className="form-field">
                   <label>Tindakan</label>
-                  <select value={selectedTindakan} onChange={(e) => setSelectedTindakan(e.target.value)}>
-                    {TINDAKAN_OPTIONS.map((t) => (
-                      <option key={t.name} value={t.name}>
-                        {t.name} — {formatRupiah(t.price)}
-                      </option>
+                  <div className="item-rows">
+                    {items.map((row) => (
+                      <div key={row.key} className="item-row">
+                        <select value={row.tarifId} onChange={(e) => handleTarifSelect(row.key, e.target.value)}>
+                          <option value="">Pilih tindakan…</option>
+                          {tarifs.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name} — {formatRupiah(t.hargaJual)}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          min={1}
+                          value={row.quantity}
+                          onChange={(e) => updateRow(row.key, { quantity: Math.max(1, Number(e.target.value) || 1) })}
+                          title="Jumlah"
+                        />
+                        <button
+                          type="button"
+                          className="btn-icon-sm"
+                          onClick={() => setItems((prev) => prev.filter((r) => r.key !== row.key))}
+                          disabled={items.length === 1}
+                          title="Hapus tindakan"
+                        >
+                          <span className="material-symbols-rounded">close</span>
+                        </button>
+                      </div>
                     ))}
-                  </select>
-                </div>
-
-                <div className="form-row-2">
-                  <div className="form-field">
-                    <label>Diskon (%)</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={diskon}
-                      onChange={(e) => setDiskon(e.target.value)}
-                    />
                   </div>
-                  <div className="form-field">
-                    <label>Status</label>
-                    <select value={status} onChange={(e) => setStatus(e.target.value as Status)}>
-                      <option value="lunas">Lunas</option>
-                      <option value="pending">Menunggu</option>
-                      <option value="belum">Belum Bayar</option>
-                    </select>
-                  </div>
+                  <button
+                    type="button"
+                    className="btn-outline"
+                    style={{ alignSelf: 'flex-start', marginTop: 8 }}
+                    onClick={() => setItems((prev) => [...prev, emptyRow()])}
+                  >
+                    <span className="material-symbols-rounded">add</span>
+                    Tambah Tindakan
+                  </button>
                 </div>
 
                 <div className="form-field">
-                  <label>Metode Pembayaran</label>
-                  <select value={metode} onChange={(e) => setMetode(e.target.value)}>
-                    {METODE_OPTIONS.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </select>
+                  <label>Catatan (opsional)</label>
+                  <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
                 </div>
 
                 <div className="summary-box">
-                  <div className="summary-row">
-                    <span>Harga Tindakan</span>
-                    <span>{formatRupiah(tindakanPrice)}</span>
-                  </div>
-                  <div className="summary-row">
-                    <span>Diskon</span>
-                    <span>-{diskonValue}%</span>
-                  </div>
                   <div className="summary-row total">
                     <span>Total Bayar</span>
-                    <span>{formatRupiah(totalAfterDiskon)}</span>
+                    <span>{formatRupiah(grandTotal)}</span>
                   </div>
                 </div>
+
+                {submitError && <div className="form-error">{submitError}</div>}
               </div>
 
               <div className="form-footer">
-                <button type="submit" className="btn-primary">
+                <button type="submit" className="btn-primary" disabled={submitting}>
                   <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
                     add
                   </span>
-                  Simpan Transaksi
+                  {submitting ? 'Menyimpan…' : 'Simpan Transaksi'}
                 </button>
               </div>
             </form>
@@ -313,7 +391,7 @@ export default function TransaksiPage() {
                 <span className="material-symbols-rounded">search</span>
                 <input
                   type="text"
-                  placeholder="Cari pasien, No. invoice, tindakan…"
+                  placeholder="Cari pasien atau No. invoice…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -327,22 +405,22 @@ export default function TransaksiPage() {
                   Semua
                 </button>
                 <button
-                  className={`filter-tab ${currentFilter === 'lunas' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('lunas')}
+                  className={`filter-tab ${currentFilter === 'paid' ? 'active' : ''}`}
+                  onClick={() => setCurrentFilter('paid')}
                   type="button"
                 >
                   Lunas
                 </button>
                 <button
-                  className={`filter-tab ${currentFilter === 'pending' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('pending')}
+                  className={`filter-tab ${currentFilter === 'partial' ? 'active' : ''}`}
+                  onClick={() => setCurrentFilter('partial')}
                   type="button"
                 >
-                  Menunggu
+                  Sebagian
                 </button>
                 <button
-                  className={`filter-tab ${currentFilter === 'belum' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('belum')}
+                  className={`filter-tab ${currentFilter === 'unpaid' ? 'active' : ''}`}
+                  onClick={() => setCurrentFilter('unpaid')}
                   type="button"
                 >
                   Belum Bayar
@@ -351,10 +429,24 @@ export default function TransaksiPage() {
             </div>
 
             <div className="panel-sort">
-              <span className="sort-label">{filteredTransaksi.length} transaksi ditemukan</span>
+              <span className="sort-label">
+                {loadingList ? 'Memuat…' : `${filteredBillings.length} transaksi ditemukan`}
+              </span>
+              <button type="button" className="btn-outline" onClick={loadBillings}>
+                <span className="material-symbols-rounded">refresh</span>
+                Muat Ulang
+              </button>
             </div>
 
-            {filteredTransaksi.length === 0 ? (
+            {listError ? (
+              <div className="riwayat-empty">
+                <div className="empty-icon-wrap">
+                  <span className="material-symbols-rounded">error</span>
+                </div>
+                <div className="empty-title">Gagal memuat riwayat</div>
+                <div className="empty-sub">{listError}</div>
+              </div>
+            ) : !loadingList && filteredBillings.length === 0 ? (
               <div className="riwayat-empty">
                 <div className="empty-icon-wrap">
                   <span className="material-symbols-rounded">receipt_long</span>
@@ -364,25 +456,36 @@ export default function TransaksiPage() {
               </div>
             ) : (
               <div className="transaksi-list">
-                {filteredTransaksi.map((t) => (
-                  <div key={t.id} className="transaksi-item">
-                    <div className="transaksi-icon">
-                      <span className="material-symbols-rounded">receipt</span>
-                    </div>
-                    <div className="transaksi-info">
-                      <div className="transaksi-name">
-                        {t.patientName} · {t.tindakan}
+                {filteredBillings.map((b) => {
+                  const { tag, label } = statusTag(b.status);
+                  return (
+                    <div key={b.billingId} className="transaksi-item">
+                      <div className="transaksi-icon">
+                        <span className="material-symbols-rounded">receipt</span>
                       </div>
-                      <div className="transaksi-meta">
-                        {t.invoiceNo} · {t.metode} · {t.date}
+                      <div className="transaksi-info">
+                        <div className="transaksi-name">{b.patientName || `Pasien #${b.encounterId}`}</div>
+                        <div className="transaksi-meta">
+                          {b.invoiceNumber} · {formatDate(b.createdAt)}
+                        </div>
                       </div>
+                      <div className="transaksi-right">
+                        <div className="transaksi-amount">{formatRupiah(b.grandTotal)}</div>
+                        <span className={`tag ${tag}`}>{label}</span>
+                      </div>
+                      {(b.status === 'unpaid' || b.status === 'partial') && (
+                        <button
+                          type="button"
+                          className="btn-outline"
+                          disabled={payingId === b.billingId}
+                          onClick={() => handleRecordPayment(b)}
+                        >
+                          {payingId === b.billingId ? '…' : 'Bayar'}
+                        </button>
+                      )}
                     </div>
-                    <div className="transaksi-right">
-                      <div className="transaksi-amount">{formatRupiah(t.amount)}</div>
-                      <span className={`tag ${t.status}`}>{statusLabel(t.status)}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

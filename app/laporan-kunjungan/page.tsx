@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Area,
   AreaChart,
@@ -18,31 +18,11 @@ import {
 } from 'recharts';
 import { FiActivity, FiCheckCircle, FiUserCheck, FiXCircle } from 'react-icons/fi';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import { useAuth } from '@/lib/auth-context';
+import { reportsApi, VisitReportResponse } from '@/lib/reports';
 import '../styles/laporan.css';
 
 type RangeOption = '7hari' | '30hari' | 'bulanini';
-
-const HARIAN_KUNJUNGAN = [
-  { tanggal: '16 Jun', selesai: 12, batal: 1, menunggu: 2 },
-  { tanggal: '17 Jun', selesai: 9, batal: 0, menunggu: 3 },
-  { tanggal: '18 Jun', selesai: 14, batal: 2, menunggu: 1 },
-  { tanggal: '19 Jun', selesai: 11, batal: 1, menunggu: 4 },
-  { tanggal: '20 Jun', selesai: 16, batal: 1, menunggu: 2 },
-  { tanggal: '21 Jun', selesai: 13, batal: 0, menunggu: 5 },
-];
-
-const STATUS_BREAKDOWN = [
-  { name: 'Selesai', value: 75, color: '#2DCB8A' },
-  { name: 'Menunggu', value: 17, color: '#F5A623' },
-  { name: 'Dibatalkan', value: 5, color: '#FF4D4F' },
-];
-
-const DOKTER_KUNJUNGAN = [
-  { dokter: 'drg. Rina Susanti', jumlah: 38 },
-  { dokter: 'drg. Anton Wijaya', jumlah: 29 },
-  { dokter: 'drg. Maya Putri', jumlah: 21 },
-  { dokter: 'drg. Dedi Hartono', jumlah: 15 },
-];
 
 const RANGE_LABELS: Record<RangeOption, string> = {
   '7hari': '7 Hari Terakhir',
@@ -50,16 +30,91 @@ const RANGE_LABELS: Record<RangeOption, string> = {
   bulanini: 'Bulan Ini',
 };
 
-export default function LaporanKunjunganPage() {
-  const [range, setRange] = useState<RangeOption>('7hari');
+function toIsoDate(date: Date) {
+  return date.toISOString().split('T')[0];
+}
 
-  const totalKunjungan = useMemo(
-    () => HARIAN_KUNJUNGAN.reduce((sum, d) => sum + d.selesai + d.batal + d.menunggu, 0),
-    []
+function getDateRange(range: RangeOption): { dateFrom: string; dateTo: string } {
+  const today = new Date();
+  const dateTo = toIsoDate(today);
+
+  if (range === 'bulanini') {
+    const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    return { dateFrom: toIsoDate(firstOfMonth), dateTo };
+  }
+
+  const days = range === '7hari' ? 6 : 29;
+  const dateFrom = new Date(today);
+  dateFrom.setDate(dateFrom.getDate() - days);
+  return { dateFrom: toIsoDate(dateFrom), dateTo };
+}
+
+function formatTanggal(isoDate: string) {
+  const date = new Date(isoDate);
+  return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+}
+
+export default function LaporanKunjunganPage() {
+  const { loading: authLoading } = useAuth();
+  const [range, setRange] = useState<RangeOption>('7hari');
+  const [report, setReport] = useState<VisitReportResponse['data'] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  if (authLoading) {
+    return (
+      <DashboardLayout>
+        <main className="content laporan-page">
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+            Memuat...
+          </div>
+        </main>
+      </DashboardLayout>
+    );
+  }
+
+  useEffect(() => {
+    async function loadReport() {
+      const { dateFrom, dateTo } = getDateRange(range);
+      setLoading(true);
+      setError(null);
+
+      try {
+        const res = await reportsApi.getVisits({ dateFrom, dateTo, limit: 1 });
+        setReport(res.data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Gagal memuat laporan kunjungan');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadReport();
+  }, [range]);
+
+  const harianKunjungan = useMemo(
+    () => (report?.byDay ?? []).map((d) => ({ tanggal: formatTanggal(d.date), jumlah: d.count })),
+    [report],
   );
-  const totalSelesai = useMemo(() => HARIAN_KUNJUNGAN.reduce((sum, d) => sum + d.selesai, 0), []);
-  const totalBatal = useMemo(() => HARIAN_KUNJUNGAN.reduce((sum, d) => sum + d.batal, 0), []);
-  const rataRata = (totalKunjungan / HARIAN_KUNJUNGAN.length).toFixed(1);
+
+  const statusBreakdown = useMemo(() => {
+    if (!report) return [];
+    return [
+      { name: 'Selesai', value: report.summary.finished, color: '#2DCB8A' },
+      { name: 'Berjalan', value: report.summary.inProgress, color: '#F5A623' },
+      { name: 'Dibatalkan', value: report.summary.cancelled, color: '#FF4D4F' },
+    ];
+  }, [report]);
+
+  const dokterKunjungan = useMemo(
+    () => (report?.byDoctor ?? []).map((d) => ({ dokter: d.practitionerName, jumlah: d.count })),
+    [report],
+  );
+
+  const totalKunjungan = report?.summary.total ?? 0;
+  const totalSelesai = report?.summary.finished ?? 0;
+  const totalBatal = report?.summary.cancelled ?? 0;
+  const rataRata = harianKunjungan.length > 0 ? (totalKunjungan / harianKunjungan.length).toFixed(1) : '0.0';
 
   return (
     <DashboardLayout>
@@ -85,13 +140,15 @@ export default function LaporanKunjunganPage() {
           </div>
         </div>
 
+        {error && <div className="laporan-error">{error}</div>}
+
         <div className="stat-grid">
           <div className="stat-card total">
             <div className="stat-icon">
               <FiActivity />
             </div>
             <div className="stat-info">
-              <div className="stat-value">{totalKunjungan}</div>
+              <div className="stat-value">{loading ? '...' : totalKunjungan}</div>
               <div className="stat-label">Total Kunjungan</div>
             </div>
           </div>
@@ -100,7 +157,7 @@ export default function LaporanKunjunganPage() {
               <FiCheckCircle />
             </div>
             <div className="stat-info">
-              <div className="stat-value">{totalSelesai}</div>
+              <div className="stat-value">{loading ? '...' : totalSelesai}</div>
               <div className="stat-label">Kunjungan Selesai</div>
             </div>
           </div>
@@ -109,7 +166,7 @@ export default function LaporanKunjunganPage() {
               <FiXCircle />
             </div>
             <div className="stat-info">
-              <div className="stat-value">{totalBatal}</div>
+              <div className="stat-value">{loading ? '...' : totalBatal}</div>
               <div className="stat-label">Dibatalkan</div>
             </div>
           </div>
@@ -118,7 +175,7 @@ export default function LaporanKunjunganPage() {
               <FiUserCheck />
             </div>
             <div className="stat-info">
-              <div className="stat-value">{rataRata}</div>
+              <div className="stat-value">{loading ? '...' : rataRata}</div>
               <div className="stat-label">Rata-rata / Hari</div>
             </div>
           </div>
@@ -131,7 +188,7 @@ export default function LaporanKunjunganPage() {
             </div>
             <div className="chart-body">
               <ResponsiveContainer width="100%" height={280}>
-                <AreaChart data={HARIAN_KUNJUNGAN}>
+                <AreaChart data={harianKunjungan}>
                   <defs>
                     <linearGradient id="selesaiGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#4F7EF8" stopOpacity={0.35} />
@@ -144,8 +201,8 @@ export default function LaporanKunjunganPage() {
                   <Tooltip />
                   <Area
                     type="monotone"
-                    dataKey="selesai"
-                    name="Selesai"
+                    dataKey="jumlah"
+                    name="Kunjungan"
                     stroke="#4F7EF8"
                     fill="url(#selesaiGrad)"
                     strokeWidth={2.5}
@@ -163,14 +220,14 @@ export default function LaporanKunjunganPage() {
               <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
                   <Pie
-                    data={STATUS_BREAKDOWN}
+                    data={statusBreakdown}
                     dataKey="value"
                     nameKey="name"
                     innerRadius={55}
                     outerRadius={85}
                     paddingAngle={3}
                   >
-                    {STATUS_BREAKDOWN.map((entry) => (
+                    {statusBreakdown.map((entry) => (
                       <Cell key={entry.name} fill={entry.color} />
                     ))}
                   </Pie>
@@ -187,7 +244,7 @@ export default function LaporanKunjunganPage() {
             </div>
             <div className="chart-body">
               <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={DOKTER_KUNJUNGAN} layout="vertical" margin={{ left: 20 }}>
+                <BarChart data={dokterKunjungan} layout="vertical" margin={{ left: 20 }}>
                   <CartesianGrid stroke="#E8ECF4" horizontal={false} />
                   <XAxis type="number" tick={{ fontSize: 12, fill: '#6B7A99' }} axisLine={false} tickLine={false} />
                   <YAxis

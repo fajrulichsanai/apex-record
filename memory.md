@@ -50,8 +50,10 @@ Semua butuh `@Roles(OWNER, SUPER_ADMIN)` kecuali disebutkan beda.
 - Seed Super Admin: `src/database/seeds/super-admin.seed.ts`, env `SUPER_ADMIN_EMAIL`/`SUPER_ADMIN_PASSWORD` (fallback dev only).
 
 ## Bug yang ditemukan & belum diperbaiki
-- `src/database/seeds/owner-code.seed.ts` → `seedOwnerCodes()` lempar `TypeError: target.split is not a function` saat `npm run seed` (mismatch versi TypeORM `createTable` API). **Belum diperbaiki** — di luar scope task User Management. Workaround: insert Super Admin manual via SQL.
 - `/(kunjungan)/list-kunjungan/page.tsx` (FE) — `useSearchParams()` tanpa Suspense boundary, bikin `next build` gagal di production build. **Belum diperbaiki**, di luar scope.
+
+## Bug yang sudah diperbaiki
+- `src/database/seeds/owner-code.seed.ts` → `seedOwnerCodes()` dulu lempar `TypeError: target.split is not a function` saat `npm run seed`. Root cause: `queryRunner.createTable()` di TypeORM `^1.0.0` butuh instance `Table`, bukan plain object (kode lama pakai `as any` cast). **Fixed**: import `Table` dari `typeorm`, wrap definisi tabel dengan `new Table({...})`. Sudah diverifikasi jalan — `npm run seed` berhasil seed APEX001-005.
 
 ## Frontend wiring
 - `lib/auth-context.tsx` — `AuthProvider`/`useAuth()`. Hydrate dari `localStorage` (`token`, `user`) **di dalam `useEffect`** (sengaja, bukan lazy `useState` initializer) supaya tidak ada SSR/hydration mismatch.

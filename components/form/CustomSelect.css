@@ -1,0 +1,119 @@
+.custom-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1.5px solid #E8ECF4;
+  border-radius: 8px;
+  background: #FFFFFF;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: #1A2340;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  text-align: left;
+  outline: none;
+}
+
+.custom-select-trigger:hover:not(:disabled) {
+  border-color: #4F7EF8;
+}
+
+.custom-select-trigger:focus-visible {
+  border-color: #4F7EF8;
+  box-shadow: 0 0 0 3px rgba(79, 126, 248, 0.12);
+}
+
+.custom-select-trigger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.custom-select-trigger.open {
+  border-color: #4F7EF8;
+  box-shadow: 0 0 0 3px rgba(79, 126, 248, 0.12);
+}
+
+.custom-select-value {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.custom-select-arrow {
+  font-size: 18px;
+  color: #A0AEC0;
+  flex-shrink: 0;
+  margin-left: 8px;
+  transition: transform 0.2s ease;
+}
+
+.custom-select-trigger.open .custom-select-arrow {
+  transform: rotate(180deg);
+}
+
+.custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #FFFFFF;
+  border: 1px solid #E8ECF4;
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
+  z-index: 1000;
+  overflow: hidden;
+  animation: slideDown 0.15s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.custom-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: none;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: #1A2340;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  text-align: left;
+  outline: none;
+}
+
+.custom-select-option:hover {
+  background-color: #F5F6FA;
+}
+
+.custom-select-option.selected {
+  background-color: #EBF1FF;
+  color: #4F7EF8;
+  font-weight: 600;
+}
+
+.custom-select-option .check-icon {
+  font-size: 16px;
+  color: #4F7EF8;
+  flex-shrink: 0;
+  margin-left: 8px;
+}

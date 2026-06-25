@@ -1,58 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { patientsApi, PatientPayload, SatusehatPatientResult } from '@/lib/patients';
+import { ApiError } from '@/lib/api-client';
 
-type Gender = 'laki-laki' | 'perempuan' | 'bayi';
+type UiGender = 'laki-laki' | 'perempuan';
 
-export interface NewPatientInput {
-  name: string;
-  gender: Gender;
-  nik: string;
-  birthDate: string;
-  phone: string;
-  address: string;
-  motherName?: string;
-}
-
-interface SatuSehatResult {
-  nik: string;
-  name: string;
-  birthDate: string;
-  gender: 'laki-laki' | 'perempuan';
-  address: string;
-}
-
-const MOCK_SATUSEHAT_DB: SatuSehatResult[] = [
-  {
-    nik: '3201012003900001',
-    name: 'Ahmad Ridwan Saputra',
-    birthDate: '1990-03-20',
-    gender: 'laki-laki',
-    address: 'Jl. Merdeka No. 12, Bandung',
-  },
-  {
-    nik: '3201015506950002',
-    name: 'Siti Rahayu Putri',
-    birthDate: '1995-06-15',
-    gender: 'perempuan',
-    address: 'Jl. Sudirman No. 45, Bandung',
-  },
-  {
-    nik: '3201017801850003',
-    name: 'Budi Santoso',
-    birthDate: '1985-01-17',
-    gender: 'laki-laki',
-    address: 'Jl. Asia Afrika No. 8, Bandung',
-  },
-];
-
-type TabKey = 'satusehat' | 'baru' | 'bayi';
-
-const TABS: { key: TabKey; label: string; icon: string }[] = [
-  { key: 'satusehat', label: 'Cari di SatuSehat', icon: 'travel_explore' },
-  { key: 'baru', label: 'Pasien Baru', icon: 'person_add' },
-  { key: 'bayi', label: 'Pasien Bayi', icon: 'child_care' },
-];
+export type NewPatientInput = PatientPayload;
 
 function getInitials(name: string) {
   return (
@@ -66,41 +20,90 @@ function getInitials(name: string) {
   );
 }
 
+function uiGenderToApi(gender: UiGender): 'male' | 'female' {
+  return gender === 'laki-laki' ? 'male' : 'female';
+}
+
+type TabKey = 'satusehat' | 'baru' | 'bayi';
+
+const TABS: { key: TabKey; label: string; icon: string }[] = [
+  { key: 'satusehat', label: 'Cari di SatuSehat', icon: 'travel_explore' },
+  { key: 'baru', label: 'Pasien Baru', icon: 'person_add' },
+  { key: 'bayi', label: 'Pasien Bayi', icon: 'child_care' },
+];
+
+interface FormNewState {
+  name: string;
+  gender: UiGender;
+  nik: string;
+  birthDate: string;
+  phone: string;
+  email: string;
+  address: string;
+  city: string;
+  province: string;
+  postalCode: string;
+  maritalStatus: '' | 'single' | 'married' | 'divorced' | 'widowed';
+}
+
+interface FormBabyState {
+  name: string;
+  babySex: UiGender;
+  birthDate: string;
+  motherName: string;
+  nikIbu: string;
+  phone: string;
+  address: string;
+  city: string;
+  province: string;
+  postalCode: string;
+}
+
 interface AddPatientModalProps {
   onClose: () => void;
-  onCreate: (patient: NewPatientInput) => void;
+  onCreate: (patient: PatientPayload) => void;
 }
 
 export default function AddPatientModal({ onClose, onCreate }: AddPatientModalProps) {
   const [activeTab, setActiveTab] = useState<TabKey>('satusehat');
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [ssQuery, setSsQuery] = useState('');
   const [ssSearched, setSsSearched] = useState(false);
   const [ssLoading, setSsLoading] = useState(false);
-  const [ssResults, setSsResults] = useState<SatuSehatResult[]>([]);
+  const [ssError, setSsError] = useState<string | null>(null);
+  const [ssResults, setSsResults] = useState<SatusehatPatientResult[]>([]);
 
-  const [formNew, setFormNew] = useState<NewPatientInput>({
+  const [formNew, setFormNew] = useState<FormNewState>({
     name: '',
     gender: 'laki-laki',
     nik: '',
     birthDate: '',
     phone: '',
+    email: '',
     address: '',
+    city: '',
+    province: '',
+    postalCode: '',
+    maritalStatus: '',
   });
 
-  const [formBaby, setFormBaby] = useState<NewPatientInput>({
+  const [formBaby, setFormBaby] = useState<FormBabyState>({
     name: '',
-    gender: 'bayi',
-    nik: '',
+    babySex: 'laki-laki',
     birthDate: '',
+    motherName: '',
+    nikIbu: '',
     phone: '',
     address: '',
-    motherName: '',
+    city: '',
+    province: '',
+    postalCode: '',
   });
-  const [babySex, setBabySex] = useState<'laki-laki' | 'perempuan'>('laki-laki');
 
-  const handleSearchSatuSehat = () => {
-    const q = ssQuery.trim().toLowerCase();
+  const handleSearchSatuSehat = async () => {
+    const q = ssQuery.trim();
     if (!q) {
       setSsSearched(true);
       setSsResults([]);
@@ -108,38 +111,76 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
     }
     setSsLoading(true);
     setSsSearched(false);
-    window.setTimeout(() => {
-      setSsResults(
-        MOCK_SATUSEHAT_DB.filter(
-          (r) => r.nik.includes(q) || r.name.toLowerCase().includes(q)
-        )
-      );
+    setSsError(null);
+    try {
+      const results = await patientsApi.searchSatusehat(q);
+      setSsResults(results ?? []);
+    } catch (err) {
+      setSsError(err instanceof ApiError ? err.message : 'Gagal menghubungi layanan SatuSehat');
+      setSsResults([]);
+    } finally {
       setSsLoading(false);
       setSsSearched(true);
-    }, 450);
+    }
   };
 
-  const handleSelectSatuSehatResult = (result: SatuSehatResult) => {
+  const handleSelectSatuSehatResult = (result: SatusehatPatientResult) => {
     onCreate({
       name: result.name,
-      gender: result.gender,
+      gender: result.gender ?? 'male',
       nik: result.nik,
-      birthDate: result.birthDate,
-      phone: '',
+      dateOfBirth: result.birthDate,
       address: result.address,
     });
   };
 
-  const handleSubmitNew = (e: React.FormEvent) => {
+  const handleSubmitNew = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formNew.name.trim()) return;
-    onCreate(formNew);
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      const payload: PatientPayload = {
+        name: formNew.name,
+        gender: uiGenderToApi(formNew.gender),
+        nik: formNew.nik || undefined,
+        dateOfBirth: formNew.birthDate || undefined,
+        phone: formNew.phone || undefined,
+        email: formNew.email || undefined,
+        address: formNew.address || undefined,
+        city: formNew.city || undefined,
+        province: formNew.province || undefined,
+        postalCode: formNew.postalCode || undefined,
+        maritalStatus: formNew.maritalStatus || undefined,
+      };
+      onCreate(payload);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleSubmitBaby = (e: React.FormEvent) => {
+  const handleSubmitBaby = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formBaby.name.trim() || !formBaby.motherName?.trim()) return;
-    onCreate({ ...formBaby, gender: 'bayi' });
+    if (!formBaby.name.trim() || !formBaby.motherName.trim()) return;
+    setSubmitError(null);
+    setSubmitting(true);
+    try {
+      const payload: PatientPayload = {
+        name: formBaby.name,
+        gender: uiGenderToApi(formBaby.babySex),
+        isNewborn: true,
+        nikIbu: formBaby.nikIbu || undefined,
+        dateOfBirth: formBaby.birthDate || undefined,
+        phone: formBaby.phone || undefined,
+        address: formBaby.address || undefined,
+        city: formBaby.city || undefined,
+        province: formBaby.province || undefined,
+        postalCode: formBaby.postalCode || undefined,
+      };
+      onCreate(payload);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -181,7 +222,7 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
                 <span className="material-symbols-rounded search-icon">search</span>
                 <input
                   type="text"
-                  placeholder="Masukkan NIK atau nama lengkap pasien…"
+                  placeholder="Masukkan NIK pasien…"
                   value={ssQuery}
                   onChange={(e) => setSsQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearchSatuSehat()}
@@ -198,9 +239,7 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
               <div className="satusehat-hint">
                 <span className="material-symbols-rounded">info</span>
                 <span>
-                  Hasil pencarian saat ini menggunakan data simulasi untuk keperluan demonstrasi.
-                  Integrasi resmi dengan Platform SatuSehat akan diaktifkan setelah kredensial
-                  klinik diverifikasi.
+                  Pencarian dilakukan langsung ke Platform SatuSehat berdasarkan NIK pasien.
                 </span>
               </div>
 
@@ -211,13 +250,21 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
                 </div>
               )}
 
-              {!ssLoading && ssSearched && ssResults.length === 0 && (
+              {!ssLoading && ssError && (
+                <div className="satusehat-empty">
+                  <span className="material-symbols-rounded">error</span>
+                  <div className="empty-title">Gagal mencari data</div>
+                  <div className="empty-sub">{ssError}</div>
+                </div>
+              )}
+
+              {!ssLoading && !ssError && ssSearched && ssResults.length === 0 && (
                 <div className="satusehat-empty">
                   <span className="material-symbols-rounded">search_off</span>
                   <div className="empty-title">Data tidak ditemukan</div>
                   <div className="empty-sub">
-                    Periksa kembali NIK atau nama yang dimasukkan, atau daftarkan pasien secara
-                    manual melalui tab &ldquo;Pasien Baru&rdquo;.
+                    Periksa kembali NIK yang dimasukkan, atau daftarkan pasien secara manual
+                    melalui tab &ldquo;Pasien Baru&rdquo;.
                   </div>
                 </div>
               )}
@@ -243,7 +290,9 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
                           </span>
                         </div>
                         <div className="satusehat-result-meta">
-                          NIK {r.nik} · Lahir {r.birthDate} · {r.address}
+                          NIK {r.nik}
+                          {r.birthDate ? ` · Lahir ${r.birthDate}` : ''}
+                          {r.address ? ` · ${r.address}` : ''}
                         </div>
                       </div>
                       <span className="material-symbols-rounded chevron-icon">chevron_right</span>
@@ -264,6 +313,7 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
           <form onSubmit={handleSubmitNew}>
             <div className="modal-body">
               <div className="form-section-title">Data Identitas Pasien</div>
+              {submitError && <div className="satusehat-empty">{submitError}</div>}
               <div className="form-row">
                 <div className="form-field full">
                   <label>Nama Lengkap</label>
@@ -280,7 +330,7 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
                   <select
                     value={formNew.gender}
                     onChange={(e) =>
-                      setFormNew({ ...formNew, gender: e.target.value as Gender })
+                      setFormNew({ ...formNew, gender: e.target.value as UiGender })
                     }
                   >
                     <option value="laki-laki">Laki-laki</option>
@@ -313,6 +363,33 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
                     onChange={(e) => setFormNew({ ...formNew, phone: e.target.value })}
                   />
                 </div>
+                <div className="form-field">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    placeholder="nama@email.com"
+                    value={formNew.email}
+                    onChange={(e) => setFormNew({ ...formNew, email: e.target.value })}
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Status Perkawinan</label>
+                  <select
+                    value={formNew.maritalStatus}
+                    onChange={(e) =>
+                      setFormNew({
+                        ...formNew,
+                        maritalStatus: e.target.value as FormNewState['maritalStatus'],
+                      })
+                    }
+                  >
+                    <option value="">Tidak diisi</option>
+                    <option value="single">Belum Menikah</option>
+                    <option value="married">Menikah</option>
+                    <option value="divorced">Cerai Hidup</option>
+                    <option value="widowed">Cerai Mati</option>
+                  </select>
+                </div>
                 <div className="form-field full">
                   <label>Alamat Domisili</label>
                   <textarea
@@ -321,17 +398,44 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
                     onChange={(e) => setFormNew({ ...formNew, address: e.target.value })}
                   />
                 </div>
+                <div className="form-field">
+                  <label>Kota / Kabupaten</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Bandung"
+                    value={formNew.city}
+                    onChange={(e) => setFormNew({ ...formNew, city: e.target.value })}
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Provinsi</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: Jawa Barat"
+                    value={formNew.province}
+                    onChange={(e) => setFormNew({ ...formNew, province: e.target.value })}
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Kode Pos</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: 40123"
+                    value={formNew.postalCode}
+                    onChange={(e) => setFormNew({ ...formNew, postalCode: e.target.value })}
+                  />
+                </div>
               </div>
             </div>
             <div className="modal-footer">
               <button type="button" className="btn-outline" onClick={onClose}>
                 Batalkan
               </button>
-              <button type="submit" className="btn-primary">
+              <button type="submit" className="btn-primary" disabled={submitting}>
                 <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
                   save
                 </span>
-                Simpan Data Pasien
+                {submitting ? 'Menyimpan…' : 'Simpan Data Pasien'}
               </button>
             </div>
           </form>
@@ -341,6 +445,7 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
           <form onSubmit={handleSubmitBaby}>
             <div className="modal-body">
               <div className="form-section-title">Data Identitas Bayi</div>
+              {submitError && <div className="satusehat-empty">{submitError}</div>}
               <div className="form-row">
                 <div className="form-field full">
                   <label>Nama Bayi</label>
@@ -355,8 +460,10 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
                 <div className="form-field">
                   <label>Jenis Kelamin</label>
                   <select
-                    value={babySex}
-                    onChange={(e) => setBabySex(e.target.value as 'laki-laki' | 'perempuan')}
+                    value={formBaby.babySex}
+                    onChange={(e) =>
+                      setFormBaby({ ...formBaby, babySex: e.target.value as UiGender })
+                    }
                   >
                     <option value="laki-laki">Laki-laki</option>
                     <option value="perempuan">Perempuan</option>
@@ -389,8 +496,8 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
                   <input
                     type="text"
                     placeholder="16 digit NIK"
-                    value={formBaby.nik}
-                    onChange={(e) => setFormBaby({ ...formBaby, nik: e.target.value })}
+                    value={formBaby.nikIbu}
+                    onChange={(e) => setFormBaby({ ...formBaby, nikIbu: e.target.value })}
                   />
                 </div>
                 <div className="form-field">
@@ -410,17 +517,41 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
                     onChange={(e) => setFormBaby({ ...formBaby, address: e.target.value })}
                   />
                 </div>
+                <div className="form-field">
+                  <label>Kota / Kabupaten</label>
+                  <input
+                    type="text"
+                    value={formBaby.city}
+                    onChange={(e) => setFormBaby({ ...formBaby, city: e.target.value })}
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Provinsi</label>
+                  <input
+                    type="text"
+                    value={formBaby.province}
+                    onChange={(e) => setFormBaby({ ...formBaby, province: e.target.value })}
+                  />
+                </div>
+                <div className="form-field">
+                  <label>Kode Pos</label>
+                  <input
+                    type="text"
+                    value={formBaby.postalCode}
+                    onChange={(e) => setFormBaby({ ...formBaby, postalCode: e.target.value })}
+                  />
+                </div>
               </div>
             </div>
             <div className="modal-footer">
               <button type="button" className="btn-outline" onClick={onClose}>
                 Batalkan
               </button>
-              <button type="submit" className="btn-primary">
+              <button type="submit" className="btn-primary" disabled={submitting}>
                 <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
                   save
                 </span>
-                Simpan Data Pasien Bayi
+                {submitting ? 'Menyimpan…' : 'Simpan Data Pasien Bayi'}
               </button>
             </div>
           </form>

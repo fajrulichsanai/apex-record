@@ -1,78 +1,34 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import AddPatientModal, { NewPatientInput } from './AddPatientModal';
+import AddPatientModal from './AddPatientModal';
+import EditPatientModal from './EditPatientModal';
+import { patientsApi, Patient, PatientPayload, Encounter, ApiGender } from '@/lib/patients';
+import { ApiError } from '@/lib/api-client';
 import '../../styles/list-pasien.css';
 
-type Gender = 'laki-laki' | 'perempuan' | 'bayi';
-type FilterValue = 'semua' | Gender;
+type UiGender = 'laki-laki' | 'perempuan' | 'bayi';
+type FilterValue = 'semua' | UiGender;
 
-interface Patient {
-  id: number;
-  name: string;
-  gender: Gender;
-  rmNumber: string;
-  age: number;
-  active: boolean;
-  avatarInitials: string;
+function apiGenderToUi(patient: Patient): UiGender {
+  if (!patient.nik && patient.nikIbu) return 'bayi';
+  return patient.gender === 'male' ? 'laki-laki' : 'perempuan';
 }
 
-const PATIENTS: Patient[] = [
-  {
-    id: 1,
-    name: 'Mu** Da** Sa**',
-    gender: 'perempuan',
-    rmNumber: '000001',
-    age: 0,
-    active: true,
-    avatarInitials: 'MD',
-  },
-  {
-    id: 2,
-    name: 'Ahmad Ri**',
-    gender: 'laki-laki',
-    rmNumber: '000002',
-    age: 28,
-    active: false,
-    avatarInitials: 'AR',
-  },
-  {
-    id: 3,
-    name: 'By. Ny. Sa**',
-    gender: 'bayi',
-    rmNumber: '000003',
-    age: 0,
-    active: true,
-    avatarInitials: 'BY',
-  },
-  {
-    id: 4,
-    name: 'Budi Su**',
-    gender: 'laki-laki',
-    rmNumber: '000004',
-    age: 45,
-    active: true,
-    avatarInitials: 'BS',
-  },
-  {
-    id: 5,
-    name: 'Siti Ra**',
-    gender: 'perempuan',
-    rmNumber: '000005',
-    age: 32,
-    active: false,
-    avatarInitials: 'SR',
-  },
-];
+function genderFilterToApi(filter: FilterValue): ApiGender | undefined {
+  if (filter === 'laki-laki') return 'male';
+  if (filter === 'perempuan') return 'female';
+  return undefined;
+}
 
-function genderTagClass(gender: Gender) {
+function genderTagClass(gender: UiGender) {
   if (gender === 'laki-laki') return 'male';
   if (gender === 'perempuan') return 'female';
   return 'baby';
 }
 
-function genderLabel(gender: Gender) {
+function genderLabel(gender: UiGender) {
   if (gender === 'laki-laki') return 'Laki-laki';
   if (gender === 'perempuan') return 'Perempuan';
   return 'Bayi';
@@ -90,7 +46,7 @@ function initialsFromName(name: string) {
   );
 }
 
-function calcAge(birthDate: string) {
+function calcAge(birthDate?: string) {
   if (!birthDate) return 0;
   const birth = new Date(birthDate);
   if (Number.isNaN(birth.getTime())) return 0;
@@ -103,32 +59,85 @@ function calcAge(birthDate: string) {
   return Math.max(age, 0);
 }
 
+function formatDate(dateStr?: string) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+const ENCOUNTER_STATUS_LABEL: Record<string, string> = {
+  finished: 'Selesai',
+  arrived: 'Sedang Berlangsung',
+  cancelled: 'Dibatalkan',
+};
+
 export default function ListPasienPage() {
-  const [patients, setPatients] = useState<Patient[]>(PATIENTS);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [currentFilter, setCurrentFilter] = useState<FilterValue>('semua');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(
-    PATIENTS[0]?.id ?? null
-  );
+  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [showDetailOnMobile, setShowDetailOnMobile] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const filteredPatients = patients.filter((p) => {
-    const matchGender = currentFilter === 'semua' || p.gender === currentFilter;
-    const q = searchQuery.toLowerCase();
-    const matchSearch =
-      p.name.toLowerCase().includes(q) ||
-      `no.rm ${p.rmNumber}`.toLowerCase().includes(q) ||
-      p.rmNumber.toLowerCase().includes(q);
-    return matchGender && matchSearch;
-  });
+  const [encounters, setEncounters] = useState<Encounter[]>([]);
+  const [encountersLoading, setEncountersLoading] = useState(false);
 
-  const totalCount = patients.length;
-  const maleCount = patients.filter((p) => p.gender === 'laki-laki').length;
-  const femaleCount = patients.filter((p) => p.gender === 'perempuan').length;
-  const babyCount = patients.filter((p) => p.gender === 'bayi').length;
+  const loadPatients = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const data = await patientsApi.list({
+        search: searchQuery || undefined,
+        gender: genderFilterToApi(currentFilter),
+        limit: 100,
+      });
+      setPatients(data);
+      setSelectedPatientId((prev) => prev ?? data[0]?.id ?? null);
+    } catch (err) {
+      setLoadError(err instanceof ApiError ? err.message : 'Gagal memuat data pasien');
+    } finally {
+      setLoading(false);
+    }
+  }, [searchQuery, currentFilter]);
+
+  useEffect(() => {
+    loadPatients();
+  }, [loadPatients]);
 
   const selectedPatient = patients.find((p) => p.id === selectedPatientId) ?? null;
+
+  useEffect(() => {
+    if (!selectedPatient) return;
+    let active = true;
+    setEncountersLoading(true);
+    patientsApi
+      .encounters(selectedPatient.id)
+      .then((data) => {
+        if (active) setEncounters(data);
+      })
+      .catch(() => {
+        if (active) setEncounters([]);
+      })
+      .finally(() => {
+        if (active) setEncountersLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [selectedPatient]);
+
+  const totalCount = patients.length;
+  const maleCount = patients.filter((p) => apiGenderToUi(p) === 'laki-laki').length;
+  const femaleCount = patients.filter((p) => apiGenderToUi(p) === 'perempuan').length;
+  const babyCount = patients.filter((p) => apiGenderToUi(p) === 'bayi').length;
 
   const handleSelectPatient = (id: number) => {
     setSelectedPatientId(id);
@@ -140,23 +149,43 @@ export default function ListPasienPage() {
   };
 
   const handleAddPatient = () => {
+    setCreateError(null);
     setShowAddModal(true);
   };
 
-  const handleCreatePatient = (input: NewPatientInput) => {
-    const nextRm = String(patients.length + 1).padStart(6, '0');
-    const newPatient: Patient = {
-      id: Math.max(0, ...patients.map((p) => p.id)) + 1,
-      name: input.name,
-      gender: input.gender,
-      rmNumber: nextRm,
-      age: calcAge(input.birthDate),
-      active: true,
-      avatarInitials: initialsFromName(input.name),
-    };
-    setPatients((prev) => [newPatient, ...prev]);
-    setSelectedPatientId(newPatient.id);
-    setShowAddModal(false);
+  const handleCreatePatient = async (input: PatientPayload) => {
+    setCreateError(null);
+    try {
+      const created = await patientsApi.create(input);
+      setShowAddModal(false);
+      await loadPatients();
+      setSelectedPatientId(created.id);
+    } catch (err) {
+      setCreateError(err instanceof ApiError ? err.message : 'Gagal menyimpan data pasien');
+    }
+  };
+
+  const handleSavePatient = async (payload: Partial<PatientPayload>) => {
+    if (!selectedPatient) return;
+    const updated = await patientsApi.update(selectedPatient.id, payload);
+    setPatients((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    setShowEditModal(false);
+  };
+
+  const handleDeletePatient = async () => {
+    if (!selectedPatient) return;
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await patientsApi.remove(selectedPatient.id);
+      setPatients((prev) => prev.filter((p) => p.id !== selectedPatient.id));
+      setSelectedPatientId(null);
+      setShowDeleteConfirm(false);
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : 'Gagal menghapus data pasien');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   return (
@@ -195,7 +224,7 @@ export default function ListPasienPage() {
               <div className="stat-label">Total Pasien</div>
             </div>
           </div>
-          <div className="stat-card male">
+          <div className="stat-card male" onClick={() => handleSetFilter('laki-laki')}>
             <div className="stat-icon">
               <span
                 className="material-symbols-rounded"
@@ -209,7 +238,7 @@ export default function ListPasienPage() {
               <div className="stat-label">Laki-laki</div>
             </div>
           </div>
-          <div className="stat-card female">
+          <div className="stat-card female" onClick={() => handleSetFilter('perempuan')}>
             <div className="stat-icon">
               <span
                 className="material-symbols-rounded"
@@ -223,7 +252,7 @@ export default function ListPasienPage() {
               <div className="stat-label">Perempuan</div>
             </div>
           </div>
-          <div className="stat-card baby">
+          <div className="stat-card baby" onClick={() => handleSetFilter('bayi')}>
             <div className="stat-icon">
               <span
                 className="material-symbols-rounded"
@@ -282,40 +311,55 @@ export default function ListPasienPage() {
             </div>
 
             <div className="panel-sort">
-              <span className="sort-label">{filteredPatients.length} Pasien ditemukan</span>
-              <button className="sort-btn">
-                <span className="material-symbols-rounded">swap_vert</span>
-                No. RM
-              </button>
+              <span className="sort-label">
+                {loading ? 'Memuat…' : `${patients.length} Pasien ditemukan`}
+              </span>
             </div>
 
+            {loadError && (
+              <div className="satusehat-empty">
+                <span className="material-symbols-rounded">error</span>
+                <div className="empty-title">Gagal memuat data</div>
+                <div className="empty-sub">{loadError}</div>
+              </div>
+            )}
+
             <div className="patient-list">
-              {filteredPatients.map((patient) => (
-                <div
-                  key={patient.id}
-                  className={`patient-item ${patient.id === selectedPatientId ? 'selected' : ''}`}
-                  onClick={() => handleSelectPatient(patient.id)}
-                >
-                  <div className={`patient-avatar ${genderTagClass(patient.gender)}`}>
-                    {patient.avatarInitials}
-                  </div>
-                  <div className="patient-info">
-                    <div className="patient-name">{patient.name}</div>
-                    <div className="patient-meta">
-                      <span className={`tag ${genderTagClass(patient.gender)}`}>
-                        {genderLabel(patient.gender)}
-                      </span>
-                      <span className="patient-rm">
-                        · No.RM {patient.rmNumber} · {patient.age} th
-                      </span>
+              {patients
+                .filter((p) => currentFilter === 'semua' || apiGenderToUi(p) === currentFilter)
+                .map((patient) => {
+                  const uiGender = apiGenderToUi(patient);
+                  return (
+                    <div
+                      key={patient.id}
+                      className={`patient-item ${patient.id === selectedPatientId ? 'selected' : ''}`}
+                      onClick={() => handleSelectPatient(patient.id)}
+                    >
+                      <div className={`patient-avatar ${genderTagClass(uiGender)}`}>
+                        {initialsFromName(patient.name)}
+                      </div>
+                      <div className="patient-info">
+                        <div className="patient-name">{patient.name}</div>
+                        <div className="patient-meta">
+                          <span className={`tag ${genderTagClass(uiGender)}`}>
+                            {genderLabel(uiGender)}
+                          </span>
+                          <span className="patient-rm">
+                            · No.RM {patient.noRm} · {calcAge(patient.birthDate)} th
+                          </span>
+                        </div>
+                      </div>
+                      <div className="patient-status">
+                        <div
+                          className={`status-dot ${patient.syncStatus === 'failed' ? 'inactive' : ''}`}
+                        />
+                        <span className="material-symbols-rounded chevron-icon">
+                          chevron_right
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="patient-status">
-                    <div className={`status-dot ${patient.active ? '' : 'inactive'}`} />
-                    <span className="material-symbols-rounded chevron-icon">chevron_right</span>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
             </div>
           </div>
 
@@ -334,27 +378,37 @@ export default function ListPasienPage() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', flex: 1 }}>
                 <div className="detail-header">
-                  <div className="detail-avatar">{selectedPatient.avatarInitials}</div>
+                  <div className="detail-avatar">{initialsFromName(selectedPatient.name)}</div>
                   <div className="detail-name-block">
                     <div className="detail-name">{selectedPatient.name}</div>
-                    <div className="detail-rm">No. Rekam Medis: {selectedPatient.rmNumber}</div>
+                    <div className="detail-rm">No. Rekam Medis: {selectedPatient.noRm}</div>
                     <div className="detail-tags">
-                      <span className={`tag ${genderTagClass(selectedPatient.gender)}`}>
-                        {genderLabel(selectedPatient.gender)}
+                      <span className={`tag ${genderTagClass(apiGenderToUi(selectedPatient))}`}>
+                        {genderLabel(apiGenderToUi(selectedPatient))}
                       </span>
-                      <span className={`tag ${selectedPatient.active ? 'active' : ''}`}>
-                        {selectedPatient.active ? 'Aktif' : 'Tidak Aktif'}
+                      <span
+                        className={`tag ${selectedPatient.syncStatus === 'synced' ? 'active' : ''}`}
+                      >
+                        {selectedPatient.syncStatus === 'synced'
+                          ? 'Tersinkron SatuSehat'
+                          : selectedPatient.syncStatus === 'failed'
+                            ? 'Sinkronisasi Gagal'
+                            : 'Belum Disinkronkan'}
                       </span>
                     </div>
                   </div>
                   <div className="detail-actions">
-                    <button className="btn-outline">
+                    <button className="btn-outline" onClick={() => setShowEditModal(true)}>
                       <span className="material-symbols-rounded">edit</span>
                       Edit
                     </button>
                     <button
                       className="btn-outline danger"
                       style={{ color: '#FF4D4F', borderColor: '#FFCCC7' }}
+                      onClick={() => {
+                        setDeleteError(null);
+                        setShowDeleteConfirm(true);
+                      }}
                     >
                       <span className="material-symbols-rounded">delete</span>
                     </button>
@@ -364,23 +418,36 @@ export default function ListPasienPage() {
                 <div className="detail-info-grid">
                   <div className="info-cell">
                     <div className="info-label">Tanggal Lahir</div>
-                    <div className="info-value">—</div>
+                    <div className="info-value">{formatDate(selectedPatient.birthDate)}</div>
                   </div>
                   <div className="info-cell">
                     <div className="info-label">Usia</div>
-                    <div className="info-value">{selectedPatient.age} tahun</div>
+                    <div className="info-value">
+                      {calcAge(selectedPatient.birthDate)} tahun
+                    </div>
                   </div>
                   <div className="info-cell">
                     <div className="info-label">No. Telepon</div>
-                    <div className="info-value">—</div>
+                    <div className="info-value">{selectedPatient.phone || '—'}</div>
                   </div>
                   <div className="info-cell">
                     <div className="info-label">NIK</div>
-                    <div className="info-value">—</div>
+                    <div className="info-value">
+                      {selectedPatient.nik || selectedPatient.nikIbu || '—'}
+                    </div>
                   </div>
                   <div className="info-cell" style={{ gridColumn: '1/-1' }}>
                     <div className="info-label">Alamat</div>
-                    <div className="info-value">—</div>
+                    <div className="info-value">
+                      {[
+                        selectedPatient.address,
+                        selectedPatient.city,
+                        selectedPatient.province,
+                        selectedPatient.postalCode,
+                      ]
+                        .filter(Boolean)
+                        .join(', ') || '—'}
+                    </div>
                   </div>
                 </div>
 
@@ -389,49 +456,23 @@ export default function ListPasienPage() {
                     <span className="material-symbols-rounded">calendar_month</span>
                     Riwayat Kunjungan
                   </div>
-                  <div className="visit-item">
-                    <div className="visit-dot" />
-                    <div className="visit-info">
-                      <div className="visit-type">Pembersihan Karang Gigi</div>
-                      <div className="visit-date">14 Jun 2025 · drg. Rina Susanti</div>
-                    </div>
-                    <div className="visit-price">Rp 150.000</div>
-                  </div>
-                  <div className="visit-item">
-                    <div className="visit-dot" style={{ background: 'var(--text-muted)' }} />
-                    <div className="visit-info">
-                      <div className="visit-type">Konsultasi Awal</div>
-                      <div className="visit-date">02 Jun 2025 · drg. Rina Susanti</div>
-                    </div>
-                    <div className="visit-price">Rp 75.000</div>
-                  </div>
-                </div>
-
-                <div className="detail-section">
-                  <div className="section-title">
-                    <span className="material-symbols-rounded">bolt</span>
-                    Tindakan Cepat
-                  </div>
-                  <div className="quick-actions">
-                    <button className="btn-outline" style={{ fontSize: '12.5px' }}>
-                      <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                        add
-                      </span>
-                      Buat Kunjungan
-                    </button>
-                    <button className="btn-outline" style={{ fontSize: '12.5px' }}>
-                      <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                        receipt
-                      </span>
-                      Buat Tagihan
-                    </button>
-                    <button className="btn-outline" style={{ fontSize: '12.5px' }}>
-                      <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                        print
-                      </span>
-                      Cetak RM
-                    </button>
-                  </div>
+                  {encountersLoading && <div className="empty-sub">Memuat riwayat kunjungan…</div>}
+                  {!encountersLoading && encounters.length === 0 && (
+                    <div className="empty-sub">Belum ada riwayat kunjungan.</div>
+                  )}
+                  {!encountersLoading &&
+                    encounters.map((enc) => (
+                      <div className="visit-item" key={enc.id}>
+                        <div className="visit-dot" />
+                        <div className="visit-info">
+                          <div className="visit-type">{enc.serviceType}</div>
+                          <div className="visit-date">
+                            {formatDate(enc.arrivedTime)} ·{' '}
+                            {ENCOUNTER_STATUS_LABEL[enc.status] ?? enc.status}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                 </div>
               </div>
             )}
@@ -440,7 +481,94 @@ export default function ListPasienPage() {
       </main>
 
       {showAddModal && (
-        <AddPatientModal onClose={() => setShowAddModal(false)} onCreate={handleCreatePatient} />
+        <AddPatientModal
+          onClose={() => setShowAddModal(false)}
+          onCreate={handleCreatePatient}
+        />
+      )}
+      {showEditModal && selectedPatient && (
+        <EditPatientModal
+          patient={selectedPatient}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleSavePatient}
+        />
+      )}
+      {showDeleteConfirm && selectedPatient && (
+        <div className="list-pasien-modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
+          <div className="modal-box" style={{ maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-header-title">
+                <div className="modal-header-icon">
+                  <span className="material-symbols-rounded">warning</span>
+                </div>
+                <div>
+                  <h2>Hapus Pasien</h2>
+                  <p>Tindakan ini tidak dapat dibatalkan</p>
+                </div>
+              </div>
+              <button
+                className="modal-close"
+                onClick={() => setShowDeleteConfirm(false)}
+                aria-label="Tutup"
+              >
+                <span className="material-symbols-rounded">close</span>
+              </button>
+            </div>
+            <div className="modal-body">
+              <p>
+                Apakah Anda yakin ingin menghapus data pasien{' '}
+                <strong>{selectedPatient.name}</strong> (No. RM {selectedPatient.noRm})? Data
+                yang sudah dihapus tidak dapat dikembalikan.
+              </p>
+              {deleteError && (
+                <div className="satusehat-empty">
+                  <span className="material-symbols-rounded">error</span>
+                  <div className="empty-title">Gagal menghapus</div>
+                  <div className="empty-sub">{deleteError}</div>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                Batalkan
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ background: '#FF4D4F', borderColor: '#FF4D4F' }}
+                onClick={handleDeletePatient}
+                disabled={deleting}
+              >
+                <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+                  delete
+                </span>
+                {deleting ? 'Menghapus…' : 'Hapus Pasien'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {createError && (
+        <div className="list-pasien-modal-overlay" style={{ zIndex: 200 }}>
+          <div className="modal-box" style={{ maxWidth: 360 }}>
+            <div className="modal-body">
+              <div className="satusehat-empty">
+                <span className="material-symbols-rounded">error</span>
+                <div className="empty-title">Gagal menyimpan pasien</div>
+                <div className="empty-sub">{createError}</div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-primary" onClick={() => setCreateError(null)}>
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </DashboardLayout>
   );

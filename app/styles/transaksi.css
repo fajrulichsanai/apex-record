@@ -225,6 +225,54 @@
 
 .transaksi-page .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+.transaksi-page .form-hint { font-size: 11.5px; color: var(--text-muted); }
+
+.transaksi-page .form-error {
+  font-size: 12.5px;
+  color: var(--red);
+  background: rgba(255,77,79,.08);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+
+.transaksi-page .item-rows { display: flex; flex-direction: column; gap: 8px; }
+
+.transaksi-page .item-row {
+  display: grid;
+  grid-template-columns: 1fr 70px 32px;
+  gap: 8px;
+  align-items: center;
+}
+
+.transaksi-page .item-row select,
+.transaksi-page .item-row input {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+}
+
+.transaksi-page .btn-icon-sm {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-sub);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.transaksi-page .btn-icon-sm .material-symbols-rounded { font-size: 16px; }
+.transaksi-page .btn-icon-sm:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+.transaksi-page .btn-icon-sm:disabled { opacity: .4; cursor: not-allowed; }
+
+.transaksi-page .transaksi-item .btn-outline { margin-left: 8px; }
+
 .transaksi-page .summary-box {
   background: var(--bg);
   border: 1px solid var(--border);

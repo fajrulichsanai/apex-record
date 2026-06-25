@@ -63,6 +63,16 @@
 .laporan-page .range-tab:hover { border-color: var(--primary); color: var(--primary); }
 .laporan-page .range-tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
 
+.laporan-page .laporan-error {
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: #FFF1F0;
+  border: 1px solid #FFCCC7;
+  color: #CF1322;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
 /* STAT CARDS */
 .laporan-page .stat-grid {
   display: grid;

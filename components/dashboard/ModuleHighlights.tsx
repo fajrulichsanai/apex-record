@@ -1,4 +1,8 @@
+'use client';
+
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 import './module-highlights.css';
 
 interface HighlightItem {
@@ -72,70 +76,119 @@ function StethoscopeIcon() {
   );
 }
 
-const HIGHLIGHTS: HighlightItem[] = [
-  {
-    id: 'pasien',
-    href: '/list-pasien',
-    title: 'Pasien',
-    metric: '5',
-    metricLabel: 'total pasien',
-    sub: '3 aktif · 1 bayi',
-    color: 'purple',
-    icon: <UsersIcon />,
-  },
-  {
-    id: 'tarif',
-    href: '/tarif',
-    title: 'Tarif & Tindakan',
-    metric: '8',
-    metricLabel: 'tindakan',
-    sub: 'Rata-rata margin 89%',
-    color: 'pink',
-    icon: <TagIcon />,
-  },
-  {
-    id: 'kunjungan',
-    href: '/list-kunjungan',
-    title: 'Kunjungan',
-    metric: '4',
-    metricLabel: 'kunjungan tercatat',
-    sub: '1 menunggu',
-    color: 'blue',
-    icon: <CalendarIcon />,
-  },
-  {
-    id: 'transaksi',
-    href: '/transaksi',
-    title: 'Transaksi',
-    metric: '5',
-    metricLabel: 'transaksi',
-    sub: 'Cek status pembayaran',
-    color: 'teal',
-    icon: <ReceiptIcon />,
-  },
-  {
-    id: 'laporan-keuangan',
-    href: '/laporan-keuangan',
-    title: 'Laporan Keuangan',
-    metric: 'Rp 9,5jt',
-    metricLabel: '6 hari terakhir',
-    sub: '↑ Rata-rata Rp 1,58jt/hari',
-    color: 'green',
-    icon: <ChartIcon />,
-  },
-  {
-    id: 'user-management',
-    href: '/user-management',
-    title: 'User & Staf',
-    metric: '2',
-    metricLabel: 'pengguna terdaftar',
-    sub: '1 admin · 1 dokter',
-    color: 'orange',
-    icon: <StethoscopeIcon />,
-  },
-];
+function BabyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <circle cx="9" cy="7.5" r="2.5" stroke="white" strokeWidth="1.8" />
+      <path d="M6 13c0-2.2 1.5-4 3.5-4s3.5 1.8 3.5 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M12 13l3-2m0 0l1-3m-1 3l3 2" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+interface DashboardHighlights {
+  pasien: { total: number };
+  bayi: { total: number };
+  tarif: { total: number };
+  kunjungan: { total: number; pending: number };
+  transaksi: { total: number };
+  laporanKeuangan: { total7Hari: number };
+  userManagement: { total: number };
+}
+
+function formatRupiahCompact(value: number) {
+  if (value >= 1_000_000) return `Rp ${(value / 1_000_000).toFixed(1).replace('.0', '')}jt`;
+  if (value >= 1_000) return `Rp ${(value / 1_000).toFixed(0)}rb`;
+  return `Rp ${value}`;
+}
+
+function buildHighlights(data: DashboardHighlights | null): HighlightItem[] {
+  return [
+    {
+      id: 'pasien',
+      href: '/list-pasien',
+      title: 'Pasien',
+      metric: data?.pasien?.total ? String(data.pasien.total) : '-',
+      metricLabel: 'total pasien',
+      sub: 'Lihat data pasien',
+      color: 'purple',
+      icon: <UsersIcon />,
+    },
+    {
+      id: 'bayi',
+      href: '/list-pasien',
+      title: 'Bayi',
+      metric: data?.bayi?.total ? String(data.bayi.total) : '-',
+      metricLabel: 'total bayi',
+      sub: 'Pasien bayi terdaftar',
+      color: 'orange',
+      icon: <BabyIcon />,
+    },
+    {
+      id: 'tarif',
+      href: '/tarif',
+      title: 'Tarif & Tindakan',
+      metric: data?.tarif?.total ? String(data.tarif.total) : '-',
+      metricLabel: 'tindakan aktif',
+      sub: 'Kelola daftar tarif',
+      color: 'pink',
+      icon: <TagIcon />,
+    },
+    {
+      id: 'kunjungan',
+      href: '/list-kunjungan',
+      title: 'Kunjungan',
+      metric: data?.kunjungan?.total ? String(data.kunjungan.total) : '-',
+      metricLabel: 'kunjungan hari ini',
+      sub: data?.kunjungan?.pending ? `${data.kunjungan.pending} menunggu` : '-',
+      color: 'blue',
+      icon: <CalendarIcon />,
+    },
+    {
+      id: 'transaksi',
+      href: '/transaksi',
+      title: 'Transaksi',
+      metric: data?.transaksi?.total ? String(data.transaksi.total) : '-',
+      metricLabel: 'transaksi',
+      sub: 'Cek status pembayaran',
+      color: 'teal',
+      icon: <ReceiptIcon />,
+    },
+    {
+      id: 'laporan-keuangan',
+      href: '/laporan-keuangan',
+      title: 'Laporan Keuangan',
+      metric: data?.laporanKeuangan?.total7Hari ? formatRupiahCompact(data.laporanKeuangan.total7Hari) : '-',
+      metricLabel: '7 hari terakhir',
+      sub: 'Lihat laporan keuangan',
+      color: 'green',
+      icon: <ChartIcon />,
+    },
+    {
+      id: 'user-management',
+      href: '/user-management',
+      title: 'User & Staf',
+      metric: data?.userManagement?.total ? String(data.userManagement.total) : '-',
+      metricLabel: 'pengguna terdaftar',
+      sub: 'Kelola akses pengguna',
+      color: 'orange',
+      icon: <StethoscopeIcon />,
+    },
+  ];
+}
 
 export default function ModuleHighlights() {
+  const [data, setData] = useState<DashboardHighlights | null>(null);
+
+  useEffect(() => {
+    apiClient
+      .get<DashboardHighlights>('/dashboard/highlights')
+      .then(setData)
+      .catch(() => setData(null));
+  }, []);
+
+  const HIGHLIGHTS = buildHighlights(data);
+
   return (
     <div className="module-highlights">
       <div className="module-highlights-header">

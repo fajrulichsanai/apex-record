@@ -1,9 +1,42 @@
+'use client';
+
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
+import { apiClient } from '@/lib/api-client';
 import './bottom-grid.css';
+
+interface ActivityItem {
+  type: 'encounter' | 'billing';
+  title: string;
+  detail: string;
+  timestamp: string;
+  status: string;
+}
+
+function timeAgo(timestamp: string) {
+  const diffMs = Date.now() - new Date(timestamp).getTime();
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return 'Baru saja';
+  if (minutes < 60) return `${minutes} menit lalu`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} jam lalu`;
+  const days = Math.floor(hours / 24);
+  if (days === 1) return 'Kemarin';
+  return `${days} hari lalu`;
+}
+
+function activityColor(item: ActivityItem) {
+  if (item.type === 'billing') return 'blue';
+  if (item.status === 'finished') return 'green';
+  if (item.status === 'arrived') return 'orange';
+  return 'purple';
+}
 
 const quickActions = [
   {
     id: 1,
     label: 'Daftar Pasien',
+    href: '/list-pasien',
     color: 'purple',
     icon: (
       <svg viewBox="0 0 24 24" fill="none">
@@ -26,6 +59,7 @@ const quickActions = [
   {
     id: 2,
     label: 'Buat Kunjungan',
+    href: '/list-kunjungan',
     color: 'blue',
     icon: (
       <svg viewBox="0 0 24 24" fill="none">
@@ -50,6 +84,7 @@ const quickActions = [
   {
     id: 3,
     label: 'Laporan Keuangan',
+    href: '/laporan-keuangan',
     color: 'green',
     icon: (
       <svg viewBox="0 0 24 24" fill="none">
@@ -65,6 +100,7 @@ const quickActions = [
   {
     id: 4,
     label: 'User Management',
+    href: '/user-management',
     color: 'orange',
     icon: (
       <svg viewBox="0 0 24 24" fill="none">
@@ -92,56 +128,41 @@ const quickActions = [
   },
 ];
 
-const recentActivities = [
-  {
-    id: 1,
-    title: 'Mu** Da** Sa** menyelesaikan kunjungan',
-    detail: 'Pembersihan Karang Gigi · drg. Daffa Safra',
-    time: '10 menit lalu',
-    color: 'green',
-  },
-  {
-    id: 2,
-    title: 'Transaksi baru tercatat',
-    detail: 'Rp 1.450.000 · Tunai',
-    time: '42 menit lalu',
-    color: 'blue',
-  },
-  {
-    id: 3,
-    title: 'Ahmad Ri** menunggu kunjungan',
-    detail: 'Konsultasi Awal · belum dimulai',
-    time: '1 jam lalu',
-    color: 'orange',
-  },
-  {
-    id: 4,
-    title: 'Tarif baru ditambahkan',
-    detail: 'Cabut Gigi · Rp 200.000 – Rp 300.000',
-    time: 'Kemarin',
-    color: 'purple',
-  },
-];
-
 export default function BottomGrid() {
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+
+  useEffect(() => {
+    apiClient
+      .get<ActivityItem[]>('/dashboard/activity?limit=8')
+      .then(setActivities)
+      .catch(() => setActivities([]));
+  }, []);
+
   return (
     <div className="bottom-grid">
       <div className="panel">
         <div className="panel-header">
           <span className="panel-title">Aktivitas Terbaru</span>
-          <a href="#" className="panel-link">
+          <Link href="/list-kunjungan" className="panel-link">
             Lihat semua
-          </a>
+          </Link>
         </div>
         <div className="activity-list">
-          {recentActivities.map((activity) => (
-            <div key={activity.id} className="activity-item">
-              <span className={`activity-dot ${activity.color}`} />
+          {activities.length === 0 && (
+            <div className="activity-item">
+              <div className="activity-info">
+                <div className="activity-detail">Belum ada aktivitas terbaru</div>
+              </div>
+            </div>
+          )}
+          {activities.map((activity, idx) => (
+            <div key={idx} className="activity-item">
+              <span className={`activity-dot ${activityColor(activity)}`} />
               <div className="activity-info">
                 <div className="activity-title">{activity.title}</div>
                 <div className="activity-detail">{activity.detail}</div>
               </div>
-              <span className="activity-time">{activity.time}</span>
+              <span className="activity-time">{timeAgo(activity.timestamp)}</span>
             </div>
           ))}
         </div>
@@ -153,7 +174,7 @@ export default function BottomGrid() {
         </div>
         <div className="quick-actions">
           {quickActions.map((action) => (
-            <div key={action.id} className="action-item">
+            <Link key={action.id} href={action.href} className="action-item">
               <div className="action-left">
                 <div className={`action-icon ${action.color}`}>
                   {action.icon}
@@ -171,7 +192,7 @@ export default function BottomGrid() {
                   />
                 </svg>
               </span>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

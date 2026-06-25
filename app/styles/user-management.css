@@ -137,7 +137,11 @@
   cursor: pointer; transition: background .15s;
   white-space: nowrap;
 }
-.user-mgmt-page .btn-primary:hover { background: var(--primary-hover); }
+.user-mgmt-page .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+.user-mgmt-page .btn-primary:disabled {
+  background: #D1D5DB; color: #9CA3AF;
+  cursor: not-allowed; opacity: 0.6;
+}
 .user-mgmt-page .btn-primary svg { width: 15px; height: 15px; }
 
 .user-mgmt-page .btn-outline {
@@ -285,6 +289,19 @@
 .user-mgmt-page .method-btn svg { width: 14px; height: 14px; }
 
 .user-mgmt-page .search-form { display: flex; flex-direction: column; gap: 10px; }
+.user-mgmt-page .search-input {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13.5px; font-family: inherit;
+  background: var(--surface); color: var(--text-1);
+  outline: none; transition: all .15s;
+}
+.user-mgmt-page .search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+}
+.user-mgmt-page .search-input::placeholder { color: var(--text-3); }
 .user-mgmt-page .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
 .user-mgmt-page .form-group { flex: 1; min-width: 140px; display: flex; flex-direction: column; gap: 4px; }
 .user-mgmt-page .form-label { font-size: 12px; font-weight: 600; color: var(--text-2); }
@@ -395,6 +412,45 @@
 .user-mgmt-page .modal-form-group { margin-bottom: 16px; }
 .user-mgmt-page .modal-form-input { background: #fff; }
 .user-mgmt-page .modal-hint { font-size: 11.5px; color: var(--text-3); margin-top: 6px; }
+
+/* ── Confirmation Modal ── */
+.user-mgmt-page .confirmation-modal {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 32px 28px;
+  width: 420px; max-width: calc(100vw - 32px);
+  box-shadow: 0 20px 60px rgba(0,0,0,.18);
+  text-align: center;
+  transform: scale(.96) translateY(8px); transition: transform .2s;
+}
+.user-mgmt-page .modal-overlay.open .confirmation-modal { transform: scale(1) translateY(0); }
+.user-mgmt-page .confirmation-icon-wrapper {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+  background: #F3F4F6;
+}
+.user-mgmt-page .confirmation-icon-wrapper svg { width: 32px; height: 32px; }
+.user-mgmt-page .confirmation-title {
+  font-size: 18px; font-weight: 700;
+  color: var(--text-1); margin-bottom: 8px;
+}
+.user-mgmt-page .confirmation-message {
+  font-size: 14px; color: var(--text-2);
+  line-height: 1.5; margin-bottom: 24px;
+}
+.user-mgmt-page .confirmation-buttons {
+  display: flex; gap: 10px;
+}
+.user-mgmt-page .confirmation-buttons .btn-outline { flex: 1; justify-content: center; }
+.user-mgmt-page .confirmation-buttons .btn-primary { flex: 1; justify-content: center; }
+.user-mgmt-page .confirmation-buttons .btn-danger {
+  background: var(--danger);
+}
+.user-mgmt-page .confirmation-buttons .btn-danger:hover:not(:disabled) {
+  background: #DC2626;
+}
 
 .user-mgmt-page .role-selector { display: flex; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
 .user-mgmt-page .role-card {
