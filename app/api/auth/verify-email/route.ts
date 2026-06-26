@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { handleCors, corsResponse } from '@/lib/cors';
 
-const BACKEND_API = process.env.BACKEND_API || 'http://localhost:3001';
+const BACKEND_API = process.env.NEXT_PUBLIC_API_URL|| 'http://localhost:3000';
 
 export async function OPTIONS(request: NextRequest) {
   return handleCors(request, {
