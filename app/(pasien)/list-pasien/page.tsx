@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import PrivateRoute from '@/components/PrivateRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import AddPatientModal from './AddPatientModal';
 import EditPatientModal from './EditPatientModal';
@@ -72,7 +73,7 @@ const ENCOUNTER_STATUS_LABEL: Record<string, string> = {
   cancelled: 'Dibatalkan',
 };
 
-export default function ListPasienPage() {
+function ListPasienPageContent() {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -571,5 +572,13 @@ export default function ListPasienPage() {
         </div>
       )}
     </DashboardLayout>
+  );
+}
+
+export default function ListPasienPage() {
+  return (
+    <PrivateRoute>
+      <ListPasienPageContent />
+    </PrivateRoute>
   );
 }

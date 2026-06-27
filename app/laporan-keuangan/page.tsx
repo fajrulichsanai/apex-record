@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import PrivateRoute from '@/components/PrivateRoute';
 import {
   Area,
   AreaChart,
@@ -73,6 +74,14 @@ function formatRupiah(value: number) {
 }
 
 export default function LaporanKeuanganPage() {
+  return (
+    <PrivateRoute>
+      <LaporanKeuanganPageInner />
+    </PrivateRoute>
+  );
+}
+
+function LaporanKeuanganPageInner() {
   const { user, loading: authLoading } = useAuth();
   const [range, setRange] = useState<RangeOption>('7hari');
   const [report, setReport] = useState<FinancialReportResponse['data'] | null>(null);

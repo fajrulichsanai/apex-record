@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import PrivateRoute from '@/components/PrivateRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeedbackModal from '@/components/feedback/FeedbackModal';
 import ConfirmationModal from '@/components/feedback/ConfirmationModal';
@@ -60,6 +61,14 @@ const KATEGORI_ICON: Record<string, string> = {
   'Ortho': 'straighten',
 };
 export default function TarifPage() {
+  return (
+    <PrivateRoute>
+      <TarifPageInner />
+    </PrivateRoute>
+  );
+}
+
+function TarifPageInner() {
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
   const [loading, setLoading] = useState(true);
 

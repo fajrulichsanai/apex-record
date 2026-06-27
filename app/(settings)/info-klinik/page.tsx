@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import PrivateRoute from '@/components/PrivateRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeedbackModal from '@/components/feedback/FeedbackModal';
 import { ApiError } from '@/lib/api-client';
@@ -137,6 +138,14 @@ function TimePicker({
 }
 
 export default function InfoKlinikPage() {
+  return (
+    <PrivateRoute>
+      <InfoKlinikPageInner />
+    </PrivateRoute>
+  );
+}
+
+function InfoKlinikPageInner() {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);

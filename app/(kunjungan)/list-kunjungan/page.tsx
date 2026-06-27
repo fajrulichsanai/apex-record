@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import PrivateRoute from '@/components/PrivateRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import AddVisitModal from './AddVisitModal';
 import {
@@ -60,9 +61,11 @@ function formatDateTime(value?: string) {
 
 export default function ListKunjunganPage() {
   return (
-    <Suspense fallback={null}>
-      <ListKunjunganPageInner />
-    </Suspense>
+    <PrivateRoute>
+      <Suspense fallback={null}>
+        <ListKunjunganPageInner />
+      </Suspense>
+    </PrivateRoute>
   );
 }
 

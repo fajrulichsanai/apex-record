@@ -2,6 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import PrivateRoute from '@/components/PrivateRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import '../styles/transaksi.css';
 import { ApiError } from '@/lib/api-client';
@@ -61,9 +62,11 @@ function emptyRow(): ItemRow {
 
 export default function TransaksiPage() {
   return (
-    <Suspense fallback={null}>
-      <TransaksiPageInner />
-    </Suspense>
+    <PrivateRoute>
+      <Suspense fallback={null}>
+        <TransaksiPageInner />
+      </Suspense>
+    </PrivateRoute>
   );
 }
 

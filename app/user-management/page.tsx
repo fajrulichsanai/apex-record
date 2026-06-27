@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import PrivateRoute from '@/components/PrivateRoute';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeedbackModal from '@/components/feedback/FeedbackModal';
 import { useAuth } from '@/lib/auth-context';
@@ -37,6 +38,14 @@ function initialsOf(name: string) {
 }
 
 export default function UserManagementPage() {
+  return (
+    <PrivateRoute>
+      <UserManagementPageInner />
+    </PrivateRoute>
+  );
+}
+
+function UserManagementPageInner() {
   const { user: currentUser } = useAuth();
   const isSuperAdmin = currentUser?.role === 'super_admin';
 

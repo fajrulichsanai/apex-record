@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import FeedbackModal from '@/components/feedback/FeedbackModal';
 import { useAuth } from '@/lib/auth-context';
@@ -12,8 +12,14 @@ type Mode = 'login' | 'register';
 
 const LoginPage = () => {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, token, loading } = useAuth();
   const [mode, setMode] = useState<Mode>('login');
+
+  useEffect(() => {
+    if (!loading && token) {
+      router.push('/dashboard');
+    }
+  }, [token, loading, router]);
   const [showPassword, setShowPassword] = useState(false);
 
   const [email, setEmail] = useState('');

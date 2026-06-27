@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import PrivateRoute from '@/components/PrivateRoute';
 import {
   Area,
   AreaChart,
@@ -55,6 +56,14 @@ function formatTanggal(isoDate: string) {
 }
 
 export default function LaporanKunjunganPage() {
+  return (
+    <PrivateRoute>
+      <LaporanKunjunganPageInner />
+    </PrivateRoute>
+  );
+}
+
+function LaporanKunjunganPageInner() {
   const { loading: authLoading } = useAuth();
   const [range, setRange] = useState<RangeOption>('7hari');
   const [report, setReport] = useState<VisitReportResponse['data'] | null>(null);
