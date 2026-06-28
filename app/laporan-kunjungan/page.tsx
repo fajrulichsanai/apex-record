@@ -20,6 +20,7 @@ import { FiActivity, FiCheckCircle, FiUserCheck, FiXCircle } from 'react-icons/f
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/lib/auth-context';
 import { reportsApi, VisitReportResponse } from '@/lib/reports';
+import { useToast } from '@/lib/toast-context';
 import '../styles/laporan.css';
 
 type RangeOption = '7hari' | '30hari' | 'bulanini';
@@ -59,37 +60,25 @@ export default function LaporanKunjunganPage() {
   const [range, setRange] = useState<RangeOption>('7hari');
   const [report, setReport] = useState<VisitReportResponse['data'] | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  if (authLoading) {
-    return (
-      <DashboardLayout>
-        <main className="content laporan-page">
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
-            Memuat...
-          </div>
-        </main>
-      </DashboardLayout>
-    );
-  }
+  const { error: showError } = useToast();
 
   useEffect(() => {
     async function loadReport() {
       const { dateFrom, dateTo } = getDateRange(range);
       setLoading(true);
-      setError(null);
 
       try {
         const res = await reportsApi.getVisits({ dateFrom, dateTo, limit: 1 });
         setReport(res.data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Gagal memuat laporan kunjungan');
+        showError(err instanceof Error ? err.message : 'Gagal memuat laporan kunjungan');
       } finally {
         setLoading(false);
       }
     }
 
     loadReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range]);
 
   const harianKunjungan = useMemo(
@@ -116,6 +105,18 @@ export default function LaporanKunjunganPage() {
   const totalBatal = report?.summary.cancelled ?? 0;
   const rataRata = harianKunjungan.length > 0 ? (totalKunjungan / harianKunjungan.length).toFixed(1) : '0.0';
 
+  if (authLoading) {
+    return (
+      <DashboardLayout>
+        <main className="content laporan-page">
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+            Memuat...
+          </div>
+        </main>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
       <main className="content laporan-page">
@@ -139,8 +140,6 @@ export default function LaporanKunjunganPage() {
             ))}
           </div>
         </div>
-
-        {error && <div className="laporan-error">{error}</div>}
 
         <div className="stat-grid">
           <div className="stat-card total">

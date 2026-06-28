@@ -4,6 +4,7 @@ import { useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import { Patient, PatientPayload, MaritalStatus } from '@/lib/patients';
 import { ApiError } from '@/lib/api-client';
+import { useToast } from '@/lib/toast-context';
 
 type UiGender = 'laki-laki' | 'perempuan';
 
@@ -22,6 +23,7 @@ interface EditPatientModalProps {
 }
 
 export default function EditPatientModal({ patient, onClose, onSave }: EditPatientModalProps) {
+  const { error: showError } = useToast();
   const [form, setForm] = useState({
     name: patient.name,
     gender: apiGenderToUiGender(patient.gender),
@@ -36,13 +38,11 @@ export default function EditPatientModal({ patient, onClose, onSave }: EditPatie
     maritalStatus: (patient.maritalStatus || '') as '' | MaritalStatus,
   });
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return;
     setSaving(true);
-    setError(null);
     try {
       await onSave({
         name: form.name,
@@ -58,7 +58,7 @@ export default function EditPatientModal({ patient, onClose, onSave }: EditPatie
         maritalStatus: form.maritalStatus || undefined,
       });
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Gagal memperbarui data pasien');
+      showError(err instanceof ApiError ? err.message : 'Gagal memperbarui data pasien');
       setSaving(false);
     }
   };
@@ -83,7 +83,6 @@ export default function EditPatientModal({ patient, onClose, onSave }: EditPatie
 
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
-            {error && <div className="satusehat-empty">{error}</div>}
             <div className="form-row">
               <div className="form-field full">
                 <label>Nama Lengkap</label>

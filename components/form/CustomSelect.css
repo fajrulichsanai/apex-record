@@ -68,7 +68,7 @@
   border: 1px solid #E8ECF4;
   border-radius: 8px;
   box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
-  z-index: 1000;
+  z-index: 9999;
   overflow: hidden;
   animation: slideDown 0.15s ease;
 }

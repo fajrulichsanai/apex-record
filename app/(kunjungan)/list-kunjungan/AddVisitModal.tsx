@@ -8,13 +8,21 @@ import { locationsApi, Location } from '@/lib/locations';
 import { queuesApi, QueueItem } from '@/lib/queues';
 import { encounterApi } from '@/lib/encounter';
 import { ApiError } from '@/lib/api-client';
+import { useToast } from '@/lib/toast-context';
 
 interface AddVisitModalProps {
   onClose: () => void;
   onCreated: () => void;
 }
 
+const STEPS = [
+  { id: 1, label: 'Pasien' },
+  { id: 2, label: 'Detail' },
+  { id: 3, label: 'Konfirmasi' },
+];
+
 export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps) {
+  const { error: showError } = useToast();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -22,6 +30,7 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [step, setStep] = useState(1);
 
   const [queueId, setQueueId] = useState('');
   const [patientId, setPatientId] = useState('');
@@ -44,11 +53,13 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
       setWaitingQueue(queueRes.data);
       if (locationList[0]) setLocationId(locationList[0].id.toString());
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Gagal memuat data');
+      const msg = err instanceof ApiError ? err.message : 'Gagal memuat data';
+      setError(msg);
+      showError(msg);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showError]);
 
   useEffect(() => {
     loadData();
@@ -72,7 +83,7 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!patientId || !practitionerId || !locationId) {
-      setError('Pasien, dokter, dan lokasi wajib dipilih');
+      showError('Pasien, dokter, dan lokasi wajib dipilih');
       return;
     }
     setSubmitting(true);
@@ -87,7 +98,9 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
       });
       onCreated();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Gagal membuat kunjungan');
+      const msg = err instanceof ApiError ? err.message : 'Gagal membuat kunjungan';
+      setError(msg);
+      showError(msg);
     } finally {
       setSubmitting(false);
     }
@@ -103,11 +116,6 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
     label: d.name,
   }));
 
-  const locationOptions = locations.map((l) => ({
-    value: l.id.toString(),
-    label: l.name,
-  }));
-
   const queueOptions = waitingQueue.map((q) => ({
     value: q.id.toString(),
     label: `${q.nomorAntrian} · ${q.patientName || `Pasien #${q.patientId}`}`,
@@ -115,125 +123,145 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
 
   const selectedPatient = patientId ? patients.find((p) => p.id.toString() === patientId) : null;
   const selectedPractitioner = practitionerId ? practitioners.find((p) => p.id.toString() === practitionerId) : null;
-  const selectedLocation = locationId ? locations.find((l) => l.id.toString() === locationId) : null;
+
+  const canGoStep2 = !!patientId;
+  const canGoStep3 = !!patientId && !!practitionerId && !!locationId;
+
+  const goNext = () => setStep((s) => Math.min(s + 1, 3));
+  const goBack = () => setStep((s) => Math.max(s - 1, 1));
 
   return (
-    <div className="kunjungan-modal-overlay" onClick={onClose}>
-      <div className="kunjungan-modal-box" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
-          <div className="modal-header-title">
-            <div className="modal-header-icon">
-              <span className="material-symbols-rounded">event_note</span>
-            </div>
-            <div>
-              <h2>Buat Kunjungan Baru</h2>
-              <p>Daftarkan kunjungan pasien ke klinik Anda</p>
-            </div>
+    <div className="visit-wizard-overlay" onClick={onClose}>
+      <div className="visit-wizard-box" onClick={(e) => e.stopPropagation()}>
+        <div className="wizard-header">
+          <div>
+            <h2>Buat Kunjungan Baru</h2>
+            <p>Daftarkan kunjungan pasien ke klinik Anda</p>
           </div>
-          <button className="modal-close" type="button" onClick={onClose} aria-label="Tutup">
+          <button className="wizard-close" type="button" onClick={onClose} aria-label="Tutup">
             <span className="material-symbols-rounded">close</span>
           </button>
         </div>
 
+        <div className="wizard-steps">
+          {STEPS.map((s, idx) => (
+            <div className="wizard-step-item" key={s.id}>
+              <div className={`wizard-step-dot ${step === s.id ? 'active' : ''} ${step > s.id ? 'done' : ''}`}>
+                {step > s.id ? <span className="material-symbols-rounded">check</span> : s.id}
+              </div>
+              <span className={`wizard-step-label ${step === s.id ? 'active' : ''}`}>{s.label}</span>
+              {idx < STEPS.length - 1 && <div className={`wizard-step-line ${step > s.id ? 'done' : ''}`} />}
+            </div>
+          ))}
+        </div>
+
         {loading ? (
-          <div className="modal-body" style={{ textAlign: 'center', padding: '40px 24px' }}>
+          <div className="wizard-body" style={{ textAlign: 'center', padding: '40px 24px' }}>
             Memuat data…
           </div>
-        ) : error && !submitting ? (
-          <div className="modal-body" style={{ textAlign: 'center', padding: '40px 24px', color: '#FF4D4F' }}>
+        ) : error && !submitting && patients.length === 0 ? (
+          <div className="wizard-body" style={{ textAlign: 'center', padding: '40px 24px', color: '#FF4D4F' }}>
             {error}
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body">
-              <div className="preview-card">
-                <div className="preview-info">
-                  {selectedPatient && <div className="preview-patient">{selectedPatient.name}</div>}
-                  {selectedPractitioner && (
-                    <div className="preview-practitioner">
-                      <span className="material-symbols-rounded">person</span>
-                      {selectedPractitioner.name}
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+            <div className="wizard-body">
+              {step === 1 && (
+                <div className="wizard-fields">
+                  {queueOptions.length > 0 && (
+                    <div className="wizard-field">
+                      <label>Dari Antrian (opsional)</label>
+                      <CustomSelect
+                        value={queueId}
+                        onChange={handleSelectQueue}
+                        options={[{ value: '', label: 'Tidak dari antrian (walk-in)' }, ...queueOptions]}
+                        disabled={submitting}
+                      />
                     </div>
                   )}
-                  {selectedLocation && (
-                    <div className="preview-location">
-                      <span className="material-symbols-rounded">location_on</span>
-                      {selectedLocation.name}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="form-row">
-                {queueOptions.length > 0 && (
-                  <div className="form-field full">
-                    <label>Dari Antrian (opsional)</label>
+                  <div className="wizard-field">
+                    <label>Pasien *</label>
                     <CustomSelect
-                      value={queueId}
-                      onChange={handleSelectQueue}
-                      options={[{ value: '', label: 'Tidak dari antrian (walk-in)' }, ...queueOptions]}
+                      value={patientId}
+                      onChange={setPatientId}
+                      options={patientOptions}
+                      placeholder="Pilih pasien…"
+                      disabled={!!selectedQueue || submitting}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {step === 2 && (
+                <div className="wizard-fields">
+                  <div className="wizard-field">
+                    <label>Dokter *</label>
+                    <CustomSelect
+                      value={practitionerId}
+                      onChange={setPractitionerId}
+                      options={practitionerOptions}
+                      placeholder="Pilih dokter…"
                       disabled={submitting}
                     />
                   </div>
-                )}
-
-                <div className="form-field full">
-                  <label>Pasien *</label>
-                  <CustomSelect
-                    value={patientId}
-                    onChange={setPatientId}
-                    options={patientOptions}
-                    placeholder="Pilih pasien…"
-                    disabled={!!selectedQueue || submitting}
-                  />
+                  <div className="wizard-field">
+                    <label>Keluhan Utama</label>
+                    <textarea
+                      value={chiefComplaint}
+                      onChange={(e) => setChiefComplaint(e.target.value)}
+                      placeholder="Keluhan utama pasien (opsional)"
+                      disabled={submitting}
+                    />
+                  </div>
                 </div>
-
-                <div className="form-field">
-                  <label>Dokter *</label>
-                  <CustomSelect
-                    value={practitionerId}
-                    onChange={setPractitionerId}
-                    options={practitionerOptions}
-                    placeholder="Pilih dokter…"
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div className="form-field">
-                  <label>Lokasi *</label>
-                  <CustomSelect
-                    value={locationId}
-                    onChange={setLocationId}
-                    options={locationOptions}
-                    placeholder="Pilih lokasi…"
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div className="form-field full">
-                  <label>Keluhan Utama</label>
-                  <textarea
-                    value={chiefComplaint}
-                    onChange={(e) => setChiefComplaint(e.target.value)}
-                    placeholder="Keluhan utama pasien (opsional)"
-                    disabled={submitting}
-                  />
-                </div>
-              </div>
-
-              {error && submitting === false && (
-                <div style={{ color: '#FF4D4F', fontSize: '13px', marginTop: '8px' }}>{error}</div>
               )}
+
+              {step === 3 && (
+                <div className="wizard-summary">
+                  <div className="wizard-summary-row">
+                    <span className="wizard-summary-label">Pasien</span>
+                    <span className="wizard-summary-value">{selectedPatient?.name || '—'}</span>
+                  </div>
+                  <div className="wizard-summary-row">
+                    <span className="wizard-summary-label">Dokter</span>
+                    <span className="wizard-summary-value">{selectedPractitioner?.name || '—'}</span>
+                  </div>
+                  <div className="wizard-summary-row">
+                    <span className="wizard-summary-label">Keluhan</span>
+                    <span className="wizard-summary-value">{chiefComplaint || '—'}</span>
+                  </div>
+                </div>
+              )}
+
             </div>
 
-            <div className="modal-footer">
-              <button type="button" className="btn-outline" onClick={onClose} disabled={submitting}>
-                Batal
-              </button>
-              <button type="submit" className="btn-primary" disabled={submitting}>
-                <span className="material-symbols-rounded">check_circle</span>
-                {submitting ? 'Menyimpan…' : 'Simpan Kunjungan'}
-              </button>
+            <div className="wizard-footer">
+              {step > 1 ? (
+                <button type="button" className="btn-outline" onClick={goBack} disabled={submitting}>
+                  Kembali
+                </button>
+              ) : (
+                <button type="button" className="btn-outline" onClick={onClose} disabled={submitting}>
+                  Batal
+                </button>
+              )}
+
+              {step < 3 ? (
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={goNext}
+                  disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3)}
+                >
+                  Lanjut
+                  <span className="material-symbols-rounded">arrow_forward</span>
+                </button>
+              ) : (
+                <button type="submit" className="btn-primary" disabled={submitting}>
+                  <span className="material-symbols-rounded">check_circle</span>
+                  {submitting ? 'Menyimpan…' : 'Simpan Kunjungan'}
+                </button>
+              )}
             </div>
           </form>
         )}

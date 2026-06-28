@@ -20,6 +20,7 @@ import { FiCreditCard, FiDollarSign, FiClock, FiTrendingUp } from 'react-icons/f
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/lib/auth-context';
 import { reportsApi, FinancialReportResponse, PaymentMethod } from '@/lib/reports';
+import { useToast } from '@/lib/toast-context';
 import '../styles/laporan.css';
 
 type RangeOption = '7hari' | '30hari' | 'bulanini';
@@ -77,21 +78,9 @@ export default function LaporanKeuanganPage() {
   const [range, setRange] = useState<RangeOption>('7hari');
   const [report, setReport] = useState<FinancialReportResponse['data'] | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { error: showError } = useToast();
 
   const isOwner = user?.role === 'owner';
-
-  if (authLoading) {
-    return (
-      <DashboardLayout>
-        <main className="content laporan-page">
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
-            Memuat...
-          </div>
-        </main>
-      </DashboardLayout>
-    );
-  }
 
   useEffect(() => {
     async function loadReport() {
@@ -102,19 +91,19 @@ export default function LaporanKeuanganPage() {
 
       const { dateFrom, dateTo } = getDateRange(range);
       setLoading(true);
-      setError(null);
 
       try {
         const res = await reportsApi.getFinancial({ dateFrom, dateTo });
         setReport(res.data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Gagal memuat laporan keuangan');
+        showError(err instanceof Error ? err.message : 'Gagal memuat laporan keuangan');
       } finally {
         setLoading(false);
       }
     }
 
     loadReport();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [range, isOwner]);
 
   const pendapatanHarian = useMemo(
@@ -141,6 +130,18 @@ export default function LaporanKeuanganPage() {
   const rataRataHarian = pendapatanHarian.length > 0 ? totalPendapatan / pendapatanHarian.length : 0;
   const belumLunas = report?.summary.totalOutstanding ?? 0;
   const totalLunas = report?.summary.totalPaid ?? 0;
+
+  if (authLoading) {
+    return (
+      <DashboardLayout>
+        <main className="content laporan-page">
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '200px' }}>
+            Memuat...
+          </div>
+        </main>
+      </DashboardLayout>
+    );
+  }
 
   if (!isOwner) {
     return (
@@ -175,8 +176,6 @@ export default function LaporanKeuanganPage() {
             ))}
           </div>
         </div>
-
-        {error && <div className="laporan-error">{error}</div>}
 
         <div className="stat-grid">
           <div className="stat-card income">

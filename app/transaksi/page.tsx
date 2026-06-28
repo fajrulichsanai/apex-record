@@ -15,6 +15,7 @@ import {
 } from '@/lib/billing';
 import { encounterApi, EncounterListItem } from '@/lib/encounter';
 import { tarifApi, Tarif } from '@/lib/tarif';
+import { useToast } from '@/lib/toast-context';
 
 type FilterValue = 'semua' | BillingStatus;
 
@@ -87,6 +88,8 @@ function TransaksiPageInner() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [payingId, setPayingId] = useState<number | null>(null);
+
+  const { success, error: showError } = useToast();
 
   const loadBillings = useCallback(async () => {
     setLoadingList(true);
@@ -199,6 +202,7 @@ function TransaksiPageInner() {
       setItems([emptyRow()]);
       setNotes('');
       await loadBillings();
+      success('Transaksi berhasil disimpan');
     } catch (err) {
       setSubmitError(err instanceof ApiError ? err.message : 'Gagal membuat transaksi');
     } finally {
@@ -219,8 +223,9 @@ function TransaksiPageInner() {
     try {
       await billingApi.createPayment(billing.billingId, { method: 'cash', amount });
       await loadBillings();
+      success('Pembayaran berhasil dicatat');
     } catch (err) {
-      window.alert(err instanceof ApiError ? err.message : 'Gagal mencatat pembayaran');
+      showError(err instanceof ApiError ? err.message : 'Gagal mencatat pembayaran');
     } finally {
       setPayingId(null);
     }

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import FeedbackModal from '@/components/feedback/FeedbackModal';
 import CustomSelect from '@/components/form/CustomSelect';
 import { ApiError } from '@/lib/api-client';
 import {
@@ -11,6 +10,7 @@ import {
   operationalHoursToDays,
   type ClinicDayHours,
 } from '@/lib/clinic';
+import { useToast } from '@/lib/toast-context';
 import '../../styles/info-klinik.css';
 
 interface ClinicInfo {
@@ -132,25 +132,12 @@ function TimePicker({
 }
 
 export default function InfoKlinikPage() {
+  const { success, error } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [info, setInfo] = useState<ClinicInfo>(EMPTY_INFO);
   const [days, setDays] = useState<DayHours[]>(operationalHoursToDays());
-
-  const [feedback, setFeedback] = useState<{
-    isOpen: boolean;
-    type: 'success' | 'error' | 'warning' | 'info';
-    title: string;
-    message: string;
-  }>({
-    isOpen: false,
-    type: 'info',
-    title: '',
-    message: '',
-  });
-
-  const closeFeedback = () => setFeedback((prev) => ({ ...prev, isOpen: false }));
 
   const loadClinic = useCallback(async () => {
     try {
@@ -170,11 +157,11 @@ export default function InfoKlinikPage() {
       setDays(operationalHoursToDays(clinic.operationalHours));
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Gagal memuat info klinik';
-      setFeedback({ isOpen: true, type: 'error', title: 'Gagal Memuat Data', message });
+      error(message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [error]);
 
   useEffect(() => {
     loadClinic();
@@ -208,16 +195,11 @@ export default function InfoKlinikPage() {
         sipNumber: info.nomorSip || undefined,
         operationalHours: daysToOperationalHours(days),
       });
-      setFeedback({
-        isOpen: true,
-        type: 'success',
-        title: 'Berhasil',
-        message: 'Profil klinik berhasil diperbarui',
-      });
+      success('Profil klinik berhasil diperbarui');
       setIsEditing(false);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Gagal menyimpan info klinik';
-      setFeedback({ isOpen: true, type: 'error', title: 'Gagal Menyimpan', message });
+      error(message);
     } finally {
       setSaving(false);
     }
@@ -506,14 +488,6 @@ export default function InfoKlinikPage() {
           </div>
         </div>
       </main>
-
-      <FeedbackModal
-        isOpen={feedback.isOpen}
-        type={feedback.type}
-        title={feedback.title}
-        message={feedback.message}
-        actionButton={{ label: 'OK', onClick: closeFeedback }}
-      />
     </DashboardLayout>
   );
 }

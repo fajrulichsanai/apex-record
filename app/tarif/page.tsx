@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import FeedbackModal from '@/components/feedback/FeedbackModal';
 import ConfirmationModal from '@/components/feedback/ConfirmationModal';
 import CustomSelect from '@/components/form/CustomSelect';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { tarifApi, type Tarif } from '@/lib/tarif';
 import { formatCurrencyInput, parseCurrency } from '@/lib/format';
+import { useToast } from '@/lib/toast-context';
 import '../styles/tarif.css';
 
 // Simple function to export CSV (Excel compatible)
@@ -60,6 +60,7 @@ const KATEGORI_ICON: Record<string, string> = {
   'Ortho': 'straighten',
 };
 export default function TarifPage() {
+  const { success, error, warning } = useToast();
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -80,19 +81,6 @@ export default function TarifPage() {
   const [inputKodeIcd9, setInputKodeIcd9] = useState('');
   const [inputDiskonMaksimal, setInputDiskonMaksimal] = useState('');
 
-  const [feedback, setFeedback] = useState<{
-    isOpen: boolean;
-    type: 'success' | 'error' | 'warning' | 'info';
-    title: string;
-    message: string;
-    onOkAction?: () => void;
-  }>({
-    isOpen: false,
-    type: 'info',
-    title: '',
-    message: '',
-  });
-
   const loadTarifs = useCallback(async () => {
     try {
       setLoading(true);
@@ -100,16 +88,11 @@ export default function TarifPage() {
       setTarifs(response.data);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Gagal memuat data tarif';
-      setFeedback({
-        isOpen: true,
-        type: 'error',
-        title: 'Gagal Memuat Data',
-        message,
-      });
+      error(message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [error]);
 
   useEffect(() => {
     loadTarifs();
@@ -191,12 +174,7 @@ export default function TarifPage() {
 
   const handleSubmit = async () => {
     if (!inputNama.trim() || !inputHargaJual.trim()) {
-      setFeedback({
-        isOpen: true,
-        type: 'warning',
-        title: 'Data Tidak Lengkap',
-        message: 'Nama dan Harga Jual harus diisi',
-      });
+      warning('Nama dan Harga Jual harus diisi');
       return;
     }
 
@@ -213,39 +191,18 @@ export default function TarifPage() {
 
       if (editingId) {
         await tarifApi.update(editingId, payload);
-        setFeedback({
-          isOpen: true,
-          type: 'success',
-          title: 'Tarif Berhasil Diperbarui',
-          message: `Tarif "${inputNama}" telah diperbarui.`,
-          onOkAction: () => {
-            closeModal();
-            loadTarifs();
-            setFeedback((prev) => ({ ...prev, isOpen: false }));
-          },
-        });
+        success(`Tarif "${inputNama}" telah diperbarui.`);
+        closeModal();
+        loadTarifs();
       } else {
         await tarifApi.create(payload);
-        setFeedback({
-          isOpen: true,
-          type: 'success',
-          title: 'Tarif Berhasil Ditambahkan',
-          message: `Tarif "${inputNama}" telah ditambahkan ke daftar.`,
-          onOkAction: () => {
-            closeModal();
-            loadTarifs();
-            setFeedback((prev) => ({ ...prev, isOpen: false }));
-          },
-        });
+        success(`Tarif "${inputNama}" telah ditambahkan ke daftar.`);
+        closeModal();
+        loadTarifs();
       }
     } catch (err) {
       const message = err instanceof ApiError ? err.message : `Gagal menyimpan tarif`;
-      setFeedback({
-        isOpen: true,
-        type: 'error',
-        title: 'Gagal Menyimpan Tarif',
-        message,
-      });
+      error(message);
     } finally {
       setSubmitting(false);
     }
@@ -260,22 +217,12 @@ export default function TarifPage() {
 
     try {
       await tarifApi.delete(confirmDelete.id);
-      setFeedback({
-        isOpen: true,
-        type: 'success',
-        title: 'Tarif Berhasil Dihapus',
-        message: `Tarif "${confirmDelete.name}" telah dihapus dari daftar.`,
-      });
+      success(`Tarif "${confirmDelete.name}" telah dihapus dari daftar.`);
       setConfirmDelete(null);
       await loadTarifs();
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Gagal menghapus tarif';
-      setFeedback({
-        isOpen: true,
-        type: 'error',
-        title: 'Gagal Menghapus Tarif',
-        message,
-      });
+      error(message);
     }
   };
 
@@ -294,21 +241,11 @@ export default function TarifPage() {
           <div className="page-header-actions">
             <button className="btn-outline" type="button" onClick={() => {
               if (filteredTarif.length === 0) {
-                setFeedback({
-                  isOpen: true,
-                  type: 'warning',
-                  title: 'Tidak ada data',
-                  message: 'Tidak ada data tarif untuk diekspor',
-                });
+                warning('Tidak ada data tarif untuk diekspor');
                 return;
               }
               exportToExcel(filteredTarif);
-              setFeedback({
-                isOpen: true,
-                type: 'success',
-                title: 'Ekspor Berhasil',
-                message: `${filteredTarif.length} tarif telah diekspor ke Excel`,
-              });
+              success(`${filteredTarif.length} tarif telah diekspor ke Excel`);
             }}>
               <span className="material-symbols-rounded">download</span>
               Ekspor
@@ -619,14 +556,6 @@ export default function TarifPage() {
           isDangerous
           onConfirm={confirmDeleteTarif}
           onCancel={() => setConfirmDelete(null)}
-        />
-
-        <FeedbackModal
-          isOpen={feedback.isOpen}
-          type={feedback.type}
-          title={feedback.title}
-          message={feedback.message}
-          onOkAction={feedback.onOkAction || (() => setFeedback({ ...feedback, isOpen: false }))}
         />
       </main>
     </DashboardLayout>

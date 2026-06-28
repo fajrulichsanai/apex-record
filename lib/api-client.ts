@@ -31,11 +31,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   const body: ApiEnvelope<T> = await res.json();
 
-  if (!res.ok || !body.success) {
+  if (!res.ok || (body.success === false)) {
     throw new ApiError(body?.error?.message || 'Terjadi kesalahan', res.status, body?.error?.code);
   }
 
-  return body.data as T;
+  return (body.data !== undefined ? body.data : body) as T;
 }
 
 export const apiClient = {

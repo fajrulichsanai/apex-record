@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import FeedbackModal from '@/components/feedback/FeedbackModal';
 import CustomSelect from '@/components/form/CustomSelect';
 import { useAuth } from '@/lib/auth-context';
 import { apiClient, ApiError } from '@/lib/api-client';
+import { useToast } from '@/lib/toast-context';
 import type { User, RoleOption } from '@/types/user';
 import type { Clinic } from '@/types/clinic';
 import '../styles/user-management.css';
@@ -39,6 +39,7 @@ function initialsOf(name: string) {
 
 export default function UserManagementPage() {
   const { user: currentUser } = useAuth();
+  const { success, error } = useToast();
   const isSuperAdmin = currentUser?.role === 'super_admin';
 
   const [mainTab, setMainTab] = useState<MainTab>('users');
@@ -68,18 +69,6 @@ export default function UserManagementPage() {
   const [editRole, setEditRole] = useState('');
   const [editSubmitting, setEditSubmitting] = useState(false);
 
-  const [feedback, setFeedback] = useState<{
-    isOpen: boolean;
-    type: 'success' | 'error' | 'warning' | 'info';
-    title: string;
-    message: string;
-  }>({
-    isOpen: false,
-    type: 'info',
-    title: '',
-    message: '',
-  });
-
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -104,12 +93,7 @@ export default function UserManagementPage() {
       setUsers(data);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Gagal memuat data user';
-      setFeedback({
-        isOpen: true,
-        type: 'error',
-        title: 'Gagal Memuat Data',
-        message,
-      });
+      error(message);
     }
   };
 
@@ -130,16 +114,12 @@ export default function UserManagementPage() {
         }
       } catch (err) {
         const message = err instanceof ApiError ? err.message : 'Gagal memuat data';
-        setFeedback({
-          isOpen: true,
-          type: 'error',
-          title: 'Gagal Memuat Data',
-          message,
-        });
+        error(message);
       } finally {
         setLoading(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSuperAdmin]);
 
   const switchMainTab = (tab: MainTab) => {
@@ -182,23 +162,13 @@ export default function UserManagementPage() {
         payload.clinicId = Number(inviteForm.clinicId);
       }
       const created = await apiClient.post<{ temporaryPassword: string; email: string }>('/users/invite', payload);
-      setFeedback({
-        isOpen: true,
-        type: 'success',
-        title: 'User Berhasil Dibuat',
-        message: `Email: ${created.email}\nPassword sementara: ${created.temporaryPassword}`,
-      });
+      success(`Email: ${created.email}\nPassword sementara: ${created.temporaryPassword}`);
       setInviteForm({ email: '', name: '', role: roleOptions[0]?.value || '', clinicId: '' });
       setInviteModalOpen(false);
       await loadUsers();
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Gagal membuat user';
-      setFeedback({
-        isOpen: true,
-        type: 'error',
-        title: 'Gagal Membuat User',
-        message,
-      });
+      error(message);
     } finally {
       setInviteSubmitting(false);
     }
@@ -213,23 +183,13 @@ export default function UserManagementPage() {
       } else {
         await apiClient.patch(`/users/${editTarget.id}/assign-role`, { role: editRole });
       }
-      setFeedback({
-        isOpen: true,
-        type: 'success',
-        title: 'Peran Diperbarui',
-        message: `Peran user berhasil diubah`,
-      });
+      success('Peran user berhasil diubah');
       setEditRoleModalOpen(false);
       setEditTarget(null);
       await loadUsers();
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Gagal mengubah peran';
-      setFeedback({
-        isOpen: true,
-        type: 'error',
-        title: 'Gagal Mengubah Peran',
-        message,
-      });
+      error(message);
     } finally {
       setEditSubmitting(false);
     }
@@ -245,21 +205,11 @@ export default function UserManagementPage() {
       } else {
         await apiClient.post(`/users/${u.id}/activate`);
       }
-      setFeedback({
-        isOpen: true,
-        type: 'success',
-        title: 'Status Diperbarui',
-        message: 'Status user berhasil diubah',
-      });
+      success('Status user berhasil diubah');
       await loadUsers();
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Gagal mengubah status user';
-      setFeedback({
-        isOpen: true,
-        type: 'error',
-        title: 'Gagal Mengubah Status',
-        message,
-      });
+      error(message);
     }
   };
 
@@ -276,22 +226,12 @@ export default function UserManagementPage() {
         try {
           await apiClient.delete(`/users/${u.id}`);
           setConfirmModal((prev) => ({ ...prev, isOpen: false }));
-          setFeedback({
-            isOpen: true,
-            type: 'success',
-            title: 'User Dihapus',
-            message: `User ${u.name} berhasil dihapus`,
-          });
+          success(`User ${u.name} berhasil dihapus`);
           await loadUsers();
         } catch (err) {
           const message = err instanceof ApiError ? err.message : 'Gagal menghapus user';
           setConfirmModal((prev) => ({ ...prev, isOpen: false }));
-          setFeedback({
-            isOpen: true,
-            type: 'error',
-            title: 'Gagal Menghapus User',
-            message,
-          });
+          error(message);
         }
       },
     });
@@ -834,18 +774,6 @@ export default function UserManagementPage() {
             </div>
           </div>
         </div>
-
-        {/* Feedback Modal */}
-        <FeedbackModal
-          isOpen={feedback.isOpen}
-          type={feedback.type}
-          title={feedback.title}
-          message={feedback.message}
-          actionButton={{
-            label: feedback.type === 'error' ? 'Coba Lagi' : 'Selesai',
-            onClick: () => setFeedback({ ...feedback, isOpen: false }),
-          }}
-        />
       </main>
     </DashboardLayout>
   );
