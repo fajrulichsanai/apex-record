@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeedbackModal from '@/components/feedback/FeedbackModal';
+import CustomSelect from '@/components/form/CustomSelect';
 import { ApiError } from '@/lib/api-client';
 import {
   clinicApi,
@@ -106,32 +107,26 @@ function TimePicker({
 }) {
   return (
     <div className={`time-picker${active ? ' active' : ''}`}>
-      <select
-        className="tp-select"
-        disabled={!active}
-        value={hVal}
-        onChange={(e) => onHChange(e.target.value)}
-      >
-        <option value="">--</option>
-        {HOURS.map((h) => (
-          <option key={h} value={h}>
-            {h}
-          </option>
-        ))}
-      </select>
+      <div className="tp-select">
+        <CustomSelect
+          disabled={!active}
+          value={hVal}
+          onChange={onHChange}
+          options={[
+            { value: '', label: '--' },
+            ...HOURS.map((h) => ({ value: h, label: h })),
+          ]}
+        />
+      </div>
       <span className="tp-colon">:</span>
-      <select
-        className="tp-select tp-select-min"
-        disabled={!active}
-        value={mVal || '00'}
-        onChange={(e) => onMChange(e.target.value)}
-      >
-        {MINUTES.map((m) => (
-          <option key={m} value={m}>
-            {m}
-          </option>
-        ))}
-      </select>
+      <div className="tp-select tp-select-min">
+        <CustomSelect
+          disabled={!active}
+          value={mVal || '00'}
+          onChange={onMChange}
+          options={MINUTES.map((m) => ({ value: m, label: m }))}
+        />
+      </div>
     </div>
   );
 }

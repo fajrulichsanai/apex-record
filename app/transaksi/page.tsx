@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import CustomSelect from '@/components/form/CustomSelect';
 import '../styles/transaksi.css';
 import { ApiError } from '@/lib/api-client';
 import {
@@ -299,17 +300,15 @@ function TransaksiPageInner() {
               <div className="form-body">
                 <div className="form-field">
                   <label>Kunjungan</label>
-                  <select
-                    value={selectedEncounterId}
-                    onChange={(e) => setSelectedEncounterId(e.target.value ? Number(e.target.value) : '')}
-                  >
-                    <option value="">Pilih kunjungan selesai…</option>
-                    {encounters.map((enc) => (
-                      <option key={enc.encounterId} value={enc.encounterId}>
-                        {enc.patientName || `Pasien #${enc.patientId}`} · {enc.noRM || '-'}
-                      </option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    value={String(selectedEncounterId)}
+                    onChange={(value) => setSelectedEncounterId(value ? Number(value) : '')}
+                    options={encounters.map((enc) => ({
+                      value: String(enc.encounterId),
+                      label: `${enc.patientName || `Pasien #${enc.patientId}`} · ${enc.noRM || '-'}`,
+                    }))}
+                    placeholder="Pilih kunjungan selesai…"
+                  />
                   {encounters.length === 0 && (
                     <span className="form-hint">Tidak ada kunjungan selesai hari ini</span>
                   )}
@@ -320,14 +319,15 @@ function TransaksiPageInner() {
                   <div className="item-rows">
                     {items.map((row) => (
                       <div key={row.key} className="item-row">
-                        <select value={row.tarifId} onChange={(e) => handleTarifSelect(row.key, e.target.value)}>
-                          <option value="">Pilih tindakan…</option>
-                          {tarifs.map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.name} — {formatRupiah(t.hargaJual)}
-                            </option>
-                          ))}
-                        </select>
+                        <CustomSelect
+                          value={String(row.tarifId)}
+                          onChange={(value) => handleTarifSelect(row.key, value)}
+                          options={tarifs.map((t) => ({
+                            value: String(t.id),
+                            label: `${t.name} — ${formatRupiah(t.hargaJual)}`,
+                          }))}
+                          placeholder="Pilih tindakan…"
+                        />
                         <input
                           type="number"
                           min={1}

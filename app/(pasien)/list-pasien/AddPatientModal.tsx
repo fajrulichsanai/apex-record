@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import CustomSelect from '@/components/form/CustomSelect';
 import { patientsApi, PatientPayload, SatusehatPatientResult } from '@/lib/patients';
 import { ApiError } from '@/lib/api-client';
 
@@ -327,15 +328,16 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
                 </div>
                 <div className="form-field">
                   <label>Jenis Kelamin</label>
-                  <select
+                  <CustomSelect
                     value={formNew.gender}
-                    onChange={(e) =>
-                      setFormNew({ ...formNew, gender: e.target.value as UiGender })
+                    onChange={(value) =>
+                      setFormNew({ ...formNew, gender: value as UiGender })
                     }
-                  >
-                    <option value="laki-laki">Laki-laki</option>
-                    <option value="perempuan">Perempuan</option>
-                  </select>
+                    options={[
+                      { value: 'laki-laki', label: 'Laki-laki' },
+                      { value: 'perempuan', label: 'Perempuan' },
+                    ]}
+                  />
                 </div>
                 <div className="form-field">
                   <label>Tanggal Lahir</label>
@@ -374,21 +376,22 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
                 </div>
                 <div className="form-field">
                   <label>Status Perkawinan</label>
-                  <select
+                  <CustomSelect
                     value={formNew.maritalStatus}
-                    onChange={(e) =>
+                    onChange={(value) =>
                       setFormNew({
                         ...formNew,
-                        maritalStatus: e.target.value as FormNewState['maritalStatus'],
+                        maritalStatus: value as FormNewState['maritalStatus'],
                       })
                     }
-                  >
-                    <option value="">Tidak diisi</option>
-                    <option value="single">Belum Menikah</option>
-                    <option value="married">Menikah</option>
-                    <option value="divorced">Cerai Hidup</option>
-                    <option value="widowed">Cerai Mati</option>
-                  </select>
+                    options={[
+                      { value: '', label: 'Tidak diisi' },
+                      { value: 'single', label: 'Belum Menikah' },
+                      { value: 'married', label: 'Menikah' },
+                      { value: 'divorced', label: 'Cerai Hidup' },
+                      { value: 'widowed', label: 'Cerai Mati' },
+                    ]}
+                  />
                 </div>
                 <div className="form-field full">
                   <label>Alamat Domisili</label>
@@ -459,15 +462,16 @@ export default function AddPatientModal({ onClose, onCreate }: AddPatientModalPr
                 </div>
                 <div className="form-field">
                   <label>Jenis Kelamin</label>
-                  <select
+                  <CustomSelect
                     value={formBaby.babySex}
-                    onChange={(e) =>
-                      setFormBaby({ ...formBaby, babySex: e.target.value as UiGender })
+                    onChange={(value) =>
+                      setFormBaby({ ...formBaby, babySex: value as UiGender })
                     }
-                  >
-                    <option value="laki-laki">Laki-laki</option>
-                    <option value="perempuan">Perempuan</option>
-                  </select>
+                    options={[
+                      { value: 'laki-laki', label: 'Laki-laki' },
+                      { value: 'perempuan', label: 'Perempuan' },
+                    ]}
+                  />
                 </div>
                 <div className="form-field">
                   <label>Tanggal Lahir</label>

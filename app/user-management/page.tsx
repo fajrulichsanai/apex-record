@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeedbackModal from '@/components/feedback/FeedbackModal';
+import CustomSelect from '@/components/form/CustomSelect';
 import { useAuth } from '@/lib/auth-context';
 import { apiClient, ApiError } from '@/lib/api-client';
 import type { User, RoleOption } from '@/types/user';
@@ -698,18 +699,12 @@ export default function UserManagementPage() {
             {isSuperAdmin && (
               <div className="form-group modal-form-group">
                 <label className="form-label">Klinik</label>
-                <select
-                  className="form-input"
+                <CustomSelect
                   value={inviteForm.clinicId}
-                  onChange={(e) => setInviteForm((f) => ({ ...f, clinicId: e.target.value }))}
-                >
-                  <option value="">Pilih klinik…</option>
-                  {clinics.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(value) => setInviteForm((f) => ({ ...f, clinicId: value }))}
+                  options={clinics.map((c) => ({ value: c.id, label: c.name }))}
+                  placeholder="Pilih klinik…"
+                />
               </div>
             )}
 

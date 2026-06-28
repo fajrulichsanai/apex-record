@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import CustomSelect from '@/components/form/CustomSelect';
 import { Patient, PatientPayload, MaritalStatus } from '@/lib/patients';
 import { ApiError } from '@/lib/api-client';
 
@@ -95,13 +96,14 @@ export default function EditPatientModal({ patient, onClose, onSave }: EditPatie
               </div>
               <div className="form-field">
                 <label>Jenis Kelamin</label>
-                <select
+                <CustomSelect
                   value={form.gender}
-                  onChange={(e) => setForm({ ...form, gender: e.target.value as UiGender })}
-                >
-                  <option value="laki-laki">Laki-laki</option>
-                  <option value="perempuan">Perempuan</option>
-                </select>
+                  onChange={(value) => setForm({ ...form, gender: value as UiGender })}
+                  options={[
+                    { value: 'laki-laki', label: 'Laki-laki' },
+                    { value: 'perempuan', label: 'Perempuan' },
+                  ]}
+                />
               </div>
               <div className="form-field">
                 <label>Tanggal Lahir</label>
@@ -137,18 +139,19 @@ export default function EditPatientModal({ patient, onClose, onSave }: EditPatie
               </div>
               <div className="form-field">
                 <label>Status Perkawinan</label>
-                <select
+                <CustomSelect
                   value={form.maritalStatus}
-                  onChange={(e) =>
-                    setForm({ ...form, maritalStatus: e.target.value as '' | MaritalStatus })
+                  onChange={(value) =>
+                    setForm({ ...form, maritalStatus: value as '' | MaritalStatus })
                   }
-                >
-                  <option value="">Tidak diisi</option>
-                  <option value="single">Belum Menikah</option>
-                  <option value="married">Menikah</option>
-                  <option value="divorced">Cerai Hidup</option>
-                  <option value="widowed">Cerai Mati</option>
-                </select>
+                  options={[
+                    { value: '', label: 'Tidak diisi' },
+                    { value: 'single', label: 'Belum Menikah' },
+                    { value: 'married', label: 'Menikah' },
+                    { value: 'divorced', label: 'Cerai Hidup' },
+                    { value: 'widowed', label: 'Cerai Mati' },
+                  ]}
+                />
               </div>
               <div className="form-field full">
                 <label>Alamat Domisili</label>
