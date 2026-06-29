@@ -103,8 +103,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             pathname={pathname}
             icon={<FiClock />}
             items={[
-              { label: 'Antrian Pasien', icon: <FiClock /> },
-              { label: 'Monitor Panggilan', icon: <FiMonitor /> },
+              { label: 'Antrian Pasien', icon: <FiClock />, href: '/antrian-pasien' },
+              { label: 'Monitor Panggilan', icon: <FiMonitor />, href: '/antrian-pasien/display' },
               { label: 'Jadwal Dokter', icon: <FiCalendar /> },
             ]}
           />

@@ -24,6 +24,21 @@ export interface QueueListResponse {
   meta: { total: number; page: number; limit: number };
 }
 
+export interface CreateQueuePayload {
+  patientId?: number;
+  patientName?: string;
+  phone?: string;
+  chiefComplaint?: string;
+  isFirstVisit?: boolean;
+  practitionerId?: number;
+  locationId?: number;
+}
+
+export interface UpdateQueueStatusPayload {
+  status: QueueStatus;
+  cancelledReason?: string;
+}
+
 export const queuesApi = {
   list: (query?: { date?: string; status?: QueueStatus; practitionerId?: number; locationId?: number }) =>
     apiClient.get<QueueListResponse>(
@@ -38,4 +53,8 @@ export const queuesApi = {
             ).toString()
           : ''),
     ),
+  create: (payload: CreateQueuePayload) =>
+    apiClient.post<QueueItem>('/queues', payload),
+  updateStatus: (id: number, payload: UpdateQueueStatusPayload) =>
+    apiClient.patch<QueueItem>(`/queues/${id}/status`, payload),
 };
