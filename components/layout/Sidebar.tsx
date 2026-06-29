@@ -18,6 +18,7 @@ import {
   FiCreditCard,
   FiFile,
   FiDollarSign,
+  FiBriefcase,
   FiBarChart2,
   FiActivity,
   FiTrendingUp,
@@ -149,14 +150,19 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             ]}
           />
 
-          <a className="nav-item disabled" aria-disabled="true">
-            <div className="nav-item-left">
-              <span className="nav-icon">
-                <FiDollarSign />
-              </span>
-              Payroll
-            </div>
-          </a>
+          <NavGroup
+            title="Operasional"
+            groupId="operasional"
+            isExpanded={expandedGroups.includes('operasional')}
+            onToggle={() => toggleGroup('operasional')}
+            onItemClick={handleNavItemClick}
+            pathname={pathname}
+            icon={<FiBriefcase />}
+            items={[
+              { label: 'Catat Operasional', icon: <FiEdit3 />, href: '/catat-operasional' },
+              { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter' },
+            ]}
+          />
 
           <NavGroup
             title="Laporan"

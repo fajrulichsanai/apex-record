@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import AddVisitModal from './AddVisitModal';
 import {
   encounterApi,
   EncounterListItem,
@@ -78,6 +79,7 @@ function ListKunjunganPageInner() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   const loadVisits = useCallback(async () => {
     setLoading(true);
@@ -136,7 +138,13 @@ function ListKunjunganPageInner() {
   };
 
   const handleAddVisit = () => {
-    router.push('/list-kunjungan/tambah');
+    setShowAddModal(true);
+  };
+
+  const handleVisitCreated = (encounterId: number) => {
+    setShowAddModal(false);
+    setSelectedVisitId(encounterId);
+    loadVisits();
   };
 
   const handleChangeStatus = async (status: EncounterStatus) => {
@@ -458,6 +466,10 @@ function ListKunjunganPageInner() {
           </div>
         </div>
       </main>
+
+      {showAddModal && (
+        <AddVisitModal onClose={() => setShowAddModal(false)} onCreated={handleVisitCreated} />
+      )}
     </DashboardLayout>
   );
 }

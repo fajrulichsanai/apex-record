@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import CustomSelect from '@/components/form/CustomSelect';
 import { patientsApi, Patient } from '@/lib/patients';
 import { practitionersApi, Practitioner } from '@/lib/practitioners';
@@ -10,7 +8,11 @@ import { queuesApi, QueueItem } from '@/lib/queues';
 import { encounterApi } from '@/lib/encounter';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
-import '../../../styles/kunjungan.css';
+
+interface AddVisitModalProps {
+  onClose: () => void;
+  onCreated: (encounterId: number) => void;
+}
 
 const STEPS = [
   { id: 1, label: 'Pasien', icon: 'person' },
@@ -31,10 +33,10 @@ function initialsFromName(name?: string) {
   );
 }
 
-export default function TambahKunjunganPage() {
-  const router = useRouter();
+export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps) {
   const { error: showError } = useToast();
   const hasLoaded = useRef(false);
+  const isMounted = useRef(true);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
   const [waitingQueue, setWaitingQueue] = useState<QueueItem[]>([]);
@@ -49,6 +51,13 @@ export default function TambahKunjunganPage() {
   const [chiefComplaint, setChiefComplaint] = useState('');
 
   useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (hasLoaded.current) return;
     hasLoaded.current = true;
 
@@ -60,18 +69,28 @@ export default function TambahKunjunganPage() {
           practitionersApi.list(),
           queuesApi.list({ status: 'waiting' }),
         ]);
+        if (!isMounted.current) return;
         setPatients(patientList);
         setPractitioners(practitionerList);
         setWaitingQueue(queueRes.data);
       } catch (err) {
+        if (!isMounted.current) return;
         const msg = err instanceof ApiError ? err.message : 'Gagal memuat data';
         setError(msg);
         showError(msg);
       } finally {
-        setLoading(false);
+        if (isMounted.current) setLoading(false);
       }
     })();
   }, [showError]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !submitting) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [submitting, onClose]);
 
   const selectedQueue = useMemo(
     () => (queueId ? waitingQueue.find((q) => q.id.toString() === queueId) : null),
@@ -85,6 +104,10 @@ export default function TambahKunjunganPage() {
       if (queue?.patientId) setPatientId(queue.patientId.toString());
       if (queue?.chiefComplaint) setChiefComplaint(queue.chiefComplaint);
       if (queue?.practitionerId) setPractitionerId(queue.practitionerId.toString());
+    } else {
+      setPatientId('');
+      setChiefComplaint('');
+      setPractitionerId('');
     }
   };
 
@@ -103,17 +126,20 @@ export default function TambahKunjunganPage() {
         queueId: queueId ? Number(queueId) : undefined,
         chiefComplaint: chiefComplaint.trim() || undefined,
       });
-      router.push(`/list-kunjungan?encounterId=${created.id}`);
+      onCreated(created.id);
     } catch (err) {
+      if (!isMounted.current) return;
       const msg = err instanceof ApiError ? err.message : 'Gagal membuat kunjungan';
       setError(msg);
       showError(msg);
     } finally {
-      setSubmitting(false);
+      if (isMounted.current) setSubmitting(false);
     }
   };
 
-  const handleCancel = () => router.push('/list-kunjungan');
+  const handleOverlayClick = () => {
+    if (!submitting) onClose();
+  };
 
   const patientOptions = patients.map((p) => ({
     value: p.id.toString(),
@@ -140,15 +166,16 @@ export default function TambahKunjunganPage() {
   const goBack = () => setStep((s) => Math.max(s - 1, 1));
 
   return (
-    <DashboardLayout>
-      <main className="content kunjungan-page kunjungan-form-page">
-        <div className="page-header">
-          <div className="page-title-block">
-            <div className="page-title">
-              <h1>Buat Kunjungan Baru</h1>
-            </div>
-            <p className="page-subtitle">Daftarkan kunjungan pasien ke klinik Anda</p>
+    <div className="visit-modal-overlay" onClick={handleOverlayClick}>
+      <div className="visit-modal-box" onClick={(e) => e.stopPropagation()}>
+        <div className="visit-modal-header">
+          <div>
+            <h2>Buat Kunjungan Baru</h2>
+            <p>Daftarkan kunjungan pasien ke klinik Anda</p>
           </div>
+          <button className="visit-modal-close" type="button" onClick={onClose} disabled={submitting} aria-label="Tutup">
+            <span className="material-symbols-rounded">close</span>
+          </button>
         </div>
 
         <div className="visit-form-card">
@@ -358,7 +385,7 @@ export default function TambahKunjunganPage() {
                     Kembali
                   </button>
                 ) : (
-                  <button type="button" className="btn-outline" onClick={handleCancel} disabled={submitting}>
+                  <button type="button" className="btn-outline" onClick={onClose} disabled={submitting}>
                     Batal
                   </button>
                 )}
@@ -387,7 +414,7 @@ export default function TambahKunjunganPage() {
             </form>
           )}
         </div>
-      </main>
-    </DashboardLayout>
+      </div>
+    </div>
   );
 }
