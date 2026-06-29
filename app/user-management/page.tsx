@@ -642,7 +642,7 @@ export default function UserManagementPage() {
                 <CustomSelect
                   value={inviteForm.clinicId}
                   onChange={(value) => setInviteForm((f) => ({ ...f, clinicId: value }))}
-                  options={clinics.map((c) => ({ value: c.id, label: c.name }))}
+                  options={clinics.map((c) => ({ value: c.id.toString(), label: c.name }))}
                   placeholder="Pilih klinik…"
                 />
               </div>
