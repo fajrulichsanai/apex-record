@@ -1,10 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import AddPatientModal from './AddPatientModal';
-import EditPatientModal from './EditPatientModal';
-import { patientsApi, Patient, PatientPayload, Encounter, ApiGender } from '@/lib/patients';
+import { patientsApi, Patient, Encounter, ApiGender } from '@/lib/patients';
 import { ApiError } from '@/lib/api-client';
 import '../../styles/list-pasien.css';
 
@@ -73,6 +72,8 @@ const ENCOUNTER_STATUS_LABEL: Record<string, string> = {
 };
 
 export default function ListPasienPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -80,11 +81,8 @@ export default function ListPasienPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [showDetailOnMobile, setShowDetailOnMobile] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const [encounters, setEncounters] = useState<Encounter[]>([]);
@@ -100,13 +98,17 @@ export default function ListPasienPage() {
         limit: 100,
       });
       setPatients(data);
-      setSelectedPatientId((prev) => prev ?? data[0]?.id ?? null);
+      const queryPatientId = Number(searchParams.get('patientId'));
+      const preselected = queryPatientId && data.some((p) => p.id === queryPatientId)
+        ? queryPatientId
+        : null;
+      setSelectedPatientId((prev) => preselected ?? prev ?? data[0]?.id ?? null);
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : 'Gagal memuat data pasien');
     } finally {
       setLoading(false);
     }
-  }, [searchQuery, currentFilter]);
+  }, [searchQuery, currentFilter, searchParams]);
 
   useEffect(() => {
     loadPatients();
@@ -149,27 +151,12 @@ export default function ListPasienPage() {
   };
 
   const handleAddPatient = () => {
-    setCreateError(null);
-    setShowAddModal(true);
+    router.push('/list-pasien/tambah');
   };
 
-  const handleCreatePatient = async (input: PatientPayload) => {
-    setCreateError(null);
-    try {
-      const created = await patientsApi.create(input);
-      setShowAddModal(false);
-      await loadPatients();
-      setSelectedPatientId(created.id);
-    } catch (err) {
-      setCreateError(err instanceof ApiError ? err.message : 'Gagal menyimpan data pasien');
-    }
-  };
-
-  const handleSavePatient = async (payload: Partial<PatientPayload>) => {
+  const handleEditPatient = () => {
     if (!selectedPatient) return;
-    const updated = await patientsApi.update(selectedPatient.id, payload);
-    setPatients((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
-    setShowEditModal(false);
+    router.push(`/list-pasien/edit/${selectedPatient.id}`);
   };
 
   const handleDeletePatient = async () => {
@@ -398,7 +385,7 @@ export default function ListPasienPage() {
                     </div>
                   </div>
                   <div className="detail-actions">
-                    <button className="btn-outline" onClick={() => setShowEditModal(true)}>
+                    <button className="btn-outline" onClick={handleEditPatient}>
                       <span className="material-symbols-rounded">edit</span>
                       Edit
                     </button>
@@ -480,19 +467,6 @@ export default function ListPasienPage() {
         </div>
       </main>
 
-      {showAddModal && (
-        <AddPatientModal
-          onClose={() => setShowAddModal(false)}
-          onCreate={handleCreatePatient}
-        />
-      )}
-      {showEditModal && selectedPatient && (
-        <EditPatientModal
-          patient={selectedPatient}
-          onClose={() => setShowEditModal(false)}
-          onSave={handleSavePatient}
-        />
-      )}
       {showDeleteConfirm && selectedPatient && (
         <div className="list-pasien-modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
           <div className="modal-box" style={{ maxWidth: 400 }} onClick={(e) => e.stopPropagation()}>
@@ -547,24 +521,6 @@ export default function ListPasienPage() {
                   delete
                 </span>
                 {deleting ? 'Menghapus…' : 'Hapus Pasien'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      {createError && (
-        <div className="list-pasien-modal-overlay" style={{ zIndex: 200 }}>
-          <div className="modal-box" style={{ maxWidth: 360 }}>
-            <div className="modal-body">
-              <div className="satusehat-empty">
-                <span className="material-symbols-rounded">error</span>
-                <div className="empty-title">Gagal menyimpan pasien</div>
-                <div className="empty-sub">{createError}</div>
-              </div>
-            </div>
-            <div className="modal-footer">
-              <button className="btn-primary" onClick={() => setCreateError(null)}>
-                Tutup
               </button>
             </div>
           </div>

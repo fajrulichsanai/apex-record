@@ -42,6 +42,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { user } = useAuth();
   const canManageUsers = user?.role === 'owner' || user?.role === 'super_admin';
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
+  const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
 
   const toggleGroup = (group: string) => {
     setExpandedGroups((prev) =>
@@ -226,23 +227,35 @@ function NavGroup({
 }: NavGroupProps) {
   const hasActiveItem = items.some((item) => item.href === pathname);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onToggle();
+    }
+  };
+
   return (
     <div className="nav-group">
       <a
         className={`nav-item nav-toggle ${isExpanded ? 'expanded' : ''} ${hasActiveItem ? 'active' : ''}`}
         onClick={onToggle}
+        onKeyDown={handleKeyDown}
         role="button"
         tabIndex={0}
+        aria-expanded={isExpanded}
+        aria-label={`${title} menu`}
       >
         <div className="nav-item-left">
-          <span className="nav-icon">{icon}</span>
+          <span className="nav-icon" aria-hidden="true">
+            {icon}
+          </span>
           {title}
         </div>
-        <span className="chevron">
+        <span className="chevron" aria-hidden="true">
           <FiChevronRight />
         </span>
       </a>
-      <div className={`submenu ${isExpanded ? 'open' : ''}`}>
+      <div className={`submenu ${isExpanded ? 'open' : ''}`} role="region" aria-label={`${title} submenu`}>
         {items.map((item) =>
           item.href ? (
             <Link
@@ -250,13 +263,18 @@ function NavGroup({
               href={item.href}
               className={`sub-item ${pathname === item.href ? 'active' : ''}`}
               onClick={onItemClick}
+              aria-current={pathname === item.href ? 'page' : undefined}
             >
-              <span className="sub-icon">{item.icon}</span>
+              <span className="sub-icon" aria-hidden="true">
+                {item.icon}
+              </span>
               {item.label}
             </Link>
           ) : (
             <a key={item.label} className="sub-item disabled" aria-disabled="true">
-              <span className="sub-icon">{item.icon}</span>
+              <span className="sub-icon" aria-hidden="true">
+                {item.icon}
+              </span>
               {item.label}
             </a>
           )

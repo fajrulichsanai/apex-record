@@ -3,6 +3,20 @@ import { apiClient } from './api-client';
 export type ApiGender = 'male' | 'female';
 export type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed';
 export type SyncStatus = 'pending' | 'synced' | 'failed';
+export type BloodType = 'A' | 'B' | 'AB' | 'O';
+export type Rhesus = 'positive' | 'negative';
+export type HubunganWali = 'ibu' | 'ayah' | 'wali';
+export type SumberInformasi =
+  | 'instagram'
+  | 'tiktok'
+  | 'google_maps'
+  | 'facebook'
+  | 'teman_keluarga'
+  | 'lewat_depan_klinik'
+  | 'brosur'
+  | 'lainnya';
+export type PreferensiKontak = 'whatsapp' | 'telepon' | 'email';
+export type PreferensiJamKontak = 'pagi' | 'siang' | 'sore' | 'malam';
 
 export interface Patient {
   id: number;
@@ -10,16 +24,38 @@ export interface Patient {
   noRm: string;
   nik?: string;
   nikIbu?: string;
+  namaWali?: string;
+  hubunganWali?: HubunganWali;
+  birthOrder?: number;
   name: string;
   birthDate?: string;
   gender: ApiGender;
   phone?: string;
   email?: string;
+  pekerjaan?: string;
   address?: string;
+  kelurahan?: string;
+  kecamatan?: string;
   city?: string;
   province?: string;
   postalCode?: string;
   maritalStatus?: MaritalStatus;
+  sumberInformasi?: SumberInformasi;
+  detailSumber?: string;
+  kodeReferral?: string;
+  referrerPatientId?: number;
+  golonganDarah?: BloodType;
+  rhesus?: Rhesus;
+  punyaAlergi?: boolean;
+  catatanAlergi?: string;
+  preferensiKontak?: PreferensiKontak;
+  preferensiJamKontak?: PreferensiJamKontak;
+  catatanPreferensi?: string;
+  consentMarketing?: boolean;
+  consentTanggal?: string;
+  consentVersion?: string;
+  isMember?: boolean;
+  memberId?: string;
   satusehatPatientId?: string;
   syncStatus: SyncStatus;
   createdAt: string;
@@ -33,13 +69,35 @@ export interface PatientPayload {
   dateOfBirth?: string;
   phone?: string;
   email?: string;
+  pekerjaan?: string;
   address?: string;
+  kelurahan?: string;
+  kecamatan?: string;
   city?: string;
   province?: string;
   postalCode?: string;
   maritalStatus?: MaritalStatus;
   isNewborn?: boolean;
   nikIbu?: string;
+  namaWali?: string;
+  hubunganWali?: HubunganWali;
+  birthOrder?: number;
+  sumberInformasi?: SumberInformasi;
+  detailSumber?: string;
+  kodeReferral?: string;
+  referrerPatientId?: number;
+  golonganDarah?: BloodType;
+  rhesus?: Rhesus;
+  punyaAlergi?: boolean;
+  catatanAlergi?: string;
+  preferensiKontak?: PreferensiKontak;
+  preferensiJamKontak?: PreferensiJamKontak;
+  catatanPreferensi?: string;
+  consentMarketing?: boolean;
+  consentTanggal?: string;
+  consentVersion?: string;
+  isMember?: boolean;
+  memberId?: string;
 }
 
 export interface Encounter {
@@ -48,14 +106,6 @@ export interface Encounter {
   serviceType: string;
   arrivedTime: string;
   finishedTime?: string;
-}
-
-export interface SatusehatPatientResult {
-  nik: string;
-  name: string;
-  birthDate?: string;
-  gender?: ApiGender;
-  address?: string;
 }
 
 export interface PatientQuery {
@@ -91,9 +141,4 @@ export const patientsApi = {
   remove: (id: number) => apiClient.delete<void>(`/patients/${id}`),
 
   encounters: (id: number) => apiClient.get<Encounter[]>(`/patients/${id}/encounters`),
-
-  searchSatusehat: (nik: string) =>
-    apiClient.get<SatusehatPatientResult[]>(
-      `/patients/search-satusehat?nik=${encodeURIComponent(nik)}`
-    ),
 };

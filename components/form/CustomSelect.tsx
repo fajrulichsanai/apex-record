@@ -9,6 +9,7 @@ interface CustomSelectProps {
   options: Array<{ value: string; label: string }>;
   placeholder?: string;
   disabled?: boolean;
+  error?: boolean;
 }
 
 export default function CustomSelect({
@@ -17,6 +18,7 @@ export default function CustomSelect({
   options,
   placeholder = 'Pilih opsi...',
   disabled = false,
+  error = false,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -40,7 +42,7 @@ export default function CustomSelect({
     <div className="custom-select-wrapper" ref={dropdownRef}>
       <button
         type="button"
-        className={`custom-select-trigger ${isOpen ? 'open' : ''}`}
+        className={`custom-select-trigger ${isOpen ? 'open' : ''} ${error ? 'error' : ''}`}
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
       >

@@ -6,6 +6,7 @@ export interface Tarif {
   name: string;
   kategori: string;
   kodeIcd9?: string;
+  deskripsi?: string;
   hargaPokok: number;
   hargaJual: number;
   diskonMaksimal: number;
@@ -18,6 +19,7 @@ export interface CreateTarifPayload {
   name: string;
   kategori: string;
   kodeIcd9?: string;
+  deskripsi?: string;
   hargaPokok?: number;
   hargaJual: number;
   diskonMaksimal?: number;
@@ -27,6 +29,7 @@ export interface UpdateTarifPayload {
   name?: string;
   kategori?: string;
   kodeIcd9?: string;
+  deskripsi?: string;
   hargaPokok?: number;
   hargaJual?: number;
   diskonMaksimal?: number;
@@ -45,6 +48,9 @@ export interface TarifListResponse {
 export const tarifApi = {
   list: (query?: { search?: string; kategori?: string; page?: number; limit?: number }) =>
     apiClient.get<TarifListResponse>('/settings/tarifs' + (query ? '?' + new URLSearchParams(query as any).toString() : '')),
+
+  get: (id: number) =>
+    apiClient.get<Tarif>(`/settings/tarifs/${id}`),
 
   create: (payload: CreateTarifPayload) =>
     apiClient.post<Tarif>('/settings/tarifs', payload),

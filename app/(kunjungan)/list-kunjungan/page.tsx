@@ -1,9 +1,8 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import AddVisitModal from './AddVisitModal';
 import {
   encounterApi,
   EncounterListItem,
@@ -68,7 +67,6 @@ export default function ListKunjunganPage() {
 
 function ListKunjunganPageInner() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [visits, setVisits] = useState<EncounterListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -76,7 +74,6 @@ function ListKunjunganPageInner() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVisitId, setSelectedVisitId] = useState<number | null>(null);
   const [showDetailOnMobile, setShowDetailOnMobile] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
   const [detail, setDetail] = useState<EncounterDetail | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -99,12 +96,6 @@ function ListKunjunganPageInner() {
   useEffect(() => {
     loadVisits();
   }, [loadVisits]);
-
-  useEffect(() => {
-    if (searchParams.get('new') === '1') {
-      setShowAddModal(true);
-    }
-  }, [searchParams]);
 
   useEffect(() => {
     if (!selectedVisitId) {
@@ -144,9 +135,8 @@ function ListKunjunganPageInner() {
     setCurrentFilter(filter);
   };
 
-  const handleCreated = () => {
-    setShowAddModal(false);
-    loadVisits();
+  const handleAddVisit = () => {
+    router.push('/list-kunjungan/tambah');
   };
 
   const handleChangeStatus = async (status: EncounterStatus) => {
@@ -202,7 +192,7 @@ function ListKunjunganPageInner() {
             </div>
             <p className="page-subtitle">Kelola seluruh kunjungan pasien klinik Anda</p>
           </div>
-          <button className="btn-primary" onClick={() => setShowAddModal(true)}>
+          <button className="btn-primary" onClick={handleAddVisit}>
             <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
               add
             </span>
@@ -468,8 +458,6 @@ function ListKunjunganPageInner() {
           </div>
         </div>
       </main>
-
-      {showAddModal && <AddVisitModal onClose={() => setShowAddModal(false)} onCreated={handleCreated} />}
     </DashboardLayout>
   );
 }

@@ -446,138 +446,398 @@
 .tarif-page .empty-title { font-size: 14px; font-weight: 600; color: var(--text-sub); }
 .tarif-page .empty-sub { font-size: 12.5px; color: var(--text-muted); max-width: 260px; line-height: 1.5; }
 
-/* MODAL */
-.tarif-page-modal-overlay {
-  --primary:      #4F7EF8;
-  --primary-dk:   #3B6CE6;
-  --surface:      #FFFFFF;
-  --text-main:    #1A2340;
-  --text-sub:     #6B7A99;
-  --text-muted:   #A0AEC0;
-  --border:       #E8ECF4;
-  --bg:           #F5F6FA;
-  --radius-sm:    8px;
-  --radius-md:    14px;
-  --radius-lg:    20px;
-  --transition:   0.2s ease;
-
-  position: fixed;
-  inset: 0;
-  background: rgba(15, 23, 42, .45);
+/* BREADCRUMB */
+.tarif-page .breadcrumb {
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 20px;
-  z-index: 200;
+  gap: 4px;
+  font-size: 12.5px;
+  color: var(--text-sub);
 }
 
-.tarif-page-modal-box {
-  background: var(--surface);
-  border-radius: var(--radius-lg);
-  width: 100%;
-  max-width: 660px;
-  max-height: 90vh;
+.tarif-page .breadcrumb a { color: var(--text-sub); text-decoration: none; transition: color var(--transition); }
+.tarif-page .breadcrumb a:hover { color: var(--primary); }
+.tarif-page .breadcrumb .material-symbols-rounded { font-size: 15px; color: var(--text-muted); }
+.tarif-page .breadcrumb .breadcrumb-current { color: var(--text-main); font-weight: 600; }
+
+/* TABLE */
+.tarif-page .tarif-table-wrap { overflow-x: auto; }
+
+.tarif-page .tarif-table { width: 100%; border-collapse: collapse; }
+
+.tarif-page .tarif-table th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  color: var(--text-muted);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.tarif-page .tarif-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13.5px;
+  color: var(--text-main);
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.tarif-page .tarif-table tbody tr:hover { background: #F8F9FE; }
+.tarif-page .tarif-table tbody tr:last-child td { border-bottom: none; }
+
+.tarif-page .tarif-table .tarif-name { font-weight: 600; }
+.tarif-page .tarif-table .tarif-code { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+.tarif-page .status-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.tarif-page .status-badge.active { background: rgba(45,203,138,.12); color: var(--green); }
+.tarif-page .status-badge.inactive { background: rgba(160,174,192,.15); color: var(--text-muted); }
+
+/* FORM PAGE (Create / Edit) */
+.tarif-page .form-header {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tarif-page .form-header h1 {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.tarif-page .form-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 24px 70px rgba(15,23,42,.3);
-  animation: tarif-modal-pop .22s ease;
-}
-
-@keyframes tarif-modal-pop {
-  from { opacity: 0; transform: translateY(8px) scale(.98); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-.tarif-page-modal-box .modal-header {
-  padding: 22px 24px;
-  border-bottom: 1px solid var(--border);
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-  background: linear-gradient(180deg, #FAFBFF, var(--surface));
+  flex-direction: column;
+  box-shadow: 0 2px 8px rgba(15,23,42,.06);
+  transition: box-shadow var(--transition);
 }
 
-.tarif-page-modal-box .modal-header-title { display: flex; align-items: flex-start; gap: 14px; }
+.tarif-page .form-panel:hover {
+  box-shadow: 0 4px 12px rgba(15,23,42,.1);
+}
 
-.tarif-page-modal-box .modal-header-icon {
-  width: 42px; height: 42px;
-  border-radius: 12px;
+.tarif-page .items-section {
+  padding: 0 32px 32px;
+  border-top: 1px solid var(--border);
+}
+
+.tarif-page .items-header {
+  margin-bottom: 20px;
+  padding-top: 24px;
+}
+
+.tarif-page .items-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 4px;
+}
+
+.tarif-page .items-header p {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.tarif-page .items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.tarif-page .item-card {
+  position: relative;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  gap: 16px;
+  align-items: flex-start;
+  transition: all var(--transition);
+}
+
+.tarif-page .item-card:hover {
+  border-color: var(--primary);
+  box-shadow: 0 2px 8px rgba(79,126,248,.08);
+}
+
+.tarif-page .item-number {
   background: linear-gradient(135deg, var(--primary), var(--primary-dk));
   color: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
   flex-shrink: 0;
-  box-shadow: 0 6px 16px rgba(79,126,248,.35);
 }
 
-.tarif-page-modal-box .modal-header-icon .material-symbols-rounded { font-size: 21px; }
+.tarif-page .item-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
 
-.tarif-page-modal-box .modal-header h2 { font-size: 17px; font-weight: 700; color: var(--text-main); letter-spacing: -.2px; }
-.tarif-page-modal-box .modal-header p { font-size: 12.5px; color: var(--text-sub); margin-top: 3px; }
+.tarif-page .item-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
 
-.tarif-page-modal-box .modal-close {
-  width: 34px; height: 34px;
-  border-radius: 9px;
-  border: none;
-  background: none;
+.tarif-page .item-field label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+
+.tarif-page .item-field input,
+.tarif-page .item-field textarea {
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+  transition: all var(--transition);
+}
+
+.tarif-page .item-field input::placeholder,
+.tarif-page .item-field textarea::placeholder {
   color: var(--text-muted);
+}
+
+.tarif-page .item-field input:focus,
+.tarif-page .item-field textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79,126,248,.1);
+  background: rgba(79,126,248,.02);
+}
+
+.tarif-page .item-field textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.tarif-page .item-field.full {
+  grid-column: 1 / -1;
+}
+
+.tarif-page .item-prices {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+}
+
+.tarif-page .margin-compact {
+  position: relative;
+}
+
+.tarif-page .margin-badge {
+  background: linear-gradient(135deg, rgba(45,203,138,.1), rgba(45,203,138,.05));
+  border: 1.5px solid rgba(45,203,138,.25);
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
+}
+
+.tarif-page .btn-remove {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(231,76,60,.08);
+  color: #E74C3C;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  transition: background var(--transition), color var(--transition);
+  transition: all var(--transition);
 }
 
-.tarif-page-modal-box .modal-close:hover { background: var(--bg); color: var(--text-main); }
+.tarif-page .btn-remove:hover {
+  background: rgba(231,76,60,.15);
+}
 
-.tarif-page-modal-box .modal-body {
+.tarif-page .btn-remove .material-symbols-rounded {
+  font-size: 16px;
+}
+
+.tarif-page .btn-add-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(79,126,248,.08);
+  color: var(--primary);
+  border: 1.5px dashed rgba(79,126,248,.3);
+  border-radius: var(--radius-md);
+  padding: 11px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  font-family: inherit;
+}
+
+.tarif-page .btn-add-item:hover {
+  background: rgba(79,126,248,.12);
+  border-color: var(--primary);
+}
+
+.tarif-page .btn-add-item .material-symbols-rounded {
+  font-size: 18px;
+}
+
+.tarif-page .form-fields {
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tarif-page .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.tarif-page .form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tarif-page .form-field.full {
+  grid-column: 1 / -1;
+}
+
+.tarif-page .form-field label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.tarif-page .form-field .required {
+  color: #E74C3C;
+  margin-left: 2px;
+}
+
+.tarif-page .form-field input,
+.tarif-page .form-field select,
+.tarif-page .form-field textarea {
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+  transition: all var(--transition);
+}
+
+.tarif-page .form-field input::placeholder,
+.tarif-page .form-field textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.tarif-page .form-field input:focus,
+.tarif-page .form-field select:focus,
+.tarif-page .form-field textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79,126,248,.1);
+  background: rgba(79,126,248,.02);
+}
+
+.tarif-page .form-field textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.tarif-page .form-field input:disabled {
+  background: var(--bg);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.tarif-page .margin-field {
+  position: relative;
+}
+
+.tarif-page .margin-display {
+  background: linear-gradient(135deg, rgba(45,203,138,.08), rgba(45,203,138,.04));
+  border: 1.5px solid rgba(45,203,138,.3);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  font-size: 14px;
+}
+
+.tarif-page .margin-value {
+  font-weight: 700;
+  color: var(--green);
+  letter-spacing: -0.3px;
+}
+
+.tarif-page .form-actions {
+  padding: 16px 32px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: var(--bg);
+}
+
+.tarif-page .panel .modal-body {
   padding: 22px 24px 24px;
-  overflow-y: auto;
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
   background: var(--bg);
 }
 
-.tarif-page-modal-box .preview-card {
-  background: linear-gradient(135deg,#4F7EF8 0%,#7B5CFA 100%);
-  border-radius: var(--radius-md);
-  padding: 18px 20px;
-  position: relative;
-  overflow: hidden;
-}
-
-.tarif-page-modal-box .preview-card::after {
-  content: '';
-  position: absolute; top: -30px; right: -30px;
-  width: 120px; height: 120px; border-radius: 50%; background: rgba(255,255,255,.08);
-}
-
-.tarif-page-modal-box .preview-badges { display: flex; gap: 6px; margin-bottom: 10px; position: relative; z-index: 1; }
-.tarif-page-modal-box .preview-badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 20px; background: rgba(255,255,255,.2); color: #fff; }
-.tarif-page-modal-box .preview-name { font-size: 15px; font-weight: 600; color: rgba(255,255,255,.85); margin-bottom: 8px; min-height: 22px; position: relative; z-index: 1; }
-.tarif-page-modal-box .preview-price { font-size: 24px; font-weight: 800; color: #fff; letter-spacing: -.5px; position: relative; z-index: 1; }
-.tarif-page-modal-box .preview-unit { font-size: 12px; color: rgba(255,255,255,.65); font-weight: 500; }
-
-.tarif-page-modal-box .form-section-title {
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--primary);
-  text-transform: uppercase;
-  letter-spacing: .5px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tarif-page-modal-box .form-section-title .material-symbols-rounded { font-size: 16px; }
-
-.tarif-page-modal-box .form-row {
+.tarif-page .panel .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
@@ -587,18 +847,18 @@
   padding: 18px;
 }
 
-.tarif-page-modal-box .form-field { display: flex; flex-direction: column; gap: 6px; }
-.tarif-page-modal-box .form-field.full { grid-column: 1 / -1; }
+.tarif-page .panel .form-field { display: flex; flex-direction: column; gap: 6px; }
+.tarif-page .panel .form-field.full { grid-column: 1 / -1; }
 
-.tarif-page-modal-box .form-field label {
+.tarif-page .panel .form-field label {
   font-size: 12.5px;
   font-weight: 600;
   color: var(--text-sub);
 }
 
-.tarif-page-modal-box .form-field input,
-.tarif-page-modal-box .form-field select,
-.tarif-page-modal-box .form-field textarea {
+.tarif-page .panel .form-field input,
+.tarif-page .panel .form-field select,
+.tarif-page .panel .form-field textarea {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
@@ -610,77 +870,19 @@
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
-.tarif-page-modal-box .form-field input::placeholder,
-.tarif-page-modal-box .form-field textarea::placeholder { color: var(--text-muted); }
+.tarif-page .panel .form-field input::placeholder,
+.tarif-page .panel .form-field textarea::placeholder { color: var(--text-muted); }
 
-.tarif-page-modal-box .form-field input:focus,
-.tarif-page-modal-box .form-field select:focus,
-.tarif-page-modal-box .form-field textarea:focus {
+.tarif-page .panel .form-field input:focus,
+.tarif-page .panel .form-field select:focus,
+.tarif-page .panel .form-field textarea:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(79,126,248,.12);
 }
 
-.tarif-page-modal-box .pricing-types {
-  display: grid;
-  grid-template-columns: repeat(3,1fr);
-  gap: 10px;
-}
+.tarif-page .panel .form-field input:disabled { background: var(--bg); color: var(--text-sub); }
 
-.tarif-page-modal-box .pricing-type {
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  cursor: pointer;
-  transition: all var(--transition);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  background: var(--surface);
-}
-
-.tarif-page-modal-box .pricing-type:hover { border-color: var(--primary); }
-.tarif-page-modal-box .pricing-type.active { border-color: var(--primary); background: rgba(79,126,248,.06); }
-.tarif-page-modal-box .pricing-type .material-symbols-rounded { font-size: 20px; color: var(--text-muted); margin-bottom: 2px; }
-.tarif-page-modal-box .pricing-type.active .material-symbols-rounded { color: var(--primary); }
-.tarif-page-modal-box .pricing-type-name { font-size: 13px; font-weight: 700; color: var(--text-main); }
-.tarif-page-modal-box .pricing-type-desc { font-size: 11.5px; color: var(--text-muted); }
-
-.tarif-page-modal-box .section-block { border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: var(--surface); }
-
-.tarif-page-modal-box .section-block-header {
-  display: flex; align-items: center; gap: 8px; padding: 12px 16px;
-  background: var(--bg); font-size: 13px; font-weight: 700; color: var(--text-main);
-  border-bottom: 1px solid var(--border);
-}
-
-.tarif-page-modal-box .section-block-header .material-symbols-rounded { font-size: 16px; color: var(--text-muted); }
-.tarif-page-modal-box .section-block-body { padding: 12px 16px; }
-.tarif-page-modal-box .empty-state { font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
-
-.tarif-page-modal-box .add-link {
-  display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
-  color: var(--primary); cursor: pointer; background: none; border: none;
-  font-family: inherit; padding: 0; transition: opacity var(--transition);
-}
-
-.tarif-page-modal-box .add-link:hover { opacity: .75; }
-.tarif-page-modal-box .add-link .material-symbols-rounded { font-size: 16px; }
-
-.tarif-page-modal-box .split-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-
-.tarif-page-modal-box .radio-group { display: flex; gap: 8px; }
-
-.tarif-page-modal-box .radio-option {
-  flex: 1; padding: 9px 10px; border-radius: var(--radius-sm);
-  border: 1.5px solid var(--border); text-align: center; font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: all var(--transition); color: var(--text-sub);
-  background: var(--surface);
-}
-
-.tarif-page-modal-box .radio-option:hover { border-color: var(--primary); color: var(--primary); }
-.tarif-page-modal-box .radio-option.active { border-color: var(--primary); background: var(--primary); color: #fff; }
-
-.tarif-page-modal-box .modal-footer {
+.tarif-page .panel .modal-footer {
   padding: 16px 24px;
   border-top: 1px solid var(--border);
   display: flex;
@@ -689,12 +891,15 @@
   background: var(--surface);
 }
 
-.tarif-page-modal-box .btn-outline,
-.tarif-page-modal-box .btn-primary { padding: 10px 20px; }
-
-.tarif-page-modal-box .modal-body::-webkit-scrollbar { width: 5px; }
-.tarif-page-modal-box .modal-body::-webkit-scrollbar-track { background: transparent; }
-.tarif-page-modal-box .modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+.tarif-page .panel .satusehat-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 30px 20px;
+  text-align: center;
+  color: var(--text-sub);
+}
 
 /* RESPONSIVE */
 @media (max-width: 1100px) {
@@ -702,13 +907,37 @@
 }
 
 @media (max-width: 768px) {
-  .tarif-page-modal-box .form-row { grid-template-columns: 1fr; }
-  .tarif-page-modal-box .pricing-types { grid-template-columns: 1fr; }
-  .tarif-page-modal-box .split-row { grid-template-columns: 1fr; }
+  .tarif-page .panel .form-row { grid-template-columns: 1fr; }
+  .tarif-page .form-row { grid-template-columns: 1fr; }
+  .tarif-page .form-fields { padding: 24px; gap: 16px; }
+  .tarif-page .form-actions { padding: 12px 24px; }
+  .tarif-page .item-prices { grid-template-columns: 1fr 1fr 1fr; }
+  .tarif-page .item-card { grid-template-columns: 32px 1fr auto; }
 }
 
 @media (max-width: 600px) {
   .tarif-page .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .tarif-page .page-title h1 { font-size: 20px; }
-  .tarif-page .tarif-right { display: none; }
+  .tarif-page .form-header h1 { font-size: 22px; }
+  .tarif-page .form-fields { padding: 20px; gap: 14px; }
+  .tarif-page .form-actions { flex-direction: column-reverse; padding: 12px 20px; }
+  .tarif-page .form-actions button { width: 100%; }
+  .tarif-page .items-section { padding: 0 20px 20px; }
+  .tarif-page .item-card {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 16px;
+  }
+  .tarif-page .item-number {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+  .tarif-page .item-prices {
+    grid-template-columns: 1fr;
+  }
+  .tarif-page .btn-remove {
+    top: 8px;
+    right: 8px;
+  }
 }

@@ -40,6 +40,15 @@
   box-shadow: 0 0 0 3px rgba(79, 126, 248, 0.12);
 }
 
+.custom-select-trigger.error {
+  border-color: #FF4D4F;
+  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.12);
+}
+
+.custom-select-trigger.error:hover:not(:disabled) {
+  border-color: #FF4D4F;
+}
+
 .custom-select-value {
   flex: 1;
   overflow: hidden;
