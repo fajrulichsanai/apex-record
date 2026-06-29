@@ -1,4 +1,4 @@
-name: Deploy to VPS
+name: Deploy Next.js to VPS
 
 on:
   push:
@@ -7,18 +7,36 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to VPS
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@master
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.VPS_PORT || 22 }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
           script: |
+            set -e
+
+            # Load NVM agar npm & node tersedia
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+            echo "📁 Masuk ke direktori project..."
             cd ~/apex-record
+
+            echo "⬇️  Pull kode terbaru..."
             git pull origin development
+
+            echo "📦 Install dependencies..."
             npm install
+
+            echo "🔨 Build project..."
             npm run build
+
+            echo "♻️  Restart PM2..."
             pm2 restart apex-record
+
+            echo "✅ Deploy selesai!"
