@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import { patientsApi, Patient } from '@/lib/patients';
 import { practitionersApi, Practitioner } from '@/lib/practitioners';
@@ -23,6 +23,7 @@ const STEPS = [
 
 export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps) {
   const { error: showError } = useToast();
+  const hasLoaded = useRef(false);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
@@ -38,32 +39,32 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
   const [locationId, setLocationId] = useState('');
   const [chiefComplaint, setChiefComplaint] = useState('');
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [patientList, practitionerList, locationList, queueRes] = await Promise.all([
-        patientsApi.list(),
-        practitionersApi.list(),
-        locationsApi.list(true),
-        queuesApi.list({ status: 'waiting' }),
-      ]);
-      setPatients(patientList);
-      setPractitioners(practitionerList);
-      setLocations(locationList);
-      setWaitingQueue(queueRes.data);
-      if (locationList[0]) setLocationId(locationList[0].id.toString());
-    } catch (err) {
-      const msg = err instanceof ApiError ? err.message : 'Gagal memuat data';
-      setError(msg);
-      showError(msg);
-    } finally {
-      setLoading(false);
-    }
-  }, [showError]);
-
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (hasLoaded.current) return;
+    hasLoaded.current = true;
+
+    (async () => {
+      try {
+        setLoading(true);
+        const [patientList, practitionerList, locationList, queueRes] = await Promise.all([
+          patientsApi.list(),
+          practitionersApi.list(),
+          locationsApi.list(true),
+          queuesApi.list({ status: 'waiting' }),
+        ]);
+        setPatients(patientList);
+        setPractitioners(practitionerList);
+        setLocations(locationList);
+        setWaitingQueue(queueRes.data);
+      } catch (err) {
+        const msg = err instanceof ApiError ? err.message : 'Gagal memuat data';
+        setError(msg);
+        showError(msg);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   const selectedQueue = useMemo(
     () => (queueId ? waitingQueue.find((q) => q.id.toString() === queueId) : null),
@@ -82,8 +83,8 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!patientId || !practitionerId || !locationId) {
-      showError('Pasien, dokter, dan lokasi wajib dipilih');
+    if (!patientId || !practitionerId) {
+      showError('Pasien dan dokter wajib dipilih');
       return;
     }
     setSubmitting(true);
@@ -92,7 +93,6 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
       await encounterApi.create({
         patientId: Number(patientId),
         practitionerId: Number(practitionerId),
-        locationId: Number(locationId),
         queueId: queueId ? Number(queueId) : undefined,
         chiefComplaint: chiefComplaint.trim() || undefined,
       });
@@ -125,7 +125,7 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
   const selectedPractitioner = practitionerId ? practitioners.find((p) => p.id.toString() === practitionerId) : null;
 
   const canGoStep2 = !!patientId;
-  const canGoStep3 = !!patientId && !!practitionerId && !!locationId;
+  const canGoStep3 = !!patientId && !!practitionerId;
 
   const goNext = () => setStep((s) => Math.min(s + 1, 3));
   const goBack = () => setStep((s) => Math.max(s - 1, 1));
