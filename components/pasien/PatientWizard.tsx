@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import { Patient, PatientPayload, patientsApi } from '@/lib/patients';
-
-export const PATIENT_DRAFT_KEY = 'patient-wizard-draft';
+import { masterDataApi, WilayahItem } from '@/lib/master-data';
+import { useToast } from '@/lib/toast-context';
 
 type UiGender = 'laki-laki' | 'perempuan';
 
@@ -33,7 +33,6 @@ interface WizardForm {
 
   sumberInformasi: string;
   detailSumber: string;
-  kodeReferral: string;
   referrerPatientId: number | null;
   referrerSearch: string;
 
@@ -41,14 +40,17 @@ interface WizardForm {
   rhesus: string;
   punyaAlergi: boolean;
   catatanAlergi: string;
+  riwayatHipertensi: boolean;
+  riwayatDiabetes: boolean;
+  riwayatParuParu: boolean;
+  riwayatSyaraf: boolean;
+  riwayatSistemikLainnya: boolean;
+  alergiObat: boolean;
+  alergiMakanan: boolean;
 
   preferensiKontak: string;
   preferensiJamKontak: string;
   catatanPreferensi: string;
-  isMember: boolean;
-  memberId: string;
-
-  consentMarketing: boolean;
 }
 
 const EMPTY_FORM: WizardForm = {
@@ -76,7 +78,6 @@ const EMPTY_FORM: WizardForm = {
 
   sumberInformasi: '',
   detailSumber: '',
-  kodeReferral: '',
   referrerPatientId: null,
   referrerSearch: '',
 
@@ -84,14 +85,17 @@ const EMPTY_FORM: WizardForm = {
   rhesus: '',
   punyaAlergi: false,
   catatanAlergi: '',
+  riwayatHipertensi: false,
+  riwayatDiabetes: false,
+  riwayatParuParu: false,
+  riwayatSyaraf: false,
+  riwayatSistemikLainnya: false,
+  alergiObat: false,
+  alergiMakanan: false,
 
   preferensiKontak: '',
   preferensiJamKontak: '',
   catatanPreferensi: '',
-  isMember: false,
-  memberId: '',
-
-  consentMarketing: false,
 };
 
 function calcAge(birthDate: string): number | null {
@@ -155,7 +159,6 @@ function patientToForm(patient: Patient): WizardForm {
 
     sumberInformasi: patient.sumberInformasi || '',
     detailSumber: patient.detailSumber || '',
-    kodeReferral: patient.kodeReferral || '',
     referrerPatientId: patient.referrerPatientId ?? null,
     referrerSearch: '',
 
@@ -163,14 +166,17 @@ function patientToForm(patient: Patient): WizardForm {
     rhesus: patient.rhesus || '',
     punyaAlergi: !!patient.punyaAlergi,
     catatanAlergi: patient.catatanAlergi || '',
+    riwayatHipertensi: !!patient.riwayatHipertensi,
+    riwayatDiabetes: !!patient.riwayatDiabetes,
+    riwayatParuParu: !!patient.riwayatParuParu,
+    riwayatSyaraf: !!patient.riwayatSyaraf,
+    riwayatSistemikLainnya: !!patient.riwayatSistemikLainnya,
+    alergiObat: !!patient.alergiObat,
+    alergiMakanan: !!patient.alergiMakanan,
 
     preferensiKontak: patient.preferensiKontak || '',
     preferensiJamKontak: patient.preferensiJamKontak || '',
     catatanPreferensi: patient.catatanPreferensi || '',
-    isMember: !!patient.isMember,
-    memberId: patient.memberId || '',
-
-    consentMarketing: !!patient.consentMarketing,
   };
 }
 
@@ -200,24 +206,24 @@ function formToPayload(form: WizardForm): PatientPayload {
 
     sumberInformasi: (form.sumberInformasi || undefined) as PatientPayload['sumberInformasi'],
     detailSumber: form.detailSumber || undefined,
-    kodeReferral: form.kodeReferral || undefined,
     referrerPatientId: form.referrerPatientId ?? undefined,
 
     golonganDarah: (form.golonganDarah || undefined) as PatientPayload['golonganDarah'],
     rhesus: (form.rhesus || undefined) as PatientPayload['rhesus'],
     punyaAlergi: form.punyaAlergi,
     catatanAlergi: form.punyaAlergi ? form.catatanAlergi || undefined : undefined,
+    riwayatHipertensi: form.riwayatHipertensi,
+    riwayatDiabetes: form.riwayatDiabetes,
+    riwayatParuParu: form.riwayatParuParu,
+    riwayatSyaraf: form.riwayatSyaraf,
+    riwayatSistemikLainnya: form.riwayatSistemikLainnya,
+    alergiObat: form.alergiObat,
+    alergiMakanan: form.alergiMakanan,
 
     preferensiKontak: (form.preferensiKontak || undefined) as PatientPayload['preferensiKontak'],
     preferensiJamKontak: (form.preferensiJamKontak ||
       undefined) as PatientPayload['preferensiJamKontak'],
     catatanPreferensi: form.catatanPreferensi || undefined,
-    isMember: form.isMember,
-    memberId: form.isMember ? form.memberId || undefined : undefined,
-
-    consentMarketing: form.consentMarketing,
-    consentTanggal: form.consentMarketing ? new Date().toISOString() : undefined,
-    consentVersion: form.consentMarketing ? '1.0' : undefined,
   };
 }
 
@@ -246,15 +252,12 @@ const BASE_STEPS: StepDef[] = [
   { key: 'marketing', label: 'Marketing', icon: 'campaign' },
   { key: 'medis', label: 'Medis', icon: 'medical_information' },
   { key: 'preferensi', label: 'Preferensi', icon: 'tune' },
-  { key: 'persetujuan', label: 'Persetujuan', icon: 'fact_check' },
 ];
 
 interface PatientWizardProps {
   mode: 'create' | 'edit';
   initialPatient?: Patient | null;
-  noRmDisplay?: string;
   submitting: boolean;
-  submitError: string | null;
   onSubmit: (payload: PatientPayload) => void;
   onCancel: () => void;
 }
@@ -262,49 +265,79 @@ interface PatientWizardProps {
 export default function PatientWizard({
   mode,
   initialPatient,
-  noRmDisplay,
   submitting,
-  submitError,
   onSubmit,
   onCancel,
 }: PatientWizardProps) {
+  const toast = useToast();
   const [form, setForm] = useState<WizardForm>(EMPTY_FORM);
   const [stepIndex, setStepIndex] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
-  const [draftSavedAt, setDraftSavedAt] = useState<string | null>(null);
   const [referrerResults, setReferrerResults] = useState<Patient[]>([]);
   const [referrerLoading, setReferrerLoading] = useState(false);
+
+  const [provinces, setProvinces] = useState<WilayahItem[]>([]);
+  const [cities, setCities] = useState<WilayahItem[]>([]);
+  const [districts, setDistricts] = useState<WilayahItem[]>([]);
+  const [subDistricts, setSubDistricts] = useState<WilayahItem[]>([]);
+  const [provinceCode, setProvinceCode] = useState('');
+  const [cityCode, setCityCode] = useState('');
+  const [districtCode, setDistrictCode] = useState('');
+
   const hydrated = useRef(false);
 
-  // Hydrate from initial patient (edit mode) or draft (create mode)
+  // Hydrate from initial patient (edit mode)
   useEffect(() => {
     if (hydrated.current) return;
     hydrated.current = true;
     if (initialPatient) {
       setForm(patientToForm(initialPatient));
+    }
+  }, [initialPatient]);
+
+  // Load provinces on mount
+  useEffect(() => {
+    masterDataApi
+      .getProvinces()
+      .then((data) => setProvinces(Array.isArray(data) ? data : []))
+      .catch(() => setProvinces([]));
+  }, []);
+
+  // Load cities when province changes
+  useEffect(() => {
+    if (!provinceCode) {
+      setCities([]);
       return;
     }
-    if (mode === 'create' && typeof window !== 'undefined') {
-      const raw = localStorage.getItem(PATIENT_DRAFT_KEY);
-      if (raw) {
-        try {
-          setForm({ ...EMPTY_FORM, ...JSON.parse(raw) });
-        } catch {
-          // ignore corrupt draft
-        }
-      }
-    }
-  }, [initialPatient, mode]);
+    masterDataApi
+      .getCities(provinceCode)
+      .then((data) => setCities(Array.isArray(data) ? data : []))
+      .catch(() => setCities([]));
+  }, [provinceCode]);
 
-  // Autosave draft (create mode only)
+  // Load districts when city changes
   useEffect(() => {
-    if (mode !== 'create') return;
-    const timeout = setTimeout(() => {
-      localStorage.setItem(PATIENT_DRAFT_KEY, JSON.stringify(form));
-      setDraftSavedAt(new Date().toLocaleTimeString('id-ID'));
-    }, 600);
-    return () => clearTimeout(timeout);
-  }, [form, mode]);
+    if (!cityCode) {
+      setDistricts([]);
+      return;
+    }
+    masterDataApi
+      .getDistricts(cityCode)
+      .then((data) => setDistricts(Array.isArray(data) ? data : []))
+      .catch(() => setDistricts([]));
+  }, [cityCode]);
+
+  // Load sub-districts when district changes
+  useEffect(() => {
+    if (!districtCode) {
+      setSubDistricts([]);
+      return;
+    }
+    masterDataApi
+      .getSubDistricts(districtCode)
+      .then((data) => setSubDistricts(Array.isArray(data) ? data : []))
+      .catch(() => setSubDistricts([]));
+  }, [districtCode]);
 
   // Clear conditional fields when toggled OFF
   useEffect(() => {
@@ -312,12 +345,6 @@ export default function PatientWizard({
       setForm((prev) => ({ ...prev, catatanAlergi: '' }));
     }
   }, [form.punyaAlergi]);
-
-  useEffect(() => {
-    if (!form.isMember && form.memberId) {
-      setForm((prev) => ({ ...prev, memberId: '' }));
-    }
-  }, [form.isMember]);
 
   useEffect(() => {
     if (form.sumberInformasi !== 'lainnya' && form.detailSumber) {
@@ -358,6 +385,7 @@ export default function PatientWizard({
 
   const update = <K extends keyof WizardForm>(key: K, value: WizardForm[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
+    setFieldErrors((prev) => (prev[key as string] ? { ...prev, [key]: null } : prev));
   };
 
   const validateStep = (key: string): Record<string, string | null> => {
@@ -405,16 +433,6 @@ export default function PatientWizard({
         errs.catatanAlergi = 'Catatan alergi wajib diisi.';
       }
     }
-    if (key === 'preferensi') {
-      if (form.isMember && !form.memberId.trim()) {
-        errs.memberId = 'Member ID wajib diisi.';
-      }
-    }
-    if (key === 'persetujuan') {
-      if (!form.consentMarketing) {
-        errs.consentMarketing = 'Persetujuan penggunaan data pribadi wajib dicentang.';
-      }
-    }
     return errs;
   };
 
@@ -423,6 +441,7 @@ export default function PatientWizard({
     const hasErrors = Object.values(errs).some((e) => e !== null);
     if (hasErrors) {
       setFieldErrors(errs);
+      toast.error(Object.values(errs).find((e) => e !== null) || 'Periksa kembali data yang diisi.');
       return;
     }
     setFieldErrors({});
@@ -434,9 +453,14 @@ export default function PatientWizard({
     setStepIndex((i) => Math.max(i - 1, 0));
   };
 
-  const handleSaveDraft = () => {
-    localStorage.setItem(PATIENT_DRAFT_KEY, JSON.stringify(form));
-    setDraftSavedAt(new Date().toLocaleTimeString('id-ID'));
+  const handleCancel = () => {
+    setForm(EMPTY_FORM);
+    setFieldErrors({});
+    setStepIndex(0);
+    setProvinceCode('');
+    setCityCode('');
+    setDistrictCode('');
+    onCancel();
   };
 
   const handleSubmit = () => {
@@ -451,6 +475,7 @@ export default function PatientWizard({
     const hasErrors = Object.values(allErrors).some((e) => e !== null);
     if (hasErrors) {
       setFieldErrors(allErrors);
+      toast.error('Periksa kembali data yang belum lengkap.');
       // Find first step with error and navigate to it
       for (let i = 0; i < steps.length; i++) {
         const stepErrors = validateStep(steps[i].key);
@@ -507,9 +532,6 @@ export default function PatientWizard({
       </div>
       <div className="wizard-progress-text">
         Langkah {stepIndex + 1} dari {steps.length} ({progressPct}%)
-        {mode === 'create' && draftSavedAt && (
-          <span className="wizard-draft-saved"> · Draf tersimpan {draftSavedAt}</span>
-        )}
       </div>
 
       <div className="patient-form-card">
@@ -521,14 +543,8 @@ export default function PatientWizard({
             {currentStep.label}
           </div>
 
-          {submitError && <div className="satusehat-empty">{submitError}</div>}
-
           {currentStep.key === 'identitas' && (
             <div className="form-row">
-              <div className="form-field">
-                <label>No. Rekam Medis</label>
-                <input type="text" value={noRmDisplay || 'Akan dibuat otomatis'} readOnly disabled />
-              </div>
               <div className={`form-field full ${fieldErrors.name ? 'error' : ''}`}>
                 <label>Nama Lengkap *</label>
                 <input
@@ -645,39 +661,72 @@ export default function PatientWizard({
                 />
               </div>
               <div className="form-field">
-                <label>Kelurahan</label>
-                <input
-                  type="text"
-                  value={form.kelurahan}
-                  onChange={(e) => update('kelurahan', e.target.value)}
+                <label>Provinsi</label>
+                <CustomSelect
+                  value={provinceCode}
+                  onChange={(v) => {
+                    setProvinceCode(v);
+                    setCityCode('');
+                    setDistrictCode('');
+                    const found = provinces.find((p) => p.code === v);
+                    update('province', found?.name || '');
+                    update('city', '');
+                    update('kecamatan', '');
+                    update('kelurahan', '');
+                  }}
+                  options={[
+                    { value: '', label: 'Pilih provinsi' },
+                    ...provinces.map((p) => ({ value: p.code, label: p.name })),
+                  ]}
                 />
-              </div>
-              <div className={`form-field ${fieldErrors.kecamatan ? 'error' : ''}`}>
-                <label>Kecamatan *</label>
-                <input
-                  type="text"
-                  value={form.kecamatan}
-                  onChange={(e) => update('kecamatan', e.target.value)}
-                />
-                {fieldErrors.kecamatan && <span className="field-error">{fieldErrors.kecamatan}</span>}
               </div>
               <div className={`form-field ${fieldErrors.city ? 'error' : ''}`}>
                 <label>Kota / Kabupaten *</label>
-                <input
-                  type="text"
-                  placeholder="Contoh: Bandung"
-                  value={form.city}
-                  onChange={(e) => update('city', e.target.value)}
+                <CustomSelect
+                  value={cityCode}
+                  onChange={(v) => {
+                    setCityCode(v);
+                    setDistrictCode('');
+                    const found = cities.find((c) => c.code === v);
+                    update('city', found?.name || '');
+                    update('kecamatan', '');
+                    update('kelurahan', '');
+                  }}
+                  options={[
+                    { value: '', label: provinceCode ? 'Pilih kota/kabupaten' : 'Pilih provinsi dahulu' },
+                    ...cities.map((c) => ({ value: c.code, label: c.name })),
+                  ]}
+                  error={!!fieldErrors.city}
                 />
                 {fieldErrors.city && <span className="field-error">{fieldErrors.city}</span>}
               </div>
+              <div className={`form-field ${fieldErrors.kecamatan ? 'error' : ''}`}>
+                <label>Kecamatan *</label>
+                <CustomSelect
+                  value={districtCode}
+                  onChange={(v) => {
+                    setDistrictCode(v);
+                    const found = districts.find((d) => d.code === v);
+                    update('kecamatan', found?.name || '');
+                    update('kelurahan', '');
+                  }}
+                  options={[
+                    { value: '', label: cityCode ? 'Pilih kecamatan' : 'Pilih kota/kabupaten dahulu' },
+                    ...districts.map((d) => ({ value: d.code, label: d.name })),
+                  ]}
+                  error={!!fieldErrors.kecamatan}
+                />
+                {fieldErrors.kecamatan && <span className="field-error">{fieldErrors.kecamatan}</span>}
+              </div>
               <div className="form-field">
-                <label>Provinsi</label>
-                <input
-                  type="text"
-                  placeholder="Contoh: Jawa Barat"
-                  value={form.province}
-                  onChange={(e) => update('province', e.target.value)}
+                <label>Kelurahan</label>
+                <CustomSelect
+                  value={form.kelurahan}
+                  onChange={(v) => update('kelurahan', v)}
+                  options={[
+                    { value: '', label: districtCode ? 'Pilih kelurahan' : 'Pilih kecamatan dahulu' },
+                    ...subDistricts.map((s) => ({ value: s.name, label: s.name })),
+                  ]}
                 />
               </div>
               <div className={`form-field ${fieldErrors.postalCode ? 'error' : ''}`}>
@@ -764,14 +813,6 @@ export default function PatientWizard({
                   {fieldErrors.detailSumber && <span className="field-error">{fieldErrors.detailSumber}</span>}
                 </div>
               )}
-              <div className="form-field">
-                <label>Kode Referral</label>
-                <input
-                  type="text"
-                  value={form.kodeReferral}
-                  onChange={(e) => update('kodeReferral', e.target.value)}
-                />
-              </div>
               <div className="form-field full wizard-autocomplete">
                 <label>Direferensikan oleh Pasien Lain</label>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -865,6 +906,28 @@ export default function PatientWizard({
                 />
                 {fieldErrors.rhesus && <span className="field-error">{fieldErrors.rhesus}</span>}
               </div>
+              {(
+                [
+                  ['riwayatHipertensi', 'Ada Penyakit Hipertensi'],
+                  ['riwayatDiabetes', 'Ada Penyakit Diabetes'],
+                  ['riwayatParuParu', 'Ada Penyakit Paru-Paru'],
+                  ['riwayatSyaraf', 'Ada Penyakit Syaraf'],
+                  ['riwayatSistemikLainnya', 'Ada Penyakit Sistemik Lainnya'],
+                  ['alergiObat', 'Ada Alergi Obat'],
+                  ['alergiMakanan', 'Ada Alergi Makanan'],
+                ] as [keyof WizardForm, string][]
+              ).map(([key, label]) => (
+                <div className="form-field full wizard-switch-field" key={key}>
+                  <label>{label}?</label>
+                  <button
+                    type="button"
+                    className={`wizard-switch ${form[key] ? 'on' : ''}`}
+                    onClick={() => update(key, !form[key])}
+                  >
+                    <span className="wizard-switch-track" />
+                  </button>
+                </div>
+              ))}
               <div className="form-field full wizard-switch-field">
                 <label>Punya Alergi?</label>
                 <button
@@ -929,62 +992,15 @@ export default function PatientWizard({
                   onChange={(e) => update('catatanPreferensi', e.target.value)}
                 />
               </div>
-              <div className="form-field full wizard-switch-field">
-                <label>Apakah Member?</label>
-                <button
-                  type="button"
-                  className={`wizard-switch ${form.isMember ? 'on' : ''}`}
-                  onClick={() => update('isMember', !form.isMember)}
-                >
-                  <span className="wizard-switch-track" />
-                </button>
-              </div>
-              {form.isMember && (
-                <div className={`form-field full ${fieldErrors.memberId ? 'error' : ''}`}>
-                  <label>Member ID *</label>
-                  <input
-                    type="text"
-                    value={form.memberId}
-                    onChange={(e) => update('memberId', e.target.value)}
-                  />
-                  {fieldErrors.memberId && <span className="field-error">{fieldErrors.memberId}</span>}
-                </div>
-              )}
-            </div>
-          )}
-
-          {currentStep.key === 'persetujuan' && (
-            <div className="form-row">
-              <div className={`form-field full wizard-consent-field ${fieldErrors.consentMarketing ? 'error' : ''}`}>
-                <label className="wizard-checkbox">
-                  <input
-                    type="checkbox"
-                    checked={form.consentMarketing}
-                    onChange={(e) => update('consentMarketing', e.target.checked)}
-                  />
-                  <span>
-                    Saya menyetujui penggunaan data pribadi sesuai kebijakan privasi klinik.
-                  </span>
-                </label>
-                {fieldErrors.consentMarketing && <span className="field-error">{fieldErrors.consentMarketing}</span>}
-              </div>
             </div>
           )}
         </div>
 
         <div className="modal-footer wizard-footer">
           <div className="wizard-footer-left">
-            <button type="button" className="btn-outline" onClick={onCancel}>
+            <button type="button" className="btn-outline" onClick={handleCancel}>
               Batalkan
             </button>
-            {mode === 'create' && (
-              <button type="button" className="btn-outline" onClick={handleSaveDraft}>
-                <span className="material-symbols-rounded" style={{ fontSize: 18 }}>
-                  save
-                </span>
-                Save Draft
-              </button>
-            )}
           </div>
           <div className="wizard-footer-right">
             {stepIndex > 0 && (

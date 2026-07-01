@@ -48,6 +48,13 @@ export interface Patient {
   rhesus?: Rhesus;
   punyaAlergi?: boolean;
   catatanAlergi?: string;
+  riwayatHipertensi?: boolean;
+  riwayatDiabetes?: boolean;
+  riwayatParuParu?: boolean;
+  riwayatSyaraf?: boolean;
+  riwayatSistemikLainnya?: boolean;
+  alergiObat?: boolean;
+  alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
   preferensiJamKontak?: PreferensiJamKontak;
   catatanPreferensi?: string;
@@ -90,6 +97,13 @@ export interface PatientPayload {
   rhesus?: Rhesus;
   punyaAlergi?: boolean;
   catatanAlergi?: string;
+  riwayatHipertensi?: boolean;
+  riwayatDiabetes?: boolean;
+  riwayatParuParu?: boolean;
+  riwayatSyaraf?: boolean;
+  riwayatSistemikLainnya?: boolean;
+  alergiObat?: boolean;
+  alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
   preferensiJamKontak?: PreferensiJamKontak;
   catatanPreferensi?: string;

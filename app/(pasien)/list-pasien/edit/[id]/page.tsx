@@ -6,18 +6,19 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import PatientWizard from '@/components/pasien/PatientWizard';
 import { patientsApi, Patient, PatientPayload } from '@/lib/patients';
 import { ApiError } from '@/lib/api-client';
+import { useToast } from '@/lib/toast-context';
 import '../../../../styles/list-pasien.css';
 
 export default function EditPasienPage() {
   const router = useRouter();
   const params = useParams();
+  const toast = useToast();
   const patientId = Number(params.id);
 
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!patientId) return;
@@ -36,13 +37,12 @@ export default function EditPasienPage() {
 
   const handleSubmit = async (payload: PatientPayload) => {
     if (!patient) return;
-    setSaveError(null);
     setSaving(true);
     try {
       await patientsApi.update(patient.id, payload);
       router.push(`/list-pasien?patientId=${patient.id}`);
     } catch (err) {
-      setSaveError(err instanceof ApiError ? err.message : 'Gagal memperbarui data pasien');
+      toast.error(err instanceof ApiError ? err.message : 'Gagal memperbarui data pasien');
     } finally {
       setSaving(false);
     }
@@ -76,9 +76,7 @@ export default function EditPasienPage() {
           <PatientWizard
             mode="edit"
             initialPatient={patient}
-            noRmDisplay={patient.noRm}
             submitting={saving}
-            submitError={saveError}
             onSubmit={handleSubmit}
             onCancel={handleCancel}
           />
