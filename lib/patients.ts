@@ -42,7 +42,6 @@ export interface Patient {
   maritalStatus?: MaritalStatus;
   sumberInformasi?: SumberInformasi;
   detailSumber?: string;
-  kodeReferral?: string;
   referrerPatientId?: number;
   golonganDarah?: BloodType;
   rhesus?: Rhesus;
@@ -61,8 +60,6 @@ export interface Patient {
   consentMarketing?: boolean;
   consentTanggal?: string;
   consentVersion?: string;
-  isMember?: boolean;
-  memberId?: string;
   satusehatPatientId?: string;
   syncStatus: SyncStatus;
   createdAt: string;
@@ -91,7 +88,6 @@ export interface PatientPayload {
   birthOrder?: number;
   sumberInformasi?: SumberInformasi;
   detailSumber?: string;
-  kodeReferral?: string;
   referrerPatientId?: number;
   golonganDarah?: BloodType;
   rhesus?: Rhesus;
@@ -110,8 +106,6 @@ export interface PatientPayload {
   consentMarketing?: boolean;
   consentTanggal?: string;
   consentVersion?: string;
-  isMember?: boolean;
-  memberId?: string;
 }
 
 export interface Encounter {
