@@ -149,7 +149,35 @@ function TransaksiPageInner() {
   const lunasCount = billings.filter((b) => b.status === 'paid').length;
 
   function updateRow(key: number, patch: Partial<ItemRow>) {
-    setItems((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+    setItems((prev) =>
+      prev.map((r) => {
+        if (r.key !== key) return r;
+        const updated = { ...r, ...patch };
+
+        // Ensure quantity is at least 1
+        if ('quantity' in patch && updated.quantity < 1) {
+          updated.quantity = 1;
+        }
+
+        // Ensure unitPrice is non-negative
+        if ('unitPrice' in patch && updated.unitPrice < 0) {
+          updated.unitPrice = 0;
+        }
+
+        // Ensure discount doesn't exceed unitPrice for nominal discount
+        if ('discount' in patch || 'discountType' in patch) {
+          if (updated.discountType === 'nominal' && updated.discount > updated.unitPrice) {
+            updated.discount = updated.unitPrice;
+          } else if (updated.discountType === 'percent' && updated.discount > 100) {
+            updated.discount = 100;
+          } else if (updated.discount < 0) {
+            updated.discount = 0;
+          }
+        }
+
+        return updated;
+      }),
+    );
   }
 
   function handleTarifSelect(key: number, tarifId: string) {
@@ -157,7 +185,7 @@ function TransaksiPageInner() {
     updateRow(key, {
       tarifId: tarif ? tarif.id : '',
       name: tarif ? tarif.name : '',
-      unitPrice: tarif ? tarif.hargaJual : 0,
+      unitPrice: tarif ? Math.max(0, tarif.hargaJual) : 0,
     });
   }
 
@@ -176,18 +204,27 @@ function TransaksiPageInner() {
       setSubmitError('Pilih kunjungan terlebih dahulu');
       return;
     }
+
+    // Validate items: must have name and unitPrice must be > 0
     const validItems = items.filter((r) => r.name && r.unitPrice > 0);
     if (validItems.length === 0) {
       setSubmitError('Tambahkan minimal satu tindakan dengan harga');
       return;
     }
 
+    // Ensure all prices are non-negative (defensive check)
+    const invalidPriceItems = validItems.filter((r) => r.unitPrice < 0 || r.discount < 0);
+    if (invalidPriceItems.length > 0) {
+      setSubmitError('Harga dan diskon tidak boleh negatif');
+      return;
+    }
+
     const payloadItems: CreateBillingItemPayload[] = validItems.map((r) => ({
       tarifId: r.tarifId || undefined,
       name: r.name,
-      quantity: r.quantity,
-      unitPrice: r.unitPrice,
-      discount: r.discount,
+      quantity: Math.max(1, r.quantity),
+      unitPrice: Math.max(0, r.unitPrice),
+      discount: Math.max(0, r.discount),
       discountType: r.discountType,
     }));
 
