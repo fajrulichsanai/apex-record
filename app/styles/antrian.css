@@ -501,6 +501,20 @@
 
 /* MODAL */
 .queue-modal-overlay {
+  --primary:      #4F7EF8;
+  --primary-dk:   #3B6CE6;
+  --green:        #2DCB8A;
+  --bg:           #F5F6FA;
+  --surface:      #FFFFFF;
+  --text-main:    #1A2340;
+  --text-sub:     #6B7A99;
+  --text-muted:   #A0AEC0;
+  --border:       #E8ECF4;
+  --tag-cancel:   #FF4D4F;
+  --radius-sm:    8px;
+  --radius-md:    14px;
+  --transition:   0.2s ease;
+
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, .55);
