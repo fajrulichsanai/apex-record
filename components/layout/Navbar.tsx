@@ -58,17 +58,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         </div>
       </div>
       <div className="topbar-right">
-        <button className="icon-btn" aria-label="Dark mode">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path
-              d="M21 12.5A9 9 0 1111.5 3a7 7 0 009.5 9.5z"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-        <button className="icon-btn" aria-label="Notifications">
+        <button className="icon-btn" aria-label="Notifikasi" title="Lihat notifikasi">
           <svg viewBox="0 0 24 24" fill="none">
             <path
               d="M6 8a6 6 0 1112 0c0 3 1 5 1.5 6H4.5C5 13 6 11 6 8z"

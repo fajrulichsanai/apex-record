@@ -292,6 +292,17 @@ export default function PatientWizard({
     hydrated.current = true;
     if (initialPatient) {
       setForm(patientToForm(initialPatient));
+      if (initialPatient.referrerPatientId) {
+        patientsApi
+          .get(initialPatient.referrerPatientId)
+          .then((referrer) => {
+            setForm((prev) => ({
+              ...prev,
+              referrerSearch: `${referrer.name} (No.RM ${referrer.noRm})`,
+            }));
+          })
+          .catch(() => {});
+      }
     }
   }, [initialPatient]);
 
@@ -338,6 +349,26 @@ export default function PatientWizard({
       .then((data) => setSubDistricts(Array.isArray(data) ? data : []))
       .catch(() => setSubDistricts([]));
   }, [districtCode]);
+
+  // Edit mode: resolve wilayah codes from saved names once each level's options are loaded,
+  // so the dropdowns show the patient's current value instead of the placeholder.
+  useEffect(() => {
+    if (mode !== 'edit' || !form.province || provinceCode || provinces.length === 0) return;
+    const found = provinces.find((p) => p.name === form.province);
+    if (found) setProvinceCode(found.code);
+  }, [mode, form.province, provinceCode, provinces]);
+
+  useEffect(() => {
+    if (mode !== 'edit' || !form.city || cityCode || cities.length === 0) return;
+    const found = cities.find((c) => c.name === form.city);
+    if (found) setCityCode(found.code);
+  }, [mode, form.city, cityCode, cities]);
+
+  useEffect(() => {
+    if (mode !== 'edit' || !form.kecamatan || districtCode || districts.length === 0) return;
+    const found = districts.find((d) => d.name === form.kecamatan);
+    if (found) setDistrictCode(found.code);
+  }, [mode, form.kecamatan, districtCode, districts]);
 
   // Clear conditional fields when toggled OFF
   useEffect(() => {
@@ -497,9 +528,9 @@ export default function PatientWizard({
     <div className="patient-wizard">
       <div className="wizard-stepper">
         {steps.map((step, idx) => {
-          const isDone = idx < stepIndex;
+          const isDone = mode === 'edit' ? true : idx < stepIndex;
           const isActive = idx === stepIndex;
-          const isLocked = idx > stepIndex;
+          const isLocked = mode === 'edit' ? false : idx > stepIndex;
           return (
             <div
               key={step.key}

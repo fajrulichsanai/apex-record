@@ -9,25 +9,17 @@ import {
   FiUsers,
   FiClock,
   FiMonitor,
-  FiCalendar,
   FiClipboard,
   FiEdit3,
-  FiPackage,
-  FiFileText,
-  FiBox,
   FiCreditCard,
-  FiFile,
   FiDollarSign,
   FiBriefcase,
   FiBarChart2,
   FiActivity,
   FiTrendingUp,
-  FiRefreshCw,
   FiSettings,
   FiHome,
   FiUserCheck,
-  FiUser,
-  FiSliders,
   FiChevronLeft,
   FiChevronRight,
 } from 'react-icons/fi';
@@ -38,12 +30,25 @@ interface SidebarProps {
   onClose: () => void;
 }
 
+interface NavLeaf {
+  label: string;
+  icon: React.ReactNode;
+  href?: string;
+}
+
+interface NavGroupDef {
+  title: string;
+  groupId: string;
+  icon: React.ReactNode;
+  items: NavLeaf[];
+}
+
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
   const canManageUsers = user?.role === 'owner' || user?.role === 'super_admin';
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
-  const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
 
   const toggleGroup = (group: string) => {
     setExpandedGroups((prev) =>
@@ -57,14 +62,93 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     }
   };
 
+  const groupDefs: NavGroupDef[] = [
+    {
+      title: 'Pasien',
+      groupId: 'pasien',
+      icon: <FiUsers />,
+      items: [{ label: 'Daftar & Tambah Pasien', icon: <FiEdit3 />, href: '/list-pasien' }],
+    },
+    {
+      title: 'Antrian',
+      groupId: 'antrian',
+      icon: <FiClock />,
+      items: [
+        { label: 'Antrian Pasien', icon: <FiClock />, href: '/antrian-pasien' },
+        { label: 'Monitor Panggilan', icon: <FiMonitor />, href: '/antrian-pasien/display' },
+      ],
+    },
+    {
+      title: 'Kunjungan',
+      groupId: 'kunjungan',
+      icon: <FiClipboard />,
+      items: [{ label: 'Daftar & Buat Kunjungan', icon: <FiEdit3 />, href: '/list-kunjungan' }],
+    },
+    {
+      title: 'Billing & Kasir',
+      groupId: 'billing',
+      icon: <FiCreditCard />,
+      items: [{ label: 'Riwayat Transaksi', icon: <FiClock />, href: '/transaksi' }],
+    },
+    {
+      title: 'Operasional',
+      groupId: 'operasional',
+      icon: <FiBriefcase />,
+      items: [
+        { label: 'Catat Operasional', icon: <FiEdit3 />, href: '/catat-operasional' },
+        { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter' },
+      ],
+    },
+    {
+      title: 'Laporan',
+      groupId: 'laporan',
+      icon: <FiBarChart2 />,
+      items: [
+        { label: 'Kunjungan', icon: <FiActivity />, href: '/laporan-kunjungan' },
+        { label: 'Keuangan', icon: <FiTrendingUp />, href: '/laporan-keuangan' },
+      ],
+    },
+    {
+      title: 'Pengaturan',
+      groupId: 'pengaturan',
+      icon: <FiSettings />,
+      items: [
+        { label: 'Info Klinik', icon: <FiHome />, href: '/info-klinik' },
+        ...(canManageUsers
+          ? [{ label: 'User Management', icon: <FiUserCheck />, href: '/user-management' }]
+          : []),
+        { label: 'Tarif & Tindakan', icon: <FiDollarSign />, href: '/tarif' },
+      ],
+    },
+  ];
+
+  // Buang item tanpa href (belum tersedia), lalu buang grup yang jadi kosong.
+  const visibleGroups = groupDefs
+    .map((g) => ({
+      ...g,
+      items: g.items.filter((item): item is NavLeaf & { href: string } => !!item.href),
+    }))
+    .filter((g) => g.items.length > 0);
+
   return (
     <>
-      <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
-        <div className="logo">
-          <div className="logo-icon">
-            <FiActivity />
+      <aside className={`sidebar ${isOpen ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`}>
+        <div className="sidebar-top">
+          <div className="logo">
+            <div className="logo-icon">
+              <FiActivity />
+            </div>
+            <span className="logo-text">ApexRecord</span>
           </div>
-          <span className="logo-text">ApexRecord</span>
+          <button
+            type="button"
+            className="collapse-btn"
+            onClick={() => setCollapsed((v) => !v)}
+            aria-label={collapsed ? 'Buka sidebar' : 'Tutup sidebar'}
+            title={collapsed ? 'Buka sidebar' : 'Tutup sidebar'}
+          >
+            {collapsed ? <FiChevronRight /> : <FiChevronLeft />}
+          </button>
         </div>
 
         <nav className="nav">
@@ -72,139 +156,45 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             href="/dashboard"
             className={`nav-item ${pathname === '/dashboard' ? 'active' : ''}`}
             onClick={handleNavItemClick}
+            title="Dashboard"
           >
             <div className="nav-item-left">
               <span className="nav-icon">
                 <FiGrid />
               </span>
-              Dashboard
+              <span className="nav-label">Dashboard</span>
             </div>
           </Link>
 
-          <NavGroup
-            title="Pasien"
-            groupId="pasien"
-            isExpanded={expandedGroups.includes('pasien')}
-            onToggle={() => toggleGroup('pasien')}
-            onItemClick={handleNavItemClick}
-            pathname={pathname}
-            icon={<FiUsers />}
-            items={[
-              { label: 'Daftar & Tambah Pasien', icon: <FiEdit3 />, href: '/list-pasien' },
-            ]}
-          />
-
-          <NavGroup
-            title="Antrian"
-            groupId="antrian"
-            isExpanded={expandedGroups.includes('antrian')}
-            onToggle={() => toggleGroup('antrian')}
-            onItemClick={handleNavItemClick}
-            pathname={pathname}
-            icon={<FiClock />}
-            items={[
-              { label: 'Antrian Pasien', icon: <FiClock />, href: '/antrian-pasien' },
-              { label: 'Monitor Panggilan', icon: <FiMonitor />, href: '/antrian-pasien/display' },
-              { label: 'Jadwal Dokter', icon: <FiCalendar /> },
-            ]}
-          />
-
-          <NavGroup
-            title="Kunjungan"
-            groupId="kunjungan"
-            isExpanded={expandedGroups.includes('kunjungan')}
-            onToggle={() => toggleGroup('kunjungan')}
-            onItemClick={handleNavItemClick}
-            pathname={pathname}
-            icon={<FiClipboard />}
-            items={[
-              { label: 'Daftar & Buat Kunjungan', icon: <FiEdit3 />, href: '/list-kunjungan' },
-            ]}
-          />
-
-          <NavGroup
-            title="Farmasi"
-            groupId="farmasi"
-            isExpanded={expandedGroups.includes('farmasi')}
-            onToggle={() => toggleGroup('farmasi')}
-            onItemClick={handleNavItemClick}
-            pathname={pathname}
-            icon={<FiPackage />}
-            items={[
-              { label: 'Resep', icon: <FiFileText /> },
-              { label: 'Pengeluaran Obat', icon: <FiBox /> },
-            ]}
-          />
-
-          <NavGroup
-            title="Billing & Kasir"
-            groupId="billing"
-            isExpanded={expandedGroups.includes('billing')}
-            onToggle={() => toggleGroup('billing')}
-            onItemClick={handleNavItemClick}
-            pathname={pathname}
-            icon={<FiCreditCard />}
-            items={[
-              { label: 'Riwayat Transaksi', icon: <FiClock />, href: '/transaksi' },
-              { label: 'Invoice', icon: <FiFile /> },
-            ]}
-          />
-
-          <NavGroup
-            title="Operasional"
-            groupId="operasional"
-            isExpanded={expandedGroups.includes('operasional')}
-            onToggle={() => toggleGroup('operasional')}
-            onItemClick={handleNavItemClick}
-            pathname={pathname}
-            icon={<FiBriefcase />}
-            items={[
-              { label: 'Catat Operasional', icon: <FiEdit3 />, href: '/catat-operasional' },
-              { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter' },
-            ]}
-          />
-
-          <NavGroup
-            title="Laporan"
-            groupId="laporan"
-            isExpanded={expandedGroups.includes('laporan')}
-            onToggle={() => toggleGroup('laporan')}
-            onItemClick={handleNavItemClick}
-            pathname={pathname}
-            icon={<FiBarChart2 />}
-            items={[
-              { label: 'Kunjungan', icon: <FiActivity />, href: '/laporan-kunjungan' },
-              { label: 'Keuangan', icon: <FiTrendingUp />, href: '/laporan-keuangan' },
-              { label: 'SATUSEHAT', icon: <FiRefreshCw /> },
-            ]}
-          />
-
-          <NavGroup
-            title="Pengaturan"
-            groupId="pengaturan"
-            isExpanded={expandedGroups.includes('pengaturan')}
-            onToggle={() => toggleGroup('pengaturan')}
-            onItemClick={handleNavItemClick}
-            pathname={pathname}
-            icon={<FiSettings />}
-            items={[
-              { label: 'Info Klinik', icon: <FiHome />, href: '/info-klinik' },
-              ...(canManageUsers
-                ? [{ label: 'User Management', icon: <FiUserCheck />, href: '/user-management' }]
-                : []),
-              { label: 'Tarif & Tindakan', icon: <FiDollarSign />, href: '/tarif' },
-              { label: 'Practitioner', icon: <FiUser /> },
-              { label: 'Template SOAP', icon: <FiFileText /> },
-              { label: 'SATUSEHAT Config', icon: <FiSliders /> },
-            ]}
-          />
+          {visibleGroups.map((group) =>
+            group.items.length === 1 ? (
+              <Link
+                key={group.groupId}
+                href={group.items[0].href!}
+                className={`nav-item ${pathname === group.items[0].href ? 'active' : ''}`}
+                onClick={handleNavItemClick}
+                title={group.title}
+              >
+                <div className="nav-item-left">
+                  <span className="nav-icon">{group.icon}</span>
+                  <span className="nav-label">{group.title}</span>
+                </div>
+              </Link>
+            ) : (
+              <NavGroup
+                key={group.groupId}
+                title={group.title}
+                groupId={group.groupId}
+                isExpanded={expandedGroups.includes(group.groupId)}
+                onToggle={() => toggleGroup(group.groupId)}
+                onItemClick={handleNavItemClick}
+                pathname={pathname}
+                icon={group.icon}
+                items={group.items}
+              />
+            )
+          )}
         </nav>
-
-        <div className="sidebar-collapse">
-          <div className="collapse-btn">
-            <FiChevronLeft />
-          </div>
-        </div>
       </aside>
     </>
   );
@@ -218,7 +208,7 @@ interface NavGroupProps {
   onItemClick: () => void;
   pathname: string;
   icon: React.ReactNode;
-  items: { label: string; icon: React.ReactNode; href?: string }[];
+  items: { label: string; icon: React.ReactNode; href: string }[];
 }
 
 function NavGroup({
@@ -262,29 +252,20 @@ function NavGroup({
         </span>
       </a>
       <div className={`submenu ${isExpanded ? 'open' : ''}`} role="region" aria-label={`${title} submenu`}>
-        {items.map((item) =>
-          item.href ? (
-            <Link
-              key={item.label}
-              href={item.href}
-              className={`sub-item ${pathname === item.href ? 'active' : ''}`}
-              onClick={onItemClick}
-              aria-current={pathname === item.href ? 'page' : undefined}
-            >
-              <span className="sub-icon" aria-hidden="true">
-                {item.icon}
-              </span>
-              {item.label}
-            </Link>
-          ) : (
-            <a key={item.label} className="sub-item disabled" aria-disabled="true">
-              <span className="sub-icon" aria-hidden="true">
-                {item.icon}
-              </span>
-              {item.label}
-            </a>
-          )
-        )}
+        {items.map((item) => (
+          <Link
+            key={item.label}
+            href={item.href}
+            className={`sub-item ${pathname === item.href ? 'active' : ''}`}
+            onClick={onItemClick}
+            aria-current={pathname === item.href ? 'page' : undefined}
+          >
+            <span className="sub-icon" aria-hidden="true">
+              {item.icon}
+            </span>
+            {item.label}
+          </Link>
+        ))}
       </div>
     </div>
   );

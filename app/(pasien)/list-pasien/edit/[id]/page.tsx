@@ -40,6 +40,7 @@ export default function EditPasienPage() {
     setSaving(true);
     try {
       await patientsApi.update(patient.id, payload);
+      toast.success('Data pasien berhasil diperbarui.');
       router.push(`/list-pasien?patientId=${patient.id}`);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : 'Gagal memperbarui data pasien');
@@ -53,9 +54,6 @@ export default function EditPasienPage() {
       <main className="content patient-form-page">
         <div className="page-header">
           <div className="page-title-block">
-            <div className="page-title">
-              <h1>Edit Data Pasien</h1>
-            </div>
             <p className="page-subtitle">Perbarui informasi pasien langkah demi langkah</p>
           </div>
         </div>
