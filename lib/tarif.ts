@@ -1,4 +1,4 @@
-import { apiClient } from './api-client';
+import { apiClient, toQueryString } from './api-client';
 
 export interface Tarif {
   id: number;
@@ -47,7 +47,7 @@ export interface TarifListResponse {
 
 export const tarifApi = {
   list: (query?: { search?: string; kategori?: string; page?: number; limit?: number }) =>
-    apiClient.get<TarifListResponse>('/settings/tarifs' + (query ? '?' + new URLSearchParams(query as any).toString() : '')),
+    apiClient.get<TarifListResponse>('/settings/tarifs' + (query ? '?' + toQueryString(query) : '')),
 
   get: (id: number) =>
     apiClient.get<Tarif>(`/settings/tarifs/${id}`),

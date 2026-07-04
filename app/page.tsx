@@ -241,7 +241,13 @@ const LoginPage = () => {
               </div>
               {mode === 'login' && (
                 <div className="row-between">
-                  <a href="#" className="link">Lupa password?</a>
+                  <a
+                    href="/forgot-password"
+                    className="link"
+                    onClick={(e) => { e.preventDefault(); router.push('/forgot-password'); }}
+                  >
+                    Lupa password?
+                  </a>
                 </div>
               )}
             </div>

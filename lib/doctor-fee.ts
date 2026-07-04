@@ -1,4 +1,4 @@
-import { apiClient } from './api-client';
+import { apiClient, toQueryString } from './api-client';
 
 export type FeeType = 'fixed' | 'percentage';
 
@@ -49,6 +49,6 @@ export const doctorFeeApi = {
 
   monthlyReport: (query: MonthlyShareReportQuery) =>
     apiClient.get<DoctorMonthlyShareReport[]>(
-      '/reports/doctor-fee-share?' + new URLSearchParams(query as any).toString()
+      '/reports/doctor-fee-share?' + toQueryString(query)
     ),
 };

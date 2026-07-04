@@ -1,4 +1,4 @@
-import { apiClient } from './api-client';
+import { apiClient, toQueryString } from './api-client';
 
 export type OperationalKategori =
   | 'listrik'
@@ -58,7 +58,7 @@ export const OPERASIONAL_KATEGORI_OPTIONS: { value: string; label: string }[] = 
 export const operationalApi = {
   list: (query?: OperationalListQuery) =>
     apiClient.get<OperationalListResponse>(
-      '/operational-records' + (query ? '?' + new URLSearchParams(query as any).toString() : '')
+      '/operational-records' + (query ? '?' + toQueryString(query) : '')
     ),
 
   get: (id: number) => apiClient.get<OperationalRecord>(`/operational-records/${id}`),
