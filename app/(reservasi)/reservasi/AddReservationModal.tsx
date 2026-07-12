@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import { patientsApi, Patient } from '@/lib/patients';
 import { practitionersApi, Practitioner } from '@/lib/practitioners';
-import { locationsApi, Location } from '@/lib/locations';
 import { reservationsApi } from '@/lib/reservations';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
@@ -33,7 +32,6 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
   const isMounted = useRef(true);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +41,6 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
   const [patientPhone, setPatientPhone] = useState('');
   const [isManualEntry, setIsManualEntry] = useState(false);
   const [practitionerId, setPractitionerId] = useState('');
-  const [locationId, setLocationId] = useState('');
   const [reservationDate, setReservationDate] = useState('');
   const [jamSlot, setJamSlot] = useState('');
   const [notes, setNotes] = useState('');
@@ -62,15 +59,13 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
     (async () => {
       try {
         setLoading(true);
-        const [patientList, practitionerList, locationList] = await Promise.all([
+        const [patientList, practitionerList] = await Promise.all([
           patientsApi.list(),
           practitionersApi.list(),
-          locationsApi.list(),
         ]);
         if (!isMounted.current) return;
         setPatients(patientList);
         setPractitioners(practitionerList);
-        setLocations(locationList);
       } catch (err) {
         if (!isMounted.current) return;
         const msg = err instanceof ApiError ? err.message : 'Gagal memuat data';
@@ -126,7 +121,6 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
         patientName: isManualEntry ? patientName.trim() : selectedPatient?.name || '',
         patientPhone: patientPhone.trim(),
         practitionerId: practitionerId ? Number(practitionerId) : undefined,
-        locationId: locationId ? Number(locationId) : undefined,
         reservationDate,
         jamSlot: jamSlot || undefined,
         notes: notes.trim() || undefined,
@@ -154,11 +148,6 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
   const practitionerOptions = [
     { value: '', label: 'Tanpa preferensi dokter' },
     ...practitioners.map((p) => ({ value: p.id.toString(), label: p.name })),
-  ];
-
-  const locationOptions = [
-    { value: '', label: 'Tanpa preferensi lokasi' },
-    ...locations.map((l) => ({ value: l.id.toString(), label: l.name })),
   ];
 
   return (
@@ -319,25 +308,14 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
                 </div>
               </div>
 
-              <div className="reservation-form-row">
-                <div className="reservation-form-group">
-                  <label className="reservation-form-label">Dokter</label>
-                  <CustomSelect
-                    value={practitionerId}
-                    onChange={setPractitionerId}
-                    options={practitionerOptions}
-                    placeholder="Pilih dokter..."
-                  />
-                </div>
-                <div className="reservation-form-group">
-                  <label className="reservation-form-label">Lokasi</label>
-                  <CustomSelect
-                    value={locationId}
-                    onChange={setLocationId}
-                    options={locationOptions}
-                    placeholder="Pilih lokasi..."
-                  />
-                </div>
+              <div className="reservation-form-group">
+                <label className="reservation-form-label">Dokter</label>
+                <CustomSelect
+                  value={practitionerId}
+                  onChange={setPractitionerId}
+                  options={practitionerOptions}
+                  placeholder="Pilih dokter..."
+                />
               </div>
 
               <div className="reservation-form-group">

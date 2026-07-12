@@ -36,7 +36,6 @@ export interface CreateReservationPayload {
   patientPhone: string;
   patientNik?: string;
   practitionerId?: number;
-  locationId?: number;
   serviceType?: string;
   reservationDate: string;
   jamSlot?: string;
