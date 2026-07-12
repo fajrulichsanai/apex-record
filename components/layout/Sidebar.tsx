@@ -9,6 +9,7 @@ import {
   FiUsers,
   FiClock,
   FiMonitor,
+  FiCalendar,
   FiClipboard,
   FiEdit3,
   FiCreditCard,
@@ -77,6 +78,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { label: 'Antrian Pasien', icon: <FiClock />, href: '/antrian-pasien' },
         { label: 'Monitor Panggilan', icon: <FiMonitor />, href: '/antrian-pasien/display' },
       ],
+    },
+    {
+      title: 'Reservasi',
+      groupId: 'reservasi',
+      icon: <FiCalendar />,
+      items: [{ label: 'Daftar Reservasi', icon: <FiCalendar />, href: '/reservasi' }],
     },
     {
       title: 'Kunjungan',
