@@ -257,6 +257,7 @@ const BASE_STEPS: StepDef[] = [
 interface PatientWizardProps {
   mode: 'create' | 'edit';
   initialPatient?: Patient | null;
+  prefill?: Partial<Pick<WizardForm, 'name' | 'phone' | 'nik'>>;
   submitting: boolean;
   onSubmit: (payload: PatientPayload) => void;
   onCancel: () => void;
@@ -265,6 +266,7 @@ interface PatientWizardProps {
 export default function PatientWizard({
   mode,
   initialPatient,
+  prefill,
   submitting,
   onSubmit,
   onCancel,
@@ -303,8 +305,10 @@ export default function PatientWizard({
           })
           .catch(() => {});
       }
+    } else if (prefill) {
+      setForm((prev) => ({ ...prev, ...prefill }));
     }
-  }, [initialPatient]);
+  }, [initialPatient, prefill]);
 
   // Load provinces on mount
   useEffect(() => {

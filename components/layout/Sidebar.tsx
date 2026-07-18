@@ -8,7 +8,6 @@ import {
   FiGrid,
   FiUsers,
   FiClock,
-  FiMonitor,
   FiCalendar,
   FiClipboard,
   FiEdit3,
@@ -69,15 +68,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       groupId: 'pasien',
       icon: <FiUsers />,
       items: [{ label: 'Daftar & Tambah Pasien', icon: <FiEdit3 />, href: '/list-pasien' }],
-    },
-    {
-      title: 'Antrian',
-      groupId: 'antrian',
-      icon: <FiClock />,
-      items: [
-        { label: 'Antrian Pasien', icon: <FiClock />, href: '/antrian-pasien' },
-        { label: 'Monitor Panggilan', icon: <FiMonitor />, href: '/antrian-pasien/display' },
-      ],
     },
     {
       title: 'Reservasi',

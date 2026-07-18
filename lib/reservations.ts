@@ -67,5 +67,7 @@ export const reservationsApi = {
     apiClient.post<ReservationItem>('/reservations', payload),
   updateStatus: (id: number, payload: UpdateReservationStatusPayload) =>
     apiClient.patch<ReservationItem>(`/reservations/${id}/status`, payload),
+  linkPatient: (id: number, patientId: number) =>
+    apiClient.patch<ReservationItem>(`/reservations/${id}/patient`, { patientId }),
   remove: (id: number) => apiClient.delete<void>(`/reservations/${id}`),
 };

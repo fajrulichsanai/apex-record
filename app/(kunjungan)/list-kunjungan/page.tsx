@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import AddVisitModal from './AddVisitModal';
 import {
@@ -68,6 +68,7 @@ export default function ListKunjunganPage() {
 
 function ListKunjunganPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [visits, setVisits] = useState<EncounterListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -80,6 +81,15 @@ function ListKunjunganPageInner() {
   const [actionLoading, setActionLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [preselectReservationId, setPreselectReservationId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get('openAddVisit') === '1') {
+      const reservationId = Number(searchParams.get('reservationId'));
+      setPreselectReservationId(reservationId || null);
+      setShowAddModal(true);
+    }
+  }, [searchParams]);
 
   const loadVisits = useCallback(async () => {
     setLoading(true);
@@ -87,13 +97,17 @@ function ListKunjunganPageInner() {
     try {
       const res = await encounterApi.list();
       setVisits(res.data);
-      setSelectedVisitId((prev) => prev ?? res.data[0]?.encounterId ?? null);
+      const queryEncounterId = Number(searchParams.get('encounterId'));
+      const preselected = queryEncounterId && res.data.some((v) => v.encounterId === queryEncounterId)
+        ? queryEncounterId
+        : null;
+      setSelectedVisitId((prev) => preselected ?? prev ?? res.data[0]?.encounterId ?? null);
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : 'Gagal memuat daftar kunjungan');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     loadVisits();
@@ -468,7 +482,11 @@ function ListKunjunganPageInner() {
       </main>
 
       {showAddModal && (
-        <AddVisitModal onClose={() => setShowAddModal(false)} onCreated={handleVisitCreated} />
+        <AddVisitModal
+          preselectReservationId={preselectReservationId}
+          onClose={() => setShowAddModal(false)}
+          onCreated={handleVisitCreated}
+        />
       )}
     </DashboardLayout>
   );

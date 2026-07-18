@@ -1,10 +1,13 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import AddReservationModal from './AddReservationModal';
 import { reservationsApi, ReservationItem, ReservationStatus } from '@/lib/reservations';
+import { encounterApi } from '@/lib/encounter';
 import { ApiError } from '@/lib/api-client';
+import { useToast } from '@/lib/toast-context';
 import '../../styles/reservasi.css';
 
 type FilterValue = 'semua' | ReservationStatus;
@@ -33,6 +36,8 @@ export default function ReservasiPage() {
 }
 
 function ReservasiPageInner() {
+  const router = useRouter();
+  const { error: showError } = useToast();
   const [reservations, setReservations] = useState<ReservationItem[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -89,14 +94,38 @@ function ReservasiPageInner() {
     }
   };
 
-  const handleComplete = async (id: number) => {
-    setActionLoadingId(id);
+  const handleCheckIn = async (r: ReservationItem) => {
+    if (!r.patientId) {
+      const params = new URLSearchParams({
+        reservationId: r.id.toString(),
+        nama: r.patientName,
+        telp: r.patientPhone,
+      });
+      if (r.patientNik) params.set('nik', r.patientNik);
+      router.push(`/list-pasien/tambah?${params.toString()}`);
+      return;
+    }
+    if (!r.practitionerId) {
+      const msg = 'Dokter belum ditentukan untuk reservasi ini. Buat kunjungan manual dari menu Kunjungan lalu pilih reservasi ini.';
+      setActionError(msg);
+      showError(msg);
+      return;
+    }
+    setActionLoadingId(r.id);
     setActionError(null);
     try {
-      await reservationsApi.updateStatus(id, { status: 'completed' });
+      const encounter = await encounterApi.create({
+        patientId: r.patientId,
+        practitionerId: r.practitionerId,
+        reservationId: r.id,
+        chiefComplaint: r.notes || undefined,
+      });
       await loadReservations();
+      router.push(`/list-kunjungan?encounterId=${encounter.id}`);
     } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Gagal menyelesaikan reservasi');
+      const msg = err instanceof ApiError ? err.message : 'Gagal check-in reservasi';
+      setActionError(msg);
+      showError(msg);
     } finally {
       setActionLoadingId(null);
     }
@@ -300,10 +329,11 @@ function ReservasiPageInner() {
                             <button
                               className="btn-row-action complete"
                               disabled={busy}
-                              onClick={() => handleComplete(r.id)}
+                              onClick={() => handleCheckIn(r)}
+                              title="Check-in pasien dan buat kunjungan"
                             >
                               <span className="material-symbols-rounded">task_alt</span>
-                              Selesai
+                              Check-in
                             </button>
                             <button
                               className="btn-row-action cancel"
