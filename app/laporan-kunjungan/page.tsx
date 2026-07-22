@@ -58,7 +58,7 @@ function formatTanggal(isoDate: string) {
 export default function LaporanKunjunganPage() {
   const { loading: authLoading } = useAuth();
   const [range, setRange] = useState<RangeOption>('7hari');
-  const [report, setReport] = useState<VisitReportResponse['data'] | null>(null);
+  const [report, setReport] = useState<VisitReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const { error: showError } = useToast();
 
@@ -69,7 +69,7 @@ export default function LaporanKunjunganPage() {
 
       try {
         const res = await reportsApi.getVisits({ dateFrom, dateTo, limit: 1 });
-        setReport(res.data);
+        setReport(res);
       } catch (err) {
         showError(err instanceof Error ? err.message : 'Gagal memuat laporan kunjungan');
       } finally {

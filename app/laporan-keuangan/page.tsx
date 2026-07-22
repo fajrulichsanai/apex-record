@@ -76,7 +76,7 @@ function formatRupiah(value: number) {
 export default function LaporanKeuanganPage() {
   const { user, loading: authLoading } = useAuth();
   const [range, setRange] = useState<RangeOption>('7hari');
-  const [report, setReport] = useState<FinancialReportResponse['data'] | null>(null);
+  const [report, setReport] = useState<FinancialReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const { error: showError } = useToast();
 
@@ -94,7 +94,7 @@ export default function LaporanKeuanganPage() {
 
       try {
         const res = await reportsApi.getFinancial({ dateFrom, dateTo });
-        setReport(res.data);
+        setReport(res);
       } catch (err) {
         showError(err instanceof Error ? err.message : 'Gagal memuat laporan keuangan');
       } finally {
