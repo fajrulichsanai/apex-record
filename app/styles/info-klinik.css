@@ -228,6 +228,22 @@
   padding-right: 6px;
 }
 
+.info-klinik-page .tp-native-select {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  color: var(--text-dark);
+  padding: 7px 4px 7px 8px;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+.info-klinik-page .tp-native-select:disabled { color: var(--text-light); cursor: default; }
+.info-klinik-page .time-picker.active .tp-native-select { cursor: pointer; }
+
 .info-klinik-page .hours-row.day-off .time-picker {
   opacity: .45;
   pointer-events: none;
