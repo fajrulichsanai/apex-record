@@ -19,24 +19,18 @@ jobs:
           port: ${{ secrets.VPS_PORT }}
           script: |
             set -e
-
-            # Load NVM agar npm & node tersedia
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-
             echo "📁 Masuk ke direktori project..."
             cd ~/apex-record
-
-            echo "⬇️  Pull kode terbaru..."
-            git pull origin development
-
+            echo "🔀 Pastikan di branch development..."
+            git fetch origin development
+            git checkout development
+            git reset --hard origin/development
             echo "📦 Install dependencies..."
-            npm install
-
+            npm ci
             echo "🔨 Build project..."
             npm run build
-
             echo "♻️  Restart PM2..."
             pm2 restart apex-record
-
             echo "✅ Deploy selesai!"
