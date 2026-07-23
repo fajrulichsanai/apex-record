@@ -151,7 +151,7 @@
   border: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .list-pasien-page .panel-toolbar {
