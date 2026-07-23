@@ -86,21 +86,11 @@ export default function CustomSelect({
       value={selectedOption}
       onChange={(opt) => opt && onChange(opt.value)}
       placeholder={placeholder}
-      styles={customStyles}
-      classNamePrefix="react-select"
       menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
       styles={{
         ...customStyles,
         menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
       }}
-      formatOptionLabel={(option) => (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span>{option.label}</span>
-          {selectedOption?.value === option.value && (
-            <span className="material-symbols-rounded" style={{ fontSize: '16px', color: '#4F7EF8' }}>check</span>
-          )}
-        </div>
-      )}
     />
   );
 }
