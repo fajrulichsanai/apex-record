@@ -278,13 +278,13 @@ export default function LaporanKeuanganPage() {
             </div>
           </div>
 
-          <div className="panel chart-panel wide">
+          <div className="panel chart-panel">
             <div className="panel-header">
               <h2>Pendapatan per Dokter</h2>
             </div>
             <div className="chart-body">
               <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={pendapatanDokter} layout="vertical" margin={{ left: 20 }}>
+                <BarChart data={pendapatanDokter} layout="vertical" margin={{ left: 10 }}>
                   <CartesianGrid stroke="#E8ECF4" horizontal={false} />
                   <XAxis
                     type="number"

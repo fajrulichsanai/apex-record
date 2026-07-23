@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import InputModal from '@/components/feedback/InputModal';
 import CustomSelect from '@/components/form/CustomSelect';
 import '../styles/transaksi.css';
 import { ApiError } from '@/lib/api-client';
@@ -88,6 +89,8 @@ function TransaksiPageInner() {
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [payingId, setPayingId] = useState<number | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingPaymentBilling, setPendingPaymentBilling] = useState<BillingListItem | null>(null);
 
   const { success, error: showError } = useToast();
 
@@ -247,20 +250,27 @@ function TransaksiPageInner() {
     }
   }
 
-  async function handleRecordPayment(billing: BillingListItem) {
-    const amountStr = window.prompt(
-      `Jumlah pembayaran untuk ${billing.invoiceNumber} (sisa ${formatRupiah(billing.outstandingAmount)})`,
-      String(billing.outstandingAmount),
-    );
-    if (!amountStr) return;
-    const amount = Number(amountStr);
-    if (!amount || amount <= 0) return;
+  function handleRecordPayment(billing: BillingListItem) {
+    setPendingPaymentBilling(billing);
+    setShowPaymentModal(true);
+  }
 
-    setPayingId(billing.billingId);
+  async function performRecordPayment(amountStr: string) {
+    if (!pendingPaymentBilling) return;
+
+    const amount = Number(amountStr);
+    if (!amount || amount <= 0) {
+      showError('Jumlah pembayaran harus lebih dari 0');
+      return;
+    }
+
+    setPayingId(pendingPaymentBilling.billingId);
     try {
-      await billingApi.createPayment(billing.billingId, { method: 'cash', amount });
+      await billingApi.createPayment(pendingPaymentBilling.billingId, { method: 'cash', amount });
       await loadBillings();
       success('Pembayaran berhasil dicatat');
+      setShowPaymentModal(false);
+      setPendingPaymentBilling(null);
     } catch (err) {
       showError(err instanceof ApiError ? err.message : 'Gagal mencatat pembayaran');
     } finally {
@@ -533,6 +543,22 @@ function TransaksiPageInner() {
           </div>
         </div>
       </main>
+
+      {pendingPaymentBilling && (
+        <InputModal
+          isOpen={showPaymentModal}
+          title="Catat Pembayaran"
+          message={`Jumlah pembayaran untuk ${pendingPaymentBilling.invoiceNumber} (sisa ${formatRupiah(pendingPaymentBilling.outstandingAmount)})`}
+          placeholder="Jumlah pembayaran..."
+          defaultValue={String(pendingPaymentBilling.outstandingAmount)}
+          confirmLabel="Catat Pembayaran"
+          onConfirm={performRecordPayment}
+          onCancel={() => {
+            setShowPaymentModal(false);
+            setPendingPaymentBilling(null);
+          }}
+        />
+      )}
     </DashboardLayout>
   );
 }

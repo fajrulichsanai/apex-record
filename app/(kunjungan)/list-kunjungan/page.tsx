@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import InputModal from '@/components/feedback/InputModal';
 import AddVisitModal from './AddVisitModal';
 import {
   encounterApi,
@@ -82,6 +83,8 @@ function ListKunjunganPageInner() {
   const [syncLoading, setSyncLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [preselectReservationId, setPreselectReservationId] = useState<number | null>(null);
+  const [showCancellationModal, setShowCancellationModal] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<EncounterStatus | null>(null);
 
   useEffect(() => {
     if (searchParams.get('openAddVisit') === '1') {
@@ -161,19 +164,20 @@ function ListKunjunganPageInner() {
     loadVisits();
   };
 
-  const handleChangeStatus = async (status: EncounterStatus) => {
+  const handleChangeStatus = (status: EncounterStatus) => {
     if (!selectedVisitId) return;
     setActionError(null);
 
-    let reason: string | undefined;
     if (status === 'cancelled') {
-      reason = window.prompt('Alasan pembatalan?') || '';
-      if (!reason.trim()) {
-        setActionError('Alasan pembatalan wajib diisi');
-        return;
-      }
+      setPendingStatusChange(status);
+      setShowCancellationModal(true);
+    } else {
+      performStatusChange(status);
     }
+  };
 
+  const performStatusChange = async (status: EncounterStatus, reason?: string) => {
+    if (!selectedVisitId) return;
     setActionLoading(true);
     try {
       await encounterApi.updateStatus(selectedVisitId, { status, reason });
@@ -182,6 +186,18 @@ function ListKunjunganPageInner() {
       setActionError(err instanceof ApiError ? err.message : 'Gagal memperbarui status kunjungan');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleCancellationModalConfirm = (reason: string) => {
+    if (!reason.trim()) {
+      setActionError('Alasan pembatalan wajib diisi');
+      return;
+    }
+    setShowCancellationModal(false);
+    if (pendingStatusChange) {
+      performStatusChange(pendingStatusChange, reason);
+      setPendingStatusChange(null);
     }
   };
 
@@ -488,6 +504,15 @@ function ListKunjunganPageInner() {
           onCreated={handleVisitCreated}
         />
       )}
+
+      <InputModal
+        isOpen={showCancellationModal}
+        title="Alasan Pembatalan"
+        placeholder="Masukkan alasan pembatalan kunjungan..."
+        confirmLabel="Batalkan"
+        onConfirm={handleCancellationModalConfirm}
+        onCancel={() => setShowCancellationModal(false)}
+      />
     </DashboardLayout>
   );
 }

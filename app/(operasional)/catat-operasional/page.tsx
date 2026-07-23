@@ -52,7 +52,6 @@ export default function CatatOperasionalPage() {
   const [records, setRecords] = useState<OperationalRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; deskripsi: string } | null>(null);
   const [formModal, setFormModal] = useState<{ mode: 'create' | 'edit'; record?: OperationalRecord } | null>(null);
 
@@ -78,17 +77,6 @@ export default function CatatOperasionalPage() {
   useEffect(() => {
     loadRecords();
   }, [loadRecords]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.op-more') && !target.closest('.op-menu')) {
-        setOpenMenuId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const kategoriOptions = useMemo(
     () => Array.from(new Set(records.map((r) => r.kategori))),
@@ -328,40 +316,23 @@ export default function CatatOperasionalPage() {
                       <td className="op-deskripsi" title={item.deskripsi}>{item.deskripsi}</td>
                       <td className="op-nominal">Rp {item.nominal.toLocaleString('id-ID')}</td>
                       <td>
-                        <div style={{ position: 'relative' }}>
+                        <div className="op-actions">
                           <button
-                            className="op-more"
                             type="button"
-                            onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}
+                            className="action-btn edit"
+                            aria-label="Edit"
+                            onClick={() => setFormModal({ mode: 'edit', record: item })}
                           >
-                            <span className="material-symbols-rounded">more_vert</span>
+                            <span className="material-symbols-rounded">edit</span>
                           </button>
-                          {openMenuId === item.id && (
-                            <div className="op-menu">
-                              <button
-                                type="button"
-                                className="op-menu-item"
-                                onClick={() => {
-                                  setFormModal({ mode: 'edit', record: item });
-                                  setOpenMenuId(null);
-                                }}
-                              >
-                                <span className="material-symbols-rounded">edit</span>
-                                Edit
-                              </button>
-                              <button
-                                type="button"
-                                className="op-menu-item delete"
-                                onClick={() => {
-                                  handleDelete(item.id, item.deskripsi);
-                                  setOpenMenuId(null);
-                                }}
-                              >
-                                <span className="material-symbols-rounded">delete</span>
-                                Hapus
-                              </button>
-                            </div>
-                          )}
+                          <button
+                            type="button"
+                            className="action-btn delete"
+                            aria-label="Hapus"
+                            onClick={() => handleDelete(item.id, item.deskripsi)}
+                          >
+                            <span className="material-symbols-rounded">delete</span>
+                          </button>
                         </div>
                       </td>
                     </tr>

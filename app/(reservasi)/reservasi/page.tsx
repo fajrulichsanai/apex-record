@@ -3,6 +3,8 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import InputModal from '@/components/feedback/InputModal';
+import ConfirmationModal from '@/components/feedback/ConfirmationModal';
 import AddReservationModal from './AddReservationModal';
 import { reservationsApi, ReservationItem, ReservationStatus } from '@/lib/reservations';
 import { encounterApi } from '@/lib/encounter';
@@ -48,6 +50,10 @@ function ReservasiPageInner() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [showCancellationModal, setShowCancellationModal] = useState(false);
+  const [pendingCancellationId, setPendingCancellationId] = useState<number | null>(null);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
   const loadReservations = useCallback(async () => {
     setLoading(true);
@@ -131,31 +137,48 @@ function ReservasiPageInner() {
     }
   };
 
-  const handleCancel = async (id: number) => {
-    const reason = window.prompt('Alasan pembatalan (opsional):') || undefined;
-    setActionLoadingId(id);
+  const handleCancel = (id: number) => {
+    setPendingCancellationId(id);
+    setShowCancellationModal(true);
+  };
+
+  const performCancel = async (reason: string) => {
+    if (!pendingCancellationId) return;
+    setShowCancellationModal(false);
+    setActionLoadingId(pendingCancellationId);
     setActionError(null);
     try {
-      await reservationsApi.updateStatus(id, { status: 'cancelled', cancelledReason: reason });
+      await reservationsApi.updateStatus(pendingCancellationId, {
+        status: 'cancelled',
+        cancelledReason: reason || undefined,
+      });
       await loadReservations();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : 'Gagal membatalkan reservasi');
     } finally {
       setActionLoadingId(null);
+      setPendingCancellationId(null);
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Hapus reservasi ini secara permanen?')) return;
-    setActionLoadingId(id);
+  const handleDelete = (id: number) => {
+    setPendingDeleteId(id);
+    setShowDeleteConfirmation(true);
+  };
+
+  const performDelete = async () => {
+    if (!pendingDeleteId) return;
+    setShowDeleteConfirmation(false);
+    setActionLoadingId(pendingDeleteId);
     setActionError(null);
     try {
-      await reservationsApi.remove(id);
+      await reservationsApi.remove(pendingDeleteId);
       await loadReservations();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : 'Gagal menghapus reservasi');
     } finally {
       setActionLoadingId(null);
+      setPendingDeleteId(null);
     }
   };
 
@@ -367,6 +390,27 @@ function ReservasiPageInner() {
       {showAddModal && (
         <AddReservationModal onClose={() => setShowAddModal(false)} onCreated={handleCreated} />
       )}
+
+      <InputModal
+        isOpen={showCancellationModal}
+        title="Batalkan Reservasi"
+        message="Alasan pembatalan (opsional)"
+        placeholder="Masukkan alasan pembatalan..."
+        confirmLabel="Batalkan"
+        onConfirm={performCancel}
+        onCancel={() => setShowCancellationModal(false)}
+      />
+
+      <ConfirmationModal
+        isOpen={showDeleteConfirmation}
+        title="Hapus Reservasi"
+        message="Hapus reservasi ini secara permanen? Tindakan ini tidak dapat dibatalkan."
+        confirmLabel="Ya, Hapus"
+        cancelLabel="Batal"
+        isDangerous={true}
+        onConfirm={performDelete}
+        onCancel={() => setShowDeleteConfirmation(false)}
+      />
     </DashboardLayout>
   );
 }

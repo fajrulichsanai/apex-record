@@ -55,7 +55,6 @@ export default function TarifPage() {
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,19 +76,6 @@ export default function TarifPage() {
   useEffect(() => {
     loadTarifs();
   }, [loadTarifs]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.tarif-more') && !target.closest('.tarif-menu')) {
-        setOpenMenuId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   const kategoriOptions = useMemo(
     () => Array.from(new Set(tarifs.map((t) => t.kategori))),
@@ -300,28 +286,13 @@ export default function TarifPage() {
                           </span>
                         </td>
                         <td>
-                          <div style={{ position: 'relative' }}>
-                            <button className="tarif-more" type="button" onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}>
-                              <span className="material-symbols-rounded">more_vert</span>
+                          <div className="tarif-actions">
+                            <button type="button" className="action-btn edit" aria-label="Edit" onClick={() => router.push(`/tarif/edit/${item.id}`)}>
+                              <span className="material-symbols-rounded">edit</span>
                             </button>
-                            {openMenuId === item.id && (
-                              <div className="tarif-menu">
-                                <button type="button" className="tarif-menu-item" onClick={() => {
-                                  router.push(`/tarif/edit/${item.id}`);
-                                  setOpenMenuId(null);
-                                }}>
-                                  <span className="material-symbols-rounded">edit</span>
-                                  Edit
-                                </button>
-                                <button type="button" className="tarif-menu-item delete" onClick={() => {
-                                  handleDelete(item.id, item.name);
-                                  setOpenMenuId(null);
-                                }}>
-                                  <span className="material-symbols-rounded">delete</span>
-                                  Hapus
-                                </button>
-                              </div>
-                            )}
+                            <button type="button" className="action-btn delete" aria-label="Hapus" onClick={() => handleDelete(item.id, item.name)}>
+                              <span className="material-symbols-rounded">delete</span>
+                            </button>
                           </div>
                         </td>
                       </tr>

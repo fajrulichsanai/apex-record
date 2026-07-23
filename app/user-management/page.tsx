@@ -52,8 +52,6 @@ export default function UserManagementPage() {
   const [userFilter, setUserFilter] = useState<UserFilter>('semua');
   const [userSearch, setUserSearch] = useState('');
 
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [editRoleModalOpen, setEditRoleModalOpen] = useState(false);
 
@@ -126,10 +124,6 @@ export default function UserManagementPage() {
     setMainTab(tab);
   };
 
-  const toggleDropdown = (id: string) => {
-    setOpenMenuId((prev) => (prev === id ? null : id));
-  };
-
   const totalUsers = users.length;
   const aktifCount = users.filter((u) => statusOf(u) === 'aktif').length;
   const dokterCount = users.filter((u) => u.role === 'dokter').length;
@@ -147,7 +141,6 @@ export default function UserManagementPage() {
     setEditTarget(u);
     setEditRole(roleOptions.find((r) => r.value === u.role)?.value || roleOptions[0]?.value || '');
     setEditRoleModalOpen(true);
-    setOpenMenuId(null);
   };
 
   const submitInvite = async () => {
@@ -195,26 +188,39 @@ export default function UserManagementPage() {
     }
   };
 
-  const handleToggleActive = async (u: User) => {
-    setOpenMenuId(null);
-    try {
-      if (u.role === 'pending') {
-        await apiClient.post(`/users/${u.id}/activate`);
-      } else if (u.isActive) {
-        await apiClient.post(`/users/${u.id}/deactivate`);
-      } else {
-        await apiClient.post(`/users/${u.id}/activate`);
-      }
-      success('Status user berhasil diubah');
-      await loadUsers();
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Gagal mengubah status user';
-      error(message);
-    }
+  const handleToggleActive = (u: User) => {
+    const isActivating = u.role === 'pending' || !u.isActive;
+    const actionLabel = isActivating ? 'Aktifkan' : 'Nonaktifkan';
+
+    setConfirmModal({
+      isOpen: true,
+      title: `${actionLabel} User`,
+      message: `Apakah Anda yakin ingin ${actionLabel.toLowerCase()} user ${u.name}?`,
+      isDangerous: !isActivating,
+      confirmText: actionLabel,
+      cancelText: 'Batalkan',
+      onConfirm: async () => {
+        try {
+          if (u.role === 'pending') {
+            await apiClient.post(`/users/${u.id}/activate`);
+          } else if (u.isActive) {
+            await apiClient.post(`/users/${u.id}/deactivate`);
+          } else {
+            await apiClient.post(`/users/${u.id}/activate`);
+          }
+          success('Status user berhasil diubah');
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+          await loadUsers();
+        } catch (err) {
+          const message = err instanceof ApiError ? err.message : 'Gagal mengubah status user';
+          setConfirmModal((prev) => ({ ...prev, isOpen: false }));
+          error(message);
+        }
+      },
+    });
   };
 
   const handleDelete = (u: User) => {
-    setOpenMenuId(null);
     setConfirmModal({
       isOpen: true,
       title: 'Hapus User',
@@ -403,54 +409,47 @@ export default function UserManagementPage() {
                       </span>
                     </div>
                     {!isSelf && (
-                      <>
+                      <div className="user-actions">
                         <button
-                          className="action-menu-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleDropdown(menuId);
-                          }}
+                          className="user-action-btn edit"
+                          aria-label="Ubah Peran"
+                          onClick={() => openEditRole(u)}
                         >
                           <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="5" r="1" />
-                            <circle cx="12" cy="12" r="1" />
-                            <circle cx="12" cy="19" r="1" />
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                            />
                           </svg>
                         </button>
-                        <div className={`dropdown-menu ${openMenuId === menuId ? 'open' : ''}`}>
-                          <div className="dropdown-item" onClick={() => openEditRole(u)}>
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              />
-                            </svg>
-                            Ubah Peran
-                          </div>
-                          <div className="dropdown-item" onClick={() => handleToggleActive(u)}>
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                              />
-                            </svg>
-                            {status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan'}
-                          </div>
-                          <div className="dropdown-divider" />
-                          <div className="dropdown-item danger" onClick={() => handleDelete(u)}>
-                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                              />
-                            </svg>
-                            Hapus
-                          </div>
-                        </div>
-                      </>
+                        <button
+                          className="user-action-btn toggle"
+                          aria-label={status === 'aktif' ? 'Nonaktifkan' : 'Aktifkan'}
+                          onClick={() => handleToggleActive(u)}
+                        >
+                          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                            />
+                          </svg>
+                        </button>
+                        <button
+                          className="user-action-btn delete"
+                          aria-label="Hapus"
+                          onClick={() => handleDelete(u)}
+                        >
+                          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                            />
+                          </svg>
+                        </button>
+                      </div>
                     )}
                   </div>
                 );

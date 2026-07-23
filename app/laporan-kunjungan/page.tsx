@@ -237,13 +237,13 @@ export default function LaporanKunjunganPage() {
             </div>
           </div>
 
-          <div className="panel chart-panel wide">
+          <div className="panel chart-panel">
             <div className="panel-header">
               <h2>Kunjungan per Dokter</h2>
             </div>
             <div className="chart-body">
               <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={dokterKunjungan} layout="vertical" margin={{ left: 20 }}>
+                <BarChart data={dokterKunjungan} layout="vertical" margin={{ left: 10 }}>
                   <CartesianGrid stroke="#E8ECF4" horizontal={false} />
                   <XAxis type="number" tick={{ fontSize: 12, fill: '#6B7A99' }} axisLine={false} tickLine={false} />
                   <YAxis
