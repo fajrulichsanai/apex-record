@@ -77,5 +77,3 @@ Semua butuh `@Roles(OWNER, SUPER_ADMIN)` kecuali disebutkan beda.
 - Single clinic per user dipertahankan (tidak bikin tabel join many-to-many) — SUPER_ADMIN = clinicId null = akses semua klinik.
 - "Create user" diimplementasi sebagai direct-create (`/users/invite`) dengan temporary password di response, **bukan** lewat flow pending-activation lama (meski awalnya user pilih opsi "reuse pending flow", pada implementasi nyata yang dipakai adalah create-langsung supaya fitur "create" di UI benar-benar berfungsi).
 - Middleware tetap no-op (token di localStorage, bukan cookie) — RBAC route protection di frontend hanya soft-guard di komponen, bukan di edge middleware.
-
-//tes
