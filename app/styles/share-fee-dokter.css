@@ -51,7 +51,7 @@
 .share-fee-page .stat-label { font-size: 12px; font-weight: 500; opacity: .85; margin-top: 3px; }
 .share-fee-page .stat-sub { font-size: 11px; font-weight: 500; opacity: .75; margin-top: 2px; }
 
-.share-fee-page .panel { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); display: flex; flex-direction: column; overflow: visible; }
+.share-fee-page .panel { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
 .share-fee-page .panel-toolbar { padding: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
 
 .share-fee-page .fee-table-wrap { overflow-x: auto; }
