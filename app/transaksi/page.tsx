@@ -84,6 +84,8 @@ function TransaksiPageInner() {
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
   const [selectedEncounterId, setSelectedEncounterId] = useState<number | ''>('');
   const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
+  const [totalDiscount, setTotalDiscount] = useState(0);
+  const [additionalFee, setAdditionalFee] = useState(0);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -192,12 +194,16 @@ function TransaksiPageInner() {
     });
   }
 
-  const grandTotal = useMemo(() => {
+  const itemsSubtotal = useMemo(() => {
     return items.reduce((sum, r) => {
       const discNominal = r.discountType === 'percent' ? (r.unitPrice * r.discount) / 100 : r.discount;
       return sum + (r.unitPrice - discNominal) * r.quantity;
     }, 0);
   }, [items]);
+
+  const grandTotal = useMemo(() => {
+    return Math.max(0, itemsSubtotal - totalDiscount + additionalFee);
+  }, [itemsSubtotal, totalDiscount, additionalFee]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -236,10 +242,15 @@ function TransaksiPageInner() {
       await billingApi.create({
         encounterId: Number(selectedEncounterId),
         items: payloadItems,
+        totalDiscount: totalDiscount > 0 ? totalDiscount : undefined,
+        totalDiscountType: totalDiscount > 0 ? 'nominal' : undefined,
+        additionalFee: additionalFee > 0 ? additionalFee : undefined,
         notes: notes || undefined,
       });
       setSelectedEncounterId('');
       setItems([emptyRow()]);
+      setTotalDiscount(0);
+      setAdditionalFee(0);
       setNotes('');
       await loadBillings();
       success('Transaksi berhasil disimpan');
@@ -411,11 +422,49 @@ function TransaksiPageInner() {
                 </div>
 
                 <div className="form-field">
+                  <label>Diskon (Rp)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={totalDiscount}
+                    onChange={(e) => setTotalDiscount(Math.max(0, Number(e.target.value) || 0))}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label>Biaya Tambahan (Rp)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={additionalFee}
+                    onChange={(e) => setAdditionalFee(Math.max(0, Number(e.target.value) || 0))}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="form-field">
                   <label>Catatan (opsional)</label>
                   <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
                 </div>
 
                 <div className="summary-box">
+                  <div className="summary-row">
+                    <span>Subtotal</span>
+                    <span>{formatRupiah(itemsSubtotal)}</span>
+                  </div>
+                  {totalDiscount > 0 && (
+                    <div className="summary-row">
+                      <span>Diskon</span>
+                      <span>-{formatRupiah(totalDiscount)}</span>
+                    </div>
+                  )}
+                  {additionalFee > 0 && (
+                    <div className="summary-row">
+                      <span>Biaya Tambahan</span>
+                      <span>+{formatRupiah(additionalFee)}</span>
+                    </div>
+                  )}
                   <div className="summary-row total">
                     <span>Total Bayar</span>
                     <span>{formatRupiah(grandTotal)}</span>
