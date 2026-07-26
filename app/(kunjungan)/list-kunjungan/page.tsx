@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 import InputModal from '@/components/feedback/InputModal';
 import AddVisitModal from './AddVisitModal';
 import {
@@ -220,6 +221,7 @@ function ListKunjunganPageInner() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="kunjungan">
       <main className="content kunjungan-page">
         {/* Header */}
         <div className="page-header">
@@ -513,6 +515,7 @@ function ListKunjunganPageInner() {
         onConfirm={handleCancellationModalConfirm}
         onCancel={() => setShowCancellationModal(false)}
       />
+      </FeatureGuard>
     </DashboardLayout>
   );
 }

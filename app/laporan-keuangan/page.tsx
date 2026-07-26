@@ -18,6 +18,8 @@ import {
 } from 'recharts';
 import { FiCreditCard, FiDollarSign, FiClock, FiTrendingUp } from 'react-icons/fi';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
+import { canAccessFeature } from '@/lib/permissions';
 import { useAuth } from '@/lib/auth-context';
 import { reportsApi, FinancialReportResponse, PaymentMethod } from '@/lib/reports';
 import { useToast } from '@/lib/toast-context';
@@ -80,11 +82,11 @@ export default function LaporanKeuanganPage() {
   const [loading, setLoading] = useState(true);
   const { error: showError } = useToast();
 
-  const isOwner = user?.role === 'owner';
+  const canView = canAccessFeature(user?.role, 'laporan-keuangan');
 
   useEffect(() => {
     async function loadReport() {
-      if (!isOwner) {
+      if (!canView) {
         setLoading(false);
         return;
       }
@@ -104,7 +106,7 @@ export default function LaporanKeuanganPage() {
 
     loadReport();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, isOwner]);
+  }, [range, canView]);
 
   const pendapatanHarian = useMemo(
     () => (report?.byDay ?? []).map((d) => ({ tanggal: formatTanggal(d.date), pendapatan: d.revenue })),
@@ -143,18 +145,9 @@ export default function LaporanKeuanganPage() {
     );
   }
 
-  if (!isOwner) {
-    return (
-      <DashboardLayout>
-        <main className="content laporan-page">
-          <div className="laporan-error">Laporan keuangan hanya dapat diakses oleh Owner.</div>
-        </main>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
+      <FeatureGuard feature="laporan-keuangan">
       <main className="content laporan-page">
         <div className="page-header">
           <div className="page-title-block">
@@ -309,6 +302,7 @@ export default function LaporanKeuanganPage() {
           </div>
         </div>
       </main>
+      </FeatureGuard>
     </DashboardLayout>
   );
 }

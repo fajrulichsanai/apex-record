@@ -18,6 +18,7 @@ import {
 } from 'recharts';
 import { FiActivity, FiCheckCircle, FiUserCheck, FiXCircle } from 'react-icons/fi';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 import { useAuth } from '@/lib/auth-context';
 import { reportsApi, VisitReportResponse } from '@/lib/reports';
 import { useToast } from '@/lib/toast-context';
@@ -119,6 +120,7 @@ export default function LaporanKunjunganPage() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="laporan-kunjungan">
       <main className="content laporan-page">
         <div className="page-header">
           <div className="page-title-block">
@@ -262,6 +264,7 @@ export default function LaporanKunjunganPage() {
           </div>
         </div>
       </main>
+      </FeatureGuard>
     </DashboardLayout>
   );
 }

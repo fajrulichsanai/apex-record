@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { canAccessFeature, type FeatureKey } from '@/lib/permissions';
 import {
   FiGrid,
   FiUsers,
@@ -34,6 +35,7 @@ interface NavLeaf {
   label: string;
   icon: React.ReactNode;
   href?: string;
+  feature: FeatureKey;
 }
 
 interface NavGroupDef {
@@ -67,33 +69,33 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: 'Pasien',
       groupId: 'pasien',
       icon: <FiUsers />,
-      items: [{ label: 'Daftar & Tambah Pasien', icon: <FiEdit3 />, href: '/list-pasien' }],
+      items: [{ label: 'Daftar & Tambah Pasien', icon: <FiEdit3 />, href: '/list-pasien', feature: 'pasien' }],
     },
     {
       title: 'Reservasi',
       groupId: 'reservasi',
       icon: <FiCalendar />,
-      items: [{ label: 'Daftar Reservasi', icon: <FiCalendar />, href: '/reservasi' }],
+      items: [{ label: 'Daftar Reservasi', icon: <FiCalendar />, href: '/reservasi', feature: 'reservasi' }],
     },
     {
       title: 'Kunjungan',
       groupId: 'kunjungan',
       icon: <FiClipboard />,
-      items: [{ label: 'Daftar & Buat Kunjungan', icon: <FiEdit3 />, href: '/list-kunjungan' }],
+      items: [{ label: 'Daftar & Buat Kunjungan', icon: <FiEdit3 />, href: '/list-kunjungan', feature: 'kunjungan' }],
     },
     {
       title: 'Billing & Kasir',
       groupId: 'billing',
       icon: <FiCreditCard />,
-      items: [{ label: 'Riwayat Transaksi', icon: <FiClock />, href: '/transaksi' }],
+      items: [{ label: 'Riwayat Transaksi', icon: <FiClock />, href: '/transaksi', feature: 'billing' }],
     },
     {
       title: 'Operasional',
       groupId: 'operasional',
       icon: <FiBriefcase />,
       items: [
-        { label: 'Catat Operasional', icon: <FiEdit3 />, href: '/catat-operasional' },
-        { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter' },
+        { label: 'Catat Operasional', icon: <FiEdit3 />, href: '/catat-operasional', feature: 'operasional' },
+        { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter', feature: 'operasional' },
       ],
     },
     {
@@ -101,8 +103,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       groupId: 'laporan',
       icon: <FiBarChart2 />,
       items: [
-        { label: 'Kunjungan', icon: <FiActivity />, href: '/laporan-kunjungan' },
-        { label: 'Keuangan', icon: <FiTrendingUp />, href: '/laporan-keuangan' },
+        { label: 'Kunjungan', icon: <FiActivity />, href: '/laporan-kunjungan', feature: 'laporan-kunjungan' },
+        { label: 'Keuangan', icon: <FiTrendingUp />, href: '/laporan-keuangan', feature: 'laporan-keuangan' },
       ],
     },
     {
@@ -110,22 +112,26 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       groupId: 'pengaturan',
       icon: <FiSettings />,
       items: [
-        { label: 'Info Klinik', icon: <FiHome />, href: '/info-klinik' },
+        { label: 'Info Klinik', icon: <FiHome />, href: '/info-klinik', feature: 'info-klinik' },
         ...(canManageUsers
-          ? [{ label: 'User Management', icon: <FiUserCheck />, href: '/user-management' }]
+          ? [{ label: 'User Management', icon: <FiUserCheck />, href: '/user-management', feature: 'user-management' as FeatureKey }]
           : []),
-        { label: 'Tarif & Tindakan', icon: <FiDollarSign />, href: '/tarif' },
+        { label: 'Tarif & Tindakan', icon: <FiDollarSign />, href: '/tarif', feature: 'tarif' },
       ],
     },
   ];
 
-  // Buang item tanpa href (belum tersedia), lalu buang grup yang jadi kosong.
+  // Buang item tanpa href/tanpa akses, lalu buang grup yang jadi kosong.
   const visibleGroups = groupDefs
     .map((g) => ({
       ...g,
-      items: g.items.filter((item): item is NavLeaf & { href: string } => !!item.href),
+      items: g.items.filter(
+        (item): item is NavLeaf & { href: string } => !!item.href && canAccessFeature(user?.role, item.feature)
+      ),
     }))
     .filter((g) => g.items.length > 0);
+
+  const canViewDashboard = canAccessFeature(user?.role, 'dashboard');
 
   return (
     <>
@@ -149,19 +155,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </div>
 
         <nav className="nav">
-          <Link
-            href="/dashboard"
-            className={`nav-item ${pathname === '/dashboard' ? 'active' : ''}`}
-            onClick={handleNavItemClick}
-            title="Dashboard"
-          >
-            <div className="nav-item-left">
-              <span className="nav-icon">
-                <FiGrid />
-              </span>
-              <span className="nav-label">Dashboard</span>
-            </div>
-          </Link>
+          {canViewDashboard && (
+            <Link
+              href="/dashboard"
+              className={`nav-item ${pathname === '/dashboard' ? 'active' : ''}`}
+              onClick={handleNavItemClick}
+              title="Dashboard"
+            >
+              <div className="nav-item-left">
+                <span className="nav-icon">
+                  <FiGrid />
+                </span>
+                <span className="nav-label">Dashboard</span>
+              </div>
+            </Link>
+          )}
 
           {visibleGroups.map((group) =>
             group.items.length === 1 ? (
@@ -205,7 +213,7 @@ interface NavGroupProps {
   onItemClick: () => void;
   pathname: string;
   icon: React.ReactNode;
-  items: { label: string; icon: React.ReactNode; href: string }[];
+  items: { label: string; icon: React.ReactNode; href: string; feature: FeatureKey }[];
 }
 
 function NavGroup({

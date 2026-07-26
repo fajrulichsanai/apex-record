@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 import InputModal from '@/components/feedback/InputModal';
 import ConfirmationModal from '@/components/feedback/ConfirmationModal';
 import AddReservationModal from './AddReservationModal';
@@ -184,6 +185,7 @@ function ReservasiPageInner() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="reservasi">
       <main className="content reservasi-page">
         <div className="page-header">
           <div className="page-title-block">
@@ -411,6 +413,7 @@ function ReservasiPageInner() {
         onConfirm={performDelete}
         onCancel={() => setShowDeleteConfirmation(false)}
       />
+      </FeatureGuard>
     </DashboardLayout>
   );
 }

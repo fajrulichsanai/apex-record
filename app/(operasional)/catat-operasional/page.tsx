@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 import ConfirmationModal from '@/components/feedback/ConfirmationModal';
 import CustomSelect from '@/components/form/CustomSelect';
 import { ApiError } from '@/lib/api-client';
@@ -148,6 +149,7 @@ export default function CatatOperasionalPage() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="operasional">
       <main className="content operasional-page">
         <div className="page-header">
           <div className="page-title-block">
@@ -365,6 +367,7 @@ export default function CatatOperasionalPage() {
           />
         )}
       </main>
+      </FeatureGuard>
     </DashboardLayout>
   );
 }

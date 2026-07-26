@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 import CustomSelect from '@/components/form/CustomSelect';
 import { useAuth } from '@/lib/auth-context';
 import { apiClient, ApiError } from '@/lib/api-client';
@@ -245,6 +246,7 @@ export default function UserManagementPage() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="user-management">
       <main className="content user-mgmt-page">
         {/* Page header */}
         <div className="page-header">
@@ -774,6 +776,7 @@ export default function UserManagementPage() {
           </div>
         </div>
       </main>
+      </FeatureGuard>
     </DashboardLayout>
   );
 }

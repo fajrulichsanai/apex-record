@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 import InputModal from '@/components/feedback/InputModal';
 import CustomSelect from '@/components/form/CustomSelect';
 import '../styles/transaksi.css';
@@ -291,6 +292,7 @@ function TransaksiPageInner() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="billing">
       <main className="content transaksi-page">
         {/* Header */}
         <div className="page-header">
@@ -608,6 +610,7 @@ function TransaksiPageInner() {
           }}
         />
       )}
+      </FeatureGuard>
     </DashboardLayout>
   );
 }
