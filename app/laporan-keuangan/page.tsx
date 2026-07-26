@@ -16,13 +16,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { FiCreditCard, FiDollarSign, FiClock, FiTrendingUp } from 'react-icons/fi';
+import { FiCreditCard, FiDollarSign, FiClock, FiDownload, FiTrendingUp } from 'react-icons/fi';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import { canAccessFeature } from '@/lib/permissions';
 import { useAuth } from '@/lib/auth-context';
 import { reportsApi, FinancialReportResponse, PaymentMethod } from '@/lib/reports';
 import { useToast } from '@/lib/toast-context';
+import { exportToExcel } from '@/lib/export-excel';
 import '../styles/laporan.css';
 
 type RangeOption = '7hari' | '30hari' | 'bulanini';
@@ -80,6 +81,7 @@ export default function LaporanKeuanganPage() {
   const [range, setRange] = useState<RangeOption>('7hari');
   const [report, setReport] = useState<FinancialReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const { error: showError } = useToast();
 
   const canView = canAccessFeature(user?.role, 'laporan-keuangan');
@@ -128,6 +130,49 @@ export default function LaporanKeuanganPage() {
     [report],
   );
 
+  function handleExport() {
+    if (!report) return;
+    setExporting(true);
+    try {
+      const { dateFrom, dateTo } = getDateRange(range);
+
+      exportToExcel(
+        [
+          {
+            name: 'Ringkasan',
+            rows: [
+              { Metrik: 'Total Pendapatan', Nilai: report.summary.totalBilling },
+              { Metrik: 'Total Lunas', Nilai: report.summary.totalPaid },
+              { Metrik: 'Belum Lunas', Nilai: report.summary.totalOutstanding },
+              { Metrik: 'Collection Rate (%)', Nilai: report.summary.collectionRate },
+              { Metrik: 'Total Refund', Nilai: report.summary.totalRefunded },
+            ],
+          },
+          {
+            name: 'Pendapatan Harian',
+            rows: report.byDay.map((d) => ({ Tanggal: d.date, Pendapatan: d.revenue, Terkumpul: d.collected })),
+          },
+          {
+            name: 'Per Metode Bayar',
+            rows: report.byPaymentMethod.map((m) => ({
+              Metode: METODE_LABELS[m.method] ?? m.method,
+              Jumlah: m.amount,
+            })),
+          },
+          {
+            name: 'Per Dokter',
+            rows: report.byDoctor.map((d) => ({ Dokter: d.practitionerName, Pendapatan: d.revenue })),
+          },
+        ],
+        `laporan-keuangan_${dateFrom}_${dateTo}`,
+      );
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Gagal mengekspor laporan keuangan');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const totalPendapatan = report?.summary.totalBilling ?? 0;
   const rataRataHarian = pendapatanHarian.length > 0 ? totalPendapatan / pendapatanHarian.length : 0;
   const belumLunas = report?.summary.totalOutstanding ?? 0;
@@ -168,6 +213,15 @@ export default function LaporanKeuanganPage() {
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={handleExport}
+            disabled={loading || exporting || !report}
+          >
+            <FiDownload />
+            {exporting ? 'Mengekspor...' : 'Export Excel'}
+          </button>
         </div>
 
         <div className="stat-grid">

@@ -28,7 +28,7 @@ export default function ShareFeeDokterPage() {
 
   return (
     <DashboardLayout>
-      <FeatureGuard feature="operasional">
+      <FeatureGuard feature="share-fee-dokter">
       <main className="content share-fee-page">
         <div className="page-header">
           <div className="page-title-block">

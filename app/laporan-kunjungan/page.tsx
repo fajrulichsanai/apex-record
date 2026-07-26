@@ -16,12 +16,13 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { FiActivity, FiCheckCircle, FiUserCheck, FiXCircle } from 'react-icons/fi';
+import { FiActivity, FiCheckCircle, FiDownload, FiUserCheck, FiXCircle } from 'react-icons/fi';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import { useAuth } from '@/lib/auth-context';
 import { reportsApi, VisitReportResponse } from '@/lib/reports';
 import { useToast } from '@/lib/toast-context';
+import { exportToExcel } from '@/lib/export-excel';
 import '../styles/laporan.css';
 
 type RangeOption = '7hari' | '30hari' | 'bulanini';
@@ -56,11 +57,19 @@ function formatTanggal(isoDate: string) {
   return date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 }
 
+const STATUS_LABELS: Record<string, string> = {
+  arrived: 'Datang',
+  in_progress: 'Berjalan',
+  finished: 'Selesai',
+  cancelled: 'Dibatalkan',
+};
+
 export default function LaporanKunjunganPage() {
   const { loading: authLoading } = useAuth();
   const [range, setRange] = useState<RangeOption>('7hari');
   const [report, setReport] = useState<VisitReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const { error: showError } = useToast();
 
   useEffect(() => {
@@ -100,6 +109,57 @@ export default function LaporanKunjunganPage() {
     () => (report?.byDoctor ?? []).map((d) => ({ dokter: d.practitionerName, jumlah: d.count })),
     [report],
   );
+
+  async function handleExport() {
+    if (!report) return;
+    setExporting(true);
+    try {
+      const { dateFrom, dateTo } = getDateRange(range);
+      const full = await reportsApi.getVisits({
+        dateFrom,
+        dateTo,
+        limit: Math.max(report.meta.total, 1),
+      });
+
+      exportToExcel(
+        [
+          {
+            name: 'Ringkasan',
+            rows: [
+              { Metrik: 'Total Kunjungan', Nilai: full.summary.total },
+              { Metrik: 'Selesai', Nilai: full.summary.finished },
+              { Metrik: 'Berjalan', Nilai: full.summary.inProgress },
+              { Metrik: 'Dibatalkan', Nilai: full.summary.cancelled },
+              { Metrik: 'Rata-rata Durasi (menit)', Nilai: full.summary.avgDurationMinutes ?? '-' },
+            ],
+          },
+          {
+            name: 'Kunjungan Harian',
+            rows: full.byDay.map((d) => ({ Tanggal: d.date, Jumlah: d.count })),
+          },
+          {
+            name: 'Per Dokter',
+            rows: full.byDoctor.map((d) => ({ Dokter: d.practitionerName, Jumlah: d.count })),
+          },
+          {
+            name: 'Detail Kunjungan',
+            rows: full.encounters.map((e) => ({
+              Tanggal: e.date,
+              Pasien: e.patientName ?? '-',
+              Dokter: e.practitionerName ?? '-',
+              Status: STATUS_LABELS[e.status] ?? e.status,
+              'Durasi (menit)': e.durationMinutes ?? '-',
+            })),
+          },
+        ],
+        `laporan-kunjungan_${dateFrom}_${dateTo}`,
+      );
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Gagal mengekspor laporan kunjungan');
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const totalKunjungan = report?.summary.total ?? 0;
   const totalSelesai = report?.summary.finished ?? 0;
@@ -141,6 +201,15 @@ export default function LaporanKunjunganPage() {
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={handleExport}
+            disabled={loading || exporting || !report}
+          >
+            <FiDownload />
+            {exporting ? 'Mengekspor...' : 'Export Excel'}
+          </button>
         </div>
 
         <div className="stat-grid">

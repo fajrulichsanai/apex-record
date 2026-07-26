@@ -7,6 +7,7 @@ export type FeatureKey =
   | 'kunjungan'
   | 'billing'
   | 'operasional'
+  | 'share-fee-dokter'
   | 'laporan-kunjungan'
   | 'laporan-keuangan'
   | 'info-klinik'
@@ -20,6 +21,7 @@ const FULL_ACCESS: FeatureKey[] = [
   'kunjungan',
   'billing',
   'operasional',
+  'share-fee-dokter',
   'laporan-kunjungan',
   'laporan-keuangan',
   'info-klinik',
