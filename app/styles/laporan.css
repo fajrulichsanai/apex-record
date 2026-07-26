@@ -46,7 +46,37 @@
 
 .laporan-page .page-subtitle { font-size: 13.5px; color: var(--text-sub); margin-top: 4px; }
 
+.laporan-page .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
 .laporan-page .range-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.laporan-page .btn-outline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-sub);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.laporan-page .btn-outline svg { width: 15px; height: 15px; }
+
+.laporan-page .btn-outline:hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.laporan-page .btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .laporan-page .range-tab {
   padding: 8px 16px;

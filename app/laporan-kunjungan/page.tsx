@@ -118,7 +118,7 @@ export default function LaporanKunjunganPage() {
       const full = await reportsApi.getVisits({
         dateFrom,
         dateTo,
-        limit: Math.max(report.meta.total, 1),
+        limit: Math.max(report.summary.total, 1),
       });
 
       exportToExcel(
@@ -189,27 +189,29 @@ export default function LaporanKunjunganPage() {
             </div>
             <p className="page-subtitle">Ringkasan dan tren kunjungan pasien klinik</p>
           </div>
-          <div className="range-tabs">
-            {(Object.keys(RANGE_LABELS) as RangeOption[]).map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                className={`range-tab ${range === opt ? 'active' : ''}`}
-                onClick={() => setRange(opt)}
-              >
-                {RANGE_LABELS[opt]}
-              </button>
-            ))}
+          <div className="header-actions">
+            <div className="range-tabs">
+              {(Object.keys(RANGE_LABELS) as RangeOption[]).map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  className={`range-tab ${range === opt ? 'active' : ''}`}
+                  onClick={() => setRange(opt)}
+                >
+                  {RANGE_LABELS[opt]}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={handleExport}
+              disabled={loading || exporting || !report}
+            >
+              <FiDownload />
+              {exporting ? 'Mengekspor...' : 'Export Excel'}
+            </button>
           </div>
-          <button
-            type="button"
-            className="btn-outline"
-            onClick={handleExport}
-            disabled={loading || exporting || !report}
-          >
-            <FiDownload />
-            {exporting ? 'Mengekspor...' : 'Export Excel'}
-          </button>
         </div>
 
         <div className="stat-grid">
