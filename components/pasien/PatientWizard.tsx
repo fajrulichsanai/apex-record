@@ -306,7 +306,10 @@ export default function PatientWizard({
           .catch(() => {});
       }
     } else if (prefill) {
-      setForm((prev) => ({ ...prev, ...prefill }));
+      const cleanedPrefill = Object.fromEntries(
+        Object.entries(prefill).filter(([, value]) => value !== undefined),
+      );
+      setForm((prev) => ({ ...prev, ...cleanedPrefill }));
     }
   }, [initialPatient, prefill]);
 
