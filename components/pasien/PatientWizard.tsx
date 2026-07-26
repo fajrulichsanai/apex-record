@@ -437,13 +437,14 @@ export default function PatientWizard({
       } else if (!isValidPhone(form.phone)) {
         errs.phone = 'Format nomor telepon tidak valid (10-13 digit).';
       }
-      if (!form.isNewborn && !form.nik.trim()) {
-        errs.nik = 'NIK wajib diisi, atau tandai sebagai bayi baru lahir.';
-      } else if (!form.isNewborn && form.nik.trim() && !isValidNIK(form.nik)) {
+      if (!form.isNewborn && form.nik.trim() && !isValidNIK(form.nik)) {
         errs.nik = 'NIK harus 16 digit.';
       }
       if (form.email.trim() && !isValidEmail(form.email)) {
         errs.email = 'Format email tidak valid.';
+      }
+      if (!form.pekerjaan.trim()) {
+        errs.pekerjaan = 'Pekerjaan wajib diisi.';
       }
     }
     if (key === 'alamat') {
@@ -627,7 +628,7 @@ export default function PatientWizard({
                 </button>
               </div>
               <div className={`form-field ${fieldErrors.nik ? 'error' : ''}`}>
-                <label>NIK {form.isNewborn ? '' : '*'}</label>
+                <label>NIK</label>
                 <input
                   type="text"
                   placeholder="16 digit NIK"
@@ -673,14 +674,15 @@ export default function PatientWizard({
                 />
                 {fieldErrors.maritalStatus && <span className="field-error">{fieldErrors.maritalStatus}</span>}
               </div>
-              <div className="form-field">
-                <label>Pekerjaan</label>
+              <div className={`form-field ${fieldErrors.pekerjaan ? 'error' : ''}`}>
+                <label>Pekerjaan *</label>
                 <input
                   type="text"
                   placeholder="Contoh: Karyawan Swasta"
                   value={form.pekerjaan}
                   onChange={(e) => update('pekerjaan', e.target.value)}
                 />
+                {fieldErrors.pekerjaan && <span className="field-error">{fieldErrors.pekerjaan}</span>}
               </div>
             </div>
           )}
