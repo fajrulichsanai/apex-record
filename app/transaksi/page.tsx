@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import InputModal from '@/components/feedback/InputModal';
 import CustomSelect from '@/components/form/CustomSelect';
+import BillingDetailModal from './BillingDetailModal';
 import '../styles/transaksi.css';
 import { ApiError } from '@/lib/api-client';
 import {
@@ -94,6 +95,7 @@ function TransaksiPageInner() {
   const [payingId, setPayingId] = useState<number | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [pendingPaymentBilling, setPendingPaymentBilling] = useState<BillingListItem | null>(null);
+  const [selectedBillingId, setSelectedBillingId] = useState<number | null>(null);
 
   const { success, error: showError } = useToast();
 
@@ -215,10 +217,10 @@ function TransaksiPageInner() {
       return;
     }
 
-    // Validate items: must have name and unitPrice must be > 0
-    const validItems = items.filter((r) => r.name && r.unitPrice > 0);
+    // Validate items: must have a name (price of 0 is a valid free/complimentary tindakan)
+    const validItems = items.filter((r) => r.name);
     if (validItems.length === 0) {
-      setSubmitError('Tambahkan minimal satu tindakan dengan harga');
+      setSubmitError('Tambahkan minimal satu tindakan');
       return;
     }
 
@@ -562,7 +564,12 @@ function TransaksiPageInner() {
                 {filteredBillings.map((b) => {
                   const { tag, label } = statusTag(b.status);
                   return (
-                    <div key={b.billingId} className="transaksi-item">
+                    <div
+                      key={b.billingId}
+                      className="transaksi-item"
+                      onClick={() => setSelectedBillingId(b.billingId)}
+                      style={{ cursor: 'pointer' }}
+                    >
                       <div className="transaksi-icon">
                         <span className="material-symbols-rounded">receipt</span>
                       </div>
@@ -581,7 +588,10 @@ function TransaksiPageInner() {
                           type="button"
                           className="btn-outline"
                           disabled={payingId === b.billingId}
-                          onClick={() => handleRecordPayment(b)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRecordPayment(b);
+                          }}
                         >
                           {payingId === b.billingId ? '…' : 'Bayar'}
                         </button>
@@ -608,6 +618,15 @@ function TransaksiPageInner() {
             setShowPaymentModal(false);
             setPendingPaymentBilling(null);
           }}
+        />
+      )}
+
+      {selectedBillingId !== null && (
+        <BillingDetailModal
+          billingId={selectedBillingId}
+          tarifs={tarifs}
+          onClose={() => setSelectedBillingId(null)}
+          onUpdated={loadBillings}
         />
       )}
       </FeatureGuard>

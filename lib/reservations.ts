@@ -51,6 +51,7 @@ export interface ReservationQuery {
   page?: number;
   limit?: number;
   date?: string;
+  dateFrom?: string;
   status?: ReservationStatus;
   practitionerId?: number;
   locationId?: number;

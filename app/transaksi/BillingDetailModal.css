@@ -1,0 +1,137 @@
+.billing-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 500;
+}
+
+.billing-modal-box {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #fff;
+  border-radius: 14px;
+  width: 92%;
+  max-width: 640px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
+  z-index: 501;
+}
+
+.billing-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #E8ECF4;
+}
+
+.billing-modal-header h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1A2340;
+  margin: 0;
+}
+
+.billing-modal-subtitle {
+  font-size: 12px;
+  color: #A0AEC0;
+  margin-top: 2px;
+}
+
+.billing-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #A0AEC0;
+  padding: 4px;
+}
+
+.billing-modal-loading {
+  padding: 40px 24px;
+  text-align: center;
+  color: #A0AEC0;
+  font-size: 14px;
+}
+
+.billing-modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.billing-modal-summary-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.billing-modal-label {
+  font-size: 11px;
+  color: #A0AEC0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.billing-modal-value {
+  font-size: 14px;
+  color: #1A2340;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.billing-modal-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1A2340;
+  margin-top: 4px;
+}
+
+.billing-modal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.billing-modal-table th {
+  text-align: left;
+  font-size: 11px;
+  color: #A0AEC0;
+  text-transform: uppercase;
+  padding: 6px 8px;
+  border-bottom: 1px solid #E8ECF4;
+}
+
+.billing-modal-table td {
+  padding: 8px;
+  border-bottom: 1px solid #F5F6FA;
+  color: #1A2340;
+}
+
+.billing-modal-field-row {
+  display: flex;
+  gap: 12px;
+}
+
+.billing-modal-field-row .form-field {
+  flex: 1;
+}
+
+.billing-modal-notes {
+  background: #F5F6FA;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.billing-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #E8ECF4;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}

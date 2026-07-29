@@ -83,6 +83,14 @@ export interface CreateBillingPayload {
   notes?: string;
 }
 
+export interface UpdateBillingPayload {
+  items?: CreateBillingItemPayload[];
+  totalDiscount?: number;
+  totalDiscountType?: DiscountType;
+  additionalFee?: number;
+  notes?: string;
+}
+
 export interface CreatePaymentPayload {
   method: PaymentMethod;
   amount: number;
@@ -122,6 +130,9 @@ export const billingApi = {
   getOne: (id: number) => apiClient.get<BillingDetail>(`/billings/${id}`),
 
   create: (payload: CreateBillingPayload) => apiClient.post<BillingDetail>('/billings', payload),
+
+  update: (id: number, payload: UpdateBillingPayload) =>
+    apiClient.patch<BillingDetail>(`/billings/${id}`, payload),
 
   createPayment: (id: number, payload: CreatePaymentPayload) =>
     apiClient.post<CreatePaymentResponse>(`/billings/${id}/payments`, payload),

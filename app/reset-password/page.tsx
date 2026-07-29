@@ -68,11 +68,7 @@ function ResetPasswordContent() {
       <div className="left-panel">
         <div className="brand">
           <div className="brand-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="7" width="18" height="13" rx="2" stroke="white" strokeWidth="2"/>
-              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="white" strokeWidth="2"/>
-              <path d="M12 11v4M10 13h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+            <img src="/logo-apex-record.png" alt="ApexRecord" />
           </div>
           <div className="brand-text">
             <span className="name">Apex</span>

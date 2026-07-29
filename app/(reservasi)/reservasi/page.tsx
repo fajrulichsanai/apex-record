@@ -30,6 +30,22 @@ function sourceLabel(source: string) {
   return 'Dashboard';
 }
 
+function todayStr() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function waLink(phone: string) {
+  const digits = phone.replace(/\D/g, '');
+  const normalized = digits.startsWith('0') ? `62${digits.slice(1)}` : digits;
+  return `https://wa.me/${normalized}`;
+}
+
+type QuickFilter = 'none' | 'today' | 'upcoming';
+
 export default function ReservasiPage() {
   return (
     <Suspense fallback={null}>
@@ -48,6 +64,7 @@ function ReservasiPageInner() {
   const [currentFilter, setCurrentFilter] = useState<FilterValue>('semua');
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState('');
+  const [quickFilter, setQuickFilter] = useState<QuickFilter>('none');
   const [showAddModal, setShowAddModal] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -61,7 +78,8 @@ function ReservasiPageInner() {
     setLoadError(null);
     try {
       const res = await reservationsApi.list({
-        date: dateFilter || undefined,
+        date: quickFilter === 'today' ? todayStr() : dateFilter || undefined,
+        dateFrom: quickFilter === 'upcoming' ? todayStr() : undefined,
         status: currentFilter === 'semua' ? undefined : currentFilter,
         search: searchQuery || undefined,
         limit: 100,
@@ -73,7 +91,7 @@ function ReservasiPageInner() {
     } finally {
       setLoading(false);
     }
-  }, [dateFilter, currentFilter, searchQuery]);
+  }, [dateFilter, currentFilter, searchQuery, quickFilter]);
 
   useEffect(() => {
     loadReservations();
@@ -268,14 +286,29 @@ function ReservasiPageInner() {
                 <input
                   type="date"
                   value={dateFilter}
+                  disabled={quickFilter !== 'none'}
                   onChange={(e) => setDateFilter(e.target.value)}
                 />
-                {dateFilter && (
+                {dateFilter && quickFilter === 'none' && (
                   <button className="date-filter-clear" onClick={() => setDateFilter('')}>
                     Semua Tanggal
                   </button>
                 )}
               </div>
+            </div>
+            <div className="filter-tabs">
+              <button
+                className={`filter-tab ${quickFilter === 'today' ? 'active' : ''}`}
+                onClick={() => setQuickFilter(quickFilter === 'today' ? 'none' : 'today')}
+              >
+                Hari Ini
+              </button>
+              <button
+                className={`filter-tab ${quickFilter === 'upcoming' ? 'active' : ''}`}
+                onClick={() => setQuickFilter(quickFilter === 'upcoming' ? 'none' : 'upcoming')}
+              >
+                Kedepannya
+              </button>
             </div>
             <div className="filter-tabs">
               {(['semua', 'pending', 'confirmed', 'completed', 'cancelled'] as FilterValue[]).map((f) => (
@@ -307,13 +340,13 @@ function ReservasiPageInner() {
                 </div>
               ) : (
                 reservations.map((r) => {
-                  const date = new Date(r.reservationDate);
+                  const [, dm, dd] = r.reservationDate.slice(0, 10).split('-').map(Number);
                   const busy = actionLoadingId === r.id;
                   return (
                     <div key={r.id} className="reservation-row-item">
                       <div className="reservation-date-block">
-                        <div className="reservation-date-day">{date.getDate()}</div>
-                        <div className="reservation-date-month">{MONTHS[date.getMonth()]}</div>
+                        <div className="reservation-date-day">{dd}</div>
+                        <div className="reservation-date-month">{MONTHS[dm - 1]}</div>
                         {r.jamSlot && <div className="reservation-time">{r.jamSlot.slice(0, 5)}</div>}
                       </div>
                       <div className="reservation-info">
@@ -329,6 +362,17 @@ function ReservasiPageInner() {
                         <span className={`reservation-status-tag ${r.status}`}>{statusLabel(r.status)}</span>
                       </div>
                       <div className="reservation-actions">
+                        {r.patientPhone && (
+                          <button
+                            className="btn-row-action"
+                            onClick={() => window.open(waLink(r.patientPhone), '_blank', 'noopener,noreferrer')}
+                            aria-label="Hubungi via WhatsApp"
+                            title="Hubungi via WhatsApp"
+                          >
+                            <span className="material-symbols-rounded">chat</span>
+                            WA
+                          </button>
+                        )}
                         {r.status === 'pending' && (
                           <>
                             <button

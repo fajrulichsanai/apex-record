@@ -139,7 +139,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         <div className="sidebar-top">
           <div className="logo">
             <div className="logo-icon">
-              <FiActivity />
+              <img src="/logo-apex-record.png" alt="ApexRecord" className="logo-img" />
             </div>
             <span className="logo-text">ApexRecord</span>
           </div>
