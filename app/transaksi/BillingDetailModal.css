@@ -1,68 +1,114 @@
 .billing-modal-overlay {
+  --primary:      #4F7EF8;
+  --primary-dk:   #3B6CE6;
+  --bg:           #F5F6FA;
+  --surface:      #FFFFFF;
+  --text-main:    #1A2340;
+  --text-sub:     #6B7A99;
+  --text-muted:   #A0AEC0;
+  --border:       #E8ECF4;
+  --tag-cancel:   #FF4D4F;
+  --radius-sm:    8px;
+  --radius-md:    14px;
+  --radius-lg:    20px;
+  --transition:   0.2s ease;
+
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.45);
+  background: rgba(15, 23, 42, .55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
   z-index: 500;
+  animation: billing-modal-fade .2s ease;
+  overflow-y: auto;
+}
+
+@keyframes billing-modal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .billing-modal-box {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: #fff;
-  border-radius: 14px;
-  width: 92%;
+  width: 100%;
   max-width: 640px;
   max-height: 88vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.3);
-  z-index: 501;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.25);
+  animation: billing-modal-pop .22s ease;
+  overflow: hidden;
+}
+
+@keyframes billing-modal-pop {
+  from { opacity: 0; transform: translateY(10px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .billing-modal-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  padding: 20px 24px;
-  border-bottom: 1px solid #E8ECF4;
+  gap: 12px;
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--border);
 }
 
 .billing-modal-header h2 {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
-  color: #1A2340;
+  color: var(--text-main);
   margin: 0;
 }
 
 .billing-modal-subtitle {
-  font-size: 12px;
-  color: #A0AEC0;
+  font-size: 12.5px;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
 .billing-modal-close {
-  background: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
   border: none;
+  background: var(--bg);
+  color: var(--text-sub);
   cursor: pointer;
-  color: #A0AEC0;
-  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--transition);
+}
+
+.billing-modal-close:hover:not(:disabled) {
+  background: var(--border);
+}
+
+.billing-modal-close:disabled {
+  opacity: .5;
+  cursor: not-allowed;
 }
 
 .billing-modal-loading {
-  padding: 40px 24px;
+  padding: 40px 28px;
   text-align: center;
-  color: #A0AEC0;
+  color: var(--text-muted);
   font-size: 14px;
 }
 
 .billing-modal-body {
-  padding: 20px 24px;
+  padding: 28px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
+  max-height: calc(90vh - 140px);
 }
 
 .billing-modal-summary-row {
@@ -73,14 +119,14 @@
 
 .billing-modal-label {
   font-size: 11px;
-  color: #A0AEC0;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
 
 .billing-modal-value {
   font-size: 14px;
-  color: #1A2340;
+  color: var(--text-main);
   font-weight: 600;
   margin-top: 2px;
 }
@@ -88,7 +134,7 @@
 .billing-modal-section-title {
   font-size: 13px;
   font-weight: 700;
-  color: #1A2340;
+  color: var(--text-main);
   margin-top: 4px;
 }
 
@@ -101,21 +147,21 @@
 .billing-modal-table th {
   text-align: left;
   font-size: 11px;
-  color: #A0AEC0;
+  color: var(--text-muted);
   text-transform: uppercase;
   padding: 6px 8px;
-  border-bottom: 1px solid #E8ECF4;
+  border-bottom: 1px solid var(--border);
 }
 
 .billing-modal-table td {
   padding: 8px;
-  border-bottom: 1px solid #F5F6FA;
-  color: #1A2340;
+  border-bottom: 1px solid var(--bg);
+  color: var(--text-main);
 }
 
 .billing-modal-field-row {
   display: flex;
-  gap: 12px;
+  gap: 14px;
 }
 
 .billing-modal-field-row .form-field {
@@ -123,15 +169,43 @@
 }
 
 .billing-modal-notes {
-  background: #F5F6FA;
-  border-radius: 8px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
   padding: 10px 12px;
 }
 
 .billing-modal-footer {
-  padding: 16px 24px;
-  border-top: 1px solid #E8ECF4;
+  padding: 16px 28px;
+  border-top: 1px solid var(--border);
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+.billing-modal-footer .btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+}
+
+.billing-modal-footer .btn-primary:hover:not(:disabled) {
+  background: var(--primary-dk);
+}
+
+.billing-modal-footer .btn-outline {
+  border: 1.5px solid var(--border);
+  background: none;
+  color: var(--text-sub);
+}
+
+.billing-modal-footer .btn-primary:disabled,
+.billing-modal-footer .btn-outline:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 560px) {
+  .billing-modal-field-row {
+    flex-direction: column;
+  }
 }
