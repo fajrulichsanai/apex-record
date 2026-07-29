@@ -19,14 +19,28 @@ jobs:
             set -e
             echo "📁 Masuk ke direktori project..."
             cd ~/staging-apex-record/frontend/apex-record
+
             echo "🔀 Pastikan di branch development..."
             git fetch origin development
             git checkout development
             git reset --hard origin/development
-            echo "📦 Install dependencies..."
-            npm install
+
+            echo "📦 Cek perubahan dependency..."
+            CURRENT_HASH=$(sha256sum package-lock.json | awk '{print $1}')
+            PREVIOUS_HASH=$(cat .last-lock-hash 2>/dev/null || echo "none")
+
+            if [ "$CURRENT_HASH" != "$PREVIOUS_HASH" ]; then
+              echo "📦 Dependency berubah, install ulang..."
+              npm install --prefer-offline --no-audit --no-fund
+              echo "$CURRENT_HASH" > .last-lock-hash
+            else
+              echo "📦 Tidak ada perubahan dependency, skip install ✅"
+            fi
+
             echo "🔨 Build project..."
             npm run build
+
             echo "♻️  Restart PM2..."
             pm2 restart apex-record-staging-frontend
+
             echo "✅ Deploy selesai!"
