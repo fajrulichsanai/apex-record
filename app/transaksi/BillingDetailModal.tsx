@@ -225,9 +225,9 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
               <div className="billing-modal-section-title">Tindakan</div>
               {editing ? (
                 <>
-                  <div className="item-rows">
+                  <div className="billing-item-rows">
                     {items.map((row) => (
-                      <div key={row.key} className="item-row">
+                      <div key={row.key} className="billing-item-row">
                         <CustomSelect
                           value={String(row.tarifId)}
                           onChange={(value) => handleTarifSelect(row.key, value)}
@@ -246,7 +246,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                         />
                         <button
                           type="button"
-                          className="btn-icon-sm"
+                          className="billing-modal-close"
                           onClick={() => setItems((prev) => prev.filter((r) => r.key !== row.key))}
                           disabled={items.length === 1}
                           title="Hapus tindakan"
@@ -258,28 +258,29 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                   </div>
                   <button
                     type="button"
-                    className="btn-outline"
-                    style={{ alignSelf: 'flex-start', marginTop: 8 }}
+                    className="btn-outline billing-add-item-btn"
                     onClick={() => setItems((prev) => [...prev, { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal' }])}
                   >
                     <span className="material-symbols-rounded">add</span>
                     Tambah Tindakan
                   </button>
 
-                  <div className="billing-modal-field-row">
-                    <div className="form-field">
-                      <label>Diskon (Rp)</label>
+                  <div className="billing-form-row">
+                    <div className="billing-form-group">
+                      <label className="billing-form-label">Diskon (Rp)</label>
                       <input
                         type="number"
+                        className="billing-form-input"
                         min={0}
                         value={totalDiscount}
                         onChange={(e) => setTotalDiscount(Math.max(0, Number(e.target.value) || 0))}
                       />
                     </div>
-                    <div className="form-field">
-                      <label>Biaya Tambahan (Rp)</label>
+                    <div className="billing-form-group">
+                      <label className="billing-form-label">Biaya Tambahan (Rp)</label>
                       <input
                         type="number"
+                        className="billing-form-input"
                         min={0}
                         value={additionalFee}
                         onChange={(e) => setAdditionalFee(Math.max(0, Number(e.target.value) || 0))}
@@ -287,13 +288,18 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                     </div>
                   </div>
 
-                  <div className="form-field">
-                    <label>Catatan</label>
-                    <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
+                  <div className="billing-form-group">
+                    <label className="billing-form-label">Catatan</label>
+                    <textarea
+                      className="billing-form-textarea"
+                      rows={2}
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                    />
                   </div>
 
-                  <div className="summary-box">
-                    <div className="summary-row total">
+                  <div className="billing-summary-box">
+                    <div className="billing-summary-row total">
                       <span>Total Bayar</span>
                       <span>{formatRupiah(editGrandTotal)}</span>
                     </div>
@@ -330,32 +336,32 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                     </tbody>
                   </table>
 
-                  <div className="summary-box">
-                    <div className="summary-row">
+                  <div className="billing-summary-box">
+                    <div className="billing-summary-row">
                       <span>Subtotal</span>
                       <span>{formatRupiah(detail.subtotal)}</span>
                     </div>
                     {detail.totalDiscount > 0 && (
-                      <div className="summary-row">
+                      <div className="billing-summary-row">
                         <span>Diskon</span>
                         <span>-{formatRupiah(detail.totalDiscount)}</span>
                       </div>
                     )}
                     {detail.additionalFee > 0 && (
-                      <div className="summary-row">
+                      <div className="billing-summary-row">
                         <span>Biaya Tambahan</span>
                         <span>+{formatRupiah(detail.additionalFee)}</span>
                       </div>
                     )}
-                    <div className="summary-row total">
+                    <div className="billing-summary-row total">
                       <span>Total Bayar</span>
                       <span>{formatRupiah(detail.grandTotal)}</span>
                     </div>
-                    <div className="summary-row">
+                    <div className="billing-summary-row">
                       <span>Sudah Dibayar</span>
                       <span>{formatRupiah(detail.paidAmount)}</span>
                     </div>
-                    <div className="summary-row">
+                    <div className="billing-summary-row">
                       <span>Sisa Tagihan</span>
                       <span>{formatRupiah(detail.outstandingAmount)}</span>
                     </div>
