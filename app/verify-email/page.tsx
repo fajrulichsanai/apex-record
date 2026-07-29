@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import '../styles/verify-email.css';
 
-const LOCAL_API = 'http://localhost:3001';
+const LOCAL_API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 type VerificationState = 'loading' | 'success' | 'error' | 'expired';
 
