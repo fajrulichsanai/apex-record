@@ -24,7 +24,7 @@ jobs:
             git checkout development
             git reset --hard origin/development
             echo "📦 Install dependencies..."
-            npm ci
+            npm install
             echo "🔨 Build project..."
             npm run build
             echo "♻️  Restart PM2..."
