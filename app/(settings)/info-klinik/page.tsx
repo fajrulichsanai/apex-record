@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import CustomSelect from '@/components/form/CustomSelect';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 import { ApiError } from '@/lib/api-client';
 import {
   clinicApi,
@@ -11,6 +11,8 @@ import {
   type ClinicDayHours,
 } from '@/lib/clinic';
 import { useToast } from '@/lib/toast-context';
+import { useAuth } from '@/lib/auth-context';
+import { isFeatureViewOnly } from '@/lib/permissions';
 import '../../styles/info-klinik.css';
 
 interface ClinicInfo {
@@ -108,24 +110,34 @@ function TimePicker({
   return (
     <div className={`time-picker${active ? ' active' : ''}`}>
       <div className="tp-select">
-        <CustomSelect
+        <select
+          className="tp-native-select"
           disabled={!active}
           value={hVal}
-          onChange={onHChange}
-          options={[
-            { value: '', label: '--' },
-            ...HOURS.map((h) => ({ value: h, label: h })),
-          ]}
-        />
+          onChange={(e) => onHChange(e.target.value)}
+        >
+          <option value="">--</option>
+          {HOURS.map((h) => (
+            <option key={h} value={h}>
+              {h}
+            </option>
+          ))}
+        </select>
       </div>
       <span className="tp-colon">:</span>
       <div className="tp-select tp-select-min">
-        <CustomSelect
+        <select
+          className="tp-native-select"
           disabled={!active}
           value={mVal || '00'}
-          onChange={onMChange}
-          options={MINUTES.map((m) => ({ value: m, label: m }))}
-        />
+          onChange={(e) => onMChange(e.target.value)}
+        >
+          {MINUTES.map((m) => (
+            <option key={m} value={m}>
+              {m}
+            </option>
+          ))}
+        </select>
       </div>
     </div>
   );
@@ -133,6 +145,8 @@ function TimePicker({
 
 export default function InfoKlinikPage() {
   const { success, error } = useToast();
+  const { user } = useAuth();
+  const viewOnly = isFeatureViewOnly(user?.role, 'info-klinik');
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -207,6 +221,7 @@ export default function InfoKlinikPage() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="info-klinik">
       <main className="content">
         <div className="info-klinik-page">
           <div className="page-content">
@@ -222,23 +237,25 @@ export default function InfoKlinikPage() {
                   <p>Informasi dan pengaturan klinik</p>
                 </div>
               </div>
-              <button
-                className={`main-btn ${isEditing ? 'mode-save' : 'mode-edit'}`}
-                onClick={handleToggleEdit}
-                disabled={loading || saving}
-              >
-                {isEditing ? (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                ) : (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                  </svg>
-                )}
-                <span>{saving ? 'Menyimpan...' : isEditing ? 'Simpan' : 'Edit'}</span>
-              </button>
+              {!viewOnly && (
+                <button
+                  className={`main-btn ${isEditing ? 'mode-save' : 'mode-edit'}`}
+                  onClick={handleToggleEdit}
+                  disabled={loading || saving}
+                >
+                  {isEditing ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  )}
+                  <span>{saving ? 'Menyimpan...' : isEditing ? 'Simpan' : 'Edit'}</span>
+                </button>
+              )}
             </div>
 
             <div className="grid-two">
@@ -488,6 +505,7 @@ export default function InfoKlinikPage() {
           </div>
         </div>
       </main>
+      </FeatureGuard>
     </DashboardLayout>
   );
 }

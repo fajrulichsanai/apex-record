@@ -64,6 +64,15 @@ Semua butuh `@Roles(OWNER, SUPER_ADMIN)` kecuali disebutkan beda.
 - Pola fetch yang **dipakai nyata** di app adalah fetch langsung ke backend (`NEXT_PUBLIC_API_URL`), BUKAN lewat `app/api/*` BFF proxy routes — route-route di `app/api/auth/*` itu mock/dead code yang tidak dipanggil dari UI manapun. Kalau nambah fitur baru, ikuti pola `lib/api-client.ts` langsung ke backend, jangan bikin BFF proxy baru kecuali diminta.
 - `lib/cors.ts` ada bug TypeScript yang tadinya bikin `next build` gagal total — sudah diperbaiki (return type `Record<string,string>` dengan fallback default).
 
+## Fase 0 cleanup (2026-07-04)
+- Dihapus (dead code, terverifikasi tak ada importer): `app/api/auth/*` (mock BFF login/register/verify-email) + `lib/cors.ts` (FE); `src/modules/tarif/tarifs.service.ts` (BE, duplikat mati — billing pakai `billing/tarifs.service.ts` sendiri, entity `tarif` tetap dipakai).
+- Dipangkas dari `Patient` (entity+DTO+service BE, tipe FE `lib/patients.ts`): `is_member`, `member_id`, `kode_referral`, `status_aktif`, `ihs_number` — 0 referensi di FE manapun. Migration: `1783100000000-RemoveUnusedPatientColumns.ts`. **Consent (`consent_marketing/tanggal/version`) sengaja DIPERTAHANKAN** meski belum ada UI — dibutuhkan untuk kepatuhan UU PDP nanti.
+- `src/modules/location/` (singular, cuma berisi entity) BUKAN duplikat dari `src/modules/locations/` (plural, module lengkap) — locations module meng-import entity dari situ. Jangan hapus.
+- Dashboard (`app/dashboard/page.tsx`) sudah terhubung penuh ke API nyata (`/dashboard/summary|activity|highlights`) lewat komponen anak (`StatsGrid`, `BottomGrid`, `ModuleHighlights`) — sempat disangka statis karena page.tsx sendiri tidak import lib apa pun, tapi child components-nya yang fetch.
+- Bug `useSearchParams` tanpa Suspense di `list-kunjungan` sudah diperbaiki sebelumnya (sudah dibungkus `<Suspense>`) — catatan lama di atas soal ini sudah usang.
+- Lint (`npm run lint`) di kedua repo punya banyak error pre-existing (any type, unsafe member access, dll) — tidak disentuh saat cleanup ini, di luar scope.
+- **Gap terbesar produk**: modul klinis backend (anamnesis, vital-sign, diagnosis, procedure, prescription, dispense, odontogram, ohis, medications) sudah lengkap tapi **belum ada UI FE sama sekali**. Ini prioritas berikutnya untuk membuat produk benar-benar jadi "rekam medis".
+
 ## Catatan keputusan desain (jangan diulang tanya ke user)
 - Single clinic per user dipertahankan (tidak bikin tabel join many-to-many) — SUPER_ADMIN = clinicId null = akses semua klinik.
 - "Create user" diimplementasi sebagai direct-create (`/users/invite`) dengan temporary password di response, **bukan** lewat flow pending-activation lama (meski awalnya user pilih opsi "reuse pending flow", pada implementasi nyata yang dipakai adalah create-langsung supaya fitur "create" di UI benar-benar berfungsi).

@@ -412,6 +412,19 @@
 
 /* ADD VISIT MODAL */
 .visit-modal-overlay {
+  --primary:      #4F7EF8;
+  --primary-dk:   #3B6CE6;
+  --green:        #2DCB8A;
+  --bg:           #F5F6FA;
+  --surface:      #FFFFFF;
+  --text-main:    #1A2340;
+  --text-sub:     #6B7A99;
+  --text-muted:   #A0AEC0;
+  --border:       #E8ECF4;
+  --radius-sm:    8px;
+  --radius-md:    14px;
+  --transition:   0.2s ease;
+
   position: fixed;
   inset: 0;
   background: rgba(15, 23, 42, .55);
@@ -445,32 +458,34 @@
 }
 
 .visit-modal-header {
-  padding: 0 4px 14px;
+  padding: 24px 32px 14px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   flex-shrink: 0;
+  background: #FFFFFF;
+  border-bottom: 1px solid var(--border);
 }
 
-.visit-modal-header h2 { font-size: 18px; font-weight: 700; color: #fff; letter-spacing: -.2px; }
-.visit-modal-header p { font-size: 12.5px; color: rgba(255,255,255,.75); margin-top: 3px; }
+.visit-modal-header h2 { font-size: 18px; font-weight: 700; color: var(--text-main); letter-spacing: -.2px; }
+.visit-modal-header p { font-size: 12.5px; color: var(--text-sub); margin-top: 3px; }
 
 .visit-modal-close {
   width: 32px; height: 32px;
   border-radius: 9px;
   border: none;
-  background: rgba(255,255,255,.12);
-  color: #fff;
+  background: transparent;
+  color: var(--text-muted);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background var(--transition);
+  transition: all var(--transition);
 }
 
-.visit-modal-close:hover:not(:disabled) { background: rgba(255,255,255,.22); }
+.visit-modal-close:hover:not(:disabled) { background: var(--bg); color: var(--text-main); }
 .visit-modal-close:disabled { opacity: .5; cursor: not-allowed; }
 
 @media (max-width: 600px) {

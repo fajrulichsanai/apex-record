@@ -13,25 +13,23 @@ export interface VisitReportQuery {
 }
 
 export interface VisitReportResponse {
-  data: {
-    summary: {
-      total: number;
-      finished: number;
-      cancelled: number;
-      inProgress: number;
-      avgDurationMinutes: number | null;
-    };
-    byDay: { date: string; count: number }[];
-    byDoctor: { practitionerName: string; count: number }[];
-    encounters: {
-      encounterId: number;
-      date: string;
-      patientName?: string;
-      practitionerName?: string;
-      status: EncounterStatus;
-      durationMinutes: number | null;
-    }[];
+  summary: {
+    total: number;
+    finished: number;
+    cancelled: number;
+    inProgress: number;
+    avgDurationMinutes: number | null;
   };
+  byDay: { date: string; count: number }[];
+  byDoctor: { practitionerName: string; count: number }[];
+  encounters: {
+    encounterId: number;
+    date: string;
+    patientName?: string;
+    practitionerName?: string;
+    status: EncounterStatus;
+    durationMinutes: number | null;
+  }[];
   meta: { total: number; page: number; limit: number; totalPages: number };
 }
 
@@ -42,18 +40,16 @@ export interface FinancialReportQuery {
 }
 
 export interface FinancialReportResponse {
-  data: {
-    summary: {
-      totalBilling: number;
-      totalPaid: number;
-      totalOutstanding: number;
-      collectionRate: number;
-      totalRefunded: number;
-    };
-    byDay: { date: string; revenue: number; collected: number }[];
-    byPaymentMethod: { method: PaymentMethod; amount: number }[];
-    byDoctor: { practitionerName: string; revenue: number }[];
+  summary: {
+    totalBilling: number;
+    totalPaid: number;
+    totalOutstanding: number;
+    collectionRate: number;
+    totalRefunded: number;
   };
+  byDay: { date: string; revenue: number; collected: number }[];
+  byPaymentMethod: { method: PaymentMethod; amount: number }[];
+  byDoctor: { practitionerName: string; revenue: number }[];
 }
 
 function toQueryString(query: VisitReportQuery | FinancialReportQuery) {

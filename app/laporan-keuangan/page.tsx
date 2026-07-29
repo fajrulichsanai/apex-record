@@ -16,11 +16,14 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { FiCreditCard, FiDollarSign, FiClock, FiTrendingUp } from 'react-icons/fi';
+import { FiCreditCard, FiDollarSign, FiClock, FiDownload, FiTrendingUp } from 'react-icons/fi';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
+import { canAccessFeature } from '@/lib/permissions';
 import { useAuth } from '@/lib/auth-context';
 import { reportsApi, FinancialReportResponse, PaymentMethod } from '@/lib/reports';
 import { useToast } from '@/lib/toast-context';
+import { exportToExcel } from '@/lib/export-excel';
 import '../styles/laporan.css';
 
 type RangeOption = '7hari' | '30hari' | 'bulanini';
@@ -76,15 +79,16 @@ function formatRupiah(value: number) {
 export default function LaporanKeuanganPage() {
   const { user, loading: authLoading } = useAuth();
   const [range, setRange] = useState<RangeOption>('7hari');
-  const [report, setReport] = useState<FinancialReportResponse['data'] | null>(null);
+  const [report, setReport] = useState<FinancialReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const { error: showError } = useToast();
 
-  const isOwner = user?.role === 'owner';
+  const canView = canAccessFeature(user?.role, 'laporan-keuangan');
 
   useEffect(() => {
     async function loadReport() {
-      if (!isOwner) {
+      if (!canView) {
         setLoading(false);
         return;
       }
@@ -94,7 +98,7 @@ export default function LaporanKeuanganPage() {
 
       try {
         const res = await reportsApi.getFinancial({ dateFrom, dateTo });
-        setReport(res.data);
+        setReport(res);
       } catch (err) {
         showError(err instanceof Error ? err.message : 'Gagal memuat laporan keuangan');
       } finally {
@@ -104,7 +108,7 @@ export default function LaporanKeuanganPage() {
 
     loadReport();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, isOwner]);
+  }, [range, canView]);
 
   const pendapatanHarian = useMemo(
     () => (report?.byDay ?? []).map((d) => ({ tanggal: formatTanggal(d.date), pendapatan: d.revenue })),
@@ -126,6 +130,49 @@ export default function LaporanKeuanganPage() {
     [report],
   );
 
+  function handleExport() {
+    if (!report) return;
+    setExporting(true);
+    try {
+      const { dateFrom, dateTo } = getDateRange(range);
+
+      exportToExcel(
+        [
+          {
+            name: 'Ringkasan',
+            rows: [
+              { Metrik: 'Total Pendapatan', Nilai: report.summary.totalBilling },
+              { Metrik: 'Total Lunas', Nilai: report.summary.totalPaid },
+              { Metrik: 'Belum Lunas', Nilai: report.summary.totalOutstanding },
+              { Metrik: 'Collection Rate (%)', Nilai: report.summary.collectionRate },
+              { Metrik: 'Total Refund', Nilai: report.summary.totalRefunded },
+            ],
+          },
+          {
+            name: 'Pendapatan Harian',
+            rows: report.byDay.map((d) => ({ Tanggal: d.date, Pendapatan: d.revenue, Terkumpul: d.collected })),
+          },
+          {
+            name: 'Per Metode Bayar',
+            rows: report.byPaymentMethod.map((m) => ({
+              Metode: METODE_LABELS[m.method] ?? m.method,
+              Jumlah: m.amount,
+            })),
+          },
+          {
+            name: 'Per Dokter',
+            rows: report.byDoctor.map((d) => ({ Dokter: d.practitionerName, Pendapatan: d.revenue })),
+          },
+        ],
+        `laporan-keuangan_${dateFrom}_${dateTo}`,
+      );
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Gagal mengekspor laporan keuangan');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   const totalPendapatan = report?.summary.totalBilling ?? 0;
   const rataRataHarian = pendapatanHarian.length > 0 ? totalPendapatan / pendapatanHarian.length : 0;
   const belumLunas = report?.summary.totalOutstanding ?? 0;
@@ -143,18 +190,9 @@ export default function LaporanKeuanganPage() {
     );
   }
 
-  if (!isOwner) {
-    return (
-      <DashboardLayout>
-        <main className="content laporan-page">
-          <div className="laporan-error">Laporan keuangan hanya dapat diakses oleh Owner.</div>
-        </main>
-      </DashboardLayout>
-    );
-  }
-
   return (
     <DashboardLayout>
+      <FeatureGuard feature="laporan-keuangan">
       <main className="content laporan-page">
         <div className="page-header">
           <div className="page-title-block">
@@ -163,17 +201,28 @@ export default function LaporanKeuanganPage() {
             </div>
             <p className="page-subtitle">Ringkasan pendapatan dan arus kas klinik</p>
           </div>
-          <div className="range-tabs">
-            {(Object.keys(RANGE_LABELS) as RangeOption[]).map((opt) => (
-              <button
-                key={opt}
-                type="button"
-                className={`range-tab ${range === opt ? 'active' : ''}`}
-                onClick={() => setRange(opt)}
-              >
-                {RANGE_LABELS[opt]}
-              </button>
-            ))}
+          <div className="header-actions">
+            <div className="range-tabs">
+              {(Object.keys(RANGE_LABELS) as RangeOption[]).map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  className={`range-tab ${range === opt ? 'active' : ''}`}
+                  onClick={() => setRange(opt)}
+                >
+                  {RANGE_LABELS[opt]}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={handleExport}
+              disabled={loading || exporting || !report}
+            >
+              <FiDownload />
+              {exporting ? 'Mengekspor...' : 'Export Excel'}
+            </button>
           </div>
         </div>
 
@@ -278,13 +327,13 @@ export default function LaporanKeuanganPage() {
             </div>
           </div>
 
-          <div className="panel chart-panel wide">
+          <div className="panel chart-panel">
             <div className="panel-header">
               <h2>Pendapatan per Dokter</h2>
             </div>
             <div className="chart-body">
               <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={pendapatanDokter} layout="vertical" margin={{ left: 20 }}>
+                <BarChart data={pendapatanDokter} layout="vertical" margin={{ left: 10 }}>
                   <CartesianGrid stroke="#E8ECF4" horizontal={false} />
                   <XAxis
                     type="number"
@@ -309,6 +358,7 @@ export default function LaporanKeuanganPage() {
           </div>
         </div>
       </main>
+      </FeatureGuard>
     </DashboardLayout>
   );
 }

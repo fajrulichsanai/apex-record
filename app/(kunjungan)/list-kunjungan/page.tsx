@@ -1,8 +1,10 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
+import InputModal from '@/components/feedback/InputModal';
 import AddVisitModal from './AddVisitModal';
 import {
   encounterApi,
@@ -68,6 +70,7 @@ export default function ListKunjunganPage() {
 
 function ListKunjunganPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [visits, setVisits] = useState<EncounterListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -80,6 +83,17 @@ function ListKunjunganPageInner() {
   const [actionLoading, setActionLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [preselectReservationId, setPreselectReservationId] = useState<number | null>(null);
+  const [showCancellationModal, setShowCancellationModal] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<EncounterStatus | null>(null);
+
+  useEffect(() => {
+    if (searchParams.get('openAddVisit') === '1') {
+      const reservationId = Number(searchParams.get('reservationId'));
+      setPreselectReservationId(reservationId || null);
+      setShowAddModal(true);
+    }
+  }, [searchParams]);
 
   const loadVisits = useCallback(async () => {
     setLoading(true);
@@ -87,13 +101,17 @@ function ListKunjunganPageInner() {
     try {
       const res = await encounterApi.list();
       setVisits(res.data);
-      setSelectedVisitId((prev) => prev ?? res.data[0]?.encounterId ?? null);
+      const queryEncounterId = Number(searchParams.get('encounterId'));
+      const preselected = queryEncounterId && res.data.some((v) => v.encounterId === queryEncounterId)
+        ? queryEncounterId
+        : null;
+      setSelectedVisitId((prev) => preselected ?? prev ?? res.data[0]?.encounterId ?? null);
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : 'Gagal memuat daftar kunjungan');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => {
     loadVisits();
@@ -147,19 +165,20 @@ function ListKunjunganPageInner() {
     loadVisits();
   };
 
-  const handleChangeStatus = async (status: EncounterStatus) => {
+  const handleChangeStatus = (status: EncounterStatus) => {
     if (!selectedVisitId) return;
     setActionError(null);
 
-    let reason: string | undefined;
     if (status === 'cancelled') {
-      reason = window.prompt('Alasan pembatalan?') || '';
-      if (!reason.trim()) {
-        setActionError('Alasan pembatalan wajib diisi');
-        return;
-      }
+      setPendingStatusChange(status);
+      setShowCancellationModal(true);
+    } else {
+      performStatusChange(status);
     }
+  };
 
+  const performStatusChange = async (status: EncounterStatus, reason?: string) => {
+    if (!selectedVisitId) return;
     setActionLoading(true);
     try {
       await encounterApi.updateStatus(selectedVisitId, { status, reason });
@@ -168,6 +187,18 @@ function ListKunjunganPageInner() {
       setActionError(err instanceof ApiError ? err.message : 'Gagal memperbarui status kunjungan');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleCancellationModalConfirm = (reason: string) => {
+    if (!reason.trim()) {
+      setActionError('Alasan pembatalan wajib diisi');
+      return;
+    }
+    setShowCancellationModal(false);
+    if (pendingStatusChange) {
+      performStatusChange(pendingStatusChange, reason);
+      setPendingStatusChange(null);
     }
   };
 
@@ -190,6 +221,7 @@ function ListKunjunganPageInner() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="kunjungan">
       <main className="content kunjungan-page">
         {/* Header */}
         <div className="page-header">
@@ -468,8 +500,25 @@ function ListKunjunganPageInner() {
       </main>
 
       {showAddModal && (
-        <AddVisitModal onClose={() => setShowAddModal(false)} onCreated={handleVisitCreated} />
+        <AddVisitModal
+          preselectReservationId={preselectReservationId}
+          onClose={() => setShowAddModal(false)}
+          onCreated={handleVisitCreated}
+        />
       )}
+
+      <InputModal
+        isOpen={showCancellationModal}
+        title="Alasan Pembatalan"
+        placeholder="Masukkan alasan pembatalan kunjungan..."
+        confirmLabel="Batalkan"
+        onConfirm={handleCancellationModalConfirm}
+        onCancel={() => setShowCancellationModal(false)}
+      />
+      </FeatureGuard>
     </DashboardLayout>
   );
 }
+
+//test
+

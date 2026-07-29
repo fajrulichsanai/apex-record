@@ -54,6 +54,7 @@ export interface BillingDetail {
   invoiceNumber: string;
   subtotal: number;
   totalDiscount: number;
+  additionalFee: number;
   grandTotal: number;
   paidAmount: number;
   outstandingAmount: number;
@@ -78,6 +79,7 @@ export interface CreateBillingPayload {
   items: CreateBillingItemPayload[];
   totalDiscount?: number;
   totalDiscountType?: DiscountType;
+  additionalFee?: number;
   notes?: string;
 }
 

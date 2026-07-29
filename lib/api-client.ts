@@ -38,6 +38,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return (body.data !== undefined ? body.data : body) as T;
 }
 
+export function toQueryString(query: object) {
+  return new URLSearchParams(
+    Object.fromEntries(
+      Object.entries(query as Record<string, unknown>)
+        .filter(([, v]) => v !== undefined && v !== null && v !== '')
+        .map(([k, v]) => [k, String(v)]),
+    ),
+  ).toString();
+}
+
 export const apiClient = {
   get: <T>(path: string) => request<T>(path, { method: 'GET' }),
   post: <T>(path: string, data?: unknown) =>

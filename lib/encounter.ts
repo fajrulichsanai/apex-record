@@ -30,7 +30,7 @@ export interface EncounterDetail {
   patientId: number;
   practitionerId: number;
   locationId: number;
-  queueId?: number;
+  reservationId?: number;
   serviceType: ServiceType;
   chiefComplaint?: string;
   status: EncounterStatus;
@@ -51,7 +51,7 @@ export interface CreateEncounterPayload {
   patientId: number;
   practitionerId: number;
   locationId?: number;
-  queueId?: number;
+  reservationId?: number;
   serviceType?: ServiceType;
   chiefComplaint?: string;
 }

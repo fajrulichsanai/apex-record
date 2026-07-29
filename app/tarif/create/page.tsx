@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 import { tarifApi } from '@/lib/tarif';
 import { ApiError } from '@/lib/api-client';
 import { formatCurrencyInput, parseCurrency } from '@/lib/format';
@@ -94,6 +95,7 @@ export default function CreateTarifPage() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="tarif" requireWrite>
       <main className="content tarif-page">
         <div className="breadcrumb">
           <Link href="/tarif">Master Data</Link>
@@ -223,6 +225,7 @@ export default function CreateTarifPage() {
           </div>
         </form>
       </main>
+      </FeatureGuard>
     </DashboardLayout>
   );
 }

@@ -221,16 +221,67 @@
 .user-mgmt-page .badge-aktif { background: #F0FDF4; color: #16A34A; }
 .user-mgmt-page .badge-nonaktif { background: #F9FAFB; color: var(--text-2); }
 
-.user-mgmt-page .action-menu-btn {
+.user-mgmt-page .user-actions {
+  display: flex; gap: 8px; align-items: center; flex-shrink: 0;
+}
+.user-mgmt-page .user-action-btn {
   width: 32px; height: 32px;
   border: 1px solid var(--border); border-radius: 8px;
   background: transparent; display: grid; place-items: center;
   cursor: pointer; color: var(--text-2);
-  transition: background .12s;
+  transition: all .12s;
   flex-shrink: 0;
+  position: relative;
 }
-.user-mgmt-page .action-menu-btn:hover { background: var(--bg); color: var(--text-1); }
-.user-mgmt-page .action-menu-btn svg { width: 15px; height: 15px; }
+.user-mgmt-page .user-action-btn:hover { background: var(--bg); color: var(--text-1); }
+.user-mgmt-page .user-action-btn.edit:hover { border-color: var(--primary); color: var(--primary); }
+.user-mgmt-page .user-action-btn.delete:hover { border-color: var(--danger); color: var(--danger); }
+.user-mgmt-page .user-action-btn svg { width: 15px; height: 15px; }
+
+.user-mgmt-page .user-action-btn::after {
+  content: attr(aria-label);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  padding: 6px 10px;
+  background: var(--text-1);
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s;
+  z-index: 1000;
+}
+
+.user-mgmt-page .user-action-btn:hover::after {
+  opacity: 1;
+}
+
+.user-mgmt-page .user-action-btn::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% - 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid var(--text-1);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .12s;
+  z-index: 1000;
+}
+
+.user-mgmt-page .user-action-btn:hover::before {
+  opacity: 1;
+}
 
 /* ── Section divider ── */
 .user-mgmt-page .section-label {

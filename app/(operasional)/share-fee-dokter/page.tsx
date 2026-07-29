@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 import { doctorFeeApi, type DoctorFeeConfig } from '@/lib/doctor-fee';
 import FeeConfigTable from './FeeConfigTable';
 import MonthlyReportPanel from './MonthlyReportPanel';
@@ -27,6 +28,7 @@ export default function ShareFeeDokterPage() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="share-fee-dokter">
       <main className="content share-fee-page">
         <div className="page-header">
           <div className="page-title-block">
@@ -100,6 +102,7 @@ export default function ShareFeeDokterPage() {
           <MonthlyReportPanel />
         )}
       </main>
+      </FeatureGuard>
     </DashboardLayout>
   );
 }

@@ -76,16 +76,6 @@ function StethoscopeIcon() {
   );
 }
 
-function BabyIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none">
-      <circle cx="9" cy="7.5" r="2.5" stroke="white" strokeWidth="1.8" />
-      <path d="M6 13c0-2.2 1.5-4 3.5-4s3.5 1.8 3.5 4" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M12 13l3-2m0 0l1-3m-1 3l3 2" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 interface DashboardHighlights {
   pasien: { total: number };
   bayi: { total: number };
@@ -113,16 +103,6 @@ function buildHighlights(data: DashboardHighlights | null): HighlightItem[] {
       sub: 'Lihat data pasien',
       color: 'purple',
       icon: <UsersIcon />,
-    },
-    {
-      id: 'bayi',
-      href: '/list-pasien',
-      title: 'Bayi',
-      metric: data?.bayi?.total ? String(data.bayi.total) : '-',
-      metricLabel: 'total bayi',
-      sub: 'Pasien bayi terdaftar',
-      color: 'orange',
-      icon: <BabyIcon />,
     },
     {
       id: 'tarif',

@@ -3,11 +3,14 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 import ConfirmationModal from '@/components/feedback/ConfirmationModal';
 import CustomSelect from '@/components/form/CustomSelect';
 import { ApiError } from '@/lib/api-client';
 import { tarifApi, type Tarif } from '@/lib/tarif';
 import { useToast } from '@/lib/toast-context';
+import { useAuth } from '@/lib/auth-context';
+import { isFeatureViewOnly } from '@/lib/permissions';
 import '../styles/tarif.css';
 
 // Simple function to export CSV (Excel compatible)
@@ -51,11 +54,12 @@ const exportToExcel = (tarifs: Tarif[]) => {
 
 export default function TarifPage() {
   const router = useRouter();
+  const { user } = useAuth();
+  const viewOnly = isFeatureViewOnly(user?.role, 'tarif');
   const { success, error, warning } = useToast();
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,19 +81,6 @@ export default function TarifPage() {
   useEffect(() => {
     loadTarifs();
   }, [loadTarifs]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.tarif-more') && !target.closest('.tarif-menu')) {
-        setOpenMenuId(null);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   const kategoriOptions = useMemo(
     () => Array.from(new Set(tarifs.map((t) => t.kategori))),
@@ -136,6 +127,7 @@ export default function TarifPage() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="tarif">
       <main className="content tarif-page">
         {/* Header */}
         <div className="page-header">
@@ -158,10 +150,12 @@ export default function TarifPage() {
               <span className="material-symbols-rounded">download</span>
               Ekspor
             </button>
-            <button className="btn-primary" type="button" onClick={() => router.push('/tarif/create')} disabled={loading}>
-              <span className="material-symbols-rounded">add</span>
-              Tambah Tarif
-            </button>
+            {!viewOnly && (
+              <button className="btn-primary" type="button" onClick={() => router.push('/tarif/create')} disabled={loading}>
+                <span className="material-symbols-rounded">add</span>
+                Tambah Tarif
+              </button>
+            )}
           </div>
         </div>
 
@@ -300,29 +294,18 @@ export default function TarifPage() {
                           </span>
                         </td>
                         <td>
-                          <div style={{ position: 'relative' }}>
-                            <button className="tarif-more" type="button" onClick={() => setOpenMenuId(openMenuId === item.id ? null : item.id)}>
-                              <span className="material-symbols-rounded">more_vert</span>
-                            </button>
-                            {openMenuId === item.id && (
-                              <div className="tarif-menu">
-                                <button type="button" className="tarif-menu-item" onClick={() => {
-                                  router.push(`/tarif/edit/${item.id}`);
-                                  setOpenMenuId(null);
-                                }}>
-                                  <span className="material-symbols-rounded">edit</span>
-                                  Edit
-                                </button>
-                                <button type="button" className="tarif-menu-item delete" onClick={() => {
-                                  handleDelete(item.id, item.name);
-                                  setOpenMenuId(null);
-                                }}>
-                                  <span className="material-symbols-rounded">delete</span>
-                                  Hapus
-                                </button>
-                              </div>
-                            )}
-                          </div>
+                          {viewOnly ? (
+                            <span className="tarif-actions-readonly">-</span>
+                          ) : (
+                            <div className="tarif-actions">
+                              <button type="button" className="action-btn edit" aria-label="Edit" onClick={() => router.push(`/tarif/edit/${item.id}`)}>
+                                <span className="material-symbols-rounded">edit</span>
+                              </button>
+                              <button type="button" className="action-btn delete" aria-label="Hapus" onClick={() => handleDelete(item.id, item.name)}>
+                                <span className="material-symbols-rounded">delete</span>
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
@@ -344,6 +327,7 @@ export default function TarifPage() {
           onCancel={() => setConfirmDelete(null)}
         />
       </main>
+      </FeatureGuard>
     </DashboardLayout>
   );
 }

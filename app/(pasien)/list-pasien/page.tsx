@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 import { patientsApi, Patient, Encounter, ApiGender } from '@/lib/patients';
 import { ApiError } from '@/lib/api-client';
 import '../../styles/list-pasien.css';
@@ -71,7 +72,7 @@ const ENCOUNTER_STATUS_LABEL: Record<string, string> = {
   cancelled: 'Dibatalkan',
 };
 
-export default function ListPasienPage() {
+function ListPasienContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -177,6 +178,7 @@ export default function ListPasienPage() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="pasien">
       <main className="content list-pasien-page">
         {/* Header */}
         <div className="page-header">
@@ -526,6 +528,15 @@ export default function ListPasienPage() {
           </div>
         </div>
       )}
+      </FeatureGuard>
     </DashboardLayout>
+  );
+}
+
+export default function ListPasienPage() {
+  return (
+    <Suspense fallback={<DashboardLayout><div>Loading...</div></DashboardLayout>}>
+      <ListPasienContent />
+    </Suspense>
   );
 }

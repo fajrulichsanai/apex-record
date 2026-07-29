@@ -3,6 +3,8 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
+import InputModal from '@/components/feedback/InputModal';
 import CustomSelect from '@/components/form/CustomSelect';
 import '../styles/transaksi.css';
 import { ApiError } from '@/lib/api-client';
@@ -83,11 +85,15 @@ function TransaksiPageInner() {
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
   const [selectedEncounterId, setSelectedEncounterId] = useState<number | ''>('');
   const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
+  const [totalDiscount, setTotalDiscount] = useState(0);
+  const [additionalFee, setAdditionalFee] = useState(0);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   const [payingId, setPayingId] = useState<number | null>(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingPaymentBilling, setPendingPaymentBilling] = useState<BillingListItem | null>(null);
 
   const { success, error: showError } = useToast();
 
@@ -149,7 +155,35 @@ function TransaksiPageInner() {
   const lunasCount = billings.filter((b) => b.status === 'paid').length;
 
   function updateRow(key: number, patch: Partial<ItemRow>) {
-    setItems((prev) => prev.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+    setItems((prev) =>
+      prev.map((r) => {
+        if (r.key !== key) return r;
+        const updated = { ...r, ...patch };
+
+        // Ensure quantity is at least 1
+        if ('quantity' in patch && updated.quantity < 1) {
+          updated.quantity = 1;
+        }
+
+        // Ensure unitPrice is non-negative
+        if ('unitPrice' in patch && updated.unitPrice < 0) {
+          updated.unitPrice = 0;
+        }
+
+        // Ensure discount doesn't exceed unitPrice for nominal discount
+        if ('discount' in patch || 'discountType' in patch) {
+          if (updated.discountType === 'nominal' && updated.discount > updated.unitPrice) {
+            updated.discount = updated.unitPrice;
+          } else if (updated.discountType === 'percent' && updated.discount > 100) {
+            updated.discount = 100;
+          } else if (updated.discount < 0) {
+            updated.discount = 0;
+          }
+        }
+
+        return updated;
+      }),
+    );
   }
 
   function handleTarifSelect(key: number, tarifId: string) {
@@ -157,16 +191,20 @@ function TransaksiPageInner() {
     updateRow(key, {
       tarifId: tarif ? tarif.id : '',
       name: tarif ? tarif.name : '',
-      unitPrice: tarif ? tarif.hargaJual : 0,
+      unitPrice: tarif ? Math.max(0, tarif.hargaJual) : 0,
     });
   }
 
-  const grandTotal = useMemo(() => {
+  const itemsSubtotal = useMemo(() => {
     return items.reduce((sum, r) => {
       const discNominal = r.discountType === 'percent' ? (r.unitPrice * r.discount) / 100 : r.discount;
       return sum + (r.unitPrice - discNominal) * r.quantity;
     }, 0);
   }, [items]);
+
+  const grandTotal = useMemo(() => {
+    return Math.max(0, itemsSubtotal - totalDiscount + additionalFee);
+  }, [itemsSubtotal, totalDiscount, additionalFee]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -176,18 +214,27 @@ function TransaksiPageInner() {
       setSubmitError('Pilih kunjungan terlebih dahulu');
       return;
     }
+
+    // Validate items: must have name and unitPrice must be > 0
     const validItems = items.filter((r) => r.name && r.unitPrice > 0);
     if (validItems.length === 0) {
       setSubmitError('Tambahkan minimal satu tindakan dengan harga');
       return;
     }
 
+    // Ensure all prices are non-negative (defensive check)
+    const invalidPriceItems = validItems.filter((r) => r.unitPrice < 0 || r.discount < 0);
+    if (invalidPriceItems.length > 0) {
+      setSubmitError('Harga dan diskon tidak boleh negatif');
+      return;
+    }
+
     const payloadItems: CreateBillingItemPayload[] = validItems.map((r) => ({
       tarifId: r.tarifId || undefined,
       name: r.name,
-      quantity: r.quantity,
-      unitPrice: r.unitPrice,
-      discount: r.discount,
+      quantity: Math.max(1, r.quantity),
+      unitPrice: Math.max(0, r.unitPrice),
+      discount: Math.max(0, r.discount),
       discountType: r.discountType,
     }));
 
@@ -196,10 +243,15 @@ function TransaksiPageInner() {
       await billingApi.create({
         encounterId: Number(selectedEncounterId),
         items: payloadItems,
+        totalDiscount: totalDiscount > 0 ? totalDiscount : undefined,
+        totalDiscountType: totalDiscount > 0 ? 'nominal' : undefined,
+        additionalFee: additionalFee > 0 ? additionalFee : undefined,
         notes: notes || undefined,
       });
       setSelectedEncounterId('');
       setItems([emptyRow()]);
+      setTotalDiscount(0);
+      setAdditionalFee(0);
       setNotes('');
       await loadBillings();
       success('Transaksi berhasil disimpan');
@@ -210,20 +262,27 @@ function TransaksiPageInner() {
     }
   }
 
-  async function handleRecordPayment(billing: BillingListItem) {
-    const amountStr = window.prompt(
-      `Jumlah pembayaran untuk ${billing.invoiceNumber} (sisa ${formatRupiah(billing.outstandingAmount)})`,
-      String(billing.outstandingAmount),
-    );
-    if (!amountStr) return;
-    const amount = Number(amountStr);
-    if (!amount || amount <= 0) return;
+  function handleRecordPayment(billing: BillingListItem) {
+    setPendingPaymentBilling(billing);
+    setShowPaymentModal(true);
+  }
 
-    setPayingId(billing.billingId);
+  async function performRecordPayment(amountStr: string) {
+    if (!pendingPaymentBilling) return;
+
+    const amount = Number(amountStr);
+    if (!amount || amount <= 0) {
+      showError('Jumlah pembayaran harus lebih dari 0');
+      return;
+    }
+
+    setPayingId(pendingPaymentBilling.billingId);
     try {
-      await billingApi.createPayment(billing.billingId, { method: 'cash', amount });
+      await billingApi.createPayment(pendingPaymentBilling.billingId, { method: 'cash', amount });
       await loadBillings();
       success('Pembayaran berhasil dicatat');
+      setShowPaymentModal(false);
+      setPendingPaymentBilling(null);
     } catch (err) {
       showError(err instanceof ApiError ? err.message : 'Gagal mencatat pembayaran');
     } finally {
@@ -233,6 +292,7 @@ function TransaksiPageInner() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="billing">
       <main className="content transaksi-page">
         {/* Header */}
         <div className="page-header">
@@ -364,11 +424,49 @@ function TransaksiPageInner() {
                 </div>
 
                 <div className="form-field">
+                  <label>Diskon (Rp)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={totalDiscount}
+                    onChange={(e) => setTotalDiscount(Math.max(0, Number(e.target.value) || 0))}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label>Biaya Tambahan (Rp)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={additionalFee}
+                    onChange={(e) => setAdditionalFee(Math.max(0, Number(e.target.value) || 0))}
+                    placeholder="0"
+                  />
+                </div>
+
+                <div className="form-field">
                   <label>Catatan (opsional)</label>
                   <textarea rows={2} value={notes} onChange={(e) => setNotes(e.target.value)} />
                 </div>
 
                 <div className="summary-box">
+                  <div className="summary-row">
+                    <span>Subtotal</span>
+                    <span>{formatRupiah(itemsSubtotal)}</span>
+                  </div>
+                  {totalDiscount > 0 && (
+                    <div className="summary-row">
+                      <span>Diskon</span>
+                      <span>-{formatRupiah(totalDiscount)}</span>
+                    </div>
+                  )}
+                  {additionalFee > 0 && (
+                    <div className="summary-row">
+                      <span>Biaya Tambahan</span>
+                      <span>+{formatRupiah(additionalFee)}</span>
+                    </div>
+                  )}
                   <div className="summary-row total">
                     <span>Total Bayar</span>
                     <span>{formatRupiah(grandTotal)}</span>
@@ -496,6 +594,23 @@ function TransaksiPageInner() {
           </div>
         </div>
       </main>
+
+      {pendingPaymentBilling && (
+        <InputModal
+          isOpen={showPaymentModal}
+          title="Catat Pembayaran"
+          message={`Jumlah pembayaran untuk ${pendingPaymentBilling.invoiceNumber} (sisa ${formatRupiah(pendingPaymentBilling.outstandingAmount)})`}
+          placeholder="Jumlah pembayaran..."
+          defaultValue={String(pendingPaymentBilling.outstandingAmount)}
+          confirmLabel="Catat Pembayaran"
+          onConfirm={performRecordPayment}
+          onCancel={() => {
+            setShowPaymentModal(false);
+            setPendingPaymentBilling(null);
+          }}
+        />
+      )}
+      </FeatureGuard>
     </DashboardLayout>
   );
 }

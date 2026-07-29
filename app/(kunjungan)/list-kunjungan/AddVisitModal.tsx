@@ -4,12 +4,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import { patientsApi, Patient } from '@/lib/patients';
 import { practitionersApi, Practitioner } from '@/lib/practitioners';
-import { queuesApi, QueueItem } from '@/lib/queues';
+import { reservationsApi, ReservationItem } from '@/lib/reservations';
 import { encounterApi } from '@/lib/encounter';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 
 interface AddVisitModalProps {
+  preselectReservationId?: number | null;
   onClose: () => void;
   onCreated: (encounterId: number) => void;
 }
@@ -33,19 +34,19 @@ function initialsFromName(name?: string) {
   );
 }
 
-export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps) {
+export default function AddVisitModal({ preselectReservationId, onClose, onCreated }: AddVisitModalProps) {
   const { error: showError } = useToast();
   const hasLoaded = useRef(false);
   const isMounted = useRef(true);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
-  const [waitingQueue, setWaitingQueue] = useState<QueueItem[]>([]);
+  const [confirmedReservations, setConfirmedReservations] = useState<ReservationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState(1);
 
-  const [queueId, setQueueId] = useState('');
+  const [reservationId, setReservationId] = useState('');
   const [patientId, setPatientId] = useState('');
   const [practitionerId, setPractitionerId] = useState('');
   const [chiefComplaint, setChiefComplaint] = useState('');
@@ -64,15 +65,27 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
     (async () => {
       try {
         setLoading(true);
-        const [patientList, practitionerList, queueRes] = await Promise.all([
+        const [patientList, practitionerList, reservationRes] = await Promise.all([
           patientsApi.list(),
           practitionersApi.list(),
-          queuesApi.list({ status: 'waiting' }),
+          reservationsApi.list({ status: 'confirmed' }),
         ]);
         if (!isMounted.current) return;
         setPatients(patientList);
         setPractitioners(practitionerList);
-        setWaitingQueue(queueRes.data);
+        const withPatient = reservationRes.data.filter((r) => !!r.patientId);
+        setConfirmedReservations(withPatient);
+
+        if (preselectReservationId) {
+          const reservation = withPatient.find((r) => r.id === preselectReservationId);
+          if (reservation) {
+            setReservationId(reservation.id.toString());
+            if (reservation.patientId) setPatientId(reservation.patientId.toString());
+            if (reservation.notes) setChiefComplaint(reservation.notes);
+            if (reservation.practitionerId) setPractitionerId(reservation.practitionerId.toString());
+            setStep(2);
+          }
+        }
       } catch (err) {
         if (!isMounted.current) return;
         const msg = err instanceof ApiError ? err.message : 'Gagal memuat data';
@@ -92,18 +105,21 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [submitting, onClose]);
 
-  const selectedQueue = useMemo(
-    () => (queueId ? waitingQueue.find((q) => q.id.toString() === queueId) : null),
-    [waitingQueue, queueId],
+  const selectedReservation = useMemo(
+    () =>
+      reservationId
+        ? confirmedReservations.find((r) => r.id.toString() === reservationId)
+        : null,
+    [confirmedReservations, reservationId],
   );
 
-  const handleSelectQueue = (value: string) => {
-    setQueueId(value);
+  const handleSelectReservation = (value: string) => {
+    setReservationId(value);
     if (value) {
-      const queue = waitingQueue.find((q) => q.id.toString() === value);
-      if (queue?.patientId) setPatientId(queue.patientId.toString());
-      if (queue?.chiefComplaint) setChiefComplaint(queue.chiefComplaint);
-      if (queue?.practitionerId) setPractitionerId(queue.practitionerId.toString());
+      const reservation = confirmedReservations.find((r) => r.id.toString() === value);
+      if (reservation?.patientId) setPatientId(reservation.patientId.toString());
+      if (reservation?.notes) setChiefComplaint(reservation.notes);
+      if (reservation?.practitionerId) setPractitionerId(reservation.practitionerId.toString());
     } else {
       setPatientId('');
       setChiefComplaint('');
@@ -123,7 +139,7 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
       const created = await encounterApi.create({
         patientId: Number(patientId),
         practitionerId: Number(practitionerId),
-        queueId: queueId ? Number(queueId) : undefined,
+        reservationId: reservationId ? Number(reservationId) : undefined,
         chiefComplaint: chiefComplaint.trim() || undefined,
       });
       onCreated(created.id);
@@ -151,9 +167,9 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
     label: d.name,
   }));
 
-  const queueOptions = waitingQueue.map((q) => ({
-    value: q.id.toString(),
-    label: `${q.nomorAntrian} · ${q.patientName || `Pasien #${q.patientId}`}`,
+  const reservationOptions = confirmedReservations.map((r) => ({
+    value: r.id.toString(),
+    label: `${r.patientName} · ${r.reservationDate}${r.jamSlot ? ` ${r.jamSlot}` : ''}`,
   }));
 
   const selectedPatient = patientId ? patients.find((p) => p.id.toString() === patientId) : null;
@@ -214,30 +230,30 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
                   <>
                     <div className="visit-step-heading">
                       <h3>Pilih Pasien</h3>
-                      <p>Pilih pasien dari antrian yang menunggu, atau cari secara manual</p>
+                      <p>Check-in dari reservasi yang sudah dikonfirmasi, atau cari pasien secara manual (walk-in)</p>
                     </div>
 
-                    {queueOptions.length > 0 && (
+                    {reservationOptions.length > 0 && (
                       <div className="visit-form-field">
                         <label>
                           <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                            schedule
+                            event_available
                           </span>
-                          Dari Antrian (opsional)
+                          Dari Reservasi (opsional)
                         </label>
                         <CustomSelect
-                          value={queueId}
-                          onChange={handleSelectQueue}
-                          options={[{ value: '', label: 'Tidak dari antrian (walk-in)' }, ...queueOptions]}
+                          value={reservationId}
+                          onChange={handleSelectReservation}
+                          options={[{ value: '', label: 'Tidak dari reservasi (walk-in)' }, ...reservationOptions]}
                           disabled={submitting}
                         />
-                        {selectedQueue && (
+                        {selectedReservation && (
                           <div className="visit-queue-banner">
                             <span className="material-symbols-rounded">confirmation_number</span>
                             <div>
-                              <div className="visit-queue-banner-text">Antrian {selectedQueue.nomorAntrian}</div>
+                              <div className="visit-queue-banner-text">Reservasi {selectedReservation.patientName}</div>
                               <div className="visit-queue-banner-sub">
-                                Data pasien & dokter otomatis terisi dari antrian ini
+                                Data pasien & dokter otomatis terisi dari reservasi ini
                               </div>
                             </div>
                           </div>
@@ -257,7 +273,7 @@ export default function AddVisitModal({ onClose, onCreated }: AddVisitModalProps
                         onChange={setPatientId}
                         options={patientOptions}
                         placeholder="Cari & pilih pasien…"
-                        disabled={!!selectedQueue || submitting}
+                        disabled={!!selectedReservation || submitting}
                       />
                       {selectedPatient && (
                         <div className="visit-preview-card">

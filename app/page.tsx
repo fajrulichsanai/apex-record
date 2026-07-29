@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
+import { defaultRouteForRole } from '@/lib/permissions';
 import './styles/page.css';
 
 const LOCAL_API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -93,10 +94,10 @@ const LoginPage = () => {
         }, 2000);
       } else {
         const data = await handleLogin();
-        success('Selamat datang! Anda akan diarahkan ke dashboard...');
+        success('Selamat datang! Anda akan diarahkan...');
         setTimeout(() => {
           login(data.accessToken, data.user);
-          router.push('/dashboard');
+          router.push(defaultRouteForRole(data.user?.role));
         }, 1500);
       }
     } catch (err) {
@@ -241,7 +242,13 @@ const LoginPage = () => {
               </div>
               {mode === 'login' && (
                 <div className="row-between">
-                  <a href="#" className="link">Lupa password?</a>
+                  <a
+                    href="/forgot-password"
+                    className="link"
+                    onClick={(e) => { e.preventDefault(); router.push('/forgot-password'); }}
+                  >
+                    Lupa password?
+                  </a>
                 </div>
               )}
             </div>
@@ -295,7 +302,7 @@ const LoginPage = () => {
             </p>
           )}
 
-          <p className="version-text">ApexRecord v1.0.0</p>
+          <p className="version-text">ApexRecord STG v1.0.0</p>
         </div>
       </div>
     </div>

@@ -97,18 +97,57 @@
 
 .operasional-page .tag { font-size: 10.5px; font-weight: 600; padding: 3px 10px; border-radius: 20px; background: rgba(79,126,248,.12); color: var(--primary); white-space: nowrap; }
 
-.operasional-page .op-more { width: 32px; height: 32px; border-radius: 9px; border: none; background: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: background var(--transition), color var(--transition); flex-shrink: 0; }
-.operasional-page .op-more:hover { background: var(--bg); color: var(--text-main); }
-.operasional-page .op-more .material-symbols-rounded { font-size: 18px; }
+.operasional-page .op-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.operasional-page .action-btn { width: 32px; height: 32px; border-radius: 9px; border: none; background: none; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-muted); transition: background var(--transition), color var(--transition); flex-shrink: 0; position: relative; }
+.operasional-page .action-btn:hover { background: var(--bg); color: var(--text-main); }
+.operasional-page .action-btn.edit:hover { color: var(--primary); }
+.operasional-page .action-btn.delete:hover { color: var(--red); }
+.operasional-page .action-btn .material-symbols-rounded { font-size: 18px; }
 
-.operasional-page .op-menu { position: absolute; top: 100%; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: 0 4px 12px rgba(15,23,42,.15); min-width: 140px; margin-top: 4px; z-index: 9999; overflow: hidden; animation: opSlideDown 0.15s ease; }
-.operasional-page .op-menu-item { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; border: none; background: none; font-size: 13px; color: var(--text-main); cursor: pointer; transition: background var(--transition); text-align: left; font-family: inherit; }
-.operasional-page .op-menu-item:hover { background: var(--bg); }
-.operasional-page .op-menu-item.delete { color: var(--red); }
-.operasional-page .op-menu-item.delete:hover { background: rgba(231,76,60,.08); }
-.operasional-page .op-menu-item .material-symbols-rounded { font-size: 16px; }
+.operasional-page .action-btn::after {
+  content: attr(aria-label);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 6px;
+  padding: 6px 10px;
+  background: var(--text-main);
+  color: white;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+  z-index: 1000;
+}
 
-@keyframes opSlideDown { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.operasional-page .action-btn:hover::after {
+  opacity: 1;
+}
+
+.operasional-page .action-btn::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% - 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid var(--text-main);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition);
+  z-index: 1000;
+}
+
+.operasional-page .action-btn:hover::before {
+  opacity: 1;
+}
 
 .operasional-page .empty-list { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 60px 20px; text-align: center; }
 .operasional-page .empty-icon-wrap { width: 70px; height: 70px; border-radius: 50%; background: var(--bg); border: 2px dashed var(--border); display: flex; align-items: center; justify-content: center; }

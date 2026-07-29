@@ -42,20 +42,24 @@ export interface Patient {
   maritalStatus?: MaritalStatus;
   sumberInformasi?: SumberInformasi;
   detailSumber?: string;
-  kodeReferral?: string;
   referrerPatientId?: number;
   golonganDarah?: BloodType;
   rhesus?: Rhesus;
   punyaAlergi?: boolean;
   catatanAlergi?: string;
+  riwayatHipertensi?: boolean;
+  riwayatDiabetes?: boolean;
+  riwayatParuParu?: boolean;
+  riwayatSyaraf?: boolean;
+  riwayatSistemikLainnya?: boolean;
+  alergiObat?: boolean;
+  alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
   preferensiJamKontak?: PreferensiJamKontak;
   catatanPreferensi?: string;
   consentMarketing?: boolean;
   consentTanggal?: string;
   consentVersion?: string;
-  isMember?: boolean;
-  memberId?: string;
   satusehatPatientId?: string;
   syncStatus: SyncStatus;
   createdAt: string;
@@ -84,20 +88,24 @@ export interface PatientPayload {
   birthOrder?: number;
   sumberInformasi?: SumberInformasi;
   detailSumber?: string;
-  kodeReferral?: string;
   referrerPatientId?: number;
   golonganDarah?: BloodType;
   rhesus?: Rhesus;
   punyaAlergi?: boolean;
   catatanAlergi?: string;
+  riwayatHipertensi?: boolean;
+  riwayatDiabetes?: boolean;
+  riwayatParuParu?: boolean;
+  riwayatSyaraf?: boolean;
+  riwayatSistemikLainnya?: boolean;
+  alergiObat?: boolean;
+  alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
   preferensiJamKontak?: PreferensiJamKontak;
   catatanPreferensi?: string;
   consentMarketing?: boolean;
   consentTanggal?: string;
   consentVersion?: string;
-  isMember?: boolean;
-  memberId?: string;
 }
 
 export interface Encounter {
