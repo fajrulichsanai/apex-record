@@ -586,3 +586,46 @@
 @media (max-width: 560px) {
   .reservation-form-row { grid-template-columns: 1fr; }
 }
+
+/* CALENDAR VIEW */
+.reservation-calendar {
+  padding: 16px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.reservation-calendar-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.reservation-calendar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.reservation-calendar-label {
+  font-weight: 600;
+  color: var(--text-main);
+  margin-left: 4px;
+  font-size: 15px;
+}
+
+.reservation-calendar-status {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.reservation-calendar-status.error { color: var(--tag-cancel); }
+
+.reservation-calendar-body {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: auto;
+  min-height: 420px;
+}

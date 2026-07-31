@@ -7,6 +7,7 @@ import FeatureGuard from '@/components/auth/FeatureGuard';
 import InputModal from '@/components/feedback/InputModal';
 import ConfirmationModal from '@/components/feedback/ConfirmationModal';
 import AddReservationModal from './AddReservationModal';
+import ReservationCalendar from '@/components/reservasi/ReservationCalendar';
 import { reservationsApi, ReservationItem, ReservationStatus } from '@/lib/reservations';
 import { encounterApi } from '@/lib/encounter';
 import { ApiError } from '@/lib/api-client';
@@ -66,6 +67,7 @@ function ReservasiPageInner() {
   const [dateFilter, setDateFilter] = useState('');
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('none');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [pageView, setPageView] = useState<'list' | 'calendar'>('list');
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
@@ -215,12 +217,28 @@ function ReservasiPageInner() {
               Kelola reservasi janji temu pasien, termasuk yang dibuat lewat website klinik Anda
             </p>
           </div>
-          <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-            <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
-              add
-            </span>
-            Tambah Reservasi
-          </button>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <div className="filter-tabs">
+              <button
+                className={`filter-tab ${pageView === 'list' ? 'active' : ''}`}
+                onClick={() => setPageView('list')}
+              >
+                Daftar
+              </button>
+              <button
+                className={`filter-tab ${pageView === 'calendar' ? 'active' : ''}`}
+                onClick={() => setPageView('calendar')}
+              >
+                Kalender
+              </button>
+            </div>
+            <button className="btn-primary" onClick={() => setShowAddModal(true)}>
+              <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+                add
+              </span>
+              Tambah Reservasi
+            </button>
+          </div>
         </div>
 
         <div className="stat-grid">
@@ -270,6 +288,18 @@ function ReservasiPageInner() {
           </div>
         </div>
 
+        {pageView === 'calendar' ? (
+          <div className="panel">
+            <ReservationCalendar
+              onSelectReservation={(r) => {
+                setPageView('list');
+                setQuickFilter('none');
+                setDateFilter(r.reservationDate.slice(0, 10));
+                setSearchQuery(r.patientName);
+              }}
+            />
+          </div>
+        ) : (
         <div className="panel">
           <div className="panel-toolbar">
             <div className="toolbar-row">
@@ -431,6 +461,7 @@ function ReservasiPageInner() {
             </div>
           )}
         </div>
+        )}
       </main>
 
       {showAddModal && (
