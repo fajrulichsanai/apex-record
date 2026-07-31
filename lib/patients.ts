@@ -117,6 +117,11 @@ export interface Encounter {
   finishedTime?: string;
 }
 
+export interface ReferralSummaryResponse {
+  bySource: { sumberInformasi: SumberInformasi; count: number }[];
+  byReferrer: { referrerPatientId: number; referrerName: string; referralCount: number }[];
+}
+
 export interface PatientQuery {
   search?: string;
   gender?: ApiGender;
@@ -150,4 +155,7 @@ export const patientsApi = {
   remove: (id: number) => apiClient.delete<void>(`/patients/${id}`),
 
   encounters: (id: number) => apiClient.get<Encounter[]>(`/patients/${id}/encounters`),
+
+  getReferralSummary: () =>
+    apiClient.get<ReferralSummaryResponse>('/patients/referral-summary'),
 };

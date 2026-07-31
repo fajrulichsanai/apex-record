@@ -12,7 +12,8 @@ export type FeatureKey =
   | 'laporan-keuangan'
   | 'info-klinik'
   | 'tarif'
-  | 'user-management';
+  | 'user-management'
+  | 'referral';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',
@@ -27,6 +28,7 @@ const FULL_ACCESS: FeatureKey[] = [
   'info-klinik',
   'tarif',
   'user-management',
+  'referral',
 ];
 
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
@@ -42,6 +44,7 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'laporan-kunjungan',
     'info-klinik',
     'tarif',
+    'referral',
   ],
   dokter: ['pasien', 'reservasi', 'kunjungan'],
   pending: [],
@@ -59,6 +62,10 @@ export function canAccessFeature(role: UserRole | undefined, feature: FeatureKey
 export function isFeatureViewOnly(role: UserRole | undefined, feature: FeatureKey): boolean {
   if (!role) return false;
   return VIEW_ONLY_FEATURES[role]?.includes(feature) ?? false;
+}
+
+export function canSeeHargaModal(role: UserRole | undefined): boolean {
+  return role !== 'admin' && role !== 'pending';
 }
 
 export function defaultRouteForRole(role: UserRole | undefined): string {

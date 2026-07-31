@@ -7,6 +7,8 @@ import FeatureGuard from '@/components/auth/FeatureGuard';
 import InputModal from '@/components/feedback/InputModal';
 import ConfirmationModal from '@/components/feedback/ConfirmationModal';
 import AddReservationModal from './AddReservationModal';
+import EditReservationModal from './EditReservationModal';
+import ReservationCard from './ReservationCard';
 import ReservationCalendar from '@/components/reservasi/ReservationCalendar';
 import { reservationsApi, ReservationItem, ReservationStatus } from '@/lib/reservations';
 import { encounterApi } from '@/lib/encounter';
@@ -16,19 +18,11 @@ import '../../styles/reservasi.css';
 
 type FilterValue = 'semua' | ReservationStatus;
 
-const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
-
 function statusLabel(status: ReservationStatus) {
   if (status === 'pending') return 'Menunggu Konfirmasi';
   if (status === 'confirmed') return 'Terkonfirmasi';
   if (status === 'completed') return 'Selesai';
   return 'Dibatalkan';
-}
-
-function sourceLabel(source: string) {
-  if (source === 'website') return 'Website';
-  if (source === 'phone') return 'Telepon';
-  return 'Dashboard';
 }
 
 function todayStr() {
@@ -37,12 +31,6 @@ function todayStr() {
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
   return `${y}-${m}-${d}`;
-}
-
-function waLink(phone: string) {
-  const digits = phone.replace(/\D/g, '');
-  const normalized = digits.startsWith('0') ? `62${digits.slice(1)}` : digits;
-  return `https://wa.me/${normalized}`;
 }
 
 type QuickFilter = 'none' | 'today' | 'upcoming';
@@ -67,6 +55,7 @@ function ReservasiPageInner() {
   const [dateFilter, setDateFilter] = useState('');
   const [quickFilter, setQuickFilter] = useState<QuickFilter>('none');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingReservation, setEditingReservation] = useState<ReservationItem | null>(null);
   const [pageView, setPageView] = useState<'list' | 'calendar'>('list');
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -105,6 +94,11 @@ function ReservasiPageInner() {
 
   const handleCreated = () => {
     setShowAddModal(false);
+    loadReservations();
+  };
+
+  const handleRescheduled = () => {
+    setEditingReservation(null);
     loadReservations();
   };
 
@@ -363,100 +357,24 @@ function ReservasiPageInner() {
           {loadError ? (
             <div style={{ padding: '16px', color: '#FF4D4F' }}>{loadError}</div>
           ) : (
-            <div className="reservation-list">
+            <div className="reservation-card-grid">
               {reservations.length === 0 ? (
                 <div style={{ padding: '40px 20px', textAlign: 'center', color: '#A0AEC0' }}>
                   Tidak ada reservasi
                 </div>
               ) : (
-                reservations.map((r) => {
-                  const [, dm, dd] = r.reservationDate.slice(0, 10).split('-').map(Number);
-                  const busy = actionLoadingId === r.id;
-                  return (
-                    <div key={r.id} className="reservation-row-item">
-                      <div className="reservation-date-block">
-                        <div className="reservation-date-day">{dd}</div>
-                        <div className="reservation-date-month">{MONTHS[dm - 1]}</div>
-                        {r.jamSlot && <div className="reservation-time">{r.jamSlot.slice(0, 5)}</div>}
-                      </div>
-                      <div className="reservation-info">
-                        <div className="reservation-patient-name">{r.patientName}</div>
-                        <div className="reservation-meta">
-                          {r.patientPhone && <span>{r.patientPhone}</span>}
-                          {r.practitioner?.name && <span>· {r.practitioner.name}</span>}
-                          {r.notes && <span>· {r.notes}</span>}
-                        </div>
-                      </div>
-                      <div className="reservation-tags">
-                        <span className="reservation-source-tag">{sourceLabel(r.source)}</span>
-                        <span className={`reservation-status-tag ${r.status}`}>{statusLabel(r.status)}</span>
-                      </div>
-                      <div className="reservation-actions">
-                        {r.patientPhone && (
-                          <button
-                            className="btn-row-action"
-                            onClick={() => window.open(waLink(r.patientPhone), '_blank', 'noopener,noreferrer')}
-                            aria-label="Hubungi via WhatsApp"
-                            title="Hubungi via WhatsApp"
-                          >
-                            <span className="material-symbols-rounded">chat</span>
-                            WA
-                          </button>
-                        )}
-                        {r.status === 'pending' && (
-                          <>
-                            <button
-                              className="btn-row-action confirm"
-                              disabled={busy}
-                              onClick={() => handleConfirm(r.id)}
-                            >
-                              <span className="material-symbols-rounded">check</span>
-                              Konfirmasi
-                            </button>
-                            <button
-                              className="btn-row-action cancel"
-                              disabled={busy}
-                              onClick={() => handleCancel(r.id)}
-                            >
-                              <span className="material-symbols-rounded">close</span>
-                              Tolak
-                            </button>
-                          </>
-                        )}
-                        {r.status === 'confirmed' && (
-                          <>
-                            <button
-                              className="btn-row-action complete"
-                              disabled={busy}
-                              onClick={() => handleCheckIn(r)}
-                              title="Check-in pasien dan buat kunjungan"
-                            >
-                              <span className="material-symbols-rounded">task_alt</span>
-                              Check-in
-                            </button>
-                            <button
-                              className="btn-row-action cancel"
-                              disabled={busy}
-                              onClick={() => handleCancel(r.id)}
-                            >
-                              <span className="material-symbols-rounded">close</span>
-                              Batalkan
-                            </button>
-                          </>
-                        )}
-                        <button
-                          className="btn-row-action delete"
-                          disabled={busy}
-                          onClick={() => handleDelete(r.id)}
-                          aria-label="Hapus reservasi"
-                          title="Hapus reservasi"
-                        >
-                          <span className="material-symbols-rounded">delete</span>
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
+                reservations.map((r) => (
+                  <ReservationCard
+                    key={r.id}
+                    reservation={r}
+                    busy={actionLoadingId === r.id}
+                    onConfirm={handleConfirm}
+                    onCancel={handleCancel}
+                    onCheckIn={handleCheckIn}
+                    onDelete={handleDelete}
+                    onEdit={setEditingReservation}
+                  />
+                ))
               )}
             </div>
           )}
@@ -466,6 +384,14 @@ function ReservasiPageInner() {
 
       {showAddModal && (
         <AddReservationModal onClose={() => setShowAddModal(false)} onCreated={handleCreated} />
+      )}
+
+      {editingReservation && (
+        <EditReservationModal
+          reservation={editingReservation}
+          onClose={() => setEditingReservation(null)}
+          onUpdated={handleRescheduled}
+        />
       )}
 
       <InputModal

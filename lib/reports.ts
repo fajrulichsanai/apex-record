@@ -49,10 +49,47 @@ export interface FinancialReportResponse {
   };
   byDay: { date: string; revenue: number; collected: number }[];
   byPaymentMethod: { method: PaymentMethod; amount: number }[];
-  byDoctor: { practitionerName: string; revenue: number }[];
+  byDoctor: { practitionerName: string; revenue: number; doctorFeeShare: number }[];
+  ringkasan: {
+    pendapatanTotal: number;
+    modal: number;
+    labaBersih: number;
+    pengeluaran: number;
+    marginPersen: number;
+  };
+  tindakanTerlaris: {
+    tarifId: number;
+    namaTindakan: string;
+    modal: number;
+    hargaJual: number;
+    frekuensi: number;
+    totalDiskon: number;
+    labaBersih: number;
+  }[];
 }
 
-function toQueryString(query: VisitReportQuery | FinancialReportQuery) {
+export interface FinancialVisitDetailQuery {
+  dateFrom: string;
+  dateTo: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface FinancialVisitDetailResponse {
+  data: {
+    encounterId: number;
+    patientName: string;
+    birthDate: string | null;
+    tindakan: string;
+    jamMasuk: string;
+    jamKeluar: string | null;
+  }[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+function toQueryString(
+  query: VisitReportQuery | FinancialReportQuery | FinancialVisitDetailQuery,
+) {
   return new URLSearchParams(
     Object.fromEntries(
       Object.entries(query as unknown as Record<string, unknown>)
@@ -68,4 +105,9 @@ export const reportsApi = {
 
   getFinancial: (query: FinancialReportQuery) =>
     apiClient.get<FinancialReportResponse>(`/reports/financial?${toQueryString(query)}`),
+
+  getFinancialVisitDetail: (query: FinancialVisitDetailQuery) =>
+    apiClient.get<FinancialVisitDetailResponse>(
+      `/reports/financial/visit-detail?${toQueryString(query)}`,
+    ),
 };

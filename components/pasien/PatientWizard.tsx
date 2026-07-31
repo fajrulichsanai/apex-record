@@ -396,6 +396,7 @@ export default function PatientWizard({
 
   const age = useMemo(() => calcAge(form.birthDate), [form.birthDate]);
   const isMinor = age !== null && age < 17;
+  const isInfant = age !== null && age < 1;
 
   const steps = useMemo(
     () => BASE_STEPS.filter((s) => s.key !== 'wali' || isMinor),
@@ -458,7 +459,7 @@ export default function PatientWizard({
         errs.postalCode = 'Kode pos harus 5 digit.';
       }
     }
-    if (key === 'wali' && isMinor) {
+    if (key === 'wali' && isMinor && !isInfant) {
       if (!form.namaWali.trim()) errs.namaWali = 'Nama wali wajib diisi.';
       if (!form.hubunganWali) errs.hubunganWali = 'Hubungan wali wajib dipilih.';
     }

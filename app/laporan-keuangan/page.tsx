@@ -16,9 +16,12 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { FiCreditCard, FiDollarSign, FiClock, FiDownload, FiTrendingUp } from 'react-icons/fi';
+import { FiCreditCard, FiDollarSign, FiClock, FiDownload, FiTrendingUp, FiTrendingDown, FiPercent } from 'react-icons/fi';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
+import StatCard from '@/components/laporan/StatCard';
+import TindakanTerlarisTable from '@/components/laporan/TindakanTerlarisTable';
+import VisitDetailTable from '@/components/laporan/VisitDetailTable';
 import { canAccessFeature } from '@/lib/permissions';
 import { useAuth } from '@/lib/auth-context';
 import { reportsApi, FinancialReportResponse, PaymentMethod } from '@/lib/reports';
@@ -26,12 +29,13 @@ import { useToast } from '@/lib/toast-context';
 import { exportToExcel } from '@/lib/export-excel';
 import '../styles/laporan.css';
 
-type RangeOption = '7hari' | '30hari' | 'bulanini';
+type RangeOption = '7hari' | '30hari' | 'bulanini' | 'custom';
 
 const RANGE_LABELS: Record<RangeOption, string> = {
   '7hari': '7 Hari Terakhir',
   '30hari': '30 Hari Terakhir',
   bulanini: 'Bulan Ini',
+  custom: 'Rentang Kustom',
 };
 
 const METODE_LABELS: Record<PaymentMethod, string> = {
@@ -52,9 +56,17 @@ function toIsoDate(date: Date) {
   return date.toISOString().split('T')[0];
 }
 
-function getDateRange(range: RangeOption): { dateFrom: string; dateTo: string } {
+function getDateRange(
+  range: RangeOption,
+  customFrom: string,
+  customTo: string,
+): { dateFrom: string; dateTo: string } {
   const today = new Date();
   const dateTo = toIsoDate(today);
+
+  if (range === 'custom') {
+    return { dateFrom: customFrom || dateTo, dateTo: customTo || dateTo };
+  }
 
   if (range === 'bulanini') {
     const firstOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -78,13 +90,16 @@ function formatRupiah(value: number) {
 
 export default function LaporanKeuanganPage() {
   const { user, loading: authLoading } = useAuth();
-  const [range, setRange] = useState<RangeOption>('7hari');
+  const [range, setRange] = useState<RangeOption>('bulanini');
+  const [customFrom, setCustomFrom] = useState('');
+  const [customTo, setCustomTo] = useState('');
   const [report, setReport] = useState<FinancialReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const { error: showError } = useToast();
 
   const canView = canAccessFeature(user?.role, 'laporan-keuangan');
+  const { dateFrom, dateTo } = getDateRange(range, customFrom, customTo);
 
   useEffect(() => {
     async function loadReport() {
@@ -92,8 +107,11 @@ export default function LaporanKeuanganPage() {
         setLoading(false);
         return;
       }
+      if (range === 'custom' && (!customFrom || !customTo)) {
+        setLoading(false);
+        return;
+      }
 
-      const { dateFrom, dateTo } = getDateRange(range);
       setLoading(true);
 
       try {
@@ -108,7 +126,7 @@ export default function LaporanKeuanganPage() {
 
     loadReport();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [range, canView]);
+  }, [range, canView, dateFrom, dateTo]);
 
   const pendapatanHarian = useMemo(
     () => (report?.byDay ?? []).map((d) => ({ tanggal: formatTanggal(d.date), pendapatan: d.revenue })),
@@ -126,7 +144,12 @@ export default function LaporanKeuanganPage() {
   );
 
   const pendapatanDokter = useMemo(
-    () => (report?.byDoctor ?? []).map((d) => ({ dokter: d.practitionerName, total: d.revenue })),
+    () =>
+      (report?.byDoctor ?? []).map((d) => ({
+        dokter: d.practitionerName,
+        pendapatanKotor: d.revenue,
+        feeDokter: d.doctorFeeShare,
+      })),
     [report],
   );
 
@@ -134,8 +157,6 @@ export default function LaporanKeuanganPage() {
     if (!report) return;
     setExporting(true);
     try {
-      const { dateFrom, dateTo } = getDateRange(range);
-
       exportToExcel(
         [
           {
@@ -146,6 +167,10 @@ export default function LaporanKeuanganPage() {
               { Metrik: 'Belum Lunas', Nilai: report.summary.totalOutstanding },
               { Metrik: 'Collection Rate (%)', Nilai: report.summary.collectionRate },
               { Metrik: 'Total Refund', Nilai: report.summary.totalRefunded },
+              { Metrik: 'Modal', Nilai: report.ringkasan.modal },
+              { Metrik: 'Laba Bersih', Nilai: report.ringkasan.labaBersih },
+              { Metrik: 'Pengeluaran', Nilai: report.ringkasan.pengeluaran },
+              { Metrik: 'Margin Keuntungan (%)', Nilai: report.ringkasan.marginPersen },
             ],
           },
           {
@@ -161,7 +186,22 @@ export default function LaporanKeuanganPage() {
           },
           {
             name: 'Per Dokter',
-            rows: report.byDoctor.map((d) => ({ Dokter: d.practitionerName, Pendapatan: d.revenue })),
+            rows: report.byDoctor.map((d) => ({
+              Dokter: d.practitionerName,
+              'Pendapatan Kotor': d.revenue,
+              'Fee Dokter (Share)': d.doctorFeeShare,
+            })),
+          },
+          {
+            name: 'Tindakan Terlaris',
+            rows: report.tindakanTerlaris.map((t) => ({
+              Tindakan: t.namaTindakan,
+              Modal: t.modal,
+              'Harga Jual': t.hargaJual,
+              Frekuensi: t.frekuensi,
+              'Total Diskon': t.totalDiskon,
+              'Laba Bersih': t.labaBersih,
+            })),
           },
         ],
         `laporan-keuangan_${dateFrom}_${dateTo}`,
@@ -214,6 +254,13 @@ export default function LaporanKeuanganPage() {
                 </button>
               ))}
             </div>
+            {range === 'custom' && (
+              <div className="custom-range">
+                <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
+                <span>–</span>
+                <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
+              </div>
+            )}
             <button
               type="button"
               className="btn-outline"
@@ -263,6 +310,39 @@ export default function LaporanKeuanganPage() {
               <div className="stat-label">Total Transaksi Lunas</div>
             </div>
           </div>
+        </div>
+
+        <div className="stat-grid">
+          <StatCard
+            variant="income"
+            icon={<FiDollarSign />}
+            value={loading ? '...' : formatRupiah(report?.ringkasan.pendapatanTotal ?? 0)}
+            label="Pendapatan Total"
+          />
+          <StatCard
+            variant="pending"
+            icon={<FiTrendingDown />}
+            value={loading ? '...' : formatRupiah(report?.ringkasan.modal ?? 0)}
+            label="Modal"
+          />
+          <StatCard
+            variant="lunas"
+            icon={<FiTrendingUp />}
+            value={loading ? '...' : formatRupiah(report?.ringkasan.labaBersih ?? 0)}
+            label="Laba Bersih"
+          />
+          <StatCard
+            variant="expense"
+            icon={<FiCreditCard />}
+            value={loading ? '...' : formatRupiah(report?.ringkasan.pengeluaran ?? 0)}
+            label="Pengeluaran"
+          />
+          <StatCard
+            variant="margin"
+            icon={<FiPercent />}
+            value={loading ? '...' : `${report?.ringkasan.marginPersen ?? 0}%`}
+            label="Margin Keuntungan"
+          />
         </div>
 
         <div className="chart-grid">
@@ -351,12 +431,17 @@ export default function LaporanKeuanganPage() {
                     width={170}
                   />
                   <Tooltip formatter={(value) => formatRupiah(Number(value))} />
-                  <Bar dataKey="total" name="Total Pendapatan" fill="#4F7EF8" radius={[0, 6, 6, 0]} barSize={22} />
+                  <Legend />
+                  <Bar dataKey="pendapatanKotor" name="Pendapatan Kotor" fill="#4F7EF8" radius={[0, 6, 6, 0]} barSize={16} />
+                  <Bar dataKey="feeDokter" name="Fee Dokter (Share)" fill="#2DCB8A" radius={[0, 6, 6, 0]} barSize={16} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         </div>
+
+        {report && <TindakanTerlarisTable tindakan={report.tindakanTerlaris} />}
+        {!loading && <VisitDetailTable dateFrom={dateFrom} dateTo={dateTo} />}
       </main>
       </FeatureGuard>
     </DashboardLayout>

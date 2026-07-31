@@ -10,21 +10,31 @@ import { ApiError } from '@/lib/api-client';
 import { tarifApi, type Tarif } from '@/lib/tarif';
 import { useToast } from '@/lib/toast-context';
 import { useAuth } from '@/lib/auth-context';
-import { isFeatureViewOnly } from '@/lib/permissions';
+import { isFeatureViewOnly, canSeeHargaModal } from '@/lib/permissions';
 import '../styles/tarif.css';
 
 // Simple function to export CSV (Excel compatible)
-const exportToExcel = (tarifs: Tarif[]) => {
-  const headers = ['Title', 'Category', 'Harga Modal (Rp)', 'Harga Jual (Rp)', 'Margin (Rp)', 'Status'];
+const exportToExcel = (tarifs: Tarif[], showHargaModal: boolean) => {
+  const headers = showHargaModal
+    ? ['Title', 'Category', 'Harga Modal (Rp)', 'Harga Jual (Rp)', 'Margin (Rp)', 'Status']
+    : ['Title', 'Category', 'Harga Jual (Rp)', 'Status'];
 
   const rows = tarifs.map(item => {
     const margin = (item.hargaJual || 0) - (item.hargaPokok || 0);
+    if (showHargaModal) {
+      return [
+        item.name,
+        item.kategori,
+        (item.hargaPokok || 0).toString(),
+        (item.hargaJual || 0).toString(),
+        margin.toString(),
+        item.isActive ? 'Aktif' : 'Nonaktif',
+      ];
+    }
     return [
       item.name,
       item.kategori,
-      (item.hargaPokok || 0).toString(),
       (item.hargaJual || 0).toString(),
-      margin.toString(),
       item.isActive ? 'Aktif' : 'Nonaktif',
     ];
   });
@@ -56,6 +66,7 @@ export default function TarifPage() {
   const router = useRouter();
   const { user } = useAuth();
   const viewOnly = isFeatureViewOnly(user?.role, 'tarif');
+  const showHargaModal = canSeeHargaModal(user?.role);
   const { success, error, warning } = useToast();
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
   const [loading, setLoading] = useState(true);
@@ -144,7 +155,7 @@ export default function TarifPage() {
                 warning('Tidak ada data tarif untuk diekspor');
                 return;
               }
-              exportToExcel(filteredTarif);
+              exportToExcel(filteredTarif, showHargaModal);
               success(`${filteredTarif.length} tarif telah diekspor ke Excel`);
             }}>
               <span className="material-symbols-rounded">download</span>
@@ -173,18 +184,20 @@ export default function TarifPage() {
               <div className="stat-sub">{kategoriCount} kategori aktif</div>
             </div>
           </div>
-          <div className="stat-card margin">
-            <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-                trending_up
-              </span>
+          {showHargaModal && (
+            <div className="stat-card margin">
+              <div className="stat-icon">
+                <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  trending_up
+                </span>
+              </div>
+              <div className="stat-info">
+                <div className="stat-value">{avgMarginMargin}%</div>
+                <div className="stat-label">Rata-rata Margin</div>
+                <div className="stat-sub">dari harga pokok</div>
+              </div>
             </div>
-            <div className="stat-info">
-              <div className="stat-value">{avgMarginMargin}%</div>
-              <div className="stat-label">Rata-rata Margin</div>
-              <div className="stat-sub">dari harga pokok</div>
-            </div>
-          </div>
+          )}
           <div className="stat-card termahal">
             <div className="stat-icon">
               <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -263,9 +276,9 @@ export default function TarifPage() {
                   <tr>
                     <th>Title</th>
                     <th>Category</th>
-                    <th>Harga Modal</th>
+                    {showHargaModal && <th>Harga Modal</th>}
                     <th>Harga Jual</th>
-                    <th>Margin</th>
+                    {showHargaModal && <th>Margin</th>}
                     <th>Status</th>
                     <th></th>
                   </tr>
@@ -280,14 +293,16 @@ export default function TarifPage() {
                           {item.kodeIcd9 && <div className="tarif-code">{item.kodeIcd9}</div>}
                         </td>
                         <td><span className="tag">{item.kategori}</span></td>
-                        <td>Rp {(item.hargaPokok || 0).toLocaleString('id-ID')}</td>
+                        {showHargaModal && <td>Rp {(item.hargaPokok || 0).toLocaleString('id-ID')}</td>}
                         <td>Rp {(item.hargaJual || 0).toLocaleString('id-ID')}</td>
-                        <td>
-                          <span className="tarif-margin">
-                            <span className="material-symbols-rounded">trending_up</span>
-                            Rp {margin.toLocaleString('id-ID')}
-                          </span>
-                        </td>
+                        {showHargaModal && (
+                          <td>
+                            <span className="tarif-margin">
+                              <span className="material-symbols-rounded">trending_up</span>
+                              Rp {margin.toLocaleString('id-ID')}
+                            </span>
+                          </td>
+                        )}
                         <td>
                           <span className={`status-badge ${item.isActive ? 'active' : 'inactive'}`}>
                             {item.isActive ? 'Aktif' : 'Nonaktif'}

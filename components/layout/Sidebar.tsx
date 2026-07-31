@@ -105,6 +105,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       items: [
         { label: 'Kunjungan', icon: <FiActivity />, href: '/laporan-kunjungan', feature: 'laporan-kunjungan' },
         { label: 'Keuangan', icon: <FiTrendingUp />, href: '/laporan-keuangan', feature: 'laporan-keuangan' },
+        { label: 'Referral', icon: <FiUsers />, href: '/referral', feature: 'referral' },
       ],
     },
     {

@@ -145,9 +145,10 @@ export default function ReservationCalendar({ onSelectReservation }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, currentDate, reservations]);
 
-  // Init/update the month calendar instance
+  // Init/update the month calendar instance (lazy: only once the month tab is visible,
+  // otherwise the grid is measured while `display: none` and collapses to 0)
   useEffect(() => {
-    if (!calendarRef.current) return;
+    if (view !== 'month' || !calendarRef.current) return;
     if (!calendarInstance.current) {
       calendarInstance.current = calendarjs.Calendar(calendarRef.current, {
         type: 'inline',
@@ -166,7 +167,7 @@ export default function ReservationCalendar({ onSelectReservation }: Props) {
       instance.render?.();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentDate, reservations]);
+  }, [view, currentDate, reservations]);
 
   const navigate = (dir: 1 | -1) => {
     const d = fromISO(currentDate);
