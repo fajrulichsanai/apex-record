@@ -12,7 +12,6 @@ interface WizardForm {
   name: string;
   gender: UiGender;
   birthDate: string;
-  isNewborn: boolean;
   nik: string;
   phone: string;
   email: string;
@@ -45,6 +44,7 @@ interface WizardForm {
   riwayatParuParu: boolean;
   riwayatSyaraf: boolean;
   riwayatSistemikLainnya: boolean;
+  catatanSistemikLainnya: string;
   alergiObat: boolean;
   alergiMakanan: boolean;
 
@@ -57,7 +57,6 @@ const EMPTY_FORM: WizardForm = {
   name: '',
   gender: 'laki-laki',
   birthDate: '',
-  isNewborn: false,
   nik: '',
   phone: '',
   email: '',
@@ -90,6 +89,7 @@ const EMPTY_FORM: WizardForm = {
   riwayatParuParu: false,
   riwayatSyaraf: false,
   riwayatSistemikLainnya: false,
+  catatanSistemikLainnya: '',
   alergiObat: false,
   alergiMakanan: false,
 
@@ -107,10 +107,6 @@ function calcAge(birthDate: string): number | null {
   const monthDiff = now.getMonth() - birth.getMonth();
   if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) age--;
   return Math.max(age, 0);
-}
-
-function isValidNIK(nik: string): boolean {
-  return /^\d{16}$/.test(nik.trim());
 }
 
 function isValidPhone(phone: string): boolean {
@@ -138,7 +134,6 @@ function patientToForm(patient: Patient): WizardForm {
     name: patient.name,
     gender: patient.gender === 'male' ? 'laki-laki' : 'perempuan',
     birthDate: patient.birthDate ? patient.birthDate.slice(0, 10) : '',
-    isNewborn: !patient.nik && !!patient.nikIbu,
     nik: patient.nik || '',
     phone: patient.phone || '',
     email: patient.email || '',
@@ -171,6 +166,7 @@ function patientToForm(patient: Patient): WizardForm {
     riwayatParuParu: !!patient.riwayatParuParu,
     riwayatSyaraf: !!patient.riwayatSyaraf,
     riwayatSistemikLainnya: !!patient.riwayatSistemikLainnya,
+    catatanSistemikLainnya: patient.catatanSistemikLainnya || '',
     alergiObat: !!patient.alergiObat,
     alergiMakanan: !!patient.alergiMakanan,
 
@@ -184,8 +180,7 @@ function formToPayload(form: WizardForm): PatientPayload {
   return {
     name: form.name,
     gender: form.gender === 'laki-laki' ? 'male' : 'female',
-    isNewborn: form.isNewborn,
-    nik: form.isNewborn ? undefined : form.nik || undefined,
+    nik: form.nik || undefined,
     dateOfBirth: form.birthDate || undefined,
     phone: form.phone || undefined,
     email: form.email || undefined,
@@ -217,6 +212,9 @@ function formToPayload(form: WizardForm): PatientPayload {
     riwayatParuParu: form.riwayatParuParu,
     riwayatSyaraf: form.riwayatSyaraf,
     riwayatSistemikLainnya: form.riwayatSistemikLainnya,
+    catatanSistemikLainnya: form.riwayatSistemikLainnya
+      ? form.catatanSistemikLainnya || undefined
+      : undefined,
     alergiObat: form.alergiObat,
     alergiMakanan: form.alergiMakanan,
 
@@ -385,13 +383,19 @@ export default function PatientWizard({
   }, [form.punyaAlergi]);
 
   useEffect(() => {
+    if (!form.riwayatSistemikLainnya && form.catatanSistemikLainnya) {
+      setForm((prev) => ({ ...prev, catatanSistemikLainnya: '' }));
+    }
+  }, [form.riwayatSistemikLainnya]);
+
+  useEffect(() => {
     if (form.sumberInformasi !== 'lainnya' && form.detailSumber) {
       setForm((prev) => ({ ...prev, detailSumber: '' }));
     }
   }, [form.sumberInformasi]);
 
   const age = useMemo(() => calcAge(form.birthDate), [form.birthDate]);
-  const isMinor = form.isNewborn || (age !== null && age < 17);
+  const isMinor = age !== null && age < 17;
 
   const steps = useMemo(
     () => BASE_STEPS.filter((s) => s.key !== 'wali' || isMinor),
@@ -439,9 +443,6 @@ export default function PatientWizard({
         errs.phone = 'Nomor telepon wajib diisi.';
       } else if (!isValidPhone(form.phone)) {
         errs.phone = 'Format nomor telepon tidak valid (10-13 digit).';
-      }
-      if (!form.isNewborn && form.nik.trim() && !isValidNIK(form.nik)) {
-        errs.nik = 'NIK harus 16 digit.';
       }
       if (form.email.trim() && !isValidEmail(form.email)) {
         errs.email = 'Format email tidak valid.';
@@ -620,24 +621,13 @@ export default function PatientWizard({
                 />
                 {fieldErrors.gender && <span className="field-error">{fieldErrors.gender}</span>}
               </div>
-              <div className="form-field full wizard-switch-field">
-                <label>Pasien Bayi Baru Lahir (Belum Punya NIK)?</label>
-                <button
-                  type="button"
-                  className={`wizard-switch ${form.isNewborn ? 'on' : ''}`}
-                  onClick={() => update('isNewborn', !form.isNewborn)}
-                >
-                  <span className="wizard-switch-track" />
-                </button>
-              </div>
               <div className={`form-field ${fieldErrors.nik ? 'error' : ''}`}>
                 <label>NIK</label>
                 <input
                   type="text"
-                  placeholder="16 digit NIK"
+                  placeholder="Nomor Induk Kependudukan"
                   value={form.nik}
                   onChange={(e) => update('nik', e.target.value)}
-                  disabled={form.isNewborn}
                 />
                 {fieldErrors.nik && <span className="field-error">{fieldErrors.nik}</span>}
               </div>
@@ -966,6 +956,14 @@ export default function PatientWizard({
                   >
                     <span className="wizard-switch-track" />
                   </button>
+                  {key === 'riwayatSistemikLainnya' && form.riwayatSistemikLainnya && (
+                    <textarea
+                      className="full"
+                      placeholder="Catatan penyakit sistemik lainnya"
+                      value={form.catatanSistemikLainnya}
+                      onChange={(e) => update('catatanSistemikLainnya', e.target.value)}
+                    />
+                  )}
                 </div>
               ))}
               <div className="form-field full wizard-switch-field">

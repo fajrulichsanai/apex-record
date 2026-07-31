@@ -11,8 +11,14 @@ interface InputModalProps {
   defaultValue?: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  numeric?: boolean;
   onConfirm: (value: string) => void;
   onCancel: () => void;
+}
+
+function formatThousands(digits: string): string {
+  if (!digits) return '';
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
 export default function InputModal({
@@ -23,6 +29,7 @@ export default function InputModal({
   defaultValue = '',
   confirmLabel = 'OK',
   cancelLabel = 'Batal',
+  numeric = false,
   onConfirm,
   onCancel,
 }: InputModalProps) {
@@ -31,16 +38,24 @@ export default function InputModal({
 
   useEffect(() => {
     if (isOpen) {
-      setValue(defaultValue);
+      setValue(numeric ? formatThousands(defaultValue.replace(/\D/g, '')) : defaultValue);
       setTimeout(() => inputRef.current?.focus(), 0);
     }
-  }, [isOpen, defaultValue]);
+  }, [isOpen, defaultValue, numeric]);
 
   if (!isOpen) return null;
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (numeric) {
+      setValue(formatThousands(e.target.value.replace(/\D/g, '')));
+    } else {
+      setValue(e.target.value);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onConfirm(value);
+    onConfirm(numeric ? value.replace(/\D/g, '') : value);
   };
 
   return (
@@ -56,10 +71,11 @@ export default function InputModal({
             <input
               ref={inputRef}
               type="text"
+              inputMode={numeric ? 'numeric' : 'text'}
               className="input-modal-input"
               placeholder={placeholder}
               value={value}
-              onChange={(e) => setValue(e.target.value)}
+              onChange={handleChange}
             />
           </div>
           <div className="input-modal-footer">

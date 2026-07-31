@@ -611,7 +611,8 @@ function TransaksiPageInner() {
           title="Catat Pembayaran"
           message={`Jumlah pembayaran untuk ${pendingPaymentBilling.invoiceNumber} (sisa ${formatRupiah(pendingPaymentBilling.outstandingAmount)})`}
           placeholder="Jumlah pembayaran..."
-          defaultValue={String(pendingPaymentBilling.outstandingAmount)}
+          defaultValue={String(Math.round(Number(pendingPaymentBilling.outstandingAmount)))}
+          numeric
           confirmLabel="Catat Pembayaran"
           onConfirm={performRecordPayment}
           onCancel={() => {

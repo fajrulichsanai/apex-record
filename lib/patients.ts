@@ -52,6 +52,7 @@ export interface Patient {
   riwayatParuParu?: boolean;
   riwayatSyaraf?: boolean;
   riwayatSistemikLainnya?: boolean;
+  catatanSistemikLainnya?: string;
   alergiObat?: boolean;
   alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
@@ -81,7 +82,6 @@ export interface PatientPayload {
   province?: string;
   postalCode?: string;
   maritalStatus?: MaritalStatus;
-  isNewborn?: boolean;
   nikIbu?: string;
   namaWali?: string;
   hubunganWali?: HubunganWali;
@@ -98,6 +98,7 @@ export interface PatientPayload {
   riwayatParuParu?: boolean;
   riwayatSyaraf?: boolean;
   riwayatSistemikLainnya?: boolean;
+  catatanSistemikLainnya?: string;
   alergiObat?: boolean;
   alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
