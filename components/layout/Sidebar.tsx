@@ -251,7 +251,7 @@ function NavGroup({
           <span className="nav-icon" aria-hidden="true">
             {icon}
           </span>
-          {title}
+          <span className="nav-label">{title}</span>
         </div>
         <span className="chevron" aria-hidden="true">
           <FiChevronRight />
