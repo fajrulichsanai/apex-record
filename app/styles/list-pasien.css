@@ -987,6 +987,13 @@
   flex-direction: row !important;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.wizard-switch-field textarea {
+  flex: 1 1 100%;
+  width: 100%;
+  margin-top: 10px;
 }
 
 .wizard-switch {
