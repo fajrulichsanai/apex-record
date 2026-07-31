@@ -6,6 +6,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import InputModal from '@/components/feedback/InputModal';
 import AddVisitModal from './AddVisitModal';
+import EditVisitModal from './EditVisitModal';
 import {
   encounterApi,
   EncounterListItem,
@@ -83,6 +84,7 @@ function ListKunjunganPageInner() {
   const [actionLoading, setActionLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [preselectReservationId, setPreselectReservationId] = useState<number | null>(null);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState<EncounterStatus | null>(null);
@@ -162,6 +164,15 @@ function ListKunjunganPageInner() {
   const handleVisitCreated = (encounterId: number) => {
     setShowAddModal(false);
     setSelectedVisitId(encounterId);
+    loadVisits();
+  };
+
+  const handleVisitUpdated = async () => {
+    setShowEditModal(false);
+    if (selectedVisitId) {
+      const refreshed = await encounterApi.detail(selectedVisitId);
+      setDetail(refreshed);
+    }
     loadVisits();
   };
 
@@ -398,6 +409,18 @@ function ListKunjunganPageInner() {
                       </span>
                     </div>
                   </div>
+                  {(selectedVisit.status === 'arrived' || selectedVisit.status === 'in_progress') && (
+                    <button
+                      className="btn-outline"
+                      style={{ fontSize: '12.5px' }}
+                      onClick={() => setShowEditModal(true)}
+                    >
+                      <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                        edit
+                      </span>
+                      Edit
+                    </button>
+                  )}
                 </div>
 
                 <div className="detail-info-grid">
@@ -504,6 +527,14 @@ function ListKunjunganPageInner() {
           preselectReservationId={preselectReservationId}
           onClose={() => setShowAddModal(false)}
           onCreated={handleVisitCreated}
+        />
+      )}
+
+      {showEditModal && detail && (
+        <EditVisitModal
+          visit={detail}
+          onClose={() => setShowEditModal(false)}
+          onUpdated={handleVisitUpdated}
         />
       )}
 

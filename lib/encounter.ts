@@ -61,6 +61,14 @@ export interface UpdateEncounterStatusPayload {
   reason?: string;
 }
 
+export interface UpdateEncounterPayload {
+  patientId?: number;
+  practitionerId?: number;
+  locationId?: number;
+  serviceType?: ServiceType;
+  chiefComplaint?: string;
+}
+
 export interface SyncResult {
   success: boolean;
   satusehatId?: string;
@@ -86,6 +94,9 @@ export const encounterApi = {
 
   create: (payload: CreateEncounterPayload) =>
     apiClient.post<EncounterDetail>('/encounters', payload),
+
+  update: (id: number, payload: UpdateEncounterPayload) =>
+    apiClient.patch<EncounterDetail>(`/encounters/${id}`, payload),
 
   updateStatus: (id: number, payload: UpdateEncounterStatusPayload) =>
     apiClient.patch<EncounterDetail>(`/encounters/${id}/status`, payload),

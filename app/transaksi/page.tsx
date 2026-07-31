@@ -273,8 +273,8 @@ function TransaksiPageInner() {
     if (!pendingPaymentBilling) return;
 
     const amount = Number(amountStr);
-    if (!amount || amount <= 0) {
-      showError('Jumlah pembayaran harus lebih dari 0');
+    if (amountStr.trim() === '' || Number.isNaN(amount) || amount < 0) {
+      showError('Jumlah pembayaran tidak valid');
       return;
     }
 
