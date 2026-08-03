@@ -5,6 +5,7 @@ import CustomSelect from '@/components/form/CustomSelect';
 import { patientsApi, Patient } from '@/lib/patients';
 import { practitionersApi, Practitioner } from '@/lib/practitioners';
 import { encounterApi, EncounterDetail } from '@/lib/encounter';
+import { encounterSoapApi } from '@/lib/encounter-soap';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 
@@ -27,6 +28,10 @@ export default function EditVisitModal({ visit, onClose, onUpdated }: EditVisitM
   const [patientId, setPatientId] = useState(visit.patientId.toString());
   const [practitionerId, setPractitionerId] = useState(visit.practitionerId.toString());
   const [chiefComplaint, setChiefComplaint] = useState(visit.chiefComplaint || '');
+  const [soapSubjective, setSoapSubjective] = useState('');
+  const [soapObjective, setSoapObjective] = useState('');
+  const [soapAssessment, setSoapAssessment] = useState('');
+  const [soapPlan, setSoapPlan] = useState('');
 
   useEffect(() => {
     isMounted.current = true;
@@ -42,13 +47,20 @@ export default function EditVisitModal({ visit, onClose, onUpdated }: EditVisitM
     (async () => {
       try {
         setLoading(true);
-        const [patientList, practitionerList] = await Promise.all([
+        const [patientList, practitionerList, soapNote] = await Promise.all([
           patientsApi.list(),
           practitionersApi.list(),
+          encounterSoapApi.get(visit.id).catch(() => null),
         ]);
         if (!isMounted.current) return;
         setPatients(patientList);
         setPractitioners(practitionerList);
+        if (soapNote) {
+          setSoapSubjective(soapNote.subjective || '');
+          setSoapObjective(soapNote.objective || '');
+          setSoapAssessment(soapNote.assessment || '');
+          setSoapPlan(soapNote.plan || '');
+        }
       } catch (err) {
         if (!isMounted.current) return;
         const msg = err instanceof ApiError ? err.message : 'Gagal memuat data';
@@ -82,6 +94,18 @@ export default function EditVisitModal({ visit, onClose, onUpdated }: EditVisitM
         practitionerId: Number(practitionerId),
         chiefComplaint: chiefComplaint.trim() || undefined,
       });
+
+      const hasSoapNote =
+        soapSubjective.trim() || soapObjective.trim() || soapAssessment.trim() || soapPlan.trim();
+      if (hasSoapNote) {
+        await encounterSoapApi.upsert(visit.id, {
+          subjective: soapSubjective.trim() || undefined,
+          objective: soapObjective.trim() || undefined,
+          assessment: soapAssessment.trim() || undefined,
+          plan: soapPlan.trim() || undefined,
+        });
+      }
+
       onUpdated();
     } catch (err) {
       if (!isMounted.current) return;
@@ -172,6 +196,66 @@ export default function EditVisitModal({ visit, onClose, onUpdated }: EditVisitM
                     value={chiefComplaint}
                     onChange={(e) => setChiefComplaint(e.target.value)}
                     placeholder="Keluhan utama pasien (opsional)"
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="visit-form-field">
+                  <label>
+                    <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                      record_voice_over
+                    </span>
+                    Subjective
+                  </label>
+                  <textarea
+                    value={soapSubjective}
+                    onChange={(e) => setSoapSubjective(e.target.value)}
+                    placeholder="Keluhan/cerita pasien menurut pasien sendiri (opsional)"
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="visit-form-field">
+                  <label>
+                    <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                      monitor_heart
+                    </span>
+                    Objective
+                  </label>
+                  <textarea
+                    value={soapObjective}
+                    onChange={(e) => setSoapObjective(e.target.value)}
+                    placeholder="Hasil pemeriksaan objektif (opsional)"
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="visit-form-field">
+                  <label>
+                    <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                      fact_check
+                    </span>
+                    Assessment
+                  </label>
+                  <textarea
+                    value={soapAssessment}
+                    onChange={(e) => setSoapAssessment(e.target.value)}
+                    placeholder="Diagnosis/penilaian klinis (opsional)"
+                    disabled={submitting}
+                  />
+                </div>
+
+                <div className="visit-form-field">
+                  <label>
+                    <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                      checklist
+                    </span>
+                    Plan
+                  </label>
+                  <textarea
+                    value={soapPlan}
+                    onChange={(e) => setSoapPlan(e.target.value)}
+                    placeholder="Rencana tindakan/terapi (opsional)"
                     disabled={submitting}
                   />
                 </div>

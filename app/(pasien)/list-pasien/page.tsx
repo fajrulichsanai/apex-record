@@ -5,7 +5,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import { patientsApi, Patient, Encounter, ApiGender } from '@/lib/patients';
+import {
+  treatmentPlanApi,
+  TreatmentPlan,
+  TREATMENT_TYPE_LABEL,
+  TREATMENT_PLAN_STATUS_LABEL,
+} from '@/lib/treatment-plan';
 import { ApiError } from '@/lib/api-client';
+import AddTreatmentPlanModal from './AddTreatmentPlanModal';
 import '../../styles/list-pasien.css';
 
 type UiGender = 'laki-laki' | 'perempuan' | 'bayi';
@@ -89,6 +96,10 @@ function ListPasienContent() {
   const [encounters, setEncounters] = useState<Encounter[]>([]);
   const [encountersLoading, setEncountersLoading] = useState(false);
 
+  const [treatmentPlans, setTreatmentPlans] = useState<TreatmentPlan[]>([]);
+  const [treatmentPlansLoading, setTreatmentPlansLoading] = useState(false);
+  const [showAddTreatmentPlan, setShowAddTreatmentPlan] = useState(false);
+
   const loadPatients = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
@@ -136,6 +147,30 @@ function ListPasienContent() {
       active = false;
     };
   }, [selectedPatient]);
+
+  const loadTreatmentPlans = useCallback((patientId: number) => {
+    let active = true;
+    setTreatmentPlansLoading(true);
+    treatmentPlanApi
+      .listByPatient(patientId)
+      .then((data) => {
+        if (active) setTreatmentPlans(data);
+      })
+      .catch(() => {
+        if (active) setTreatmentPlans([]);
+      })
+      .finally(() => {
+        if (active) setTreatmentPlansLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedPatient) return;
+    return loadTreatmentPlans(selectedPatient.id);
+  }, [selectedPatient, loadTreatmentPlans]);
 
   const totalCount = patients.length;
   const maleCount = patients.filter((p) => apiGenderToUi(p) === 'laki-laki').length;
@@ -463,11 +498,88 @@ function ListPasienContent() {
                       </div>
                     ))}
                 </div>
+
+                <div className="detail-section">
+                  <div className="section-title" style={{ justifyContent: 'space-between', display: 'flex' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="material-symbols-rounded">timeline</span>
+                      Progress Treatment
+                    </span>
+                    <button
+                      type="button"
+                      className="btn-outline"
+                      style={{ padding: '4px 10px', fontSize: '13px' }}
+                      onClick={() => setShowAddTreatmentPlan(true)}
+                    >
+                      <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                        add
+                      </span>
+                      Tambah
+                    </button>
+                  </div>
+                  {treatmentPlansLoading && <div className="empty-sub">Memuat progress treatment…</div>}
+                  {!treatmentPlansLoading && treatmentPlans.length === 0 && (
+                    <div className="empty-sub">Belum ada treatment plan.</div>
+                  )}
+                  {!treatmentPlansLoading &&
+                    treatmentPlans.map((plan) => {
+                      const percent = plan.totalStages
+                        ? Math.min(100, Math.round((plan.currentStage / plan.totalStages) * 100))
+                        : null;
+                      return (
+                        <div className="visit-item" key={plan.id}>
+                          <div className="visit-dot" />
+                          <div className="visit-info" style={{ width: '100%' }}>
+                            <div className="visit-type">
+                              {plan.label || TREATMENT_TYPE_LABEL[plan.treatmentType]}
+                            </div>
+                            <div className="visit-date">
+                              {TREATMENT_PLAN_STATUS_LABEL[plan.status]} ·{' '}
+                              {plan.totalStages
+                                ? `Tahap ${plan.currentStage} dari ${plan.totalStages}`
+                                : `Tahap ke-${plan.currentStage}`}
+                            </div>
+                            {percent !== null && (
+                              <div
+                                style={{
+                                  height: '6px',
+                                  borderRadius: '4px',
+                                  background: 'var(--border, #e5e7eb)',
+                                  marginTop: '6px',
+                                  overflow: 'hidden',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    height: '100%',
+                                    width: `${percent}%`,
+                                    borderRadius: '4px',
+                                    background: 'var(--primary, #2563eb)',
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
               </div>
             )}
           </div>
         </div>
       </main>
+
+      {showAddTreatmentPlan && selectedPatient && (
+        <AddTreatmentPlanModal
+          patientId={selectedPatient.id}
+          onClose={() => setShowAddTreatmentPlan(false)}
+          onCreated={() => {
+            setShowAddTreatmentPlan(false);
+            loadTreatmentPlans(selectedPatient.id);
+          }}
+        />
+      )}
 
       {showDeleteConfirm && selectedPatient && (
         <div className="list-pasien-modal-overlay" onClick={() => setShowDeleteConfirm(false)}>
