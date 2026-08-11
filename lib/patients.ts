@@ -113,8 +113,10 @@ export interface Encounter {
   id: number;
   status: string;
   serviceType: string;
+  chiefComplaint?: string;
   arrivedTime: string;
   finishedTime?: string;
+  practitionerName?: string;
 }
 
 export interface ReferralSummaryResponse {

@@ -13,6 +13,7 @@ import {
 } from '@/lib/treatment-plan';
 import { ApiError } from '@/lib/api-client';
 import AddTreatmentPlanModal from './AddTreatmentPlanModal';
+import PatientSoapModal from './PatientSoapModal';
 import '../../styles/list-pasien.css';
 
 type UiGender = 'laki-laki' | 'perempuan' | 'bayi';
@@ -99,6 +100,7 @@ function ListPasienContent() {
   const [treatmentPlans, setTreatmentPlans] = useState<TreatmentPlan[]>([]);
   const [treatmentPlansLoading, setTreatmentPlansLoading] = useState(false);
   const [showAddTreatmentPlan, setShowAddTreatmentPlan] = useState(false);
+  const [showSoapModal, setShowSoapModal] = useState(false);
 
   const loadPatients = useCallback(async () => {
     setLoading(true);
@@ -422,6 +424,10 @@ function ListPasienContent() {
                     </div>
                   </div>
                   <div className="detail-actions">
+                    <button className="btn-outline" onClick={() => setShowSoapModal(true)}>
+                      <span className="material-symbols-rounded">description</span>
+                      SOAP
+                    </button>
                     <button className="btn-outline" onClick={handleEditPatient}>
                       <span className="material-symbols-rounded">edit</span>
                       Edit
@@ -569,6 +575,14 @@ function ListPasienContent() {
           </div>
         </div>
       </main>
+
+      {showSoapModal && selectedPatient && (
+        <PatientSoapModal
+          patientName={selectedPatient.name}
+          encounters={encounters}
+          onClose={() => setShowSoapModal(false)}
+        />
+      )}
 
       {showAddTreatmentPlan && selectedPatient && (
         <AddTreatmentPlanModal
