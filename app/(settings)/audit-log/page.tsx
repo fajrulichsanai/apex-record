@@ -18,7 +18,6 @@ const ACTION_OPTIONS = [
   { value: 'LOGIN', label: 'Login' },
   { value: 'LOGOUT', label: 'Logout' },
   { value: 'EXPORT', label: 'Ekspor' },
-  { value: 'VIEW', label: 'Lihat' },
 ];
 
 const ENTITY_OPTIONS = [

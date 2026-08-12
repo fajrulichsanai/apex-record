@@ -136,6 +136,8 @@ export const billingApi = {
   update: (id: number, payload: UpdateBillingPayload) =>
     apiClient.patch<BillingDetail>(`/billings/${id}`, payload),
 
+  cancel: (id: number) => apiClient.patch<BillingDetail>(`/billings/${id}/cancel`, {}),
+
   createPayment: (id: number, payload: CreatePaymentPayload) =>
     apiClient.post<CreatePaymentResponse>(`/billings/${id}/payments`, payload),
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
+import ConfirmationModal from '@/components/feedback/ConfirmationModal';
 import { ApiError } from '@/lib/api-client';
 import { billingApi, BillingDetail, DiscountType } from '@/lib/billing';
 import { Tarif } from '@/lib/tarif';
@@ -71,6 +72,8 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
   const [additionalFee, setAdditionalFee] = useState(0);
   const [notes, setNotes] = useState('');
   const [sendingWa, setSendingWa] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
     isMounted.current = true;
@@ -207,6 +210,24 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
   };
 
   const canEdit = detail && detail.status !== 'cancelled' && detail.status !== 'refunded';
+  const canCancel = detail && detail.status === 'unpaid' && detail.paidAmount === 0;
+
+  const handleCancelBilling = async () => {
+    if (!detail) return;
+    try {
+      setCancelling(true);
+      await billingApi.cancel(detail.id);
+      success('Transaksi telah dibatalkan, stok bahan (jika ada) telah dikembalikan.');
+      setConfirmCancel(false);
+      onUpdated();
+      onClose();
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Gagal membatalkan transaksi';
+      showError(message);
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   return (
     <div className="billing-modal-overlay" onClick={handleOverlayClick}>
@@ -447,6 +468,12 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                       {sendingWa ? 'Menyiapkan…' : 'Kirim Invoice ke WA'}
                     </button>
                   )}
+                  {canCancel && (
+                    <button type="button" className="btn-outline" onClick={() => setConfirmCancel(true)}>
+                      <span className="material-symbols-rounded">cancel</span>
+                      Batalkan Transaksi
+                    </button>
+                  )}
                   {canEdit && (
                     <button type="button" className="btn-primary" onClick={startEdit}>
                       Edit Invoice
@@ -458,6 +485,17 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
           </>
         ) : null}
       </div>
+
+      <ConfirmationModal
+        isOpen={confirmCancel}
+        title="Batalkan Transaksi?"
+        message="Transaksi akan ditandai dibatalkan dan stok bahan yang terpakai (jika ada resep BOM) akan dikembalikan otomatis. Tindakan ini tidak dapat diurungkan."
+        confirmLabel={cancelling ? 'Membatalkan...' : 'Ya, Batalkan'}
+        cancelLabel="Tutup"
+        isDangerous
+        onConfirm={handleCancelBilling}
+        onCancel={() => setConfirmCancel(false)}
+      />
     </div>
   );
 }

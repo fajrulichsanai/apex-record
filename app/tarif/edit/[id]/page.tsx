@@ -10,7 +10,9 @@ import { tarifApi, Tarif } from '@/lib/tarif';
 import { ApiError } from '@/lib/api-client';
 import { formatCurrencyInput, parseCurrency } from '@/lib/format';
 import { useToast } from '@/lib/toast-context';
+import BomPanel from './BomPanel';
 import '../../../styles/tarif.css';
+import '../../../styles/gudang.css';
 
 export default function EditTarifPage() {
   const router = useRouter();
@@ -193,6 +195,8 @@ export default function EditTarifPage() {
             </form>
           )}
         </div>
+
+        {!loading && !loadError && tarif && <BomPanel tarifId={tarif.id} />}
       </main>
       </FeatureGuard>
     </DashboardLayout>
