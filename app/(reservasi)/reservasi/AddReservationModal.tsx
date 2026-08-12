@@ -60,7 +60,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
       try {
         setLoading(true);
         const [patientList, practitionerList] = await Promise.all([
-          patientsApi.list(),
+          patientsApi.listAll(),
           practitionersApi.list(),
         ]);
         if (!isMounted.current) return;
