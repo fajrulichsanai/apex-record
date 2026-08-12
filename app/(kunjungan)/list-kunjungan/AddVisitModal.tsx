@@ -66,7 +66,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
       try {
         setLoading(true);
         const [patientList, practitionerList, reservationRes] = await Promise.all([
-          patientsApi.list(),
+          patientsApi.listAll(),
           practitionersApi.list(),
           reservationsApi.list({ status: 'confirmed' }),
         ]);

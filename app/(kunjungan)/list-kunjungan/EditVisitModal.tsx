@@ -43,7 +43,7 @@ export default function EditVisitModal({ visit, onClose, onUpdated }: EditVisitM
       try {
         setLoading(true);
         const [patientList, practitionerList] = await Promise.all([
-          patientsApi.list(),
+          patientsApi.listAll(),
           practitionersApi.list(),
         ]);
         if (!isMounted.current) return;

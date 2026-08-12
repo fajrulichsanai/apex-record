@@ -147,6 +147,24 @@ export const patientsApi = {
           : '')
     ),
 
+  // Backend caps `limit` at 100 per page, so a plain list() only returns the
+  // first 10 (default) patients. This paginates through every page to fetch
+  // the full list, for UI pickers (reservasi/kunjungan) that need all patients.
+  listAll: async (query?: Omit<PatientQuery, 'page' | 'limit'>) => {
+    const pageSize = 100;
+    let page = 1;
+    const all: Patient[] = [];
+
+    while (true) {
+      const batch = await patientsApi.list({ ...query, page, limit: pageSize });
+      all.push(...batch);
+      if (batch.length < pageSize) break;
+      page += 1;
+    }
+
+    return all;
+  },
+
   get: (id: number) => apiClient.get<Patient>(`/patients/${id}`),
 
   create: (payload: PatientPayload) => apiClient.post<Patient>('/patients', payload),
