@@ -13,7 +13,8 @@ export type FeatureKey =
   | 'info-klinik'
   | 'tarif'
   | 'user-management'
-  | 'referral';
+  | 'referral'
+  | 'audit-log';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',
@@ -29,6 +30,7 @@ const FULL_ACCESS: FeatureKey[] = [
   'tarif',
   'user-management',
   'referral',
+  'audit-log',
 ];
 
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {

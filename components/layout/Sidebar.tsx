@@ -23,6 +23,7 @@ import {
   FiUserCheck,
   FiChevronLeft,
   FiChevronRight,
+  FiShield,
 } from 'react-icons/fi';
 import './sidebar.css';
 
@@ -118,6 +119,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           ? [{ label: 'User Management', icon: <FiUserCheck />, href: '/user-management', feature: 'user-management' as FeatureKey }]
           : []),
         { label: 'Tarif & Tindakan', icon: <FiDollarSign />, href: '/tarif', feature: 'tarif' },
+        { label: 'Log Aktivitas', icon: <FiShield />, href: '/audit-log', feature: 'audit-log' as FeatureKey },
       ],
     },
   ];

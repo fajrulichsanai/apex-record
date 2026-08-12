@@ -1,4 +1,6 @@
-import { apiClient } from './api-client';
+import { apiClient, ApiError } from './api-client';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export type BillingStatus = 'unpaid' | 'partial' | 'paid' | 'cancelled' | 'refunded';
 export type DiscountType = 'nominal' | 'percent';
@@ -62,7 +64,7 @@ export interface BillingDetail {
   notes?: string;
   items: BillingItem[];
   payments: Payment[];
-  patient?: { id: number; name: string; noRm?: string };
+  patient?: { id: number; name: string; noRm?: string; phone?: string };
 }
 
 export interface CreateBillingItemPayload {
@@ -136,4 +138,24 @@ export const billingApi = {
 
   createPayment: (id: number, payload: CreatePaymentPayload) =>
     apiClient.post<CreatePaymentResponse>(`/billings/${id}/payments`, payload),
+
+  downloadInvoicePdf: async (id: number) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const res = await fetch(`${API_URL}/billings/${id}/invoice`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) {
+      throw new ApiError('Gagal mengunduh invoice PDF', res.status);
+    }
+    const blob = await res.blob();
+    const filename = `invoice-${id}.pdf`;
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  },
 };

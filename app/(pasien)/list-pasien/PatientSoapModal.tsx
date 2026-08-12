@@ -1,11 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import CustomSelect from '@/components/form/CustomSelect';
 import { Encounter } from '@/lib/patients';
-import { encounterSoapApi } from '@/lib/encounter-soap';
-import { ApiError } from '@/lib/api-client';
-import { useToast } from '@/lib/toast-context';
+import { encounterSoapApi, SoapNote } from '@/lib/encounter-soap';
 
 interface PatientSoapModalProps {
   patientName: string;
@@ -13,32 +10,22 @@ interface PatientSoapModalProps {
   onClose: () => void;
 }
 
-const ENCOUNTER_STATUS_LABEL: Record<string, string> = {
-  finished: 'Selesai',
-  in_progress: 'Sedang Berlangsung',
-  arrived: 'Menunggu',
-  cancelled: 'Dibatalkan',
-};
-
-function formatDateTime(dateStr?: string) {
+function formatDate(dateStr?: string) {
   if (!dateStr) return '—';
   const d = new Date(dateStr);
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-export default function PatientSoapModal({ patientName, encounters, onClose }: PatientSoapModalProps) {
-  const { success: showSuccess, error: showError } = useToast();
-  const isMounted = useRef(true);
-  const [encounterId, setEncounterId] = useState(encounters[0]?.id.toString() || '');
-  const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface SoapRow {
+  encounter: Encounter;
+  note: SoapNote | null;
+}
 
-  const [subjective, setSubjective] = useState('');
-  const [objective, setObjective] = useState('');
-  const [assessment, setAssessment] = useState('');
-  const [plan, setPlan] = useState('');
+export default function PatientSoapModal({ patientName, encounters, onClose }: PatientSoapModalProps) {
+  const isMounted = useRef(true);
+  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState<SoapRow[]>([]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -48,177 +35,115 @@ export default function PatientSoapModal({ patientName, encounters, onClose }: P
   }, []);
 
   useEffect(() => {
-    if (!encounterId) return;
+    if (encounters.length === 0) {
+      setLoading(false);
+      setRows([]);
+      return;
+    }
     let active = true;
     setLoading(true);
-    setError(null);
-    encounterSoapApi
-      .get(Number(encounterId))
-      .then((note) => {
-        if (!active) return;
-        setSubjective(note?.subjective || '');
-        setObjective(note?.objective || '');
-        setAssessment(note?.assessment || '');
-        setPlan(note?.plan || '');
-      })
-      .catch((err) => {
-        if (!active) return;
-        const msg = err instanceof ApiError ? err.message : 'Gagal memuat catatan SOAP';
-        setError(msg);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    Promise.all(
+      encounters.map((encounter) =>
+        encounterSoapApi
+          .get(encounter.id)
+          .then((note) => ({ encounter, note }))
+          .catch(() => ({ encounter, note: null })),
+      ),
+    ).then((results) => {
+      if (!active) return;
+      const sorted = [...results].sort(
+        (a, b) => new Date(b.encounter.arrivedTime).getTime() - new Date(a.encounter.arrivedTime).getTime(),
+      );
+      setRows(sorted);
+      setLoading(false);
+    });
     return () => {
       active = false;
     };
-  }, [encounterId]);
+  }, [encounters]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !submitting) onClose();
+      if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [submitting, onClose]);
+  }, [onClose]);
 
-  const handleOverlayClick = () => {
-    if (!submitting) onClose();
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!encounterId) {
-      showError('Pilih kunjungan terlebih dahulu');
-      return;
-    }
-    setSubmitting(true);
-    setError(null);
-    try {
-      await encounterSoapApi.upsert(Number(encounterId), {
-        subjective: subjective.trim() || undefined,
-        objective: objective.trim() || undefined,
-        assessment: assessment.trim() || undefined,
-        plan: plan.trim() || undefined,
-      });
-      if (!isMounted.current) return;
-      showSuccess('Catatan SOAP berhasil disimpan');
-      onClose();
-    } catch (err) {
-      if (!isMounted.current) return;
-      const msg = err instanceof ApiError ? err.message : 'Gagal menyimpan catatan SOAP';
-      setError(msg);
-      showError(msg);
-    } finally {
-      if (isMounted.current) setSubmitting(false);
-    }
-  };
-
-  const encounterOptions = encounters.map((enc) => ({
-    value: enc.id.toString(),
-    label: `${formatDateTime(enc.arrivedTime)} · ${enc.practitionerName || 'Dokter tidak diketahui'} · ${ENCOUNTER_STATUS_LABEL[enc.status] ?? enc.status}`,
-  }));
+  const rowsWithNote = rows.filter((r) => r.note && (r.note.subjective || r.note.objective || r.note.assessment || r.note.plan));
 
   return (
-    <div className="list-pasien-modal-overlay" onClick={handleOverlayClick}>
-      <div className="modal-box" style={{ maxWidth: 520 }} onClick={(e) => e.stopPropagation()}>
+    <div className="list-pasien-modal-overlay" onClick={onClose}>
+      <div className="modal-box" style={{ maxWidth: 960 }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="modal-header-title">
             <div className="modal-header-icon">
               <span className="material-symbols-rounded">description</span>
             </div>
             <div>
-              <h2>Catatan SOAP</h2>
+              <h2>Riwayat Catatan SOAP</h2>
               <p>Dokumentasi klinis untuk {patientName}</p>
             </div>
           </div>
-          <button className="modal-close" type="button" onClick={onClose} disabled={submitting} aria-label="Tutup">
+          <button className="modal-close" type="button" onClick={onClose} aria-label="Tutup">
             <span className="material-symbols-rounded">close</span>
           </button>
         </div>
 
-        {encounters.length === 0 ? (
-          <div className="modal-body">
+        <div className="modal-body">
+          {loading ? (
+            <div className="empty-sub">Memuat catatan SOAP…</div>
+          ) : encounters.length === 0 ? (
             <div className="satusehat-empty">
               <span className="material-symbols-rounded">event_busy</span>
               <div className="empty-title">Belum ada kunjungan</div>
               <div className="empty-sub">
-                Pasien ini belum memiliki riwayat kunjungan. Catatan SOAP hanya bisa diisi untuk kunjungan yang sudah tercatat.
+                Pasien ini belum memiliki riwayat kunjungan, sehingga belum ada catatan SOAP.
               </div>
             </div>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body">
-              <div className="form-field full">
-                <label>Kunjungan *</label>
-                <CustomSelect
-                  value={encounterId}
-                  onChange={setEncounterId}
-                  options={encounterOptions}
-                  disabled={submitting}
-                />
+          ) : rowsWithNote.length === 0 ? (
+            <div className="satusehat-empty">
+              <span className="material-symbols-rounded">description</span>
+              <div className="empty-title">Belum ada catatan SOAP</div>
+              <div className="empty-sub">
+                Catatan SOAP diisi saat membuat kunjungan baru. Belum ada kunjungan dengan catatan SOAP terisi.
               </div>
-
-              {loading ? (
-                <div className="empty-sub">Memuat catatan SOAP…</div>
-              ) : (
-                <>
-                  <div className="form-field full">
-                    <label>Subjective</label>
-                    <textarea
-                      value={subjective}
-                      onChange={(e) => setSubjective(e.target.value)}
-                      placeholder="Keluhan/cerita pasien menurut pasien sendiri (opsional)"
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div className="form-field full">
-                    <label>Objective</label>
-                    <textarea
-                      value={objective}
-                      onChange={(e) => setObjective(e.target.value)}
-                      placeholder="Hasil pemeriksaan objektif (opsional)"
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div className="form-field full">
-                    <label>Assessment</label>
-                    <textarea
-                      value={assessment}
-                      onChange={(e) => setAssessment(e.target.value)}
-                      placeholder="Diagnosis/penilaian klinis (opsional)"
-                      disabled={submitting}
-                    />
-                  </div>
-
-                  <div className="form-field full">
-                    <label>Plan</label>
-                    <textarea
-                      value={plan}
-                      onChange={(e) => setPlan(e.target.value)}
-                      placeholder="Rencana tindakan/terapi (opsional)"
-                      disabled={submitting}
-                    />
-                  </div>
-                </>
-              )}
-
-              {error && <div className="field-error">{error}</div>}
             </div>
-
-            <div className="modal-footer">
-              <button type="button" className="btn-outline" onClick={onClose} disabled={submitting}>
-                Batal
-              </button>
-              <button type="submit" className="btn-primary" disabled={submitting || loading}>
-                {submitting ? 'Menyimpan…' : 'Simpan Catatan SOAP'}
-              </button>
+          ) : (
+            <div style={{ overflowX: 'auto' }}>
+              <table className="soap-history-table">
+                <thead>
+                  <tr>
+                    <th>Tanggal Kunjungan</th>
+                    <th>Dokter</th>
+                    <th>Subjective</th>
+                    <th>Objective</th>
+                    <th>Assessment</th>
+                    <th>Plan</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rowsWithNote.map(({ encounter, note }) => (
+                    <tr key={encounter.id}>
+                      <td>{formatDate(encounter.arrivedTime)}</td>
+                      <td>{encounter.practitionerName || '—'}</td>
+                      <td>{note?.subjective || '—'}</td>
+                      <td>{note?.objective || '—'}</td>
+                      <td>{note?.assessment || '—'}</td>
+                      <td>{note?.plan || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </form>
-        )}
+          )}
+        </div>
+
+        <div className="modal-footer">
+          <button type="button" className="btn-outline" onClick={onClose}>
+            Tutup
+          </button>
+        </div>
       </div>
     </div>
   );

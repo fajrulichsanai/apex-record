@@ -1073,3 +1073,35 @@
   .wizard-footer { flex-wrap: wrap; gap: 10px; }
   .wizard-footer-left, .wizard-footer-right { width: 100%; justify-content: space-between; }
 }
+
+.soap-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  min-width: 720px;
+}
+
+.soap-history-table th,
+.soap-history-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border, #e5e7eb);
+  vertical-align: top;
+}
+
+.soap-history-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--bg, #f9fafb);
+}
+
+.soap-history-table td {
+  color: var(--text-main);
+  max-width: 220px;
+  white-space: pre-wrap;
+}
+
+.soap-history-table tbody tr:last-child td {
+  border-bottom: none;
+}

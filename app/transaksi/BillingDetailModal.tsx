@@ -6,6 +6,7 @@ import { ApiError } from '@/lib/api-client';
 import { billingApi, BillingDetail, DiscountType } from '@/lib/billing';
 import { Tarif } from '@/lib/tarif';
 import { useToast } from '@/lib/toast-context';
+import { waLink } from '@/lib/utils/whatsapp';
 import './BillingDetailModal.css';
 
 interface BillingDetailModalProps {
@@ -69,6 +70,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [additionalFee, setAdditionalFee] = useState(0);
   const [notes, setNotes] = useState('');
+  const [sendingWa, setSendingWa] = useState(false);
 
   useEffect(() => {
     isMounted.current = true;
@@ -176,6 +178,27 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
       showError(err instanceof ApiError ? err.message : 'Gagal memperbarui invoice');
     } finally {
       if (isMounted.current) setSaving(false);
+    }
+  }
+
+  async function handleSendInvoiceWa() {
+    if (!detail) return;
+    const phone = detail.patient?.phone;
+    if (!phone) {
+      showError('Pasien tidak memiliki nomor WhatsApp');
+      return;
+    }
+
+    setSendingWa(true);
+    try {
+      await billingApi.downloadInvoicePdf(billingId);
+      const message = `Halo ${detail.patient?.name || ''}, berikut invoice pembayaran ${detail.invoiceNumber} sebesar ${formatRupiah(detail.grandTotal)}. Mohon lampirkan file PDF invoice yang baru terunduh pada chat ini. Terima kasih.`;
+      window.open(waLink(phone, message), '_blank', 'noopener,noreferrer');
+      success('Invoice PDF diunduh, silakan lampirkan di chat WhatsApp yang terbuka');
+    } catch (err) {
+      showError(err instanceof ApiError ? err.message : 'Gagal mengunduh invoice PDF');
+    } finally {
+      if (isMounted.current) setSendingWa(false);
     }
   }
 
@@ -418,6 +441,12 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                   <button type="button" className="btn-outline" onClick={onClose}>
                     Tutup
                   </button>
+                  {detail.status === 'paid' && (
+                    <button type="button" className="btn-outline" onClick={handleSendInvoiceWa} disabled={sendingWa}>
+                      <span className="material-symbols-rounded">chat</span>
+                      {sendingWa ? 'Menyiapkan…' : 'Kirim Invoice ke WA'}
+                    </button>
+                  )}
                   {canEdit && (
                     <button type="button" className="btn-primary" onClick={startEdit}>
                       Edit Invoice
