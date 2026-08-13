@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/lib/toast-context";
+import { SubscriptionGateProvider } from "@/lib/subscription-gate-context";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -38,7 +39,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <ToastProvider>
+            <SubscriptionGateProvider>{children}</SubscriptionGateProvider>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

@@ -17,6 +17,15 @@ interface ApiEnvelope<T> {
   error?: { message: string; code?: string };
 }
 
+// Set by SubscriptionGateProvider so a SUBSCRIPTION_EXPIRED response from any
+// mutating request — anywhere in the app — can pop the renew modal without
+// every page having to check subscription status itself.
+let onSubscriptionExpired: (() => void) | null = null;
+
+export function setOnSubscriptionExpired(handler: (() => void) | null) {
+  onSubscriptionExpired = handler;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
@@ -32,7 +41,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const body: ApiEnvelope<T> = await res.json();
 
   if (!res.ok || (body.success === false)) {
-    throw new ApiError(body?.error?.message || 'Terjadi kesalahan', res.status, body?.error?.code);
+    const code = body?.error?.code;
+    if (code === 'SUBSCRIPTION_EXPIRED') {
+      onSubscriptionExpired?.();
+    }
+    throw new ApiError(body?.error?.message || 'Terjadi kesalahan', res.status, code);
   }
 
   return (body.data !== undefined ? body.data : body) as T;

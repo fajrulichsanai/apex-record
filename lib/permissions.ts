@@ -15,7 +15,8 @@ export type FeatureKey =
   | 'tarif'
   | 'user-management'
   | 'referral'
-  | 'audit-log';
+  | 'audit-log'
+  | 'langganan';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',
@@ -33,6 +34,7 @@ const FULL_ACCESS: FeatureKey[] = [
   'user-management',
   'referral',
   'audit-log',
+  'langganan',
 ];
 
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
@@ -50,13 +52,14 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'info-klinik',
     'tarif',
     'referral',
+    'langganan',
   ],
   dokter: ['pasien', 'reservasi', 'kunjungan'],
   pending: [],
 };
 
 const VIEW_ONLY_FEATURES: Partial<Record<UserRole, FeatureKey[]>> = {
-  admin: ['info-klinik', 'tarif'],
+  admin: ['info-klinik', 'tarif', 'langganan'],
 };
 
 export function canAccessFeature(role: UserRole | undefined, feature: FeatureKey): boolean {
