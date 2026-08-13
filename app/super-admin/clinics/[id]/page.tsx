@@ -6,10 +6,20 @@ import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
 import CustomSelect from '@/components/form/CustomSelect';
 import { clinicSubscriptionApi, subscriptionPlanApi } from '@/lib/subscription';
 import type { ClinicSubscription, SubscriptionPlan } from '@/types/subscription';
-import { ApiError } from '@/lib/api-client';
+import type { User } from '@/types/user';
+import { apiClient, ApiError } from '@/lib/api-client';
+import { authApi } from '@/lib/auth-api';
+import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency } from '@/lib/format';
 import '../../../styles/super-admin.css';
+
+const ROLE_LABEL: Record<string, string> = {
+  owner: 'Owner',
+  admin: 'Admin',
+  dokter: 'Dokter',
+  pending: 'Pending',
+};
 
 function formatDate(value?: string) {
   if (!value) return '-';
@@ -21,24 +31,29 @@ export default function SuperAdminClinicDetailPage() {
   const router = useRouter();
   const clinicId = Number(params?.id);
   const { success, error: showError } = useToast();
+  const { startImpersonation } = useAuth();
 
   const [history, setHistory] = useState<ClinicSubscription[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [impersonatingId, setImpersonatingId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [hist, planList] = await Promise.all([
+      const [hist, planList, allUsers] = await Promise.all([
         clinicSubscriptionApi.getForClinic(clinicId),
         subscriptionPlanApi.list(),
+        apiClient.get<User[]>('/users'),
       ]);
       setHistory(hist);
       setPlans(planList.filter((p) => p.isActive));
+      setUsers(allUsers.filter((u) => u.clinicId === clinicId));
     } catch (err) {
       showError(err instanceof ApiError ? err.message : 'Gagal memuat data klinik');
     } finally {
@@ -77,6 +92,20 @@ export default function SuperAdminClinicDetailPage() {
     }
   };
 
+  const handleImpersonate = async (target: User) => {
+    setImpersonatingId(target.id);
+    try {
+      const { accessToken, user } = await authApi.impersonate(target.id);
+      startImpersonation(accessToken, user);
+      success(`Masuk sebagai ${target.name}`);
+      router.push('/dashboard');
+    } catch (err) {
+      showError(err instanceof ApiError ? err.message : 'Gagal login sebagai pengguna ini');
+    } finally {
+      setImpersonatingId(null);
+    }
+  };
+
   return (
     <SuperAdminLayout>
       <div className="sa-page">
@@ -110,6 +139,55 @@ export default function SuperAdminClinicDetailPage() {
             </p>
           </div>
         )}
+
+        <div className="card">
+          <h3>Pengguna Klinik</h3>
+          <div className="table-wrap">
+            <table className="sa-table">
+              <thead>
+                <tr>
+                  <th>Nama</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? (
+                  <tr><td colSpan={5} className="empty-row">Memuat...</td></tr>
+                ) : users.length === 0 ? (
+                  <tr><td colSpan={5} className="empty-row">Belum ada pengguna di klinik ini.</td></tr>
+                ) : (
+                  users.map((u) => (
+                    <tr key={u.id}>
+                      <td style={{ fontWeight: 600 }}>{u.name}</td>
+                      <td>{u.email}</td>
+                      <td>{ROLE_LABEL[u.role] || u.role}</td>
+                      <td>
+                        <span className={`tag ${u.isActive ? 'tag-active' : 'tag-neutral'}`}>
+                          {u.isActive ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </td>
+                      <td>
+                        {u.isActive && (
+                          <button
+                            type="button"
+                            className="btn-outline btn-sm"
+                            onClick={() => handleImpersonate(u)}
+                            disabled={impersonatingId === u.id}
+                          >
+                            {impersonatingId === u.id ? 'Memproses...' : 'Login sebagai'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         <div className="table-wrap">
           <table className="sa-table">

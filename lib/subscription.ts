@@ -59,19 +59,29 @@ export const clinicSubscriptionApi = {
 };
 
 export const paymentApi = {
-  create: (payload: CreatePaymentPayload) => apiClient.post<Payment>('/payments', payload),
+  create: (payload: CreatePaymentPayload, proof?: File) => {
+    if (!proof) {
+      return apiClient.post<Payment>('/subscription-payments', payload);
+    }
+    const form = new FormData();
+    form.append('planId', String(payload.planId));
+    form.append('amount', String(payload.amount));
+    if (payload.notes) form.append('notes', payload.notes);
+    form.append('proof', proof);
+    return apiClient.postForm<Payment>('/subscription-payments', form);
+  },
   listMine: (query?: PaymentListQuery) =>
     apiClient.get<{ data: Payment[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(
-      `/payments/mine?${toQueryString(query || {})}`,
+      `/subscription-payments/mine?${toQueryString(query || {})}`,
     ),
   listQueue: (query?: PaymentListQuery) =>
     apiClient.get<{ data: Payment[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(
-      `/payments?${toQueryString(query || {})}`,
+      `/subscription-payments?${toQueryString(query || {})}`,
     ),
   confirm: (id: number, payload?: ConfirmPaymentPayload) =>
-    apiClient.post<Payment>(`/payments/${id}/confirm`, payload),
+    apiClient.post<Payment>(`/subscription-payments/${id}/confirm`, payload),
   reject: (id: number, payload?: ConfirmPaymentPayload) =>
-    apiClient.post<Payment>(`/payments/${id}/reject`, payload),
+    apiClient.post<Payment>(`/subscription-payments/${id}/reject`, payload),
 };
 
 export const superAdminReportApi = {

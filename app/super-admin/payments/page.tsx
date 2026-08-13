@@ -5,7 +5,7 @@ import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
 import CustomSelect from '@/components/form/CustomSelect';
 import { paymentApi } from '@/lib/subscription';
 import type { Payment } from '@/types/subscription';
-import { ApiError } from '@/lib/api-client';
+import { ApiError, apiFileUrl } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency } from '@/lib/format';
 import '../../styles/super-admin.css';
@@ -100,14 +100,15 @@ export default function SuperAdminPaymentsPage() {
                 <th>Paket</th>
                 <th>Jumlah</th>
                 <th>Status</th>
+                <th>Bukti</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="empty-row">Memuat...</td></tr>
+                <tr><td colSpan={7} className="empty-row">Memuat...</td></tr>
               ) : rows.length === 0 ? (
-                <tr><td colSpan={6} className="empty-row">Tidak ada klaim pembayaran untuk filter ini.</td></tr>
+                <tr><td colSpan={7} className="empty-row">Tidak ada klaim pembayaran untuk filter ini.</td></tr>
               ) : (
                 rows.map((row) => (
                   <tr key={row.id}>
@@ -117,6 +118,15 @@ export default function SuperAdminPaymentsPage() {
                     <td>Rp {formatCurrency(row.amount)}</td>
                     <td>
                       <span className={`tag ${tagClass(row.status)}`}>{tagLabel(row.status)}</span>
+                    </td>
+                    <td>
+                      {row.proofUrl ? (
+                        <a href={apiFileUrl(row.proofUrl)} target="_blank" rel="noopener noreferrer">
+                          Lihat
+                        </a>
+                      ) : (
+                        '-'
+                      )}
                     </td>
                     <td style={{ display: 'flex', gap: 8 }}>
                       {row.status === 'pending' && (

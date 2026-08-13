@@ -10,15 +10,26 @@ import RenewSubscriptionPopup from '@/components/subscription/RenewSubscriptionP
 interface SubscriptionGateState {
   subscription: ClinicSubscription | null;
   isExpired: boolean;
+  daysUntilExpiry: number | null;
   refresh: () => Promise<void>;
 }
 
+const WARNING_WINDOW_DAYS = 7;
+
 const SubscriptionGateContext = createContext<SubscriptionGateState | undefined>(undefined);
+
+function computeDaysLeft(sub: ClinicSubscription | null): number | null {
+  if (!sub) return null;
+  const today = new Date(new Date().toDateString());
+  const endDate = new Date(`${sub.endDate}T00:00:00`);
+  return Math.round((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
 
 function computeExpired(sub: ClinicSubscription | null): boolean {
   if (!sub) return true;
   if (sub.status !== 'active') return true;
-  return new Date(sub.endDate) < new Date(new Date().toDateString());
+  const daysLeft = computeDaysLeft(sub);
+  return daysLeft !== null && daysLeft < 0;
 }
 
 export function SubscriptionGateProvider({ children }: { children: ReactNode }) {
@@ -26,7 +37,7 @@ export function SubscriptionGateProvider({ children }: { children: ReactNode }) 
   const [subscription, setSubscription] = useState<ClinicSubscription | null>(null);
   const [checked, setChecked] = useState(false);
   const [popupOpen, setPopupOpen] = useState(false);
-  const [popupReason, setPopupReason] = useState<'initial' | 'mutation'>('initial');
+  const [popupReason, setPopupReason] = useState<'initial' | 'mutation' | 'warning'>('initial');
 
   const gated = !loading && !!user && user.role !== 'super_admin' && !!user.clinicId;
 
@@ -47,13 +58,23 @@ export function SubscriptionGateProvider({ children }: { children: ReactNode }) 
     refresh();
   }, [refresh]);
 
+  // Once per mount: show the already-expired popup, or — if the subscription
+  // is still active but within WARNING_WINDOW_DAYS of endDate — a lighter
+  // heads-up popup ("langganan akan habis dalam N hari").
   useEffect(() => {
     if (!gated || !checked) return;
     if (computeExpired(subscription)) {
       setPopupReason('initial');
       setPopupOpen(true);
+      return;
     }
-  }, [gated, checked, subscription]);
+    const daysLeft = computeDaysLeft(subscription);
+    if (daysLeft !== null && daysLeft >= 0 && daysLeft <= WARNING_WINDOW_DAYS) {
+      setPopupReason('warning');
+      setPopupOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gated, checked]);
 
   useEffect(() => {
     setOnSubscriptionExpired(() => {
@@ -65,14 +86,16 @@ export function SubscriptionGateProvider({ children }: { children: ReactNode }) 
   }, [refresh]);
 
   const isExpired = gated && checked && computeExpired(subscription);
+  const daysUntilExpiry = checked ? computeDaysLeft(subscription) : null;
 
   return (
-    <SubscriptionGateContext.Provider value={{ subscription, isExpired, refresh }}>
+    <SubscriptionGateContext.Provider value={{ subscription, isExpired, daysUntilExpiry, refresh }}>
       {children}
       {gated && (
         <RenewSubscriptionPopup
           isOpen={popupOpen}
           reason={popupReason}
+          daysUntilExpiry={daysUntilExpiry}
           onClose={() => setPopupOpen(false)}
         />
       )}

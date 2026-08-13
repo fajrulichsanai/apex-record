@@ -37,6 +37,7 @@ export interface Payment {
   confirmedByName?: string | null;
   confirmedAt: string | null;
   notes: string | null;
+  proofUrl: string | null;
   createdAt: string;
 }
 

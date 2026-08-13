@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { isFeatureViewOnly } from '@/lib/permissions';
 import { paymentApi, subscriptionPlanApi } from '@/lib/subscription';
 import type { Payment, SubscriptionPlan } from '@/types/subscription';
-import { ApiError } from '@/lib/api-client';
+import { ApiError, apiFileUrl } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency } from '@/lib/format';
 import { useSubscriptionGate } from '@/lib/subscription-gate-context';
@@ -38,6 +38,7 @@ function LanggananPageInner() {
   const [history, setHistory] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
+  const [proofFile, setProofFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const loadHistory = useCallback(async () => {
@@ -67,9 +68,10 @@ function LanggananPageInner() {
     if (!selectedPlan) return;
     setSubmitting(true);
     try {
-      await paymentApi.create({ planId: selectedPlan.id, amount: selectedPlan.price });
+      await paymentApi.create({ planId: selectedPlan.id, amount: selectedPlan.price }, proofFile || undefined);
       success('Klaim pembayaran terkirim. Menunggu konfirmasi Super Admin.');
       setSelectedPlan(null);
+      setProofFile(null);
       loadHistory();
       refresh();
     } catch (err) {
@@ -147,6 +149,18 @@ function LanggananPageInner() {
                   />
                   <p className="qr-hint">Scan QR di atas menggunakan aplikasi e-wallet atau mobile banking Anda.</p>
                 </div>
+                <div className="proof-upload">
+                  <label htmlFor="proof-upload-input" className="proof-upload-label">
+                    {proofFile ? proofFile.name : 'Unggah Bukti Transfer (opsional)'}
+                  </label>
+                  <input
+                    id="proof-upload-input"
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,application/pdf"
+                    onChange={(e) => setProofFile(e.target.files?.[0] || null)}
+                  />
+                  <p className="qr-hint">Mempercepat proses verifikasi oleh Super Admin. Format JPG/PNG/WEBP/PDF, maks 5MB.</p>
+                </div>
                 <div className="payment-actions">
                   <button type="button" className="btn-outline" onClick={() => setSelectedPlan(null)} disabled={submitting}>
                     Ganti Paket
@@ -170,11 +184,12 @@ function LanggananPageInner() {
                   <th>Paket</th>
                   <th>Jumlah</th>
                   <th>Status</th>
+                  <th>Bukti</th>
                 </tr>
               </thead>
               <tbody>
                 {history.length === 0 ? (
-                  <tr><td colSpan={4} className="empty-row">Belum ada riwayat pembayaran.</td></tr>
+                  <tr><td colSpan={5} className="empty-row">Belum ada riwayat pembayaran.</td></tr>
                 ) : (
                   history.map((p) => (
                     <tr key={p.id}>
@@ -185,6 +200,15 @@ function LanggananPageInner() {
                         <span className={`tag ${p.status === 'confirmed' ? 'tag-confirmed' : p.status === 'rejected' ? 'tag-rejected' : 'tag-pending'}`}>
                           {p.status === 'confirmed' ? 'Dikonfirmasi' : p.status === 'rejected' ? 'Ditolak' : 'Menunggu'}
                         </span>
+                      </td>
+                      <td>
+                        {p.proofUrl ? (
+                          <a href={apiFileUrl(p.proofUrl)} target="_blank" rel="noopener noreferrer">
+                            Lihat
+                          </a>
+                        ) : (
+                          '-'
+                        )}
                       </td>
                     </tr>
                   ))

@@ -3,6 +3,7 @@ import { Poppins } from "next/font/google";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/lib/toast-context";
 import { SubscriptionGateProvider } from "@/lib/subscription-gate-context";
+import ImpersonationBanner from "@/components/subscription/ImpersonationBanner";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -40,7 +41,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <AuthProvider>
           <ToastProvider>
-            <SubscriptionGateProvider>{children}</SubscriptionGateProvider>
+            <SubscriptionGateProvider>
+              <ImpersonationBanner />
+              {children}
+            </SubscriptionGateProvider>
           </ToastProvider>
         </AuthProvider>
       </body>

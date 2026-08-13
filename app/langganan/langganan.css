@@ -80,6 +80,19 @@
 .langganan-page .qr-hint { font-size: 12.5px; color: var(--text-sub); max-width: 320px; }
 .langganan-page .payment-actions { display: flex; gap: 10px; }
 
+.langganan-page .proof-upload { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.langganan-page .proof-upload-label {
+  display: inline-block;
+  padding: 9px 16px;
+  border: 1.5px dashed var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+.langganan-page .proof-upload-label:hover { border-color: var(--primary); color: var(--primary); }
+.langganan-page .proof-upload input[type='file'] { display: none; }
+
 .langganan-page .btn-primary,
 .langganan-page .btn-outline {
   display: inline-flex;

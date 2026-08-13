@@ -1,0 +1,29 @@
+.impersonation-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: #1a2340;
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.impersonation-banner button {
+  background: #f5a623;
+  color: #1a2340;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.impersonation-banner button:hover {
+  background: #e6971b;
+}
