@@ -56,7 +56,10 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw new ApiError(body?.error?.message || 'Terjadi kesalahan', res.status, code);
   }
 
-  return (body.data !== undefined ? body.data : body) as T;
+  // Only unwrap `.data` for the explicit { success, data } envelope. Paginated
+  // endpoints return `{ data, meta }` with no `success` field and must pass
+  // through as-is, or callers expecting { data, meta } get a bare array instead.
+  return (body.success === true && body.data !== undefined ? body.data : body) as T;
 }
 
 export function toQueryString(query: object) {

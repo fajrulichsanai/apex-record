@@ -45,3 +45,11 @@ next-env.d.ts
 
 # graphify
 graphify-out/
+
+# playwright MCP
+test-results/
+playwright-report/
+playwright/.cache/
+.playwright/
+.playwright-mcp/
+/*.png

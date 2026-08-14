@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import CustomSelect from '@/components/form/CustomSelect';
@@ -10,7 +11,6 @@ import { useToast } from '@/lib/toast-context';
 import { useAuth } from '@/lib/auth-context';
 import { isFeatureViewOnly } from '@/lib/permissions';
 import GudangTabs from '../GudangTabs';
-import TransaksiFormModal from './TransaksiFormModal';
 import '../../styles/gudang.css';
 
 const TYPE_LABELS: Record<StokTransaksiType, string> = {
@@ -21,6 +21,7 @@ const TYPE_LABELS: Record<StokTransaksiType, string> = {
 };
 
 export default function TransaksiPage() {
+  const router = useRouter();
   const { user } = useAuth();
   const viewOnly = isFeatureViewOnly(user?.role, 'gudang');
   const { error } = useToast();
@@ -28,7 +29,6 @@ export default function TransaksiPage() {
   const [barangList, setBarangList] = useState<Barang[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState('');
-  const [showModal, setShowModal] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -56,11 +56,6 @@ export default function TransaksiPage() {
     [transaksi, filterType]
   );
 
-  const handleSaved = () => {
-    setShowModal(false);
-    loadData();
-  };
-
   return (
     <DashboardLayout>
       <FeatureGuard feature="gudang">
@@ -77,7 +72,7 @@ export default function TransaksiPage() {
           </div>
           <div className="page-header-actions">
             {!viewOnly && (
-              <button className="btn-primary" type="button" onClick={() => setShowModal(true)} disabled={loading || barangList.length === 0}>
+              <button className="btn-primary" type="button" onClick={() => router.push('/gudang/transaksi/create')} disabled={loading || barangList.length === 0}>
                 <span className="material-symbols-rounded">add</span>
                 Tambah Transaksi
               </button>
@@ -149,10 +144,6 @@ export default function TransaksiPage() {
           )}
         </div>
       </main>
-
-      {showModal && (
-        <TransaksiFormModal barangList={barangList} onClose={() => setShowModal(false)} onSaved={handleSaved} />
-      )}
       </FeatureGuard>
     </DashboardLayout>
   );

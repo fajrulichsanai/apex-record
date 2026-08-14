@@ -157,7 +157,7 @@ function AuditLogPageInner() {
   return (
     <DashboardLayout>
       <FeatureGuard feature="audit-log">
-        <div className="audit-log-page">
+        <main className="content audit-log-page">
           <div className="page-header">
             <div className="page-title-block">
               <div className="page-title">
@@ -287,7 +287,7 @@ function AuditLogPageInner() {
               </button>
             </div>
           )}
-        </div>
+        </main>
 
         {selectedId !== null && (
           <AuditLogDetailModal id={selectedId} onClose={() => setSelectedId(null)} />

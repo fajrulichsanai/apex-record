@@ -25,7 +25,7 @@ export default function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
         <SuperAdminSidebar isOpen={sidebarOpen} onClose={closeSidebar} />
         <div className="main-container">
           <Navbar onMenuClick={toggleSidebar} />
-          {children}
+          <div className="content">{children}</div>
         </div>
       </div>
     </SuperAdminGuard>

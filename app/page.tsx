@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
@@ -13,8 +13,14 @@ type Mode = 'login' | 'register';
 
 const LoginPage = () => {
   const router = useRouter();
-  const { login } = useAuth();
+  const { user, loading: authLoading, login } = useAuth();
   const { success, error } = useToast();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace(defaultRouteForRole(user.role));
+    }
+  }, [authLoading, user, router]);
   const [mode, setMode] = useState<Mode>('login');
   const [showPassword, setShowPassword] = useState(false);
 
