@@ -837,21 +837,17 @@
 }
 
 .tarif-page .panel .modal-body {
-  padding: 22px 24px 24px;
+  padding: 24px 28px 28px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: var(--bg);
+  background: var(--surface);
 }
 
 .tarif-page .panel .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 18px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px 20px;
 }
 
 .tarif-page .panel .form-field { display: flex; flex-direction: column; gap: 6px; }
@@ -890,12 +886,19 @@
 .tarif-page .panel .form-field input:disabled { background: var(--bg); color: var(--text-sub); }
 
 .tarif-page .panel .modal-footer {
-  padding: 16px 24px;
+  padding: 16px 28px;
   border-top: 1px solid var(--border);
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   background: var(--surface);
+}
+
+.tarif-page .form-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
 }
 
 .tarif-page .panel .satusehat-empty {
@@ -906,6 +909,57 @@
   padding: 30px 20px;
   text-align: center;
   color: var(--text-sub);
+}
+
+/* BOM ADD ROW */
+.tarif-page .bom-add-row {
+  margin: 16px;
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.tarif-page .bom-add-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 12px;
+}
+
+.tarif-page .bom-add-empty { font-size: 13px; color: var(--text-sub); margin: 0; }
+
+.tarif-page .bom-add-fields {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.tarif-page .bom-add-field { display: flex; flex-direction: column; gap: 6px; }
+.tarif-page .bom-add-field label { font-size: 12px; font-weight: 600; color: var(--text-sub); }
+.tarif-page .bom-add-field-bahan { flex: 1 1 240px; min-width: 220px; }
+.tarif-page .bom-add-field-qty { flex: 0 0 120px; }
+.tarif-page .bom-add-field-qty input {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+  width: 100%;
+}
+.tarif-page .bom-add-field-qty input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,126,248,.12); }
+.tarif-page .bom-add-checkbox { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-main); cursor: pointer; height: 40px; }
+.tarif-page .bom-add-btn { height: 40px; white-space: nowrap; }
+
+@media (max-width: 640px) {
+  .tarif-page .bom-add-fields { flex-direction: column; align-items: stretch; }
+  .tarif-page .bom-add-field-bahan,
+  .tarif-page .bom-add-field-qty { flex: 1 1 auto; }
+  .tarif-page .bom-add-btn { width: 100%; justify-content: center; }
 }
 
 /* RESPONSIVE */

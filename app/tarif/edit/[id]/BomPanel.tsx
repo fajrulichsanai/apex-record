@@ -134,30 +134,37 @@ export default function BomPanel({ tarifId }: BomPanelProps) {
             </div>
           )}
 
-          <div className="toolbar-row" style={{ marginTop: 16, alignItems: 'flex-end' }}>
-            <div style={{ minWidth: 220 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6 }}>Bahan</label>
-              <CustomSelect
-                value={barangId}
-                onChange={setBarangId}
-                options={availableBarang.map((b) => ({ value: String(b.id), label: `${b.name} (${b.satuanPakai})` }))}
-                placeholder="Pilih bahan..."
-              />
-            </div>
-            <div style={{ minWidth: 120 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, display: 'block', marginBottom: 6 }}>Qty Pakai</label>
-              <input type="number" min={0.001} step={0.001} placeholder="0" value={qtyPakai} onChange={(e) => setQtyPakai(e.target.value)} />
-            </div>
-            <div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10, fontSize: 13 }}>
-                <input type="checkbox" checked={wajib} onChange={(e) => setWajib(e.target.checked)} />
-                Wajib
-              </label>
-            </div>
-            <button type="button" className="btn-primary" onClick={handleAdd} disabled={submitting || !barangId || !qtyPakai}>
-              <span className="material-symbols-rounded">add</span>
-              Tambah
-            </button>
+          <div className="bom-add-row">
+            <h3 className="bom-add-title">Tambah Bahan ke Resep</h3>
+            {availableBarang.length === 0 ? (
+              <p className="bom-add-empty">Semua barang aktif sudah terdaftar di resep ini, atau belum ada barang aktif di gudang.</p>
+            ) : (
+              <div className="bom-add-fields">
+                <div className="bom-add-field bom-add-field-bahan">
+                  <label>Bahan</label>
+                  <CustomSelect
+                    value={barangId}
+                    onChange={setBarangId}
+                    options={availableBarang.map((b) => ({ value: String(b.id), label: `${b.name} (${b.satuanPakai})` }))}
+                    placeholder="Pilih bahan..."
+                  />
+                </div>
+                <div className="bom-add-field bom-add-field-qty">
+                  <label>Qty Pakai</label>
+                  <input type="number" min={0.001} step={0.001} placeholder="0" value={qtyPakai} onChange={(e) => setQtyPakai(e.target.value)} />
+                </div>
+                <div className="bom-add-field bom-add-field-wajib">
+                  <label className="bom-add-checkbox">
+                    <input type="checkbox" checked={wajib} onChange={(e) => setWajib(e.target.checked)} />
+                    Wajib
+                  </label>
+                </div>
+                <button type="button" className="btn-primary bom-add-btn" onClick={handleAdd} disabled={submitting || !barangId || !qtyPakai}>
+                  <span className="material-symbols-rounded">add</span>
+                  Tambah
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}

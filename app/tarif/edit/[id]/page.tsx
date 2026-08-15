@@ -122,6 +122,7 @@ export default function EditTarifPage() {
           {!loading && !loadError && tarif && (
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
+                <h2 className="form-section-title">Informasi Tarif</h2>
                 <div className="form-row">
                   <div className="form-field full">
                     <label>Title</label>

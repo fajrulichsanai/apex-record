@@ -94,52 +94,54 @@ export default function BarangForm({ mode, initial }: BarangFormProps) {
 
         <form onSubmit={handleSubmit} className="form-panel">
           <div className="form-fields">
-            <div className="form-field">
-              <label htmlFor="name">Nama Barang <span className="required">*</span></label>
-              <input id="name" type="text" placeholder="Contoh: Komposit Resin" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label htmlFor="sku">SKU <span className="required">*</span></label>
-              <input id="sku" type="text" placeholder="Contoh: BHN-001" value={sku} onChange={(e) => setSku(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label htmlFor="kategori">Kategori</label>
-              <input id="kategori" type="text" placeholder="Contoh: Bahan Habis Pakai" value={kategori} onChange={(e) => setKategori(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label htmlFor="lokasi">Lokasi Simpan</label>
-              <input id="lokasi" type="text" placeholder="Contoh: Rak A1" value={lokasiSimpan} onChange={(e) => setLokasiSimpan(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label htmlFor="satuanBeli">Satuan Beli <span className="required">*</span></label>
-              <input id="satuanBeli" type="text" placeholder="Contoh: Box" value={satuanBeli} onChange={(e) => setSatuanBeli(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label htmlFor="satuanPakai">Satuan Pakai <span className="required">*</span></label>
-              <input id="satuanPakai" type="text" placeholder="Contoh: Pcs" value={satuanPakai} onChange={(e) => setSatuanPakai(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label htmlFor="konversi">Konversi (1 satuan beli = ? satuan pakai)</label>
-              <input id="konversi" type="number" min={1} placeholder="1" value={konversiQty} onChange={(e) => setKonversiQty(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label htmlFor="supplier">Supplier</label>
-              <input id="supplier" type="text" placeholder="Nama supplier" value={supplierName} onChange={(e) => setSupplierName(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label htmlFor="hargaBeli">Harga Beli (per satuan pakai)</label>
-              <input id="hargaBeli" type="text" placeholder="0" value={formatCurrencyInput(hargaBeli)} onChange={(e) => setHargaBeli(e.target.value.replace(/\D/g, ''))} />
-            </div>
-            <div className="form-field">
-              <label htmlFor="stokMinimum">Stok Minimum</label>
-              <input id="stokMinimum" type="number" min={0} placeholder="0" value={stokMinimum} onChange={(e) => setStokMinimum(e.target.value)} />
-            </div>
-            <div className="form-field">
-              <label htmlFor="trackExpiry">Lacak Expiry</label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                <input id="trackExpiry" type="checkbox" checked={trackExpiry} onChange={(e) => setTrackExpiry(e.target.checked)} />
-                Aktifkan pelacakan tanggal kedaluwarsa & no. batch
-              </label>
+            <div className="form-row">
+              <div className="form-field full">
+                <label htmlFor="name">Nama Barang <span className="required">*</span></label>
+                <input id="name" type="text" placeholder="Contoh: Komposit Resin" value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label htmlFor="sku">SKU <span className="required">*</span></label>
+                <input id="sku" type="text" placeholder="Contoh: BHN-001" value={sku} onChange={(e) => setSku(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label htmlFor="kategori">Kategori</label>
+                <input id="kategori" type="text" placeholder="Contoh: Bahan Habis Pakai" value={kategori} onChange={(e) => setKategori(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label htmlFor="lokasi">Lokasi Simpan</label>
+                <input id="lokasi" type="text" placeholder="Contoh: Rak A1" value={lokasiSimpan} onChange={(e) => setLokasiSimpan(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label htmlFor="satuanBeli">Satuan Beli <span className="required">*</span></label>
+                <input id="satuanBeli" type="text" placeholder="Contoh: Box" value={satuanBeli} onChange={(e) => setSatuanBeli(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label htmlFor="satuanPakai">Satuan Pakai <span className="required">*</span></label>
+                <input id="satuanPakai" type="text" placeholder="Contoh: Pcs" value={satuanPakai} onChange={(e) => setSatuanPakai(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label htmlFor="konversi">Konversi (1 satuan beli = ? satuan pakai)</label>
+                <input id="konversi" type="number" min={1} placeholder="1" value={konversiQty} onChange={(e) => setKonversiQty(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label htmlFor="supplier">Supplier</label>
+                <input id="supplier" type="text" placeholder="Nama supplier" value={supplierName} onChange={(e) => setSupplierName(e.target.value)} />
+              </div>
+              <div className="form-field">
+                <label htmlFor="hargaBeli">Harga Beli (per satuan pakai)</label>
+                <input id="hargaBeli" type="text" placeholder="0" value={formatCurrencyInput(hargaBeli)} onChange={(e) => setHargaBeli(e.target.value.replace(/\D/g, ''))} />
+              </div>
+              <div className="form-field">
+                <label htmlFor="stokMinimum">Stok Minimum</label>
+                <input id="stokMinimum" type="number" min={0} placeholder="0" value={stokMinimum} onChange={(e) => setStokMinimum(e.target.value)} />
+              </div>
+              <div className="form-field full">
+                <label htmlFor="trackExpiry">Lacak Expiry</label>
+                <label className="checkbox-inline" htmlFor="trackExpiry-input">
+                  <input id="trackExpiry-input" type="checkbox" checked={trackExpiry} onChange={(e) => setTrackExpiry(e.target.checked)} />
+                  Aktifkan pelacakan tanggal kedaluwarsa & no. batch
+                </label>
+              </div>
             </div>
           </div>
 

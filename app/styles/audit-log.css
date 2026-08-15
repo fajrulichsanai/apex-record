@@ -91,7 +91,7 @@
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 8px;
+  padding: 16px 20px;
   overflow-x: auto;
 }
 
@@ -107,7 +107,11 @@
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
-.audit-log-page .audit-table td { padding: 14px 20px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text-main); }
+.audit-log-page .audit-table th:first-child,
+.audit-log-page .audit-table td:first-child { padding-left: 8px; }
+.audit-log-page .audit-table th:last-child,
+.audit-log-page .audit-table td:last-child { padding-right: 8px; }
+.audit-log-page .audit-table td { padding: 16px 20px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text-main); }
 .audit-log-page .audit-table tr:last-child td { border-bottom: none; }
 .audit-log-page .audit-table tr.row-critical { background: rgba(255,77,79,.05); }
 .audit-log-page .empty-row { text-align: center; color: var(--text-muted); padding: 40px 16px !important; }
