@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import SignaturePad from '@/components/form/SignaturePad';
-import { encounterApi, EncounterDetail } from '@/lib/encounter';
+import { EncounterDetail } from '@/lib/encounter';
 import { encounterSoapApi } from '@/lib/encounter-soap';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
@@ -76,10 +76,6 @@ export default function PeriksaModal({ visit, practitionerName, onClose, onSaved
         signature,
       });
 
-      if (visit.status === 'arrived') {
-        await encounterApi.updateStatus(visit.id, { status: 'in_progress' });
-      }
-
       onSaved();
     } catch (err) {
       if (!isMounted.current) return;
@@ -96,8 +92,8 @@ export default function PeriksaModal({ visit, practitionerName, onClose, onSaved
       <div className="visit-modal-box" onClick={(e) => e.stopPropagation()}>
         <div className="visit-modal-header">
           <div>
-            <h2>Mulai Periksa</h2>
-            <p>Isi catatan SOAP dan tanda tangan untuk memulai pemeriksaan</p>
+            <h2>Catatan SOAP</h2>
+            <p>Isi dokumentasi klinis dan tanda tangan dokter untuk kunjungan ini</p>
           </div>
           <button className="visit-modal-close" type="button" onClick={onClose} disabled={submitting} aria-label="Tutup">
             <span className="material-symbols-rounded">close</span>
@@ -175,7 +171,7 @@ export default function PeriksaModal({ visit, practitionerName, onClose, onSaved
                 <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                   check_circle
                 </span>
-                {submitting ? 'Menyimpan…' : 'Simpan & Mulai Periksa'}
+                {submitting ? 'Menyimpan…' : 'Simpan SOAP'}
               </button>
             </div>
           </form>

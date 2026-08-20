@@ -14,6 +14,7 @@ import {
   EncounterStatus,
   EncounterDetail,
 } from '@/lib/encounter';
+import { encounterSoapApi, SoapNote } from '@/lib/encounter-soap';
 import { ApiError } from '@/lib/api-client';
 import '../../styles/kunjungan.css';
 
@@ -90,6 +91,7 @@ function ListKunjunganPageInner() {
   const [showCancellationModal, setShowCancellationModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState<EncounterStatus | null>(null);
   const [showPeriksaModal, setShowPeriksaModal] = useState(false);
+  const [soapNote, setSoapNote] = useState<SoapNote | null>(null);
 
   useEffect(() => {
     if (searchParams.get('openAddVisit') === '1') {
@@ -124,12 +126,17 @@ function ListKunjunganPageInner() {
   useEffect(() => {
     if (!selectedVisitId) {
       setDetail(null);
+      setSoapNote(null);
       return;
     }
     encounterApi
       .detail(selectedVisitId)
       .then(setDetail)
       .catch(() => setDetail(null));
+    encounterSoapApi
+      .get(selectedVisitId)
+      .then(setSoapNote)
+      .catch(() => setSoapNote(null));
   }, [selectedVisitId]);
 
   const filteredVisits = visits.filter((v) => {
@@ -206,8 +213,12 @@ function ListKunjunganPageInner() {
   const handlePeriksaSaved = async () => {
     setShowPeriksaModal(false);
     if (selectedVisitId) {
-      const refreshed = await encounterApi.detail(selectedVisitId);
+      const [refreshed, note] = await Promise.all([
+        encounterApi.detail(selectedVisitId),
+        encounterSoapApi.get(selectedVisitId).catch(() => null),
+      ]);
       setDetail(refreshed);
+      setSoapNote(note);
     }
     loadVisits();
   };
@@ -240,6 +251,7 @@ function ListKunjunganPageInner() {
   };
 
   const arrivedDateTime = formatDateTime(selectedVisit?.arrivedTime);
+  const isSoapFilled = !!soapNote && [soapNote.subjective, soapNote.objective, soapNote.assessment, soapNote.plan].some((v) => v && v.trim());
 
   return (
     <DashboardLayout>
@@ -472,12 +484,24 @@ function ListKunjunganPageInner() {
                         className="btn-outline"
                         style={{ fontSize: '12.5px' }}
                         disabled={actionLoading}
-                        onClick={() => setShowPeriksaModal(true)}
+                        onClick={() => handleChangeStatus('in_progress')}
                       >
                         Mulai Periksa
                       </button>
                     )}
-                    {selectedVisit.status === 'in_progress' && (
+                    {(selectedVisit.status === 'in_progress' || selectedVisit.status === 'finished') && (
+                      <button
+                        className="btn-outline"
+                        style={{ fontSize: '12.5px' }}
+                        onClick={() => setShowPeriksaModal(true)}
+                      >
+                        <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                          description
+                        </span>
+                        {isSoapFilled ? 'Edit SOAP' : 'Isi SOAP'}
+                      </button>
+                    )}
+                    {selectedVisit.status === 'in_progress' && isSoapFilled && (
                       <button
                         className="btn-outline"
                         style={{ fontSize: '12.5px' }}
