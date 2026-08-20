@@ -106,7 +106,7 @@ export default function PatientSoapModal({ patientName, encounters, onClose }: P
               <span className="material-symbols-rounded">description</span>
               <div className="empty-title">Belum ada catatan SOAP</div>
               <div className="empty-sub">
-                Catatan SOAP diisi saat membuat kunjungan baru. Belum ada kunjungan dengan catatan SOAP terisi.
+                Catatan SOAP diisi saat kunjungan mulai diperiksa. Belum ada kunjungan dengan catatan SOAP terisi.
               </div>
             </div>
           ) : (
@@ -120,6 +120,7 @@ export default function PatientSoapModal({ patientName, encounters, onClose }: P
                     <th>Objective</th>
                     <th>Assessment</th>
                     <th>Plan</th>
+                    <th>Tanda Tangan</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -131,6 +132,14 @@ export default function PatientSoapModal({ patientName, encounters, onClose }: P
                       <td>{note?.objective || '—'}</td>
                       <td>{note?.assessment || '—'}</td>
                       <td>{note?.plan || '—'}</td>
+                      <td>
+                        {note?.signature ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={note.signature} alt="Tanda tangan dokter" style={{ height: 32, background: '#fff', borderRadius: 4 }} />
+                        ) : (
+                          '—'
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

@@ -6,7 +6,6 @@ import { patientsApi, Patient } from '@/lib/patients';
 import { practitionersApi, Practitioner } from '@/lib/practitioners';
 import { reservationsApi, ReservationItem } from '@/lib/reservations';
 import { encounterApi } from '@/lib/encounter';
-import { encounterSoapApi } from '@/lib/encounter-soap';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 
@@ -19,8 +18,7 @@ interface AddVisitModalProps {
 const STEPS = [
   { id: 1, label: 'Pasien', icon: 'person' },
   { id: 2, label: 'Detail', icon: 'medical_services' },
-  { id: 3, label: 'SOAP', icon: 'description' },
-  { id: 4, label: 'Konfirmasi', icon: 'task_alt' },
+  { id: 3, label: 'Konfirmasi', icon: 'task_alt' },
 ];
 
 function initialsFromName(name?: string) {
@@ -52,11 +50,6 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
   const [patientId, setPatientId] = useState('');
   const [practitionerId, setPractitionerId] = useState('');
   const [chiefComplaint, setChiefComplaint] = useState('');
-
-  const [subjective, setSubjective] = useState('');
-  const [objective, setObjective] = useState('');
-  const [assessment, setAssessment] = useState('');
-  const [plan, setPlan] = useState('');
 
   useEffect(() => {
     isMounted.current = true;
@@ -150,16 +143,6 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
         chiefComplaint: chiefComplaint.trim() || undefined,
       });
 
-      const hasSoap = [subjective, objective, assessment, plan].some((v) => v.trim());
-      if (hasSoap) {
-        await encounterSoapApi.upsert(created.id, {
-          subjective: subjective.trim() || undefined,
-          objective: objective.trim() || undefined,
-          assessment: assessment.trim() || undefined,
-          plan: plan.trim() || undefined,
-        });
-      }
-
       onCreated(created.id);
     } catch (err) {
       if (!isMounted.current) return;
@@ -195,9 +178,8 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
 
   const canGoStep2 = !!patientId;
   const canGoStep3 = !!patientId && !!practitionerId;
-  const canGoStep4 = canGoStep3;
 
-  const goNext = () => setStep((s) => Math.min(s + 1, 4));
+  const goNext = () => setStep((s) => Math.min(s + 1, 3));
   const goBack = () => setStep((s) => Math.max(s - 1, 1));
 
   return (
@@ -365,55 +347,6 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                 {step === 3 && (
                   <>
                     <div className="visit-step-heading">
-                      <h3>Catatan SOAP</h3>
-                      <p>Isi dokumentasi klinis awal untuk kunjungan ini (opsional, bisa dilengkapi nanti)</p>
-                    </div>
-
-                    <div className="visit-form-field">
-                      <label>Subjective</label>
-                      <textarea
-                        value={subjective}
-                        onChange={(e) => setSubjective(e.target.value)}
-                        placeholder="Keluhan/cerita pasien menurut pasien sendiri (opsional)"
-                        disabled={submitting}
-                      />
-                    </div>
-
-                    <div className="visit-form-field">
-                      <label>Objective</label>
-                      <textarea
-                        value={objective}
-                        onChange={(e) => setObjective(e.target.value)}
-                        placeholder="Hasil pemeriksaan objektif (opsional)"
-                        disabled={submitting}
-                      />
-                    </div>
-
-                    <div className="visit-form-field">
-                      <label>Assessment</label>
-                      <textarea
-                        value={assessment}
-                        onChange={(e) => setAssessment(e.target.value)}
-                        placeholder="Diagnosis/penilaian klinis (opsional)"
-                        disabled={submitting}
-                      />
-                    </div>
-
-                    <div className="visit-form-field">
-                      <label>Plan</label>
-                      <textarea
-                        value={plan}
-                        onChange={(e) => setPlan(e.target.value)}
-                        placeholder="Rencana tindakan/terapi (opsional)"
-                        disabled={submitting}
-                      />
-                    </div>
-                  </>
-                )}
-
-                {step === 4 && (
-                  <>
-                    <div className="visit-step-heading">
                       <h3>Konfirmasi Kunjungan</h3>
                       <p>Periksa kembali data sebelum menyimpan kunjungan</p>
                     </div>
@@ -448,19 +381,6 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                           </div>
                         </div>
                       </div>
-                      <div className="visit-summary-row">
-                        <div className="visit-summary-icon">
-                          <span className="material-symbols-rounded">description</span>
-                        </div>
-                        <div className="visit-summary-body">
-                          <div className="visit-summary-label">Catatan SOAP</div>
-                          <div className={`visit-summary-value ${![subjective, objective, assessment, plan].some((v) => v.trim()) ? 'muted' : ''}`}>
-                            {[subjective, objective, assessment, plan].some((v) => v.trim())
-                              ? 'Terisi'
-                              : 'Belum diisi'}
-                          </div>
-                        </div>
-                      </div>
                     </div>
 
                     <div className="visit-confirm-banner">
@@ -487,12 +407,12 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                   </button>
                 )}
 
-                {step < 4 ? (
+                {step < 3 ? (
                   <button
                     type="button"
                     className="btn-primary"
                     onClick={goNext}
-                    disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3) || (step === 3 && !canGoStep4)}
+                    disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3)}
                   >
                     Lanjut
                     <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>

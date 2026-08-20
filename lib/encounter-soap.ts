@@ -7,6 +7,7 @@ export interface SoapNote {
   objective?: string;
   assessment?: string;
   plan?: string;
+  signature?: string;
 }
 
 export interface UpsertSoapNotePayload {
@@ -14,6 +15,7 @@ export interface UpsertSoapNotePayload {
   objective?: string;
   assessment?: string;
   plan?: string;
+  signature?: string;
 }
 
 export const encounterSoapApi = {
