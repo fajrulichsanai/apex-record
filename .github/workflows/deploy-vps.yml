@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - development
+      - dev-daffa
 jobs:
   deploy:
     name: Deploy to Staging VPS
@@ -20,10 +21,10 @@ jobs:
             echo "📁 Masuk ke direktori project..."
             cd ~/staging-apex-record/frontend/apex-record
 
-            echo "🔀 Pastikan di branch development..."
-            git fetch origin development
-            git checkout development
-            git reset --hard origin/development
+            echo "🔀 Pastikan di branch ${{ github.ref_name }}..."
+            git fetch origin ${{ github.ref_name }}
+            git checkout ${{ github.ref_name }}
+            git reset --hard origin/${{ github.ref_name }}
 
             echo "📦 Cek perubahan dependency..."
             CURRENT_HASH=$(sha256sum package-lock.json | awk '{print $1}')
