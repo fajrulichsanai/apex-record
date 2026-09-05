@@ -192,11 +192,23 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
       return;
     }
 
+    // Open the WA tab synchronously (still inside the click's call stack) so
+    // browsers don't treat it as an unsolicited popup and silently block it —
+    // that only holds if window.open runs before the first await below.
+    const message = `Halo ${detail.patient?.name || ''}, berikut invoice pembayaran ${detail.invoiceNumber} sebesar ${formatRupiah(detail.grandTotal)}. Mohon lampirkan file PDF invoice yang baru terunduh pada chat ini. Terima kasih.`;
+    // No noopener/noreferrer here on purpose: those force window.open() to
+    // always return null (even on success), which would break the blocked-
+    // popup check below. wa.me is a hardcoded, trusted destination, so the
+    // usual tabnabbing risk that noopener guards against doesn't apply.
+    const waWindow = window.open(waLink(phone, message), '_blank');
+    if (!waWindow) {
+      showError('Browser memblokir pop-up WhatsApp. Izinkan pop-up untuk situs ini lalu coba lagi.');
+      return;
+    }
+
     setSendingWa(true);
     try {
       await billingApi.downloadInvoicePdf(billingId);
-      const message = `Halo ${detail.patient?.name || ''}, berikut invoice pembayaran ${detail.invoiceNumber} sebesar ${formatRupiah(detail.grandTotal)}. Mohon lampirkan file PDF invoice yang baru terunduh pada chat ini. Terima kasih.`;
-      window.open(waLink(phone, message), '_blank', 'noopener,noreferrer');
       success('Invoice PDF diunduh, silakan lampirkan di chat WhatsApp yang terbuka');
     } catch (err) {
       showError(err instanceof ApiError ? err.message : 'Gagal mengunduh invoice PDF');
