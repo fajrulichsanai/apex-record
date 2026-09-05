@@ -41,6 +41,7 @@ const RANGE_LABELS: Record<RangeOption, string> = {
 const METODE_LABELS: Record<PaymentMethod, string> = {
   cash: 'Tunai',
   transfer: 'Transfer Bank',
+  qris: 'QRIS',
   insurance: 'Asuransi',
   bpjs: 'BPJS',
 };
@@ -48,6 +49,7 @@ const METODE_LABELS: Record<PaymentMethod, string> = {
 const METODE_COLORS: Record<PaymentMethod, string> = {
   cash: '#4F7EF8',
   transfer: '#2DCB8A',
+  qris: '#9B59F6',
   insurance: '#F5A623',
   bpjs: '#38C9C0',
 };

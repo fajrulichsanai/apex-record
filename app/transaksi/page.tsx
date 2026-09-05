@@ -15,6 +15,7 @@ import {
   BillingStatus,
   CreateBillingItemPayload,
   DiscountType,
+  PaymentMethod,
 } from '@/lib/billing';
 import { encounterApi, EncounterListItem } from '@/lib/encounter';
 import { tarifApi, Tarif } from '@/lib/tarif';
@@ -64,6 +65,12 @@ function emptyRow(): ItemRow {
   return { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal' };
 }
 
+const PAYMENT_METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
+  { value: 'cash', label: 'Tunai' },
+  { value: 'qris', label: 'QRIS' },
+  { value: 'transfer', label: 'Transfer Bank' },
+];
+
 export default function TransaksiPage() {
   return (
     <Suspense fallback={null}>
@@ -88,6 +95,7 @@ function TransaksiPageInner() {
   const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [additionalFee, setAdditionalFee] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -242,7 +250,7 @@ function TransaksiPageInner() {
 
     setSubmitting(true);
     try {
-      await billingApi.create({
+      const created = await billingApi.create({
         encounterId: Number(selectedEncounterId),
         items: payloadItems,
         totalDiscount: totalDiscount > 0 ? totalDiscount : undefined,
@@ -250,10 +258,27 @@ function TransaksiPageInner() {
         additionalFee: additionalFee > 0 ? additionalFee : undefined,
         notes: notes || undefined,
       });
+
+      if (created.grandTotal > 0) {
+        try {
+          await billingApi.createPayment(created.id, {
+            method: paymentMethod,
+            amount: created.grandTotal,
+          });
+        } catch (paymentErr) {
+          showError(
+            paymentErr instanceof ApiError
+              ? paymentErr.message
+              : 'Transaksi tersimpan, tapi gagal mencatat pembayaran. Catat manual lewat tombol Bayar.',
+          );
+        }
+      }
+
       setSelectedEncounterId('');
       setItems([emptyRow()]);
       setTotalDiscount(0);
       setAdditionalFee(0);
+      setPaymentMethod('cash');
       setNotes('');
       await loadBillings();
       success('Transaksi berhasil disimpan');
@@ -444,6 +469,15 @@ function TransaksiPageInner() {
                     value={additionalFee}
                     onChange={(e) => setAdditionalFee(Math.max(0, Number(e.target.value) || 0))}
                     placeholder="0"
+                  />
+                </div>
+
+                <div className="form-field">
+                  <label>Metode Pembayaran</label>
+                  <CustomSelect
+                    value={paymentMethod}
+                    onChange={(value) => setPaymentMethod(value as PaymentMethod)}
+                    options={PAYMENT_METHOD_OPTIONS}
                   />
                 </div>
 

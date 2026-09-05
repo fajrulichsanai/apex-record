@@ -4,7 +4,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export type BillingStatus = 'unpaid' | 'partial' | 'paid' | 'cancelled' | 'refunded';
 export type DiscountType = 'nominal' | 'percent';
-export type PaymentMethod = 'cash' | 'transfer' | 'insurance' | 'bpjs';
+export type PaymentMethod = 'cash' | 'transfer' | 'qris' | 'insurance' | 'bpjs';
 
 export interface BillingListItem {
   billingId: number;

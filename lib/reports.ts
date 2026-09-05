@@ -1,7 +1,7 @@
 import { apiClient } from './api-client';
 
 export type EncounterStatus = 'arrived' | 'in_progress' | 'finished' | 'cancelled';
-export type PaymentMethod = 'cash' | 'transfer' | 'insurance' | 'bpjs';
+export type PaymentMethod = 'cash' | 'transfer' | 'qris' | 'insurance' | 'bpjs';
 
 export interface VisitReportQuery {
   dateFrom: string;
