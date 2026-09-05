@@ -90,6 +90,9 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
     [patients, patientId, isManualEntry],
   );
 
+  const phoneFromPatient = !isManualEntry && !!selectedPatient?.phone;
+  const effectivePhone = phoneFromPatient ? selectedPatient!.phone! : patientPhone;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -103,7 +106,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
       return;
     }
 
-    if (!patientPhone.trim()) {
+    if (!effectivePhone.trim()) {
       showError('Nomor telepon wajib diisi');
       return;
     }
@@ -119,7 +122,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
       await reservationsApi.create({
         patientId: isManualEntry ? undefined : Number(patientId),
         patientName: isManualEntry ? patientName.trim() : selectedPatient?.name || '',
-        patientPhone: patientPhone.trim(),
+        patientPhone: effectivePhone.trim(),
         practitionerId: practitionerId ? Number(practitionerId) : undefined,
         reservationDate,
         jamSlot: jamSlot || undefined,
@@ -277,10 +280,16 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
                   type="tel"
                   className="reservation-form-input"
                   placeholder="08xx xxxx xxxx"
-                  value={patientPhone}
+                  value={effectivePhone}
                   onChange={(e) => setPatientPhone(e.target.value)}
-                  disabled={submitting}
+                  disabled={submitting || phoneFromPatient}
+                  readOnly={phoneFromPatient}
                 />
+                {phoneFromPatient && (
+                  <div style={{ fontSize: '12px', color: '#A0AEC0', marginTop: '4px' }}>
+                    Nomor telepon diambil dari data pasien
+                  </div>
+                )}
               </div>
 
               <div className="reservation-form-row">
