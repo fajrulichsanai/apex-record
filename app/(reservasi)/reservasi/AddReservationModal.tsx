@@ -90,8 +90,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
     [patients, patientId, isManualEntry],
   );
 
-  const phoneFromPatient = !isManualEntry && !!selectedPatient?.phone;
-  const effectivePhone = phoneFromPatient ? selectedPatient!.phone! : patientPhone;
+  const effectivePhone = isManualEntry ? patientPhone : (selectedPatient?.phone ?? '');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -272,25 +271,21 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
                 </div>
               )}
 
-              <div className="reservation-form-group">
-                <label className="reservation-form-label">
-                  Nomor Telepon <span className="req">*</span>
-                </label>
-                <input
-                  type="tel"
-                  className="reservation-form-input"
-                  placeholder="08xx xxxx xxxx"
-                  value={effectivePhone}
-                  onChange={(e) => setPatientPhone(e.target.value)}
-                  disabled={submitting || phoneFromPatient}
-                  readOnly={phoneFromPatient}
-                />
-                {phoneFromPatient && (
-                  <div style={{ fontSize: '12px', color: '#A0AEC0', marginTop: '4px' }}>
-                    Nomor telepon diambil dari data pasien
-                  </div>
-                )}
-              </div>
+              {isManualEntry && (
+                <div className="reservation-form-group">
+                  <label className="reservation-form-label">
+                    Nomor Telepon <span className="req">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    className="reservation-form-input"
+                    placeholder="08xx xxxx xxxx"
+                    value={patientPhone}
+                    onChange={(e) => setPatientPhone(e.target.value)}
+                    disabled={submitting}
+                  />
+                </div>
+              )}
 
               <div className="reservation-form-row">
                 <div className="reservation-form-group">
