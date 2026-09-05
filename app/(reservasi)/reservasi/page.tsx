@@ -10,13 +10,14 @@ import AddReservationModal from './AddReservationModal';
 import EditReservationModal from './EditReservationModal';
 import ReservationCard from './ReservationCard';
 import ReservationCalendar from '@/components/reservasi/ReservationCalendar';
-import { reservationsApi, ReservationItem, ReservationStatus } from '@/lib/reservations';
+import { reservationsApi, ReservationItem, ReservationQuery, ReservationStatus } from '@/lib/reservations';
 import { encounterApi } from '@/lib/encounter';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import '../../styles/reservasi.css';
 
 type FilterValue = 'semua' | ReservationStatus;
+type DateScope = 'all' | 'today' | 'upcoming' | 'custom';
 
 function statusLabel(status: ReservationStatus) {
   if (status === 'pending') return 'Menunggu Konfirmasi';
@@ -25,15 +26,45 @@ function statusLabel(status: ReservationStatus) {
   return 'Dibatalkan';
 }
 
-function todayStr() {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+function isoDate(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
-type QuickFilter = 'none' | 'today' | 'upcoming';
+function todayStr() {
+  return isoDate(new Date());
+}
+
+function tomorrowStr() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return isoDate(d);
+}
+
+/** Turns the current date-scope selection into the date param(s) the API expects. */
+function dateScopeQuery(scope: DateScope, customDate: string): Pick<ReservationQuery, 'date' | 'dateFrom'> {
+  switch (scope) {
+    case 'today':
+      return { date: todayStr() };
+    case 'upcoming':
+      return { dateFrom: tomorrowStr() };
+    case 'custom':
+      return customDate ? { date: customDate } : {};
+    default:
+      return {};
+  }
+}
+
+interface ReservationStats {
+  total: number;
+  pending: number;
+  confirmed: number;
+  completed: number;
+}
+
+const EMPTY_STATS: ReservationStats = { total: 0, pending: 0, confirmed: 0, completed: 0 };
 
 export default function ReservasiPage() {
   return (
@@ -47,13 +78,14 @@ function ReservasiPageInner() {
   const router = useRouter();
   const { error: showError } = useToast();
   const [reservations, setReservations] = useState<ReservationItem[]>([]);
-  const [total, setTotal] = useState(0);
+  const [listTotal, setListTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [currentFilter, setCurrentFilter] = useState<FilterValue>('semua');
   const [searchQuery, setSearchQuery] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
-  const [quickFilter, setQuickFilter] = useState<QuickFilter>('none');
+  const [dateScope, setDateScope] = useState<DateScope>('all');
+  const [customDate, setCustomDate] = useState('');
+  const [stats, setStats] = useState<ReservationStats>(EMPTY_STATS);
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingReservation, setEditingReservation] = useState<ReservationItem | null>(null);
   const [pageView, setPageView] = useState<'list' | 'calendar'>('list');
@@ -69,32 +101,55 @@ function ReservasiPageInner() {
     setLoadError(null);
     try {
       const res = await reservationsApi.list({
-        date: quickFilter === 'today' ? todayStr() : dateFilter || undefined,
-        dateFrom: quickFilter === 'upcoming' ? todayStr() : undefined,
+        ...dateScopeQuery(dateScope, customDate),
         status: currentFilter === 'semua' ? undefined : currentFilter,
         search: searchQuery || undefined,
         limit: 100,
       });
       setReservations(res.data);
-      setTotal(res.meta.total);
+      setListTotal(res.meta.total);
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : 'Gagal memuat reservasi');
     } finally {
       setLoading(false);
     }
-  }, [dateFilter, currentFilter, searchQuery, quickFilter]);
+  }, [dateScope, customDate, currentFilter, searchQuery]);
+
+  // Stat cards are a clinic-wide overview ("berapa total, berapa yang masih
+  // menunggu, dst"), independent from whatever the list below is filtered to
+  // — otherwise narrowing the list to one date/search makes the cards read
+  // as "0" and look broken even though nothing is wrong.
+  const loadStats = useCallback(async () => {
+    try {
+      const [all, pending, confirmed, completed] = await Promise.all([
+        reservationsApi.list({ limit: 1 }),
+        reservationsApi.list({ limit: 1, status: 'pending' }),
+        reservationsApi.list({ limit: 1, status: 'confirmed' }),
+        reservationsApi.list({ limit: 1, status: 'completed' }),
+      ]);
+      setStats({
+        total: all.meta.total,
+        pending: pending.meta.total,
+        confirmed: confirmed.meta.total,
+        completed: completed.meta.total,
+      });
+    } catch {
+      // Non-critical overview numbers; keep whatever was last loaded.
+    }
+  }, []);
 
   useEffect(() => {
     loadReservations();
   }, [loadReservations]);
 
-  const pendingCount = reservations.filter((r) => r.status === 'pending').length;
-  const confirmedCount = reservations.filter((r) => r.status === 'confirmed').length;
-  const completedCount = reservations.filter((r) => r.status === 'completed').length;
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   const handleCreated = () => {
     setShowAddModal(false);
     loadReservations();
+    loadStats();
   };
 
   const handleRescheduled = () => {
@@ -108,6 +163,7 @@ function ReservasiPageInner() {
     try {
       await reservationsApi.updateStatus(id, { status: 'confirmed' });
       await loadReservations();
+      loadStats();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : 'Gagal mengkonfirmasi reservasi');
     } finally {
@@ -168,6 +224,7 @@ function ReservasiPageInner() {
         cancelledReason: reason || undefined,
       });
       await loadReservations();
+      loadStats();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : 'Gagal membatalkan reservasi');
     } finally {
@@ -189,12 +246,24 @@ function ReservasiPageInner() {
     try {
       await reservationsApi.remove(pendingDeleteId);
       await loadReservations();
+      loadStats();
     } catch (err) {
       setActionError(err instanceof ApiError ? err.message : 'Gagal menghapus reservasi');
     } finally {
       setActionLoadingId(null);
       setPendingDeleteId(null);
     }
+  };
+
+  const selectDateScope = (scope: DateScope) => {
+    setDateScope(scope);
+    setCustomDate('');
+  };
+
+  const goToDate = (dateIso: string) => {
+    setPageView('list');
+    setCustomDate(dateIso);
+    setDateScope('custom');
   };
 
   return (
@@ -205,7 +274,7 @@ function ReservasiPageInner() {
           <div className="page-title-block">
             <div className="page-title">
               <h1>Reservasi</h1>
-              <span className="badge-count">{total}</span>
+              <span className="badge-count">{listTotal}</span>
             </div>
             <p className="page-subtitle">
               Kelola reservasi janji temu pasien, termasuk yang dibuat lewat website klinik Anda
@@ -243,7 +312,7 @@ function ReservasiPageInner() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{total}</div>
+              <div className="stat-value">{stats.total}</div>
               <div className="stat-label">Total Reservasi</div>
             </div>
           </div>
@@ -254,7 +323,7 @@ function ReservasiPageInner() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{pendingCount}</div>
+              <div className="stat-value">{stats.pending}</div>
               <div className="stat-label">Menunggu Konfirmasi</div>
             </div>
           </div>
@@ -265,7 +334,7 @@ function ReservasiPageInner() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{confirmedCount}</div>
+              <div className="stat-value">{stats.confirmed}</div>
               <div className="stat-label">Terkonfirmasi</div>
             </div>
           </div>
@@ -276,7 +345,7 @@ function ReservasiPageInner() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{completedCount}</div>
+              <div className="stat-value">{stats.completed}</div>
               <div className="stat-label">Selesai</div>
             </div>
           </div>
@@ -287,15 +356,13 @@ function ReservasiPageInner() {
             <ReservationCalendar
               onSelectReservation={(r) => {
                 setPageView('list');
-                setQuickFilter('none');
-                setDateFilter(r.reservationDate.slice(0, 10));
                 setSearchQuery(r.patientName);
+                setCustomDate(r.reservationDate.slice(0, 10));
+                setDateScope('custom');
               }}
               onSelectDate={(dateIso) => {
-                setPageView('list');
-                setQuickFilter('none');
-                setDateFilter(dateIso);
                 setSearchQuery('');
+                goToDate(dateIso);
               }}
             />
           </div>
@@ -312,44 +379,56 @@ function ReservasiPageInner() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div className="date-filter">
-                <input
-                  type="date"
-                  value={dateFilter}
-                  disabled={quickFilter !== 'none'}
-                  onChange={(e) => setDateFilter(e.target.value)}
-                />
-                {dateFilter && quickFilter === 'none' && (
-                  <button className="date-filter-clear" onClick={() => setDateFilter('')}>
-                    Semua Tanggal
-                  </button>
-                )}
+            </div>
+
+            <div className="filter-group">
+              <span className="filter-group-label">Rentang Waktu</span>
+              <div className="filter-tabs">
+                <button
+                  className={`filter-tab ${dateScope === 'all' ? 'active' : ''}`}
+                  onClick={() => selectDateScope('all')}
+                >
+                  Semua Tanggal
+                </button>
+                <button
+                  className={`filter-tab ${dateScope === 'today' ? 'active' : ''}`}
+                  onClick={() => selectDateScope('today')}
+                >
+                  Hari Ini
+                </button>
+                <button
+                  className={`filter-tab ${dateScope === 'upcoming' ? 'active' : ''}`}
+                  onClick={() => selectDateScope('upcoming')}
+                >
+                  Kedepannya
+                </button>
+                <label className={`date-pick ${dateScope === 'custom' ? 'active' : ''}`}>
+                  <span className="material-symbols-rounded">calendar_month</span>
+                  <input
+                    type="date"
+                    value={customDate}
+                    onChange={(e) => {
+                      setCustomDate(e.target.value);
+                      setDateScope('custom');
+                    }}
+                  />
+                </label>
               </div>
             </div>
-            <div className="filter-tabs">
-              <button
-                className={`filter-tab ${quickFilter === 'today' ? 'active' : ''}`}
-                onClick={() => setQuickFilter(quickFilter === 'today' ? 'none' : 'today')}
-              >
-                Hari Ini
-              </button>
-              <button
-                className={`filter-tab ${quickFilter === 'upcoming' ? 'active' : ''}`}
-                onClick={() => setQuickFilter(quickFilter === 'upcoming' ? 'none' : 'upcoming')}
-              >
-                Kedepannya
-              </button>
-            </div>
-            <div className="filter-tabs">
-              {(['semua', 'pending', 'confirmed', 'completed', 'cancelled'] as FilterValue[]).map((f) => (
-                <button
-                  key={f}
-                  className={`filter-tab ${currentFilter === f ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter(f)}
-                >
-                  {f === 'semua' ? 'Semua' : statusLabel(f)}
-                </button>
-              ))}
+
+            <div className="filter-group">
+              <span className="filter-group-label">Status</span>
+              <div className="filter-tabs">
+                {(['semua', 'pending', 'confirmed', 'completed', 'cancelled'] as FilterValue[]).map((f) => (
+                  <button
+                    key={f}
+                    className={`filter-tab ${currentFilter === f ? 'active' : ''}`}
+                    onClick={() => setCurrentFilter(f)}
+                  >
+                    {f === 'semua' ? 'Semua' : statusLabel(f)}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
