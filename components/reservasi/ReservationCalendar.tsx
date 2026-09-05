@@ -1,14 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import calendarjs from '@calendarjs/ce';
-import type Schedule from '@calendarjs/ce/dist/types/schedule/index';
-import type Calendar from '@calendarjs/ce/dist/types/calendar/index';
-import '@calendarjs/ce/dist/style.css';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { reservationsApi, ReservationItem, ReservationStatus } from '@/lib/reservations';
 import { ApiError } from '@/lib/api-client';
 
-type ViewMode = 'day' | 'week' | 'month';
+type ViewMode = 'week' | 'month';
 
 const STATUS_COLOR: Record<ReservationStatus, string> = {
   pending: '#F5A623',
@@ -17,7 +13,21 @@ const STATUS_COLOR: Record<ReservationStatus, string> = {
   cancelled: '#FF4D4F',
 };
 
+const STATUS_LABEL: Record<ReservationStatus, string> = {
+  pending: 'Menunggu Konfirmasi',
+  confirmed: 'Terkonfirmasi',
+  completed: 'Selesai',
+  cancelled: 'Dibatalkan',
+};
+
 const DAY_MS = 24 * 60 * 60 * 1000;
+const DAY_LABELS = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+const MONTHS = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+const VIEW_LABEL: Record<ViewMode, string> = { week: 'Mingguan', month: 'Bulanan' };
+const MAX_MONTH_CELL_ITEMS = 3;
 
 function toISO(d: Date) {
   const y = d.getFullYear();
@@ -38,151 +48,97 @@ function startOfWeek(d: Date) {
   return monday;
 }
 
-function addMinutes(hhmm: string, minutes: number) {
-  const [h, m] = hhmm.split(':').map(Number);
-  const total = h * 60 + m + minutes;
-  const nh = Math.floor(((total % (24 * 60)) + 24 * 60) % (24 * 60) / 60);
-  const nm = ((total % 60) + 60) % 60;
-  return `${String(nh).padStart(2, '0')}:${String(nm).padStart(2, '0')}`;
+function reservationLabel(r: ReservationItem) {
+  const parts = [r.patientName];
+  if (r.practitioner?.name) parts.push(`dr. ${r.practitioner.name}`);
+  return parts.join(' · ');
 }
-
-const VIEW_LABEL: Record<ViewMode, string> = { day: 'Harian', week: 'Mingguan', month: 'Bulanan' };
-const MONTHS = [
-  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
-];
 
 interface Props {
   onSelectReservation?: (reservation: ReservationItem) => void;
+  onSelectDate?: (dateIso: string) => void;
 }
 
-export default function ReservationCalendar({ onSelectReservation }: Props) {
+export default function ReservationCalendar({ onSelectReservation, onSelectDate }: Props) {
   const [view, setView] = useState<ViewMode>('week');
   const [currentDate, setCurrentDate] = useState(() => toISO(new Date()));
   const [reservations, setReservations] = useState<ReservationItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  const scheduleRef = useRef<HTMLDivElement>(null);
-  const calendarRef = useRef<HTMLDivElement>(null);
-  const scheduleInstance = useRef<Schedule.Instance | null>(null);
-  const calendarInstance = useRef<Calendar.Instance | null>(null);
-  const onSelectRef = useRef(onSelectReservation);
-  useEffect(() => {
-    onSelectRef.current = onSelectReservation;
-  }, [onSelectReservation]);
+  const ref = fromISO(currentDate);
+
+  const { rangeStart, rangeEnd } = useMemo(() => {
+    const anchor = fromISO(currentDate);
+    if (view === 'week') {
+      const start = startOfWeek(anchor);
+      return { rangeStart: toISO(start), rangeEnd: toISO(new Date(start.getTime() + 6 * DAY_MS)) };
+    }
+    return {
+      rangeStart: toISO(new Date(anchor.getFullYear(), anchor.getMonth(), 1)),
+      rangeEnd: toISO(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0)),
+    };
+  }, [view, currentDate]);
 
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(null);
     try {
-      const ref = fromISO(currentDate);
-      const dateFrom =
-        view === 'day' ? currentDate : view === 'week' ? toISO(startOfWeek(ref)) : toISO(new Date(ref.getFullYear(), ref.getMonth(), 1));
-      const res = await reservationsApi.list({ dateFrom, limit: 100 });
+      const res = await reservationsApi.list({ dateFrom: rangeStart, dateTo: rangeEnd, limit: 200 });
       setReservations(res.data);
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : 'Gagal memuat reservasi');
     } finally {
       setLoading(false);
     }
-  }, [view, currentDate]);
+  }, [rangeStart, rangeEnd]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const ref = fromISO(currentDate);
-  const rangeEnd =
-    view === 'day'
-      ? currentDate
-      : view === 'week'
-        ? toISO(new Date(startOfWeek(ref).getTime() + 6 * DAY_MS))
-        : toISO(new Date(ref.getFullYear(), ref.getMonth() + 1, 0));
-  const rangeStart = view === 'day' ? currentDate : view === 'week' ? toISO(startOfWeek(ref)) : toISO(new Date(ref.getFullYear(), ref.getMonth(), 1));
-
-  const visible = reservations.filter((r) => {
-    const d = r.reservationDate.slice(0, 10);
-    return d >= rangeStart && d <= rangeEnd;
-  });
-
-  const scheduleEvents = visible.map((r) => {
-    const start = (r.jamSlot || '09:00').slice(0, 5);
-    return {
-      guid: String(r.id),
-      title: `${r.patientName}${r.practitioner?.name ? ' · ' + r.practitioner.name : ''}`,
-      date: r.reservationDate.slice(0, 10),
-      start,
-      end: addMinutes(start, 30),
-      color: STATUS_COLOR[r.status],
-      readonly: true,
-      reservationId: r.id,
-    };
-  });
-
-  const calendarEvents = visible.map((r) => ({ date: r.reservationDate.slice(0, 10), reservationId: r.id }));
-
-  // Init/update the day/week schedule instance
-  useEffect(() => {
-    if (!scheduleRef.current) return;
-    if (!scheduleInstance.current) {
-      scheduleInstance.current = calendarjs.Schedule(scheduleRef.current, {
-        type: view === 'month' ? 'week' : view,
-        value: currentDate,
-        data: scheduleEvents,
-        grid: 30,
-        ondblclick: (_self: Schedule.Instance, ev: Schedule.Event) => {
-          const found = reservations.find((r) => String(r.id) === String(ev.reservationId));
-          if (found) onSelectRef.current?.(found);
-        },
-      });
-    } else {
-      scheduleInstance.current.type = view === 'month' ? 'week' : view;
-      scheduleInstance.current.value = currentDate;
-      scheduleInstance.current.setData(scheduleEvents);
-      scheduleInstance.current.render();
+  const byDate = useMemo(() => {
+    const map = new Map<string, ReservationItem[]>();
+    for (const r of reservations) {
+      const d = r.reservationDate.slice(0, 10);
+      if (!map.has(d)) map.set(d, []);
+      map.get(d)!.push(r);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, currentDate, reservations]);
-
-  // Init/update the month calendar instance (lazy: only once the month tab is visible,
-  // otherwise the grid is measured while `display: none` and collapses to 0)
-  useEffect(() => {
-    if (view !== 'month' || !calendarRef.current) return;
-    if (!calendarInstance.current) {
-      calendarInstance.current = calendarjs.Calendar(calendarRef.current, {
-        type: 'inline',
-        grid: true,
-        value: currentDate,
-        data: calendarEvents,
-        onchange: (_self: Calendar.Instance, value: string | number) => {
-          setCurrentDate(String(value).slice(0, 10));
-          setView('day');
-        },
-      });
-    } else {
-      const instance = calendarInstance.current as Calendar.Instance & { data?: unknown[]; render?: () => void };
-      instance.setValue?.(currentDate);
-      instance.data = calendarEvents;
-      instance.render?.();
+    for (const list of map.values()) {
+      list.sort((a, b) => (a.jamSlot || '').localeCompare(b.jamSlot || ''));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, currentDate, reservations]);
+    return map;
+  }, [reservations]);
 
   const navigate = (dir: 1 | -1) => {
     const d = fromISO(currentDate);
-    if (view === 'day') d.setDate(d.getDate() + dir);
-    else if (view === 'week') d.setDate(d.getDate() + dir * 7);
+    if (view === 'week') d.setDate(d.getDate() + dir * 7);
     else d.setMonth(d.getMonth() + dir);
     setCurrentDate(toISO(d));
   };
 
   const rangeLabel =
-    view === 'day'
-      ? `${ref.getDate()} ${MONTHS[ref.getMonth()]} ${ref.getFullYear()}`
-      : view === 'week'
-        ? `${fromISO(rangeStart).getDate()} - ${fromISO(rangeEnd).getDate()} ${MONTHS[ref.getMonth()]} ${ref.getFullYear()}`
-        : `${MONTHS[ref.getMonth()]} ${ref.getFullYear()}`;
+    view === 'week'
+      ? `${fromISO(rangeStart).getDate()} - ${fromISO(rangeEnd).getDate()} ${MONTHS[ref.getMonth()]} ${ref.getFullYear()}`
+      : `${MONTHS[ref.getMonth()]} ${ref.getFullYear()}`;
+
+  const weekDays = useMemo(() => {
+    const start = fromISO(rangeStart);
+    return Array.from({ length: 7 }, (_, i) => toISO(new Date(start.getTime() + i * DAY_MS)));
+  }, [rangeStart]);
+
+  const monthCells = useMemo(() => {
+    const first = fromISO(rangeStart);
+    const leadingBlanks = (first.getDay() + 6) % 7; // Monday-first offset
+    const daysInMonth = fromISO(rangeEnd).getDate();
+    const cells: (string | null)[] = Array.from({ length: leadingBlanks }, () => null);
+    for (let day = 1; day <= daysInMonth; day++) {
+      cells.push(toISO(new Date(first.getFullYear(), first.getMonth(), day)));
+    }
+    return cells;
+  }, [rangeStart, rangeEnd]);
+
+  const todayIso = toISO(new Date());
 
   return (
     <div className="reservation-calendar">
@@ -200,7 +156,7 @@ export default function ReservationCalendar({ onSelectReservation }: Props) {
           <span className="reservation-calendar-label">{rangeLabel}</span>
         </div>
         <div className="filter-tabs">
-          {(['day', 'week', 'month'] as ViewMode[]).map((v) => (
+          {(['week', 'month'] as ViewMode[]).map((v) => (
             <button key={v} className={`filter-tab ${view === v ? 'active' : ''}`} onClick={() => setView(v)}>
               {VIEW_LABEL[v]}
             </button>
@@ -208,13 +164,104 @@ export default function ReservationCalendar({ onSelectReservation }: Props) {
         </div>
       </div>
 
+      <div className="reservation-calendar-legend">
+        {(Object.keys(STATUS_LABEL) as ReservationStatus[]).map((s) => (
+          <span key={s} className="reservation-calendar-legend-item">
+            <span className="reservation-calendar-legend-dot" style={{ background: STATUS_COLOR[s] }} />
+            {STATUS_LABEL[s]}
+          </span>
+        ))}
+      </div>
+
       {loading && <div className="reservation-calendar-status">Memuat…</div>}
       {loadError && <div className="reservation-calendar-status error">{loadError}</div>}
 
-      <div className="reservation-calendar-body">
-        <div ref={scheduleRef} style={{ display: view === 'month' ? 'none' : 'block' }} />
-        <div ref={calendarRef} style={{ display: view === 'month' ? 'block' : 'none' }} />
-      </div>
+      {view === 'week' ? (
+        <div className="res-week-grid">
+          {weekDays.map((dateIso) => {
+            const dayReservations = byDate.get(dateIso) || [];
+            const d = fromISO(dateIso);
+            return (
+              <div key={dateIso} className={`res-week-day ${dateIso === todayIso ? 'is-today' : ''}`}>
+                <button
+                  type="button"
+                  className="res-week-day-header"
+                  onClick={() => onSelectDate?.(dateIso)}
+                >
+                  <span className="res-week-day-name">{DAY_LABELS[(d.getDay() + 6) % 7]}</span>
+                  <span className="res-week-day-num">{d.getDate()}</span>
+                  {dayReservations.length > 0 && (
+                    <span className="res-day-count">{dayReservations.length}</span>
+                  )}
+                </button>
+                <div className="res-week-day-list">
+                  {dayReservations.length === 0 ? (
+                    <div className="res-week-day-empty">Tidak ada reservasi</div>
+                  ) : (
+                    dayReservations.map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        className="res-chip"
+                        style={{ borderLeftColor: STATUS_COLOR[r.status] }}
+                        onClick={() => onSelectReservation?.(r)}
+                      >
+                        <div className="res-chip-time">{(r.jamSlot || '-').slice(0, 5)}</div>
+                        <div className="res-chip-title">{reservationLabel(r)}</div>
+                        {r.notes && <div className="res-chip-notes">{r.notes}</div>}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="res-month">
+          <div className="res-month-weekdays">
+            {DAY_LABELS.map((label) => (
+              <div key={label} className="res-month-weekday">{label}</div>
+            ))}
+          </div>
+          <div className="res-month-grid">
+            {monthCells.map((dateIso, i) => {
+              if (!dateIso) return <div key={`blank-${i}`} className="res-month-cell is-blank" />;
+              const dayReservations = byDate.get(dateIso) || [];
+              const extra = dayReservations.length - MAX_MONTH_CELL_ITEMS;
+              return (
+                <div key={dateIso} className={`res-month-cell ${dateIso === todayIso ? 'is-today' : ''}`}>
+                  <button type="button" className="res-month-cell-header" onClick={() => onSelectDate?.(dateIso)}>
+                    <span className="res-month-cell-num">{fromISO(dateIso).getDate()}</span>
+                    {dayReservations.length > 0 && (
+                      <span className="res-day-count">{dayReservations.length}</span>
+                    )}
+                  </button>
+                  <div className="res-month-cell-items">
+                    {dayReservations.slice(0, MAX_MONTH_CELL_ITEMS).map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        className="res-month-item"
+                        style={{ borderLeftColor: STATUS_COLOR[r.status] }}
+                        onClick={() => onSelectReservation?.(r)}
+                        title={reservationLabel(r)}
+                      >
+                        {(r.jamSlot || '-').slice(0, 5)} {r.patientName}
+                      </button>
+                    ))}
+                    {extra > 0 && (
+                      <button type="button" className="res-month-more" onClick={() => onSelectDate?.(dateIso)}>
+                        +{extra} lainnya
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

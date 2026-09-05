@@ -291,6 +291,12 @@ function ReservasiPageInner() {
                 setDateFilter(r.reservationDate.slice(0, 10));
                 setSearchQuery(r.patientName);
               }}
+              onSelectDate={(dateIso) => {
+                setPageView('list');
+                setQuickFilter('none');
+                setDateFilter(dateIso);
+                setSearchQuery('');
+              }}
             />
           </div>
         ) : (
