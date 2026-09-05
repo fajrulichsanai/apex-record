@@ -10,6 +10,7 @@ import {
   FiDollarSign,
   FiBarChart2,
   FiShield,
+  FiKey,
   FiChevronLeft,
   FiChevronRight,
 } from 'react-icons/fi';
@@ -23,6 +24,7 @@ interface SuperAdminSidebarProps {
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: <FiGrid />, href: '/super-admin/dashboard' },
   { label: 'Klinik', icon: <FiHome />, href: '/super-admin/clinics' },
+  { label: 'Owner Code', icon: <FiKey />, href: '/super-admin/owner-codes' },
   { label: 'Paket Langganan', icon: <FiDollarSign />, href: '/super-admin/plans' },
   { label: 'Konfirmasi Pembayaran', icon: <FiCreditCard />, href: '/super-admin/payments' },
   { label: 'Laporan', icon: <FiBarChart2 />, href: '/super-admin/reports' },

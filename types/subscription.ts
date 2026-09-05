@@ -47,6 +47,15 @@ export interface ClinicSubscriptionSummary {
   subscription: ClinicSubscription | null;
 }
 
+export interface OwnerCode {
+  id: number;
+  code: string;
+  isUsed: boolean;
+  usedBy: number | null;
+  usedAt: string | null;
+  createdAt: string;
+}
+
 export interface SuperAdminReportSummary {
   totalClinics: number;
   activeClinics: number;

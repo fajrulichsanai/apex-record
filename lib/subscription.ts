@@ -2,6 +2,7 @@ import { apiClient, toQueryString } from './api-client';
 import type {
   ClinicSubscription,
   ClinicSubscriptionSummary,
+  OwnerCode,
   Payment,
   SubscriptionPlan,
   SuperAdminReportSummary,
@@ -82,6 +83,11 @@ export const paymentApi = {
     apiClient.post<Payment>(`/subscription-payments/${id}/confirm`, payload),
   reject: (id: number, payload?: ConfirmPaymentPayload) =>
     apiClient.post<Payment>(`/subscription-payments/${id}/reject`, payload),
+};
+
+export const ownerCodeApi = {
+  list: () => apiClient.get<OwnerCode[]>('/owner-codes'),
+  create: (code: string) => apiClient.post<OwnerCode>('/owner-codes', { code }),
 };
 
 export const superAdminReportApi = {
