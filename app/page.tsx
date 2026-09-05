@@ -304,7 +304,7 @@ const LoginPage = () => {
             </p>
           )}
 
-          <p className="version-text">ApexRecord STG v1.0.0</p>
+          <p className="version-text">ApexRecord STG v1.0.1</p>
         </div>
       </div>
     </div>
