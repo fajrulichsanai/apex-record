@@ -7,7 +7,6 @@ import FeatureGuard from '@/components/auth/FeatureGuard';
 import InputModal from '@/components/feedback/InputModal';
 import AddVisitModal from './AddVisitModal';
 import EditVisitModal from './EditVisitModal';
-import PeriksaModal from './PeriksaModal';
 import {
   encounterApi,
   EncounterListItem,
@@ -90,7 +89,6 @@ function ListKunjunganPageInner() {
   const [preselectReservationId, setPreselectReservationId] = useState<number | null>(null);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState<EncounterStatus | null>(null);
-  const [showPeriksaModal, setShowPeriksaModal] = useState(false);
   const [soapNote, setSoapNote] = useState<SoapNote | null>(null);
 
   useEffect(() => {
@@ -208,19 +206,6 @@ function ListKunjunganPageInner() {
     } finally {
       setActionLoading(false);
     }
-  };
-
-  const handlePeriksaSaved = async () => {
-    setShowPeriksaModal(false);
-    if (selectedVisitId) {
-      const [refreshed, note] = await Promise.all([
-        encounterApi.detail(selectedVisitId),
-        encounterSoapApi.get(selectedVisitId).catch(() => null),
-      ]);
-      setDetail(refreshed);
-      setSoapNote(note);
-    }
-    loadVisits();
   };
 
   const handleCancellationModalConfirm = (reason: string) => {
@@ -493,10 +478,10 @@ function ListKunjunganPageInner() {
                       <button
                         className="btn-outline"
                         style={{ fontSize: '12.5px' }}
-                        onClick={() => setShowPeriksaModal(true)}
+                        onClick={() => router.push(`/list-kunjungan/${selectedVisit.encounterId}/rekam-medis`)}
                       >
                         <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                          description
+                          menu_book
                         </span>
                         {isSoapFilled ? 'Edit SOAP' : 'Isi SOAP'}
                       </button>
@@ -570,15 +555,6 @@ function ListKunjunganPageInner() {
           visit={detail}
           onClose={() => setShowEditModal(false)}
           onUpdated={handleVisitUpdated}
-        />
-      )}
-
-      {showPeriksaModal && detail && (
-        <PeriksaModal
-          visit={detail}
-          practitionerName={selectedVisit?.practitionerName || detail.practitioner?.name}
-          onClose={() => setShowPeriksaModal(false)}
-          onSaved={handlePeriksaSaved}
         />
       )}
 

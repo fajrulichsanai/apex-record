@@ -1,0 +1,140 @@
+/* ===================== REKAM MEDIS PAGE ===================== */
+/* Nested under .kunjungan-page so it inherits that page's CSS variables
+   (--primary, --border, --radius-lg, etc.) and its .btn-primary/.btn-outline
+   chrome — see kunjungan.css for the variable declarations. */
+
+.rekam-medis-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rm-back-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  color: var(--text-sub);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color var(--transition);
+}
+
+.rm-back-btn:hover { color: var(--primary); }
+.rm-back-btn .material-symbols-rounded { font-size: 18px; }
+
+.rm-loading {
+  padding: 80px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.rm-loading.error { color: #FF4D4F; }
+
+.rm-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rm-patient-name { font-size: 18px; font-weight: 700; color: var(--text-main); }
+.rm-patient-meta { font-size: 13px; color: var(--text-sub); margin-top: 3px; }
+
+.rm-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.rm-sidebar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 20px;
+}
+
+.rm-sidebar-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 10px 10px;
+}
+
+.rm-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-sub);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition);
+}
+
+.rm-sidebar-item:hover { background: var(--bg); color: var(--text-main); }
+.rm-sidebar-item.active { background: var(--primary); color: #fff; }
+.rm-sidebar-item .material-symbols-rounded { font-size: 18px; }
+
+.rm-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 18px rgba(15,23,42,.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.rm-section { display: flex; flex-direction: column; }
+
+.rm-section-heading {
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rm-section-heading h2 { font-size: 17px; font-weight: 700; color: var(--text-main); }
+.rm-section-heading p { font-size: 12.5px; color: var(--text-sub); margin-top: 3px; }
+
+.rm-section-body {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rm-section-footer {
+  padding: 16px 28px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+@media (max-width: 860px) {
+  .rm-layout { grid-template-columns: 1fr; }
+  .rm-sidebar {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+}
