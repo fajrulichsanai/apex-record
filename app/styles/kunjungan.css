@@ -812,12 +812,43 @@
   flex-shrink: 0;
 }
 
+/* Self-contained button chrome: this modal renders as a sibling of
+   <main class="kunjungan-page">, not inside it, so the page-scoped
+   ".kunjungan-page .btn-primary/.btn-outline" rules never reach these
+   buttons — they need their own full styling, not just overrides. */
 .visit-form-footer .btn-outline,
 .visit-form-footer .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   padding: 11px 22px;
   border-radius: var(--radius-md);
   font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
 }
+
+.visit-form-footer .btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 14px rgba(79,126,248,.35);
+}
+
+.visit-form-footer .btn-primary:hover:not(:disabled) {
+  background: var(--primary-dk);
+  box-shadow: 0 6px 20px rgba(79,126,248,.45);
+}
+
+.visit-form-footer .btn-outline {
+  background: none;
+  border: 1.5px solid var(--border);
+  color: var(--text-sub);
+}
+
+.visit-form-footer .btn-outline:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
 
 .visit-form-footer .btn-outline:disabled,
 .visit-form-footer .btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
