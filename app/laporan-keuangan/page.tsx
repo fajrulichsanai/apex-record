@@ -16,7 +16,19 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import { FiCreditCard, FiDollarSign, FiClock, FiDownload, FiTrendingUp, FiTrendingDown, FiPercent } from 'react-icons/fi';
+import {
+  FiAlertTriangle,
+  FiCreditCard,
+  FiDollarSign,
+  FiClock,
+  FiDownload,
+  FiFileText,
+  FiInfo,
+  FiTrendingUp,
+  FiTrendingDown,
+  FiPercent,
+  FiZap,
+} from 'react-icons/fi';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import StatCard from '@/components/laporan/StatCard';
@@ -90,6 +102,97 @@ function formatRupiah(value: number) {
   return `Rp ${value.toLocaleString('id-ID')}`;
 }
 
+interface Insight {
+  text: string;
+  tone: 'good' | 'warn' | 'neutral';
+}
+
+function buildFinancialInsights(report: FinancialReportResponse | null): Insight[] {
+  if (!report) return [];
+  const list: Insight[] = [];
+
+  const { changePercent } = report.comparison;
+  if (changePercent !== null) {
+    if (changePercent > 0) {
+      list.push({ text: `Pendapatan naik ${changePercent}% dibanding periode sebelumnya.`, tone: 'good' });
+    } else if (changePercent < 0) {
+      list.push({ text: `Pendapatan turun ${Math.abs(changePercent)}% dibanding periode sebelumnya.`, tone: 'warn' });
+    } else {
+      list.push({ text: 'Pendapatan stabil, sama seperti periode sebelumnya.', tone: 'neutral' });
+    }
+  }
+
+  const { collectionRate, totalBilling, totalOutstanding } = report.summary;
+  if (totalBilling > 0) {
+    if (collectionRate >= 90) {
+      list.push({ text: `Collection rate ${collectionRate}% — penagihan berjalan sangat baik.`, tone: 'good' });
+    } else if (collectionRate < 70) {
+      list.push({ text: `Collection rate baru ${collectionRate}% — banyak tagihan belum tertagih.`, tone: 'warn' });
+    } else {
+      list.push({ text: `Collection rate ${collectionRate}%, masih dalam batas wajar.`, tone: 'neutral' });
+    }
+
+    if (totalOutstanding > 0) {
+      const outstandingPct = (totalOutstanding / totalBilling) * 100;
+      if (outstandingPct >= 20) {
+        list.push({
+          text: `Piutang belum tertagih mencapai ${outstandingPct.toFixed(0)}% dari total tagihan (${formatRupiah(totalOutstanding)}) — perlu ditindaklanjuti.`,
+          tone: 'warn',
+        });
+      }
+    }
+  }
+
+  const { marginPersen, pengeluaran, pendapatanTotal } = report.ringkasan;
+  if (pendapatanTotal > 0) {
+    if (marginPersen >= 30) {
+      list.push({ text: `Margin keuntungan ${marginPersen}% — kesehatan finansial klinik baik.`, tone: 'good' });
+    } else if (marginPersen < 10) {
+      list.push({ text: `Margin keuntungan tipis (${marginPersen}%) — perlu efisiensi biaya.`, tone: 'warn' });
+    } else {
+      list.push({ text: `Margin keuntungan ${marginPersen}%.`, tone: 'neutral' });
+    }
+
+    if (pengeluaran > 0) {
+      const expenseRatio = (pengeluaran / pendapatanTotal) * 100;
+      if (expenseRatio >= 30) {
+        list.push({ text: `Pengeluaran operasional setara ${expenseRatio.toFixed(0)}% dari pendapatan — cukup besar.`, tone: 'warn' });
+      }
+    }
+  }
+
+  if (report.byDoctor.length > 0) {
+    const totalRevenue = report.byDoctor.reduce((sum, d) => sum + d.revenue, 0);
+    const top = [...report.byDoctor].sort((a, b) => b.revenue - a.revenue)[0];
+    if (totalRevenue > 0) {
+      const pct = (top.revenue / totalRevenue) * 100;
+      list.push({ text: `${top.practitionerName} berkontribusi ${pct.toFixed(0)}% dari total pendapatan dokter.`, tone: 'neutral' });
+    }
+  }
+
+  if (report.tindakanTerlaris.length > 0) {
+    const topProfit = [...report.tindakanTerlaris].sort((a, b) => b.labaBersih - a.labaBersih)[0];
+    if (topProfit.labaBersih > 0) {
+      list.push({ text: `Tindakan paling menguntungkan: ${topProfit.namaTindakan} (${formatRupiah(topProfit.labaBersih)} laba bersih).`, tone: 'neutral' });
+    }
+  }
+
+  if (report.byPaymentMethod.length > 0) {
+    const totalMethod = report.byPaymentMethod.reduce((sum, m) => sum + m.amount, 0);
+    const top = [...report.byPaymentMethod].sort((a, b) => b.amount - a.amount)[0];
+    if (totalMethod > 0) {
+      const pct = (top.amount / totalMethod) * 100;
+      list.push({ text: `${pct.toFixed(0)}% transaksi melalui ${METODE_LABELS[top.method] ?? top.method}.`, tone: 'neutral' });
+    }
+  }
+
+  if (report.summary.totalRefunded > 0) {
+    list.push({ text: `Ada ${formatRupiah(report.summary.totalRefunded)} refund pada periode ini.`, tone: 'warn' });
+  }
+
+  return list;
+}
+
 export default function LaporanKeuanganPage() {
   const { user, loading: authLoading } = useAuth();
   const [range, setRange] = useState<RangeOption>('bulanini');
@@ -155,6 +258,9 @@ export default function LaporanKeuanganPage() {
     [report],
   );
 
+  const insights = useMemo(() => buildFinancialInsights(report), [report]);
+  const comparisonPercent = report?.comparison.changePercent ?? null;
+
   function handleExport() {
     if (!report) return;
     setExporting(true);
@@ -173,6 +279,8 @@ export default function LaporanKeuanganPage() {
               { Metrik: 'Laba Bersih', Nilai: report.ringkasan.labaBersih },
               { Metrik: 'Pengeluaran', Nilai: report.ringkasan.pengeluaran },
               { Metrik: 'Margin Keuntungan (%)', Nilai: report.ringkasan.marginPersen },
+              { Metrik: 'Pendapatan Periode Sebelumnya', Nilai: report.comparison.previousPendapatan },
+              { Metrik: 'Perubahan vs Periode Sebelumnya (%)', Nilai: report.comparison.changePercent ?? '-' },
             ],
           },
           {
@@ -275,75 +383,82 @@ export default function LaporanKeuanganPage() {
           </div>
         </div>
 
-        <div className="stat-grid">
-          <div className="stat-card income">
-            <div className="stat-icon">
-              <FiDollarSign />
+        {!loading && insights.length > 0 && (
+          <div className="insight-panel">
+            <div className="insight-panel-title">
+              <FiZap />
+              Insight Otomatis
             </div>
-            <div className="stat-info">
-              <div className="stat-value">{loading ? '...' : formatRupiah(totalPendapatan)}</div>
-              <div className="stat-label">Total Pendapatan</div>
-            </div>
-          </div>
-          <div className="stat-card total">
-            <div className="stat-icon">
-              <FiTrendingUp />
-            </div>
-            <div className="stat-info">
-              <div className="stat-value">{loading ? '...' : formatRupiah(Math.round(rataRataHarian))}</div>
-              <div className="stat-label">Rata-rata / Hari</div>
+            <div className="insight-list">
+              {insights.map((insight, i) => (
+                <div key={i} className={`insight-item ${insight.tone}`}>
+                  <span className="insight-icon">
+                    {insight.tone === 'good' ? <FiTrendingUp /> : insight.tone === 'warn' ? <FiAlertTriangle /> : <FiInfo />}
+                  </span>
+                  {insight.text}
+                </div>
+              ))}
             </div>
           </div>
-          <div className="stat-card pending">
-            <div className="stat-icon">
-              <FiClock />
-            </div>
-            <div className="stat-info">
-              <div className="stat-value">{loading ? '...' : formatRupiah(belumLunas)}</div>
-              <div className="stat-label">Belum Lunas</div>
-            </div>
-          </div>
-          <div className="stat-card lunas">
-            <div className="stat-icon">
-              <FiCreditCard />
-            </div>
-            <div className="stat-info">
-              <div className="stat-value">{loading ? '...' : formatRupiah(totalLunas)}</div>
-              <div className="stat-label">Total Transaksi Lunas</div>
-            </div>
-          </div>
-        </div>
+        )}
 
         <div className="stat-grid">
           <StatCard
             variant="income"
-            icon={<FiDollarSign />}
-            value={loading ? '...' : formatRupiah(report?.ringkasan.pendapatanTotal ?? 0)}
-            label="Pendapatan Total"
-          />
-          <StatCard
-            variant="pending"
-            icon={<FiTrendingDown />}
-            value={loading ? '...' : formatRupiah(report?.ringkasan.modal ?? 0)}
-            label="Modal"
+            icon={<FiFileText />}
+            value={loading ? '...' : formatRupiah(totalPendapatan)}
+            label="Total Ditagih"
           />
           <StatCard
             variant="lunas"
-            icon={<FiTrendingUp />}
-            value={loading ? '...' : formatRupiah(report?.ringkasan.labaBersih ?? 0)}
-            label="Laba Bersih"
+            icon={<FiCreditCard />}
+            value={loading ? '...' : formatRupiah(totalLunas)}
+            label="Total Diterima (Lunas)"
+            trend={
+              !loading && comparisonPercent !== null ? (
+                <>
+                  {comparisonPercent >= 0 ? <FiTrendingUp /> : <FiTrendingDown />}
+                  {comparisonPercent >= 0 ? '+' : ''}
+                  {comparisonPercent}% vs sebelumnya
+                </>
+              ) : undefined
+            }
+          />
+          <StatCard
+            variant="pending"
+            icon={<FiClock />}
+            value={loading ? '...' : formatRupiah(belumLunas)}
+            label="Belum Lunas (Piutang)"
+          />
+          <StatCard
+            variant="expense"
+            icon={<FiTrendingDown />}
+            value={loading ? '...' : formatRupiah(report?.ringkasan.modal ?? 0)}
+            label="Modal (HPP)"
           />
           <StatCard
             variant="expense"
             icon={<FiCreditCard />}
             value={loading ? '...' : formatRupiah(report?.ringkasan.pengeluaran ?? 0)}
-            label="Pengeluaran"
+            label="Pengeluaran Operasional"
           />
           <StatCard
             variant="margin"
+            icon={<FiTrendingUp />}
+            value={loading ? '...' : formatRupiah(report?.ringkasan.labaBersih ?? 0)}
+            label="Laba Bersih"
+          />
+          <StatCard
+            variant="total"
             icon={<FiPercent />}
             value={loading ? '...' : `${report?.ringkasan.marginPersen ?? 0}%`}
             label="Margin Keuntungan"
+          />
+          <StatCard
+            variant="total"
+            icon={<FiDollarSign />}
+            value={loading ? '...' : formatRupiah(Math.round(rataRataHarian))}
+            label="Rata-rata Pendapatan / Hari"
           />
         </div>
 

@@ -63,6 +63,10 @@ export interface FinancialReportResponse {
     collectionRate: number;
     totalRefunded: number;
   };
+  comparison: {
+    previousPendapatan: number;
+    changePercent: number | null;
+  };
   byDay: { date: string; revenue: number; collected: number }[];
   byPaymentMethod: { method: PaymentMethod; amount: number }[];
   byDoctor: { practitionerName: string; revenue: number; doctorFeeShare: number }[];
