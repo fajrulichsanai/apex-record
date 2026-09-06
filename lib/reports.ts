@@ -1,4 +1,6 @@
-import { apiClient } from './api-client';
+import { apiClient, ApiError } from './api-client';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export type EncounterStatus = 'arrived' | 'in_progress' | 'finished' | 'cancelled';
 export type PaymentMethod = 'cash' | 'transfer' | 'qris' | 'insurance' | 'bpjs';
@@ -86,6 +88,25 @@ export interface FinancialReportResponse {
     totalDiskon: number;
     labaBersih: number;
   }[];
+  businessMetrics: {
+    ltv: { averageLtv: number; averageVisitsPerPatient: number; patientCount: number };
+    arpv: number;
+    pareto: { top20PercentPatientShare: number; patientCount: number };
+    dso: { averageDays: number; outstandingCount: number };
+    retention: {
+      retentionRatePercent: number | null;
+      previousPeriodPatients: number;
+      returningPatients: number;
+    };
+    categoryProfitability: {
+      kategori: string;
+      frekuensi: number;
+      pendapatan: number;
+      modal: number;
+      labaBersih: number;
+      marginPersen: number;
+    }[];
+  };
 }
 
 export interface FinancialVisitDetailQuery {
@@ -130,4 +151,30 @@ export const reportsApi = {
     apiClient.get<FinancialVisitDetailResponse>(
       `/reports/financial/visit-detail?${toQueryString(query)}`,
     ),
+
+  downloadInvestorReportPdf: async () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const res = await fetch(`${API_URL}/reports/investor/pdf`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) {
+      let message = 'Gagal mengunduh laporan investor';
+      try {
+        const body = await res.json();
+        if (body?.error?.message) message = body.error.message;
+      } catch {
+        // ignore — fall back to the generic message
+      }
+      throw new ApiError(message, res.status);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'laporan-investor.pdf';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  },
 };

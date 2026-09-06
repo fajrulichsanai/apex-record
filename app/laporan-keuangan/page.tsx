@@ -18,21 +18,25 @@ import {
 } from 'recharts';
 import {
   FiAlertTriangle,
+  FiAward,
   FiCreditCard,
   FiDollarSign,
   FiClock,
   FiDownload,
   FiFileText,
   FiInfo,
+  FiRepeat,
   FiTrendingUp,
   FiTrendingDown,
   FiPercent,
+  FiUsers,
   FiZap,
 } from 'react-icons/fi';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import StatCard from '@/components/laporan/StatCard';
 import TindakanTerlarisTable from '@/components/laporan/TindakanTerlarisTable';
+import CategoryProfitabilityTable from '@/components/laporan/CategoryProfitabilityTable';
 import VisitDetailTable from '@/components/laporan/VisitDetailTable';
 import { canAccessFeature } from '@/lib/permissions';
 import { useAuth } from '@/lib/auth-context';
@@ -190,6 +194,34 @@ function buildFinancialInsights(report: FinancialReportResponse | null): Insight
     list.push({ text: `Ada ${formatRupiah(report.summary.totalRefunded)} refund pada periode ini.`, tone: 'warn' });
   }
 
+  const { pareto, retention, dso, ltv } = report.businessMetrics;
+  if (pareto.patientCount >= 5) {
+    if (pareto.top20PercentPatientShare >= 60) {
+      list.push({
+        text: `20% pasien teratas menyumbang ${pareto.top20PercentPatientShare}% pendapatan — konsentrasi tinggi, risiko jika pasien tsb berhenti.`,
+        tone: 'warn',
+      });
+    } else {
+      list.push({ text: `20% pasien teratas menyumbang ${pareto.top20PercentPatientShare}% pendapatan — cukup terdiversifikasi.`, tone: 'good' });
+    }
+  }
+
+  if (retention.retentionRatePercent !== null) {
+    if (retention.retentionRatePercent >= 50) {
+      list.push({ text: `Retensi pasien ${retention.retentionRatePercent}% — pasien lama rutin kembali bertransaksi.`, tone: 'good' });
+    } else {
+      list.push({ text: `Retensi pasien baru ${retention.retentionRatePercent}% — perlu strategi agar pasien lama kembali.`, tone: 'warn' });
+    }
+  }
+
+  if (dso.outstandingCount > 0 && dso.averageDays >= 30) {
+    list.push({ text: `Rata-rata piutang belum tertagih sudah berumur ${dso.averageDays} hari — pertimbangkan penagihan lebih aktif.`, tone: 'warn' });
+  }
+
+  if (ltv.patientCount > 0) {
+    list.push({ text: `Customer Lifetime Value rata-rata ${formatRupiah(ltv.averageLtv)} per pasien (${ltv.averageVisitsPerPatient}x kunjungan rata-rata).`, tone: 'neutral' });
+  }
+
   return list;
 }
 
@@ -201,6 +233,7 @@ export default function LaporanKeuanganPage() {
   const [report, setReport] = useState<FinancialReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [downloadingInvestor, setDownloadingInvestor] = useState(false);
   const { error: showError } = useToast();
 
   const canView = canAccessFeature(user?.role, 'laporan-keuangan');
@@ -323,6 +356,17 @@ export default function LaporanKeuanganPage() {
     }
   }
 
+  async function handleDownloadInvestorReport() {
+    setDownloadingInvestor(true);
+    try {
+      await reportsApi.downloadInvestorReportPdf();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Gagal mengunduh laporan investor');
+    } finally {
+      setDownloadingInvestor(false);
+    }
+  }
+
   const totalPendapatan = report?.summary.totalBilling ?? 0;
   const rataRataHarian = pendapatanHarian.length > 0 ? totalPendapatan / pendapatanHarian.length : 0;
   const belumLunas = report?.summary.totalOutstanding ?? 0;
@@ -379,6 +423,16 @@ export default function LaporanKeuanganPage() {
             >
               <FiDownload />
               {exporting ? 'Mengekspor...' : 'Export Excel'}
+            </button>
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={handleDownloadInvestorReport}
+              disabled={downloadingInvestor}
+              title="Ringkasan kinerja 12 bulan terakhir, siap dibagikan ke investor/bank"
+            >
+              <FiAward />
+              {downloadingInvestor ? 'Menyiapkan...' : 'Laporan Investor (PDF)'}
             </button>
           </div>
         </div>
@@ -556,6 +610,58 @@ export default function LaporanKeuanganPage() {
             </div>
           </div>
         </div>
+
+        {report && (
+          <div className="laporan-section">
+            <div className="laporan-section-title">
+              <h2>Analisis Bisnis Lanjutan</h2>
+              <span>Unit economics &amp; kesehatan keuangan klinik</span>
+            </div>
+            <div className="stat-grid">
+              <StatCard
+                variant="income"
+                icon={<FiUsers />}
+                value={formatRupiah(report.businessMetrics.ltv.averageLtv)}
+                label="Customer Lifetime Value (LTV)"
+              />
+              <StatCard
+                variant="total"
+                icon={<FiDollarSign />}
+                value={formatRupiah(report.businessMetrics.arpv)}
+                label="Avg. Revenue / Kunjungan (ARPV)"
+              />
+              <StatCard
+                variant="lunas"
+                icon={<FiRepeat />}
+                value={
+                  report.businessMetrics.retention.retentionRatePercent !== null
+                    ? `${report.businessMetrics.retention.retentionRatePercent}%`
+                    : '-'
+                }
+                label="Retensi Pasien"
+              />
+              <StatCard
+                variant="pending"
+                icon={<FiClock />}
+                value={`${report.businessMetrics.dso.averageDays} hari`}
+                label="Days Sales Outstanding (DSO)"
+              />
+              <StatCard
+                variant="expense"
+                icon={<FiPercent />}
+                value={`${report.businessMetrics.pareto.top20PercentPatientShare}%`}
+                label="Konsentrasi 20% Pasien Teratas"
+              />
+              <StatCard
+                variant="margin"
+                icon={<FiAward />}
+                value={`${report.businessMetrics.ltv.averageVisitsPerPatient}x`}
+                label="Rata-rata Kunjungan / Pasien"
+              />
+            </div>
+            <CategoryProfitabilityTable data={report.businessMetrics.categoryProfitability} />
+          </div>
+        )}
 
         {report && <TindakanTerlarisTable tindakan={report.tindakanTerlaris} />}
         {!loading && <VisitDetailTable dateFrom={dateFrom} dateTo={dateTo} />}
