@@ -174,9 +174,41 @@
 }
 
 .rm-bp-group { display: flex; align-items: center; gap: 8px; }
-.rm-bp-group input { text-align: center; }
-.rm-bp-group .rm-bp-sep { color: var(--text-muted); font-weight: 700; font-size: 15px; }
+/* The generic `.visit-form-field input { width: 100% }` rule computes each
+   input's flex-basis as 100% of this flex row, so with two of them the
+   browser crushes both far below their content width (bug: showed "1/ 8"
+   instead of "120/80"). Give them a real, larger flex-basis instead. */
+.rm-bp-group input {
+  text-align: center;
+  width: auto;
+  flex: 1 1 64px;
+  min-width: 56px;
+  font-size: 15px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.rm-bp-group .rm-bp-sep { color: var(--text-muted); font-weight: 700; font-size: 16px; }
 .rm-bp-group .unit { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+
+/* "besarkan formnya sedikit" — slightly larger vital-sign inputs overall. */
+.rm-fieldset-vitals .rm-input-unit input {
+  font-size: 15px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.rm-bmi-badge {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  border: 1.5px dashed var(--border);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-main);
+}
 
 /* Physical exam narrative fields (paru/jantung/abdomen/lainnya) stay
    compact — there are ~19 of them, a 90px default height would make the
@@ -185,6 +217,166 @@
   min-height: 56px;
   max-height: 160px;
 }
+
+/* ----- Skala Nyeri: 0-10 tap picker + body map ----- */
+
+.pain-scale-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pain-scale-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-main);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.pain-scale-btn:hover { border-color: var(--primary); }
+.pain-scale-btn.active { color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+
+.pain-map {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pain-map-svg {
+  width: 160px;
+  height: 336px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: crosshair;
+}
+
+.pain-map-svg.disabled { cursor: default; }
+
+.pain-map-body { fill: #C9D3E8; stroke: #A0AEC0; stroke-width: 1; }
+.pain-map-point { fill: #FF4D4F; stroke: #fff; stroke-width: 2; cursor: pointer; }
+.pain-map-hint { font-size: 11.5px; color: var(--text-muted); max-width: 220px; }
+
+/* ----- SOAP read-only view mode ----- */
+
+.rm-view-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rm-view-field { display: flex; flex-direction: column; gap: 6px; }
+.rm-view-field label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+
+.rm-view-value {
+  font-size: 13.5px;
+  color: var(--text-main);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.rm-view-empty { font-size: 13px; color: var(--text-muted); font-style: italic; }
+
+.rm-view-signature {
+  max-width: 220px;
+  max-height: 90px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  padding: 6px;
+}
+
+/* ----- Resep Obat (Prescription) panel — distinct from the plain textareas ----- */
+
+.rx-panel { display: flex; flex-direction: column; gap: 14px; }
+
+.rx-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.rx-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+
+.rx-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rx-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--bg);
+  color: var(--text-sub);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.rx-table td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  color: var(--text-main);
+}
+.rx-drug-name { font-weight: 600; }
+
+.rx-delete-btn {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+}
+.rx-delete-btn:hover { color: #FF4D4F; background: rgba(255,77,79,.1); }
+.rx-delete-btn .material-symbols-rounded { font-size: 18px; }
+
+.rx-add-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border);
+}
+
+.rx-add-fields {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr 1.4fr;
+  gap: 8px;
+}
+
+.rx-add-fields input {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+}
+.rx-add-fields input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,126,248,.12); }
+
+.rx-add-btn { align-self: flex-end; }
 
 @media (max-width: 860px) {
   .rm-layout { grid-template-columns: 1fr; }
@@ -201,4 +393,6 @@
   .rm-field-grid.cols-4 {
     grid-template-columns: 1fr;
   }
+
+  .rx-add-fields { grid-template-columns: 1fr 1fr; }
 }

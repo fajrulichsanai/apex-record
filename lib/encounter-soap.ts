@@ -6,14 +6,18 @@ export interface SoapNote {
   subjective?: string;
   objective?: string;
   assessment?: string;
+  treatment?: string;
   plan?: string;
   signature?: string;
+  updatedAt?: string;
+  createdAt?: string;
 }
 
 export interface UpsertSoapNotePayload {
   subjective?: string;
   objective?: string;
   assessment?: string;
+  treatment?: string;
   plan?: string;
   signature?: string;
 }

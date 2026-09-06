@@ -8,6 +8,12 @@ export interface PhysicalExamination {
 
   generalCondition?: string;
   consciousness?: string;
+  nutritionalStatus?: string;
+  height?: number;
+  weight?: number;
+
+  painScale?: number;
+  painPoints?: { x: number; y: number }[];
 
   bloodPressureSystolic?: number;
   bloodPressureDiastolic?: number;

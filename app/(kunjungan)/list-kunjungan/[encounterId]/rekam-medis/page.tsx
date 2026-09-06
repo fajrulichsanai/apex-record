@@ -6,6 +6,10 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import SignaturePad from '@/components/form/SignaturePad';
 import ExamFindingSelect from '@/components/form/ExamFindingSelect';
+import PainScalePicker from '@/components/form/PainScalePicker';
+import BodyPainMap, { PainPoint } from '@/components/form/BodyPainMap';
+import PrescriptionPanel from '@/components/form/PrescriptionPanel';
+import SoapNoteView from '@/components/rekam-medis/SoapNoteView';
 import { encounterApi, EncounterDetail } from '@/lib/encounter';
 import { encounterSoapApi } from '@/lib/encounter-soap';
 import { physicalExaminationApi, PhysicalExamination } from '@/lib/physical-examination';
@@ -28,6 +32,10 @@ const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
 type ExamField =
   | 'generalCondition'
   | 'consciousness'
+  | 'nutritionalStatus'
+  | 'height'
+  | 'weight'
+  | 'painScale'
   | 'bloodPressureSystolic'
   | 'bloodPressureDiastolic'
   | 'pulseRate'
@@ -64,6 +72,9 @@ type ExamField =
   | 'rectal';
 
 const NUMERIC_EXAM_FIELDS: ExamField[] = [
+  'height',
+  'weight',
+  'painScale',
   'bloodPressureSystolic',
   'bloodPressureDiastolic',
   'pulseRate',
@@ -75,6 +86,10 @@ const NUMERIC_EXAM_FIELDS: ExamField[] = [
 const EMPTY_EXAM: Record<ExamField, string> = {
   generalCondition: '',
   consciousness: '',
+  nutritionalStatus: '',
+  height: '',
+  weight: '',
+  painScale: '',
   bloodPressureSystolic: '',
   bloodPressureDiastolic: '',
   pulseRate: '',
@@ -127,6 +142,7 @@ function examFromResponse(data: PhysicalExamination | null): Record<ExamField, s
 const EXAM_OPTIONS: Partial<Record<ExamField, string[]>> = {
   generalCondition: ['Baik', 'Tampak sakit ringan', 'Tampak sakit sedang', 'Tampak sakit berat'],
   consciousness: ['Komposmentis', 'Apatis', 'Delirium', 'Somnolen', 'Sopor', 'Soporokoma', 'Koma'],
+  nutritionalStatus: ['Gizi baik', 'Gizi kurang / kurus', 'Gizi lebih / obesitas'],
 
   cyanosis: ['Tidak ada (-)', 'Ada (+)'],
   edema: ['Tidak ada (-)', 'Ada (+)'],
@@ -175,14 +191,20 @@ function formatExamDate(value?: string | null) {
 // Compiles whichever exam fields have content into a readable Objective
 // block for the SOAP note — only sections with at least one filled field
 // show up, so an untouched exam contributes nothing.
-function composeObjectiveFromExam(exam: Record<ExamField, string>): string {
+function composeObjectiveFromExam(exam: Record<ExamField, string>, painPointCount = 0): string {
   const lines: string[] = [];
 
   const keadaan = [
     exam.generalCondition && `Keadaan umum: ${exam.generalCondition}`,
     exam.consciousness && `Kesadaran: ${exam.consciousness}`,
+    exam.nutritionalStatus && `Status gizi: ${exam.nutritionalStatus}`,
+    exam.height && exam.weight && `TB/BB: ${exam.height} cm / ${exam.weight} kg`,
   ].filter(Boolean);
   if (keadaan.length) lines.push(keadaan.join(', '));
+
+  if (exam.painScale) {
+    lines.push(`Skala nyeri: ${exam.painScale}/10${painPointCount ? ` (${painPointCount} lokasi ditandai)` : ''}`);
+  }
 
   const vital = [
     exam.bloodPressureSystolic && exam.bloodPressureDiastolic && `TD ${exam.bloodPressureSystolic}/${exam.bloodPressureDiastolic} mmHg`,
@@ -284,6 +306,7 @@ export default function RekamMedisPage() {
 
   const [exam, setExam] = useState<Record<ExamField, string>>(EMPTY_EXAM);
   const [examUpdatedAt, setExamUpdatedAt] = useState<string | null>(null);
+  const [painPoints, setPainPoints] = useState<PainPoint[]>([]);
   const [submittingExam, setSubmittingExam] = useState(false);
   // Tracks the auto-generated block last written into Objective, so a
   // re-save of the exam can replace just that block instead of clobbering
@@ -293,9 +316,15 @@ export default function RekamMedisPage() {
   const [subjective, setSubjective] = useState('');
   const [objective, setObjective] = useState('');
   const [assessment, setAssessment] = useState('');
+  const [treatment, setTreatment] = useState('');
   const [plan, setPlan] = useState('');
   const [signature, setSignature] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [soapUpdatedAt, setSoapUpdatedAt] = useState<string | null>(null);
+  // A SOAP note that was already saved opens in read-only view mode first
+  // ("bukan tempat isi saja") — Edit switches to the form.
+  const [soapMode, setSoapMode] = useState<'view' | 'edit'>('edit');
+  const [hasSavedNote, setHasSavedNote] = useState(false);
 
   useEffect(() => {
     isMounted.current = true;
@@ -321,16 +350,21 @@ export default function RekamMedisPage() {
           setSubjective(note.subjective || '');
           setObjective(note.objective || '');
           setAssessment(note.assessment || '');
+          setTreatment(note.treatment || '');
           setPlan(note.plan || '');
           setSignature(note.signature || null);
+          setSoapUpdatedAt(note.updatedAt || note.createdAt || null);
+          setHasSavedNote(true);
+          setSoapMode('view');
         }
         const loadedExam = examFromResponse(examData);
         setExam(loadedExam);
         setExamUpdatedAt(examData?.updatedAt || examData?.createdAt || null);
+        setPainPoints(examData?.painPoints || []);
         // If Objective already starts with what this exam data would
         // compose to, remember it so the next save replaces that block
         // instead of duplicating it.
-        const composed = composeObjectiveFromExam(loadedExam);
+        const composed = composeObjectiveFromExam(loadedExam, examData?.painPoints?.length || 0);
         if (composed && note?.objective?.startsWith(composed)) {
           lastAutoObjectiveRef.current = composed;
         }
@@ -357,8 +391,8 @@ export default function RekamMedisPage() {
   // Prepends the freshly composed exam summary to Objective, replacing the
   // previous auto-generated block (if the doctor hasn't since typed over
   // it) so their own notes after it survive the update.
-  const applyExamToObjective = (examValues: Record<ExamField, string>) => {
-    const block = composeObjectiveFromExam(examValues);
+  const applyExamToObjective = (examValues: Record<ExamField, string>, painPointCount: number) => {
+    const block = composeObjectiveFromExam(examValues, painPointCount);
     if (!block) return;
     setObjective((prev) => {
       const prevAuto = lastAutoObjectiveRef.current;
@@ -372,7 +406,7 @@ export default function RekamMedisPage() {
     e.preventDefault();
     setSubmittingExam(true);
     try {
-      const payload: Record<string, string | number | undefined> = {};
+      const payload: Record<string, string | number | undefined | PainPoint[]> = {};
       (Object.keys(EMPTY_EXAM) as ExamField[]).forEach((field) => {
         const raw = exam[field].trim();
         if (!raw) {
@@ -381,10 +415,12 @@ export default function RekamMedisPage() {
         }
         payload[field] = NUMERIC_EXAM_FIELDS.includes(field) ? Number(raw) : raw;
       });
+      payload.painPoints = painPoints.length ? painPoints : undefined;
       const saved = await physicalExaminationApi.upsert(encounterId, payload);
       setExamUpdatedAt(saved?.updatedAt || new Date().toISOString());
-      applyExamToObjective(exam);
+      applyExamToObjective(exam, painPoints.length);
       success('Pemeriksaan fisik berhasil disimpan, hasilnya ditambahkan ke Objective SOAP');
+      setSoapMode('edit');
       setActiveSection('soap');
     } catch (err) {
       if (!isMounted.current) return;
@@ -402,15 +438,18 @@ export default function RekamMedisPage() {
     }
     setSubmitting(true);
     try {
-      await encounterSoapApi.upsert(encounterId, {
+      const saved = await encounterSoapApi.upsert(encounterId, {
         subjective: subjective.trim() || undefined,
         objective: objective.trim() || undefined,
         assessment: assessment.trim() || undefined,
+        treatment: treatment.trim() || undefined,
         plan: plan.trim() || undefined,
         signature,
       });
+      setSoapUpdatedAt(saved?.updatedAt || new Date().toISOString());
+      setHasSavedNote(true);
       success('Catatan SOAP berhasil disimpan');
-      goBackToVisit();
+      setSoapMode('view');
     } catch (err) {
       if (!isMounted.current) return;
       showError(err instanceof ApiError ? err.message : 'Gagal menyimpan pemeriksaan');
@@ -479,7 +518,7 @@ export default function RekamMedisPage() {
                             <span className="material-symbols-rounded">visibility</span>
                             Keadaan Umum &amp; Kesadaran
                           </div>
-                          <div className="rm-field-grid">
+                          <div className="rm-field-grid cols-3">
                             <div className="visit-form-field">
                               <label>Keadaan Umum</label>
                               <ExamFindingSelect
@@ -498,10 +537,53 @@ export default function RekamMedisPage() {
                                 disabled={submittingExam}
                               />
                             </div>
+                            <div className="visit-form-field">
+                              <label>Status Gizi</label>
+                              <ExamFindingSelect
+                                value={exam.nutritionalStatus}
+                                onChange={setExamValue('nutritionalStatus')}
+                                options={EXAM_OPTIONS.nutritionalStatus!}
+                                disabled={submittingExam}
+                              />
+                            </div>
+                            <div className="visit-form-field">
+                              <label>Tinggi Badan</label>
+                              <div className="rm-input-unit">
+                                <input
+                                  type="number"
+                                  value={exam.height}
+                                  onChange={setExamField('height')}
+                                  placeholder="165"
+                                  disabled={submittingExam}
+                                />
+                                <span className="unit">cm</span>
+                              </div>
+                            </div>
+                            <div className="visit-form-field">
+                              <label>Berat Badan</label>
+                              <div className="rm-input-unit">
+                                <input
+                                  type="number"
+                                  value={exam.weight}
+                                  onChange={setExamField('weight')}
+                                  placeholder="60"
+                                  disabled={submittingExam}
+                                />
+                                <span className="unit">kg</span>
+                              </div>
+                            </div>
+                            {exam.height && exam.weight && (
+                              <div className="visit-form-field">
+                                <label>IMT (BMI)</label>
+                                <div className="rm-bmi-badge">
+                                  {(Number(exam.weight) / (Number(exam.height) / 100) ** 2).toFixed(1)} kg/m²
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
 
-                        <div className="rm-fieldset">
+                        <div className="rm-fieldset rm-fieldset-vitals">
                           <div className="rm-fieldset-title">
                             <span className="material-symbols-rounded">monitor_heart</span>
                             Tanda Vital
@@ -581,6 +663,21 @@ export default function RekamMedisPage() {
                                 <span className="unit">%</span>
                               </div>
                             </div>
+                          </div>
+                        </div>
+
+                        <div className="rm-fieldset">
+                          <div className="rm-fieldset-title">
+                            <span className="material-symbols-rounded">sentiment_dissatisfied</span>
+                            Skala Nyeri
+                          </div>
+                          <div className="visit-form-field">
+                            <label>Seberapa nyeri dirasakan pasien? (0 = tidak nyeri, 10 = nyeri terberat)</label>
+                            <PainScalePicker value={exam.painScale} onChange={setExamValue('painScale')} disabled={submittingExam} />
+                          </div>
+                          <div className="visit-form-field">
+                            <label>Lokasi Nyeri</label>
+                            <BodyPainMap points={painPoints} onChange={setPainPoints} disabled={submittingExam} />
                           </div>
                         </div>
 
@@ -865,7 +962,22 @@ export default function RekamMedisPage() {
                     </form>
                   )}
 
-                  {activeSection === 'soap' && (
+                  {activeSection === 'soap' && soapMode === 'view' && (
+                    <SoapNoteView
+                      encounterId={encounterId}
+                      practitionerName={detail.practitioner?.name}
+                      subjective={subjective}
+                      objective={objective}
+                      assessment={assessment}
+                      treatment={treatment}
+                      plan={plan}
+                      signature={signature}
+                      updatedAtLabel={formatExamDate(soapUpdatedAt)}
+                      onEdit={() => setSoapMode('edit')}
+                    />
+                  )}
+
+                  {activeSection === 'soap' && soapMode === 'edit' && (
                     <form onSubmit={handleSaveSoap} className="rm-section">
                       <div className="rm-section-heading">
                         <h2>Catatan SOAP</h2>
@@ -919,12 +1031,32 @@ export default function RekamMedisPage() {
                           />
                         </div>
 
+                        <div className="rm-fieldset">
+                          <div className="rm-fieldset-title">
+                            <span className="material-symbols-rounded">clinical_notes</span>
+                            Treatment — tindakan pada kunjungan ini
+                          </div>
+                          <div className="visit-form-field">
+                            <label>Tindakan yang dilakukan</label>
+                            <textarea
+                              value={treatment}
+                              onChange={(e) => setTreatment(e.target.value)}
+                              placeholder="mis. Debridement luka, injeksi antibiotik (opsional)"
+                              disabled={submitting}
+                            />
+                          </div>
+                          <div className="visit-form-field">
+                            <label>Resep Obat</label>
+                            <PrescriptionPanel encounterId={encounterId} disabled={submitting} />
+                          </div>
+                        </div>
+
                         <div className="visit-form-field">
                           <label>Plan</label>
                           <textarea
                             value={plan}
                             onChange={(e) => setPlan(e.target.value)}
-                            placeholder="Rencana tindakan/terapi (opsional)"
+                            placeholder="Rencana untuk kunjungan berikutnya (opsional)"
                             disabled={submitting}
                           />
                         </div>
@@ -938,7 +1070,12 @@ export default function RekamMedisPage() {
                       </div>
 
                       <div className="rm-section-footer">
-                        <button type="button" className="btn-outline" onClick={goBackToVisit} disabled={submitting}>
+                        <button
+                          type="button"
+                          className="btn-outline"
+                          onClick={() => (hasSavedNote ? setSoapMode('view') : goBackToVisit())}
+                          disabled={submitting}
+                        >
                           Batal
                         </button>
                         <button type="submit" className="btn-primary" disabled={submitting}>
