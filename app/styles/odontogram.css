@@ -1,0 +1,242 @@
+/* ===================== ODONTOGRAM ===================== */
+/* Nested under .kunjungan-page (rendered as a Rekam Medis tab) so it
+   inherits --primary/--border/--radius-* etc. The tooth-detail modal reuses
+   .visit-modal-overlay, which already carries its own full variable set. */
+
+.odt-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.odt-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 20px;
+  padding: 12px 14px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.odt-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-sub);
+  font-weight: 600;
+}
+
+.odt-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.odt-swatch-x {
+  width: 12px;
+  height: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.odt-badge-sample {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 700;
+}
+
+.odt-arch {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.odt-arch-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.odt-row-scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.odt-row {
+  display: grid;
+  grid-template-rows: auto 14px;
+  gap: 4px 4px;
+  min-width: 720px;
+}
+
+.odt-tooth-cell {
+  display: flex;
+  justify-content: center;
+}
+
+.odt-bridge-bar {
+  align-self: start;
+  height: 8px;
+  border-radius: 4px;
+  background: #8E7CC3;
+  margin-top: 2px;
+  font-size: 0;
+  overflow: hidden;
+}
+
+/* ----- single tooth ----- */
+
+.tooth-box {
+  width: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 2px;
+  position: relative;
+}
+
+.tooth-grid {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  grid-template-columns: 10px 1fr 10px;
+  grid-template-rows: 10px 1fr 10px;
+  grid-template-areas:
+    ".    top    ."
+    "left center right"
+    ".    bottom .";
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--surface);
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.tooth-box:hover .tooth-grid { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,126,248,.12); }
+
+.t-cell { background: transparent; }
+.t-top { grid-area: top; }
+.t-bottom { grid-area: bottom; }
+.t-left { grid-area: left; }
+.t-right { grid-area: right; }
+.t-center { grid-area: center; border-radius: 1px; }
+
+.tooth-number { font-size: 10.5px; font-weight: 700; color: var(--text-sub); }
+
+.tooth-badge {
+  position: absolute;
+  top: -4px;
+  right: -2px;
+  min-width: 20px;
+  height: 13px;
+  padding: 0 2px;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 7.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tooth-crown .tooth-grid { box-shadow: 0 0 0 2px var(--primary); }
+.tooth-unerupted .tooth-grid { border-style: dashed; opacity: .6; }
+
+.tooth-missing,
+.tooth-extract {
+  width: 44px;
+  height: 40px;
+  justify-content: center;
+}
+
+.tooth-missing .material-symbols-rounded,
+.tooth-extract .material-symbols-rounded {
+  width: 40px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 18px;
+}
+
+.tooth-missing .material-symbols-rounded { background: var(--bg); color: var(--text-muted); border: 1.5px dashed var(--border); }
+.tooth-extract .material-symbols-rounded { background: rgba(255,77,79,.1); color: #FF4D4F; border: 1.5px solid #FF4D4F; }
+
+/* ----- bridge manager ----- */
+
+.odt-bridge-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--border);
+}
+
+.odt-bridge-list { display: flex; flex-direction: column; gap: 6px; }
+
+.odt-bridge-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.odt-bridge-range { font-size: 13px; font-weight: 700; color: var(--text-main); min-width: 64px; }
+.odt-bridge-label { font-size: 13px; color: var(--text-sub); flex: 1; }
+
+.odt-bridge-add {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
+/* ----- tooth detail modal ----- */
+
+.odt-modal-box { max-width: 480px; }
+
+.odt-modal-body {
+  padding: 20px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.odt-fieldset-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .odt-bridge-add { grid-template-columns: 1fr 1fr; }
+  .odt-bridge-add button { grid-column: span 2; justify-self: end; }
+}

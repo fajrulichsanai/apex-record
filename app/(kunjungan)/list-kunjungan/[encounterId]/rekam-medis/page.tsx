@@ -11,6 +11,7 @@ import BodyPainMap, { PainPoint } from '@/components/form/BodyPainMap';
 import PrescriptionPanel from '@/components/form/PrescriptionPanel';
 import CustomSelect from '@/components/form/CustomSelect';
 import SoapNoteView from '@/components/rekam-medis/SoapNoteView';
+import OdontogramChart from '@/components/odontogram/OdontogramChart';
 import { encounterApi, EncounterDetail } from '@/lib/encounter';
 import { encounterSoapApi } from '@/lib/encounter-soap';
 import { physicalExaminationApi, PhysicalExamination } from '@/lib/physical-examination';
@@ -20,16 +21,19 @@ import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import '../../../../styles/kunjungan.css';
 import '../../../../styles/rekam-medis.css';
+import '../../../../styles/odontogram.css';
 
 // Rekam Medis is a book: one chapter per kind of clinical record. Pemeriksaan
-// Fisik comes first (what the doctor observes), Resep Obat stands on its
-// own between exam and SOAP (printable independently), SOAP comes last (the
-// doctor's conclusion) — new chapters (odontogram, penunjang, dst.) get
-// added here later without touching the layout around them.
-type SectionId = 'physical-exam' | 'prescription' | 'soap';
+// Fisik comes first (what the doctor observes), Odontogram documents the
+// dentist's tooth-by-tooth findings, Resep Obat stands on its own
+// (printable independently), SOAP comes last (the doctor's conclusion) —
+// new chapters (penunjang, dst.) get added here later without touching the
+// layout around them.
+type SectionId = 'physical-exam' | 'odontogram' | 'prescription' | 'soap';
 
 const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
   { id: 'physical-exam', label: 'Pemeriksaan Fisik', icon: 'stethoscope' },
+  { id: 'odontogram', label: 'Odontogram', icon: 'dentistry' },
   { id: 'prescription', label: 'Resep Obat', icon: 'prescriptions' },
   { id: 'soap', label: 'Catatan SOAP', icon: 'medical_services' },
 ];
@@ -1047,6 +1051,22 @@ export default function RekamMedisPage() {
                         </button>
                       </div>
                     </form>
+                  )}
+
+                  {activeSection === 'odontogram' && (
+                    <div className="rm-section">
+                      <div className="rm-section-heading">
+                        <h2>Odontogram</h2>
+                        <p>Peta kondisi gigi pasien (FDI/ISO 3950) — data ini mengikuti pasien di semua kunjungan, bukan hanya kunjungan ini</p>
+                      </div>
+                      <div className="rm-section-body">
+                        {detail.patient ? (
+                          <OdontogramChart patientId={detail.patient.id} />
+                        ) : (
+                          <div className="rm-loading">Data pasien tidak ditemukan</div>
+                        )}
+                      </div>
+                    </div>
                   )}
 
                   {activeSection === 'prescription' && (
