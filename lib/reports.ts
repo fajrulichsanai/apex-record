@@ -22,6 +22,22 @@ export interface VisitReportResponse {
   };
   byDay: { date: string; count: number }[];
   byDoctor: { practitionerName: string; count: number }[];
+  demographics: {
+    byGender: { gender: 'male' | 'female' | null; count: number }[];
+    byAgeGroup: { group: string; count: number }[];
+    newVsReturning: { new: number; returning: number };
+  };
+  procedureMix: {
+    topProcedures: { tarifName: string; kategori: string; count: number }[];
+    byKategori: { kategori: string; count: number }[];
+    avgProceduresPerVisit: number;
+  };
+  byHour: { hour: number; count: number }[];
+  byDayOfWeek: { day: string; count: number }[];
+  comparison: {
+    previousTotal: number;
+    changePercent: number | null;
+  };
   encounters: {
     encounterId: number;
     date: string;

@@ -260,6 +260,116 @@
   background: var(--surface);
 }
 
+/* INSIGHT PANEL */
+.laporan-page .insight-panel {
+  background: linear-gradient(135deg, #EEF2FF, #F5F0FF);
+  border: 1px solid #DCE3FA;
+  border-radius: var(--radius-lg);
+  padding: 18px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.laporan-page .insight-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--primary-dk);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+.laporan-page .insight-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px 20px;
+}
+.laporan-page .insight-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--text-main);
+  line-height: 1.5;
+}
+.laporan-page .insight-item .insight-icon { flex-shrink: 0; margin-top: 2px; color: var(--primary); }
+.laporan-page .insight-item.warn .insight-icon { color: var(--orange); }
+.laporan-page .insight-item.good .insight-icon { color: var(--green); }
+.laporan-page .insight-empty { font-size: 13px; color: var(--text-muted); }
+
+/* STAT CARD trend badge */
+.laporan-page .stat-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 700;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.22);
+  width: fit-content;
+  position: relative;
+  z-index: 1;
+}
+
+/* SECTION TITLES between chart-grid groups */
+.laporan-page .laporan-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.laporan-page .laporan-section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.laporan-page .laporan-section-title h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+.laporan-page .laporan-section-title span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Simple split stat inside a panel (pasien baru vs lama) */
+.laporan-page .split-stat-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.laporan-page .split-stat-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--bg);
+}
+.laporan-page .split-stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.laporan-page .split-stat-row .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+.laporan-page .split-stat-row .label { display: flex; align-items: center; color: var(--text-sub); }
+.laporan-page .split-stat-row .value { font-weight: 700; color: var(--text-main); }
+.laporan-page .split-stat-hint { font-size: 12px; color: var(--text-muted); }
+
+.laporan-page .mini-metric-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+}
+.laporan-page .mini-metric-row .mini-metric-label { font-size: 12.5px; color: var(--text-sub); }
+.laporan-page .mini-metric-row .mini-metric-value { font-size: 17px; font-weight: 800; color: var(--text-main); }
+
 /* RESPONSIVE */
 @media (max-width: 1100px) {
   .laporan-page .stat-grid { grid-template-columns: repeat(2, 1fr); }
