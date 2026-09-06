@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import { ApiError } from '@/lib/api-client';
@@ -13,7 +14,13 @@ import {
 import { useToast } from '@/lib/toast-context';
 import { useAuth } from '@/lib/auth-context';
 import { isFeatureViewOnly } from '@/lib/permissions';
+import { useSubscriptionGate } from '@/lib/subscription-gate-context';
 import '../../styles/info-klinik.css';
+
+function formatSubscriptionDate(value?: string) {
+  if (!value) return '-';
+  return new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+}
 
 interface ClinicInfo {
   nama: string;
@@ -147,6 +154,9 @@ export default function InfoKlinikPage() {
   const { success, error } = useToast();
   const { user } = useAuth();
   const viewOnly = isFeatureViewOnly(user?.role, 'info-klinik');
+  const { subscription, daysUntilExpiry } = useSubscriptionGate();
+  const subscriptionActive =
+    !!subscription && subscription.status === 'active' && new Date(subscription.endDate) >= new Date(new Date().toDateString());
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -439,6 +449,49 @@ export default function InfoKlinikPage() {
 
               {/* RIGHT COLUMN */}
               <div>
+                <div className="card">
+                  <div className="card-header">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    Langganan
+                  </div>
+                  <div className="card-body">
+                    {subscription ? (
+                      <>
+                        <div className="subscription-status-row">
+                          <span className={`sub-tag ${subscriptionActive ? 'sub-tag-active' : 'sub-tag-expired'}`}>
+                            {subscriptionActive ? 'Aktif' : 'Kadaluarsa'}
+                          </span>
+                          <span className="subscription-plan">{subscription.plan?.name || '-'}</span>
+                        </div>
+                        <div className="subscription-period">
+                          Masa berlaku: {formatSubscriptionDate(subscription.startDate)} &ndash; {formatSubscriptionDate(subscription.endDate)}
+                        </div>
+                        {subscriptionActive && daysUntilExpiry !== null && daysUntilExpiry <= 7 && (
+                          <p className="subscription-hint warning">Akan berakhir dalam {daysUntilExpiry} hari</p>
+                        )}
+                        {!subscriptionActive && (
+                          <p className="subscription-hint expired">Perpanjang langganan agar dapat menambah, mengubah, atau menghapus data</p>
+                        )}
+                        <Link href="/langganan" className="subscription-link">
+                          Kelola Langganan &rarr;
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <p className="subscription-hint expired">Klinik Anda belum memiliki langganan aktif.</p>
+                        <Link href="/langganan" className="subscription-link">
+                          Kelola Langganan &rarr;
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 <div className="card">
                   <div className="card-header">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

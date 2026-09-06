@@ -63,6 +63,7 @@
 
 .renew-popup-actions .btn-primary,
 .renew-popup-actions .btn-outline {
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -72,13 +73,17 @@
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .renew-popup-actions .btn-primary {
   background: #4f7ef8;
   color: #fff;
-  border: none;
+  /* Same border width as .btn-outline (just transparent) so both buttons
+     compute the exact same box size instead of the outline one growing
+     ~3px larger from its visible border. */
+  border: 1.5px solid transparent;
   box-shadow: 0 4px 14px rgba(79, 126, 248, 0.35);
 }
 .renew-popup-actions .btn-primary:hover {

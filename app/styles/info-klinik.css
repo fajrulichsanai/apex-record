@@ -130,6 +130,40 @@
   cursor: default;
 }
 
+/* Langganan card */
+.info-klinik-page .subscription-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.info-klinik-page .sub-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+.info-klinik-page .sub-tag-active { background: rgba(34,197,94,.12); color: var(--save-dark); }
+.info-klinik-page .sub-tag-expired { background: rgba(255,77,79,.12); color: #D93B3D; }
+.info-klinik-page .subscription-plan { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+.info-klinik-page .subscription-period { font-size: 13px; color: var(--text-mid); margin-bottom: 10px; }
+.info-klinik-page .subscription-hint { font-size: 12.5px; color: var(--text-mid); margin-bottom: 10px; }
+.info-klinik-page .subscription-hint.warning { color: #B8791A; }
+.info-klinik-page .subscription-hint.expired { color: #D93B3D; }
+.info-klinik-page .subscription-link {
+  display: inline-block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+}
+.info-klinik-page .subscription-link:hover { text-decoration: underline; }
+
 /* Operating hours */
 .info-klinik-page .info-banner {
   background: var(--info-bg);
