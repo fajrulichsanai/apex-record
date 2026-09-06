@@ -9,10 +9,12 @@ import ExamFindingSelect from '@/components/form/ExamFindingSelect';
 import PainScalePicker from '@/components/form/PainScalePicker';
 import BodyPainMap, { PainPoint } from '@/components/form/BodyPainMap';
 import PrescriptionPanel from '@/components/form/PrescriptionPanel';
+import CustomSelect from '@/components/form/CustomSelect';
 import SoapNoteView from '@/components/rekam-medis/SoapNoteView';
 import { encounterApi, EncounterDetail } from '@/lib/encounter';
 import { encounterSoapApi } from '@/lib/encounter-soap';
 import { physicalExaminationApi, PhysicalExamination } from '@/lib/physical-examination';
+import { reservationsApi } from '@/lib/reservations';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import '../../../../styles/kunjungan.css';
@@ -179,6 +181,39 @@ const EXAM_OPTIONS: Partial<Record<ExamField, string[]>> = {
   rectal: ['Dalam batas normal', 'Tidak dilakukan pemeriksaan'],
 };
 
+const CONTROL_OPTIONS = [
+  { value: 'none', label: 'Tidak perlu kontrol' },
+  { value: '3d', label: 'Kontrol 3 Hari Lagi' },
+  { value: '1w', label: 'Kontrol 1 Minggu Lagi' },
+  { value: '2w', label: 'Kontrol 2 Minggu Lagi' },
+  { value: '1m', label: 'Kontrol 1 Bulan Lagi' },
+  { value: 'custom', label: 'Pilih Tanggal Sendiri' },
+];
+
+const CONTROL_OPTION_DAYS: Record<string, number> = { '3d': 3, '1w': 7, '2w': 14, '1m': 30 };
+
+// Same WIB-vs-UTC pitfall as the "today" filter elsewhere in this app —
+// shift to WIB before reading calendar fields so a control date computed
+// late at night doesn't land a day early.
+function wibToday(): Date {
+  return new Date(Date.now() + 7 * 60 * 60 * 1000);
+}
+
+function computeControlDate(option: string): string {
+  const days = CONTROL_OPTION_DAYS[option];
+  if (!days) return '';
+  const d = wibToday();
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function formatDateOnly(value?: string) {
+  if (!value) return '';
+  const [y, m, d] = value.split('-').map(Number);
+  if (!y || !m || !d) return '';
+  return new Date(y, m - 1, d).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
 function formatExamDate(value?: string | null) {
   if (!value) return null;
   const d = new Date(value);
@@ -326,6 +361,14 @@ export default function RekamMedisPage() {
   const [soapMode, setSoapMode] = useState<'view' | 'edit'>('edit');
   const [hasSavedNote, setHasSavedNote] = useState(false);
 
+  // Plan's follow-up control scheduler — creates a Reservasi automatically
+  // on save so a control visit doesn't rely on the doctor remembering to
+  // book it separately afterward.
+  const [controlOption, setControlOption] = useState('none');
+  const [controlDate, setControlDate] = useState('');
+  const [controlReservationCreated, setControlReservationCreated] = useState(false);
+  const effectiveControlDate = controlOption === 'custom' ? controlDate : computeControlDate(controlOption);
+
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -386,6 +429,17 @@ export default function RekamMedisPage() {
 
   const setExamValue = (field: ExamField) => (value: string) => {
     setExam((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleControlOptionChange = (value: string) => {
+    setControlOption(value);
+    setControlReservationCreated(false);
+    if (value !== 'custom') setControlDate('');
+  };
+
+  const handleControlDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setControlDate(e.target.value);
+    setControlReservationCreated(false);
   };
 
   // Prepends the freshly composed exam summary to Objective, replacing the
@@ -449,6 +503,23 @@ export default function RekamMedisPage() {
       setSoapUpdatedAt(saved?.updatedAt || new Date().toISOString());
       setHasSavedNote(true);
       success('Catatan SOAP berhasil disimpan');
+
+      if (controlOption !== 'none' && effectiveControlDate && !controlReservationCreated && detail?.patient?.id) {
+        try {
+          await reservationsApi.create({
+            patientId: detail.patient.id,
+            patientName: detail.patient.name,
+            practitionerId: detail.practitioner?.id,
+            reservationDate: effectiveControlDate,
+            notes: 'Kontrol lanjutan dari hasil pemeriksaan',
+          });
+          setControlReservationCreated(true);
+          success(`Reservasi kontrol otomatis dibuat untuk ${formatDateOnly(effectiveControlDate)}`);
+        } catch (rErr) {
+          showError(rErr instanceof ApiError ? `Catatan SOAP tersimpan, tapi gagal membuat reservasi kontrol: ${rErr.message}` : 'Catatan SOAP tersimpan, tapi gagal membuat reservasi kontrol otomatis');
+        }
+      }
+
       setSoapMode('view');
     } catch (err) {
       if (!isMounted.current) return;
@@ -1059,6 +1130,49 @@ export default function RekamMedisPage() {
                             placeholder="Rencana untuk kunjungan berikutnya (opsional)"
                             disabled={submitting}
                           />
+                        </div>
+
+                        <div className="rm-fieldset">
+                          <div className="rm-fieldset-title">
+                            <span className="material-symbols-rounded">event_repeat</span>
+                            Jadwal Kontrol
+                          </div>
+                          <div className="rm-field-grid cols-3">
+                            <div className="visit-form-field">
+                              <label>Kontrol Berikutnya</label>
+                              <CustomSelect
+                                value={controlOption}
+                                onChange={handleControlOptionChange}
+                                options={CONTROL_OPTIONS}
+                                disabled={submitting}
+                              />
+                            </div>
+                            {controlOption === 'custom' && (
+                              <div className="visit-form-field">
+                                <label>Tanggal Kontrol</label>
+                                <input
+                                  type="date"
+                                  value={controlDate}
+                                  min={wibToday().toISOString().slice(0, 10)}
+                                  onChange={handleControlDateChange}
+                                  disabled={submitting}
+                                />
+                              </div>
+                            )}
+                            {controlOption !== 'none' && controlOption !== 'custom' && effectiveControlDate && (
+                              <div className="visit-form-field">
+                                <label>Tanggal</label>
+                                <div className="rm-bmi-badge">{formatDateOnly(effectiveControlDate)}</div>
+                              </div>
+                            )}
+                          </div>
+                          {controlOption !== 'none' && (
+                            <p className={`rm-control-hint${controlReservationCreated ? ' done' : ''}`}>
+                              {controlReservationCreated
+                                ? `✓ Reservasi kontrol sudah dibuat untuk ${formatDateOnly(effectiveControlDate)}`
+                                : 'Reservasi kontrol akan dibuat otomatis di modul Reservasi saat Catatan SOAP ini disimpan.'}
+                            </p>
+                          )}
                         </div>
 
                         <div className="visit-form-field">

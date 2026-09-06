@@ -651,7 +651,8 @@
 }
 
 .visit-form-field input[type="text"],
-.visit-form-field input[type="number"] {
+.visit-form-field input[type="number"],
+.visit-form-field input[type="date"] {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 10px 14px;
@@ -674,7 +675,8 @@
 .visit-form-field input::placeholder { color: var(--text-muted); }
 
 .visit-form-field input[type="text"]:focus,
-.visit-form-field input[type="number"]:focus {
+.visit-form-field input[type="number"]:focus,
+.visit-form-field input[type="date"]:focus {
   border-color: var(--primary);
   background: var(--surface);
   box-shadow: 0 0 0 3px rgba(79,126,248,.12);

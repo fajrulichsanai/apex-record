@@ -33,7 +33,9 @@ export interface ReservationListResponse {
 export interface CreateReservationPayload {
   patientId?: number;
   patientName: string;
-  patientPhone: string;
+  // Required only for manual entry (no patientId) — the backend resolves
+  // it from the patient record when patientId is given and this is omitted.
+  patientPhone?: string;
   patientNik?: string;
   practitionerId?: number;
   serviceType?: string;

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import ConfirmationModal from '@/components/feedback/ConfirmationModal';
+import ExamFindingSelect from '@/components/form/ExamFindingSelect';
 import { ApiError } from '@/lib/api-client';
 import { prescriptionsApi, type PrescriptionItem } from '@/lib/prescriptions';
 import { useToast } from '@/lib/toast-context';
@@ -12,6 +13,11 @@ interface PrescriptionPanelProps {
 }
 
 const EMPTY_DRAFT = { drugName: '', dosage: '', frequency: '', duration: '', quantity: '', instructions: '' };
+
+// Common drugs the clinic prescribes often — tap to pick instead of typing.
+// ExamFindingSelect's "Lainnya (isi manual)" fallback still allows any drug
+// not on this starter list.
+const DRUG_OPTIONS = ['Amoxicillin', 'Ibuprofen', 'Paracetamol Syrup'];
 
 /**
  * Resep obat — a distinct, structured list (not a plain textarea like the
@@ -135,13 +141,13 @@ export default function PrescriptionPanel({ encounterId, disabled }: Prescriptio
           {!disabled && (
             <div className="rx-add-row">
               <div className="rx-add-fields">
-                <input
-                  type="text"
-                  placeholder="Nama obat *"
-                  value={draft.drugName}
-                  onChange={(e) => setDraft((d) => ({ ...d, drugName: e.target.value }))}
-                  className="rx-add-drug"
-                />
+                <div className="rx-add-drug">
+                  <ExamFindingSelect
+                    value={draft.drugName}
+                    onChange={(v) => setDraft((d) => ({ ...d, drugName: v }))}
+                    options={DRUG_OPTIONS}
+                  />
+                </div>
                 <input
                   type="text"
                   placeholder="Dosis"
