@@ -15,19 +15,22 @@ import { encounterApi, EncounterDetail } from '@/lib/encounter';
 import { encounterSoapApi } from '@/lib/encounter-soap';
 import { physicalExaminationApi, PhysicalExamination } from '@/lib/physical-examination';
 import { reservationsApi } from '@/lib/reservations';
+import { prescriptionsApi } from '@/lib/prescriptions';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import '../../../../styles/kunjungan.css';
 import '../../../../styles/rekam-medis.css';
 
 // Rekam Medis is a book: one chapter per kind of clinical record. Pemeriksaan
-// Fisik comes first (what the doctor observes), SOAP comes last (the
-// doctor's conclusion) — new chapters (odontogram, resep, penunjang, dst.)
-// get added here later without touching the layout around them.
-type SectionId = 'physical-exam' | 'soap';
+// Fisik comes first (what the doctor observes), Resep Obat stands on its
+// own between exam and SOAP (printable independently), SOAP comes last (the
+// doctor's conclusion) — new chapters (odontogram, penunjang, dst.) get
+// added here later without touching the layout around them.
+type SectionId = 'physical-exam' | 'prescription' | 'soap';
 
 const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
   { id: 'physical-exam', label: 'Pemeriksaan Fisik', icon: 'stethoscope' },
+  { id: 'prescription', label: 'Resep Obat', icon: 'prescriptions' },
   { id: 'soap', label: 'Catatan SOAP', icon: 'medical_services' },
 ];
 
@@ -369,6 +372,8 @@ export default function RekamMedisPage() {
   const [controlReservationCreated, setControlReservationCreated] = useState(false);
   const effectiveControlDate = controlOption === 'custom' ? controlDate : computeControlDate(controlOption);
 
+  const [printingRx, setPrintingRx] = useState(false);
+
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -440,6 +445,17 @@ export default function RekamMedisPage() {
   const handleControlDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setControlDate(e.target.value);
     setControlReservationCreated(false);
+  };
+
+  const handlePrintPrescription = async () => {
+    setPrintingRx(true);
+    try {
+      await prescriptionsApi.downloadPdf(encounterId);
+    } catch (err) {
+      showError(err instanceof ApiError ? err.message : 'Gagal mencetak resep');
+    } finally {
+      setPrintingRx(false);
+    }
   };
 
   // Prepends the freshly composed exam summary to Objective, replacing the
@@ -1033,9 +1049,28 @@ export default function RekamMedisPage() {
                     </form>
                   )}
 
+                  {activeSection === 'prescription' && (
+                    <div className="rm-section">
+                      <div className="rm-section-heading rm-view-heading">
+                        <div>
+                          <h2>Resep Obat</h2>
+                          <p>Kelola obat yang diresepkan untuk kunjungan ini, lalu cetak sebagai lembar resep</p>
+                        </div>
+                        <button type="button" className="btn-primary" onClick={handlePrintPrescription} disabled={printingRx}>
+                          <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                            print
+                          </span>
+                          {printingRx ? 'Menyiapkan…' : 'Cetak Resep'}
+                        </button>
+                      </div>
+                      <div className="rm-section-body">
+                        <PrescriptionPanel encounterId={encounterId} />
+                      </div>
+                    </div>
+                  )}
+
                   {activeSection === 'soap' && soapMode === 'view' && (
                     <SoapNoteView
-                      encounterId={encounterId}
                       practitionerName={detail.practitioner?.name}
                       subjective={subjective}
                       objective={objective}
@@ -1112,13 +1147,9 @@ export default function RekamMedisPage() {
                             <textarea
                               value={treatment}
                               onChange={(e) => setTreatment(e.target.value)}
-                              placeholder="mis. Debridement luka, injeksi antibiotik (opsional)"
+                              placeholder="mis. Debridement luka, injeksi antibiotik (opsional). Resep obat dikelola di tab Resep Obat."
                               disabled={submitting}
                             />
-                          </div>
-                          <div className="visit-form-field">
-                            <label>Resep Obat</label>
-                            <PrescriptionPanel encounterId={encounterId} disabled={submitting} />
                           </div>
                         </div>
 

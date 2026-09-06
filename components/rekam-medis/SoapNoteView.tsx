@@ -1,9 +1,6 @@
 'use client';
 
-import PrescriptionPanel from '@/components/form/PrescriptionPanel';
-
 interface SoapNoteViewProps {
-  encounterId: number;
   practitionerName?: string;
   subjective?: string;
   objective?: string;
@@ -27,11 +24,11 @@ function ViewField({ label, value }: { label: string; value?: string }) {
 /**
  * Read-only display of a saved SOAP note — "bukan tempat isi saja". Opens
  * by default whenever a note already exists so the doctor (or anyone else
- * opening the record) can review Subjective/Objective/Assessment/Treatment
- * (incl. the prescriptions given)/Plan and the signature before editing.
+ * opening the record) can review Subjective/Objective/Assessment/Treatment/
+ * Plan and the signature before editing. Resep Obat is its own tab now, not
+ * shown here.
  */
 export default function SoapNoteView({
-  encounterId,
   practitionerName,
   subjective,
   objective,
@@ -62,19 +59,7 @@ export default function SoapNoteView({
         <ViewField label="Subjective" value={subjective} />
         <ViewField label="Objective" value={objective} />
         <ViewField label="Assessment" value={assessment} />
-
-        <div className="rm-fieldset">
-          <div className="rm-fieldset-title">
-            <span className="material-symbols-rounded">clinical_notes</span>
-            Treatment — tindakan pada kunjungan ini
-          </div>
-          {treatment ? <p className="rm-view-value">{treatment}</p> : <p className="rm-view-empty">Belum diisi</p>}
-          <div className="rm-view-field">
-            <label>Resep Obat</label>
-            <PrescriptionPanel encounterId={encounterId} disabled />
-          </div>
-        </div>
-
+        <ViewField label="Treatment — tindakan pada kunjungan ini" value={treatment} />
         <ViewField label="Plan (kunjungan berikutnya)" value={plan} />
 
         <div className="rm-view-field">

@@ -9,7 +9,6 @@ import { useToast } from '@/lib/toast-context';
 
 interface PrescriptionPanelProps {
   encounterId: number;
-  disabled?: boolean;
 }
 
 const EMPTY_DRAFT = { drugName: '', dosage: '', frequency: '', duration: '', quantity: '', instructions: '' };
@@ -20,12 +19,11 @@ const EMPTY_DRAFT = { drugName: '', dosage: '', frequency: '', duration: '', qua
 const DRUG_OPTIONS = ['Amoxicillin', 'Ibuprofen', 'Paracetamol Syrup'];
 
 /**
- * Resep obat — a distinct, structured list (not a plain textarea like the
- * rest of SOAP) so each drug's dosage/frequency/duration/quantity stays
- * separately readable. Lives inside the Treatment section. Add/remove
+ * Resep obat — a distinct, structured list (not a plain textarea) with its
+ * own tab in Rekam Medis so it can be printed on its own. Add/remove
  * persist immediately, mirroring BomPanel's pattern for tarif/tindakan.
  */
-export default function PrescriptionPanel({ encounterId, disabled }: PrescriptionPanelProps) {
+export default function PrescriptionPanel({ encounterId }: PrescriptionPanelProps) {
   const { success, error } = useToast();
   const [items, setItems] = useState<PrescriptionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +98,7 @@ export default function PrescriptionPanel({ encounterId, disabled }: Prescriptio
                     <th>Durasi</th>
                     <th>Jumlah</th>
                     <th>Aturan Pakai</th>
-                    {!disabled && <th></th>}
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -112,18 +110,16 @@ export default function PrescriptionPanel({ encounterId, disabled }: Prescriptio
                       <td>{item.duration || '—'}</td>
                       <td>{item.quantity || '—'}</td>
                       <td>{item.instructions || '—'}</td>
-                      {!disabled && (
-                        <td>
-                          <button
-                            type="button"
-                            className="rx-delete-btn"
-                            aria-label="Hapus"
-                            onClick={() => setConfirmDelete({ id: item.id, name: item.drugName })}
-                          >
-                            <span className="material-symbols-rounded">delete</span>
-                          </button>
-                        </td>
-                      )}
+                      <td>
+                        <button
+                          type="button"
+                          className="rx-delete-btn"
+                          aria-label="Hapus"
+                          onClick={() => setConfirmDelete({ id: item.id, name: item.drugName })}
+                        >
+                          <span className="material-symbols-rounded">delete</span>
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -138,8 +134,7 @@ export default function PrescriptionPanel({ encounterId, disabled }: Prescriptio
             </div>
           )}
 
-          {!disabled && (
-            <div className="rx-add-row">
+          <div className="rx-add-row">
               <div className="rx-add-fields">
                 <div className="rx-add-drug">
                   <ExamFindingSelect
@@ -185,7 +180,6 @@ export default function PrescriptionPanel({ encounterId, disabled }: Prescriptio
                 Tambah Obat
               </button>
             </div>
-          )}
         </>
       )}
 
