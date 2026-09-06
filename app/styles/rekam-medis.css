@@ -388,6 +388,138 @@
 
 .rx-add-btn { align-self: flex-end; }
 
+/* ----- Pemeriksaan Gigi Lanjutan: OHI-S / GI / PCR badges + probing depth ----- */
+
+.rm-index-badge {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 700;
+  border: 1.5px solid transparent;
+}
+
+.rm-index-badge.good { background: rgba(45,203,138,.12); color: #1E9C6B; border-color: rgba(45,203,138,.35); }
+.rm-index-badge.fair { background: rgba(245,166,35,.12); color: #B8791A; border-color: rgba(245,166,35,.35); }
+.rm-index-badge.poor { background: rgba(255,77,79,.12); color: #D93B3D; border-color: rgba(255,77,79,.35); }
+
+.rm-probing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.rm-probing-arch-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub);
+  margin-bottom: 8px;
+}
+
+.rm-probing-table th,
+.rm-probing-table td { text-align: center; }
+.rm-probing-table th:first-child,
+.rm-probing-table td:first-child { text-align: left; font-weight: 600; }
+
+.rm-probing-table td input[type="number"] {
+  width: 100%;
+  max-width: 64px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 4px;
+  font-size: 13px;
+  text-align: center;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+}
+.rm-probing-table td input[type="number"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+}
+
+/* ----- Pemeriksaan Penunjang: upload row + image gallery + lightbox ----- */
+
+.se-upload-fields {
+  display: grid;
+  grid-template-columns: 160px 1fr 1fr;
+  gap: 8px;
+}
+
+.se-upload-notes input {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+}
+.se-upload-notes input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,126,248,.12); }
+
+.se-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.se-gallery-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.se-gallery-thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  background: var(--bg);
+}
+
+.se-gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.se-badge {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.se-badge-photo { background: rgba(79,126,248,.9); }
+.se-badge-xray { background: rgba(26,35,64,.9); }
+
+.se-gallery-caption {
+  font-size: 12px;
+  color: var(--text-sub);
+  white-space: pre-wrap;
+}
+
+.se-gallery-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(255,255,255,.9);
+}
+
+.se-lightbox-box { max-width: 800px; }
+.se-lightbox-img { width: 100%; max-height: 70vh; object-fit: contain; border-radius: var(--radius-sm); }
+
 @media (max-width: 860px) {
   .rm-layout { grid-template-columns: 1fr; }
   .rm-sidebar {
@@ -405,4 +537,7 @@
   }
 
   .rx-add-fields { grid-template-columns: 1fr 1fr; }
+
+  .rm-probing-grid { grid-template-columns: 1fr; }
+  .se-upload-fields { grid-template-columns: 1fr; }
 }

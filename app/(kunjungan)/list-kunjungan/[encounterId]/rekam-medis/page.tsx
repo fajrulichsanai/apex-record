@@ -11,10 +11,13 @@ import BodyPainMap, { PainPoint } from '@/components/form/BodyPainMap';
 import PrescriptionPanel from '@/components/form/PrescriptionPanel';
 import CustomSelect from '@/components/form/CustomSelect';
 import SoapNoteView from '@/components/rekam-medis/SoapNoteView';
+import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
 import OdontogramChart from '@/components/odontogram/OdontogramChart';
+import { UPPER_ROW, LOWER_ROW, ALL_TEETH } from '@/components/odontogram/odontogramData';
 import { encounterApi, EncounterDetail } from '@/lib/encounter';
 import { encounterSoapApi } from '@/lib/encounter-soap';
 import { physicalExaminationApi, PhysicalExamination } from '@/lib/physical-examination';
+import { dentalExaminationApi, DentalExamination, ProbingDepthEntry } from '@/lib/dental-examination';
 import { reservationsApi } from '@/lib/reservations';
 import { prescriptionsApi } from '@/lib/prescriptions';
 import { ApiError } from '@/lib/api-client';
@@ -25,15 +28,23 @@ import '../../../../styles/odontogram.css';
 
 // Rekam Medis is a book: one chapter per kind of clinical record. Pemeriksaan
 // Fisik comes first (what the doctor observes), Odontogram documents the
-// dentist's tooth-by-tooth findings, Resep Obat stands on its own
-// (printable independently), SOAP comes last (the doctor's conclusion) —
-// new chapters (penunjang, dst.) get added here later without touching the
-// layout around them.
-type SectionId = 'physical-exam' | 'odontogram' | 'prescription' | 'soap';
+// dentist's tooth-by-tooth findings, Pemeriksaan Gigi Lanjutan adds the
+// dentist's indices (OHI-S/GI/PCR/probing depth) on top of that, Pemeriksaan
+// Penunjang holds supporting images (foto/rontgen), Resep Obat stands on its
+// own (printable independently), SOAP comes last (the doctor's conclusion).
+type SectionId =
+  | 'physical-exam'
+  | 'odontogram'
+  | 'dental-exam'
+  | 'supporting-exam'
+  | 'prescription'
+  | 'soap';
 
 const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
   { id: 'physical-exam', label: 'Pemeriksaan Fisik', icon: 'stethoscope' },
   { id: 'odontogram', label: 'Odontogram', icon: 'dentistry' },
+  { id: 'dental-exam', label: 'Pemeriksaan Gigi Lanjutan', icon: 'cleaning_services' },
+  { id: 'supporting-exam', label: 'Pemeriksaan Penunjang', icon: 'image' },
   { id: 'prescription', label: 'Resep Obat', icon: 'prescriptions' },
   { id: 'soap', label: 'Catatan SOAP', icon: 'medical_services' },
 ];
@@ -313,6 +324,125 @@ function composeObjectiveFromExam(exam: Record<ExamField, string>, painPointCoun
   return lines.join('\n');
 }
 
+// ----- Pemeriksaan Gigi Lanjutan: OHI-S, Gingival Index, Plaque Control
+// Record, Probing Depth — a second "objective" data source that composes
+// into SOAP's Objective field alongside Pemeriksaan Fisik (see
+// mergeAutoBlockIntoObjective below).
+
+type DentalExamField =
+  | 'ohisDebris'
+  | 'ohisCalculus'
+  | 'gingivalIndex'
+  | 'plaqueSurfacesWithPlaque'
+  | 'plaqueSurfacesExamined'
+  | 'notes';
+
+type DentalExamState = Record<DentalExamField, string>;
+
+const EMPTY_DENTAL_EXAM: DentalExamState = {
+  ohisDebris: '',
+  ohisCalculus: '',
+  gingivalIndex: '',
+  plaqueSurfacesWithPlaque: '',
+  plaqueSurfacesExamined: '',
+  notes: '',
+};
+
+interface ProbingRow {
+  toothNumber: number;
+  buccal: string;
+  lingual: string;
+}
+
+function emptyProbingRows(): ProbingRow[] {
+  return ALL_TEETH.map((toothNumber) => ({ toothNumber, buccal: '', lingual: '' }));
+}
+
+function dentalExamFromResponse(data: DentalExamination | null): DentalExamState {
+  const next = { ...EMPTY_DENTAL_EXAM };
+  if (!data) return next;
+  (Object.keys(EMPTY_DENTAL_EXAM) as DentalExamField[]).forEach((field) => {
+    const value = data[field];
+    next[field] = value === null || value === undefined ? '' : String(value);
+  });
+  return next;
+}
+
+function probingRowsFromResponse(data: DentalExamination | null): ProbingRow[] {
+  const rows = emptyProbingRows();
+  if (!data?.probingDepths?.length) return rows;
+  const byTooth = new Map(data.probingDepths.map((p) => [p.toothNumber, p]));
+  return rows.map((row) => {
+    const found = byTooth.get(row.toothNumber);
+    if (!found) return row;
+    return {
+      toothNumber: row.toothNumber,
+      buccal: found.buccal === null || found.buccal === undefined ? '' : String(found.buccal),
+      lingual: found.lingual === null || found.lingual === undefined ? '' : String(found.lingual),
+    };
+  });
+}
+
+// OHI-S (Greene & Vermillion): Debris Index + Calculus Index, each 0-3.
+function ohisCategory(total: number): string {
+  if (total <= 1.2) return 'Baik';
+  if (total <= 3.0) return 'Sedang';
+  return 'Buruk';
+}
+
+// Gingival Index (Löe & Silness), 0-3.
+function gingivalCategory(value: number): string {
+  if (value <= 0) return 'Sehat';
+  if (value <= 1.0) return 'Ringan';
+  if (value <= 2.0) return 'Sedang';
+  return 'Berat';
+}
+
+function indexBadgeTone(category: string): 'good' | 'fair' | 'poor' {
+  if (category === 'Baik' || category === 'Sehat') return 'good';
+  if (category === 'Sedang' || category === 'Ringan') return 'fair';
+  return 'poor';
+}
+
+function composeObjectiveFromDentalExam(exam: DentalExamState, probing: ProbingRow[]): string {
+  const lines: string[] = [];
+
+  const debris = exam.ohisDebris ? Number(exam.ohisDebris) : null;
+  const calculus = exam.ohisCalculus ? Number(exam.ohisCalculus) : null;
+  if (debris !== null || calculus !== null) {
+    const total = (debris || 0) + (calculus || 0);
+    lines.push(
+      `OHI-S: Debris Index ${debris ?? '-'} + Calculus Index ${calculus ?? '-'} = ${total.toFixed(1)} (${ohisCategory(total)})`,
+    );
+  }
+
+  if (exam.gingivalIndex) {
+    const gi = Number(exam.gingivalIndex);
+    lines.push(`Gingival Index: ${gi} (${gingivalCategory(gi)})`);
+  }
+
+  const withPlaque = exam.plaqueSurfacesWithPlaque ? Number(exam.plaqueSurfacesWithPlaque) : null;
+  const examined = exam.plaqueSurfacesExamined ? Number(exam.plaqueSurfacesExamined) : null;
+  if (withPlaque !== null && examined) {
+    const pct = (withPlaque / examined) * 100;
+    lines.push(
+      `Plaque Control Record: ${withPlaque}/${examined} permukaan (${pct.toFixed(1)}%, ${pct < 10 ? 'baik' : 'perlu perbaikan kebersihan mulut'})`,
+    );
+  }
+
+  const filledProbing = probing.filter((p) => p.buccal || p.lingual);
+  if (filledProbing.length) {
+    lines.push(
+      `Probing depth (mm): ${filledProbing.map((p) => `gigi ${p.toothNumber} B${p.buccal || '-'}/L${p.lingual || '-'}`).join(', ')}`,
+    );
+  }
+
+  if (exam.notes) lines.push(`Catatan: ${exam.notes}`);
+
+  if (!lines.length) return '';
+  return ['Pemeriksaan Gigi Lanjutan:', ...lines].join('\n');
+}
+
 function initialsFromName(name?: string) {
   if (!name) return '?';
   return (
@@ -350,9 +480,15 @@ export default function RekamMedisPage() {
   const [examUpdatedAt, setExamUpdatedAt] = useState<string | null>(null);
   const [painPoints, setPainPoints] = useState<PainPoint[]>([]);
   const [submittingExam, setSubmittingExam] = useState(false);
-  // Tracks the auto-generated block last written into Objective, so a
-  // re-save of the exam can replace just that block instead of clobbering
-  // whatever the doctor typed after it.
+  const [dentalExam, setDentalExam] = useState<DentalExamState>(EMPTY_DENTAL_EXAM);
+  const [dentalExamUpdatedAt, setDentalExamUpdatedAt] = useState<string | null>(null);
+  const [probingDepths, setProbingDepths] = useState<ProbingRow[]>(emptyProbingRows());
+  const [submittingDentalExam, setSubmittingDentalExam] = useState(false);
+
+  // Tracks the combined auto-generated block (Pemeriksaan Fisik + Pemeriksaan
+  // Gigi Lanjutan) last written into Objective, so saving either exam can
+  // replace just that block instead of clobbering whatever the doctor typed
+  // after it, or duplicating the other exam's contribution.
   const lastAutoObjectiveRef = useRef('');
 
   const [subjective, setSubjective] = useState('');
@@ -378,6 +514,12 @@ export default function RekamMedisPage() {
 
   const [printingRx, setPrintingRx] = useState(false);
 
+  const ohisTotal = (Number(dentalExam.ohisDebris) || 0) + (Number(dentalExam.ohisCalculus) || 0);
+  const pcrPercent =
+    dentalExam.plaqueSurfacesWithPlaque && dentalExam.plaqueSurfacesExamined && Number(dentalExam.plaqueSurfacesExamined) > 0
+      ? (Number(dentalExam.plaqueSurfacesWithPlaque) / Number(dentalExam.plaqueSurfacesExamined)) * 100
+      : null;
+
   useEffect(() => {
     isMounted.current = true;
     return () => {
@@ -391,10 +533,11 @@ export default function RekamMedisPage() {
       setLoading(true);
       setLoadError(null);
       try {
-        const [d, note, examData] = await Promise.all([
+        const [d, note, examData, dentalExamData] = await Promise.all([
           encounterApi.detail(encounterId),
           encounterSoapApi.get(encounterId),
           physicalExaminationApi.get(encounterId),
+          dentalExaminationApi.get(encounterId),
         ]);
         if (!isMounted.current) return;
         setDetail(d);
@@ -413,12 +556,21 @@ export default function RekamMedisPage() {
         setExam(loadedExam);
         setExamUpdatedAt(examData?.updatedAt || examData?.createdAt || null);
         setPainPoints(examData?.painPoints || []);
-        // If Objective already starts with what this exam data would
-        // compose to, remember it so the next save replaces that block
-        // instead of duplicating it.
-        const composed = composeObjectiveFromExam(loadedExam, examData?.painPoints?.length || 0);
-        if (composed && note?.objective?.startsWith(composed)) {
-          lastAutoObjectiveRef.current = composed;
+
+        const loadedDentalExam = dentalExamFromResponse(dentalExamData);
+        setDentalExam(loadedDentalExam);
+        setDentalExamUpdatedAt(dentalExamData?.updatedAt || dentalExamData?.createdAt || null);
+        const loadedProbingDepths = probingRowsFromResponse(dentalExamData);
+        setProbingDepths(loadedProbingDepths);
+
+        // If Objective already starts with what these two exams would
+        // compose to combined, remember it so the next save replaces that
+        // block instead of duplicating it.
+        const physicalBlock = composeObjectiveFromExam(loadedExam, examData?.painPoints?.length || 0);
+        const dentalBlock = composeObjectiveFromDentalExam(loadedDentalExam, loadedProbingDepths);
+        const combined = [physicalBlock, dentalBlock].filter(Boolean).join('\n\n');
+        if (combined && note?.objective?.startsWith(combined)) {
+          lastAutoObjectiveRef.current = combined;
         }
       } catch (err) {
         if (!isMounted.current) return;
@@ -438,6 +590,16 @@ export default function RekamMedisPage() {
 
   const setExamValue = (field: ExamField) => (value: string) => {
     setExam((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const setDentalField = (field: DentalExamField) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { value } = e.target;
+    setDentalExam((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const setProbingValue = (toothNumber: number, side: 'buccal' | 'lingual') => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value } = e.target;
+    setProbingDepths((prev) => prev.map((row) => (row.toothNumber === toothNumber ? { ...row, [side]: value } : row)));
   };
 
   const handleControlOptionChange = (value: string) => {
@@ -462,18 +624,30 @@ export default function RekamMedisPage() {
     }
   };
 
-  // Prepends the freshly composed exam summary to Objective, replacing the
-  // previous auto-generated block (if the doctor hasn't since typed over
-  // it) so their own notes after it survive the update.
-  const applyExamToObjective = (examValues: Record<ExamField, string>, painPointCount: number) => {
-    const block = composeObjectiveFromExam(examValues, painPointCount);
-    if (!block) return;
+  // Prepends the freshly composed combined block (Pemeriksaan Fisik +
+  // Pemeriksaan Gigi Lanjutan) to Objective, replacing the previous
+  // auto-generated block (if the doctor hasn't since typed over it) so
+  // their own notes after it survive the update.
+  const mergeAutoBlockIntoObjective = (combined: string) => {
+    if (!combined) return;
     setObjective((prev) => {
       const prevAuto = lastAutoObjectiveRef.current;
       const manual = prevAuto && prev.startsWith(prevAuto) ? prev.slice(prevAuto.length).replace(/^\s+/, '') : prev.trim() === '' ? '' : prev;
-      lastAutoObjectiveRef.current = block;
-      return manual ? `${block}\n\n${manual}` : block;
+      lastAutoObjectiveRef.current = combined;
+      return manual ? `${combined}\n\n${manual}` : combined;
     });
+  };
+
+  const applyExamToObjective = (examValues: Record<ExamField, string>, painPointCount: number) => {
+    const physicalBlock = composeObjectiveFromExam(examValues, painPointCount);
+    const dentalBlock = composeObjectiveFromDentalExam(dentalExam, probingDepths);
+    mergeAutoBlockIntoObjective([physicalBlock, dentalBlock].filter(Boolean).join('\n\n'));
+  };
+
+  const applyDentalExamToObjective = (dentalValues: DentalExamState, probingValues: ProbingRow[]) => {
+    const physicalBlock = composeObjectiveFromExam(exam, painPoints.length);
+    const dentalBlock = composeObjectiveFromDentalExam(dentalValues, probingValues);
+    mergeAutoBlockIntoObjective([physicalBlock, dentalBlock].filter(Boolean).join('\n\n'));
   };
 
   const handleSaveExam = async (e: React.FormEvent) => {
@@ -501,6 +675,45 @@ export default function RekamMedisPage() {
       showError(err instanceof ApiError ? err.message : 'Gagal menyimpan pemeriksaan fisik');
     } finally {
       if (isMounted.current) setSubmittingExam(false);
+    }
+  };
+
+  const handleSaveDentalExam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmittingDentalExam(true);
+    try {
+      const numericFields: DentalExamField[] = [
+        'ohisDebris',
+        'ohisCalculus',
+        'gingivalIndex',
+        'plaqueSurfacesWithPlaque',
+        'plaqueSurfacesExamined',
+      ];
+      const payload: Record<string, string | number | undefined | ProbingDepthEntry[]> = {};
+      numericFields.forEach((field) => {
+        const raw = dentalExam[field].trim();
+        payload[field] = raw ? Number(raw) : undefined;
+      });
+      payload.notes = dentalExam.notes.trim() || undefined;
+      const filledProbing: ProbingDepthEntry[] = probingDepths
+        .filter((row) => row.buccal.trim() || row.lingual.trim())
+        .map((row) => ({
+          toothNumber: row.toothNumber,
+          buccal: row.buccal.trim() ? Number(row.buccal) : undefined,
+          lingual: row.lingual.trim() ? Number(row.lingual) : undefined,
+        }));
+      payload.probingDepths = filledProbing.length ? filledProbing : undefined;
+      const saved = await dentalExaminationApi.upsert(encounterId, payload);
+      setDentalExamUpdatedAt(saved?.updatedAt || new Date().toISOString());
+      applyDentalExamToObjective(dentalExam, probingDepths);
+      success('Pemeriksaan gigi lanjutan berhasil disimpan, hasilnya ditambahkan ke Objective SOAP');
+      setSoapMode('edit');
+      setActiveSection('soap');
+    } catch (err) {
+      if (!isMounted.current) return;
+      showError(err instanceof ApiError ? err.message : 'Gagal menyimpan pemeriksaan gigi lanjutan');
+    } finally {
+      if (isMounted.current) setSubmittingDentalExam(false);
     }
   };
 
@@ -1065,6 +1278,259 @@ export default function RekamMedisPage() {
                         ) : (
                           <div className="rm-loading">Data pasien tidak ditemukan</div>
                         )}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSection === 'dental-exam' && (
+                    <form onSubmit={handleSaveDentalExam} className="rm-section">
+                      <div className="rm-section-heading">
+                        <h2>Pemeriksaan Gigi Lanjutan</h2>
+                        <p>
+                          OHI-S, Gingival Index, Plaque Control Record &amp; Probing Depth — hasilnya ikut ditambahkan ke Objective SOAP
+                          {formatExamDate(dentalExamUpdatedAt) && ` · Terakhir diperiksa ${formatExamDate(dentalExamUpdatedAt)}`}
+                        </p>
+                      </div>
+
+                      <div className="rm-section-body">
+                        <div className="rm-fieldset">
+                          <div className="rm-fieldset-title">
+                            <span className="material-symbols-rounded">cleaning_services</span>
+                            Oral Hygiene Index — Simplified (OHI-S)
+                          </div>
+                          <div className="rm-field-grid cols-3">
+                            <div className="visit-form-field">
+                              <label>Debris Index (0–3)</label>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="3"
+                                value={dentalExam.ohisDebris}
+                                onChange={setDentalField('ohisDebris')}
+                                placeholder="0.0"
+                                disabled={submittingDentalExam}
+                              />
+                            </div>
+                            <div className="visit-form-field">
+                              <label>Calculus Index (0–3)</label>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="3"
+                                value={dentalExam.ohisCalculus}
+                                onChange={setDentalField('ohisCalculus')}
+                                placeholder="0.0"
+                                disabled={submittingDentalExam}
+                              />
+                            </div>
+                            {(dentalExam.ohisDebris || dentalExam.ohisCalculus) && (
+                              <div className="visit-form-field">
+                                <label>Total OHI-S</label>
+                                <div className={`rm-index-badge ${indexBadgeTone(ohisCategory(ohisTotal))}`}>
+                                  {ohisTotal.toFixed(1)} · {ohisCategory(ohisTotal)}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="rm-fieldset">
+                          <div className="rm-fieldset-title">
+                            <span className="material-symbols-rounded">emergency</span>
+                            Gingival Index (Löe &amp; Silness)
+                          </div>
+                          <div className="rm-field-grid cols-3">
+                            <div className="visit-form-field">
+                              <label>Skor (0–3)</label>
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="3"
+                                value={dentalExam.gingivalIndex}
+                                onChange={setDentalField('gingivalIndex')}
+                                placeholder="0.0"
+                                disabled={submittingDentalExam}
+                              />
+                            </div>
+                            {dentalExam.gingivalIndex && (
+                              <div className="visit-form-field">
+                                <label>Kategori</label>
+                                <div className={`rm-index-badge ${indexBadgeTone(gingivalCategory(Number(dentalExam.gingivalIndex)))}`}>
+                                  {gingivalCategory(Number(dentalExam.gingivalIndex))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="rm-fieldset">
+                          <div className="rm-fieldset-title">
+                            <span className="material-symbols-rounded">grid_on</span>
+                            Plaque Control Record (O&apos;Leary)
+                          </div>
+                          <div className="rm-field-grid cols-3">
+                            <div className="visit-form-field">
+                              <label>Permukaan dengan Plak</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={dentalExam.plaqueSurfacesWithPlaque}
+                                onChange={setDentalField('plaqueSurfacesWithPlaque')}
+                                placeholder="0"
+                                disabled={submittingDentalExam}
+                              />
+                            </div>
+                            <div className="visit-form-field">
+                              <label>Total Permukaan Diperiksa</label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={dentalExam.plaqueSurfacesExamined}
+                                onChange={setDentalField('plaqueSurfacesExamined')}
+                                placeholder="128"
+                                disabled={submittingDentalExam}
+                              />
+                            </div>
+                            {pcrPercent !== null && (
+                              <div className="visit-form-field">
+                                <label>Persentase Plak</label>
+                                <div className={`rm-index-badge ${pcrPercent < 10 ? 'good' : 'poor'}`}>{pcrPercent.toFixed(1)}%</div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="rm-fieldset">
+                          <div className="rm-fieldset-title">
+                            <span className="material-symbols-rounded">straighten</span>
+                            Probing Depth (mm)
+                          </div>
+                          <div className="rm-probing-grid">
+                            <div>
+                              <div className="rm-probing-arch-label">Rahang Atas</div>
+                              <div className="rx-table-wrap">
+                                <table className="rx-table rm-probing-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Gigi</th>
+                                      <th>Bukal</th>
+                                      <th>Palatal</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {probingDepths
+                                      .filter((row) => UPPER_ROW.includes(row.toothNumber))
+                                      .map((row) => (
+                                        <tr key={row.toothNumber}>
+                                          <td>{row.toothNumber}</td>
+                                          <td>
+                                            <input
+                                              type="number"
+                                              step="0.5"
+                                              min="0"
+                                              value={row.buccal}
+                                              onChange={setProbingValue(row.toothNumber, 'buccal')}
+                                              disabled={submittingDentalExam}
+                                            />
+                                          </td>
+                                          <td>
+                                            <input
+                                              type="number"
+                                              step="0.5"
+                                              min="0"
+                                              value={row.lingual}
+                                              onChange={setProbingValue(row.toothNumber, 'lingual')}
+                                              disabled={submittingDentalExam}
+                                            />
+                                          </td>
+                                        </tr>
+                                      ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                            <div>
+                              <div className="rm-probing-arch-label">Rahang Bawah</div>
+                              <div className="rx-table-wrap">
+                                <table className="rx-table rm-probing-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Gigi</th>
+                                      <th>Bukal</th>
+                                      <th>Lingual</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {probingDepths
+                                      .filter((row) => LOWER_ROW.includes(row.toothNumber))
+                                      .map((row) => (
+                                        <tr key={row.toothNumber}>
+                                          <td>{row.toothNumber}</td>
+                                          <td>
+                                            <input
+                                              type="number"
+                                              step="0.5"
+                                              min="0"
+                                              value={row.buccal}
+                                              onChange={setProbingValue(row.toothNumber, 'buccal')}
+                                              disabled={submittingDentalExam}
+                                            />
+                                          </td>
+                                          <td>
+                                            <input
+                                              type="number"
+                                              step="0.5"
+                                              min="0"
+                                              value={row.lingual}
+                                              onChange={setProbingValue(row.toothNumber, 'lingual')}
+                                              disabled={submittingDentalExam}
+                                            />
+                                          </td>
+                                        </tr>
+                                      ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="visit-form-field">
+                          <label>Catatan Tambahan</label>
+                          <textarea
+                            value={dentalExam.notes}
+                            onChange={setDentalField('notes')}
+                            placeholder="Catatan lain (opsional)"
+                            disabled={submittingDentalExam}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="rm-section-footer">
+                        <button type="button" className="btn-outline" onClick={goBackToVisit} disabled={submittingDentalExam}>
+                          Batal
+                        </button>
+                        <button type="submit" className="btn-primary" disabled={submittingDentalExam}>
+                          <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                            arrow_forward
+                          </span>
+                          {submittingDentalExam ? 'Menyimpan…' : 'Simpan & Lanjut ke SOAP'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+
+                  {activeSection === 'supporting-exam' && (
+                    <div className="rm-section">
+                      <div className="rm-section-heading">
+                        <h2>Pemeriksaan Penunjang</h2>
+                        <p>Unggah foto atau hasil rontgen untuk kunjungan ini</p>
+                      </div>
+                      <div className="rm-section-body">
+                        <SupportingExamPanel encounterId={encounterId} />
                       </div>
                     </div>
                   )}
