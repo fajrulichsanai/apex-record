@@ -3,6 +3,8 @@ import { apiClient } from './api-client';
 export interface PhysicalExamination {
   id?: number;
   encounterId?: number;
+  createdAt?: string;
+  updatedAt?: string;
 
   generalCondition?: string;
   consciousness?: string;

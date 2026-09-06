@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import SignaturePad from '@/components/form/SignaturePad';
+import ExamFindingSelect from '@/components/form/ExamFindingSelect';
 import { encounterApi, EncounterDetail } from '@/lib/encounter';
 import { encounterSoapApi } from '@/lib/encounter-soap';
 import { physicalExaminationApi, PhysicalExamination } from '@/lib/physical-examination';
@@ -120,6 +121,134 @@ function examFromResponse(data: PhysicalExamination | null): Record<ExamField, s
   return next;
 }
 
+// Standard findings a doctor can tap instead of typing — covers the common
+// case for each field; "Lainnya (isi manual)" in ExamFindingSelect still
+// allows free text for anything not on the list.
+const EXAM_OPTIONS: Partial<Record<ExamField, string[]>> = {
+  generalCondition: ['Baik', 'Tampak sakit ringan', 'Tampak sakit sedang', 'Tampak sakit berat'],
+  consciousness: ['Komposmentis', 'Apatis', 'Delirium', 'Somnolen', 'Sopor', 'Soporokoma', 'Koma'],
+
+  cyanosis: ['Tidak ada (-)', 'Ada (+)'],
+  edema: ['Tidak ada (-)', 'Ada (+)'],
+  anemia: ['Tidak ada (-)', 'Ada (+)'],
+  jaundice: ['Tidak ada (-)', 'Ada (+)'],
+
+  skin: ['Dalam batas normal', 'Ikterik', 'Sianosis', 'Pucat', 'Ruam (+)', 'Turgor menurun'],
+  lymphNodes: ['Tidak teraba pembesaran KGB', 'Teraba pembesaran KGB'],
+  head: ['Normocephali', 'Mikrocephali', 'Makrocephali', 'Deformitas (+)'],
+  hair: ['Hitam, distribusi merata, tidak mudah rontok', 'Rontok', 'Beruban', 'Rapuh'],
+  eyes: ['Konjungtiva anemis -/-, sklera ikterik -/-', 'Konjungtiva anemis +/+', 'Sklera ikterik +/+', 'Pupil isokor, refleks cahaya +/+'],
+  ears: ['Dalam batas normal', 'Sekret (+)', 'Nyeri tekan tragus (+)', 'Gangguan pendengaran (+)'],
+  nose: ['Dalam batas normal', 'Sekret (+)', 'Deviasi septum (+)', 'Napas cuping hidung (+)'],
+  mouth: ['Dalam batas normal', 'Mukosa bibir kering', 'Sianosis perioral (+)', 'Faring hiperemis (+)'],
+  neck: ['Dalam batas normal, KGB tidak teraba membesar', 'Pembesaran KGB (+)', 'Pembesaran tiroid (+)', 'Peningkatan JVP (+)'],
+
+  lungInspection: ['Simetris statis dan dinamis', 'Asimetris', 'Retraksi dinding dada (+)', 'Penggunaan otot bantu napas (+)'],
+  lungPalpation: ['Fremitus taktil simetris kanan = kiri', 'Fremitus meningkat', 'Fremitus menurun'],
+  lungPercussion: ['Sonor pada kedua lapang paru', 'Redup', 'Hipersonor'],
+  lungAuscultation: ['Vesikuler +/+, ronkhi -/-, wheezing -/-', 'Ronkhi (+)', 'Wheezing (+)', 'Suara napas menurun'],
+
+  heartInspection: ['Ictus cordis tidak tampak', 'Ictus cordis tampak'],
+  heartPalpation: ['Ictus cordis tidak teraba', 'Ictus cordis teraba di ICS V linea midklavikula sinistra'],
+  heartPercussion: ['Batas jantung dalam batas normal', 'Kardiomegali'],
+  heartAuscultation: ['BJ I-II reguler, murmur (-), gallop (-)', 'Murmur (+)', 'Gallop (+)', 'Bunyi jantung ireguler'],
+
+  abdomenInspection: ['Datar', 'Distensi (+)', 'Skar (+)', 'Massa (+)'],
+  abdomenPalpation: ['Supel, nyeri tekan (-), hepar/lien tidak teraba', 'Nyeri tekan (+)', 'Hepatomegali (+)', 'Splenomegali (+)', 'Defans muskular (+)'],
+  abdomenPercussion: ['Timpani pada seluruh lapang abdomen', 'Shifting dullness (+)', 'Pekak sisi (+)'],
+  abdomenAuscultation: ['Bising usus (+) normal', 'Bising usus meningkat', 'Bising usus menurun/tidak terdengar'],
+
+  extremities: ['Akral hangat, CRT < 2 detik, edema (-)', 'Akral dingin', 'Edema (+)', 'Sianosis perifer (+)'],
+  genitalia: ['Dalam batas normal', 'Tidak dilakukan pemeriksaan'],
+  rectal: ['Dalam batas normal', 'Tidak dilakukan pemeriksaan'],
+};
+
+function formatExamDate(value?: string | null) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return null;
+  const date = d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+  const time = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+  return `${date}, ${time}`;
+}
+
+// Compiles whichever exam fields have content into a readable Objective
+// block for the SOAP note — only sections with at least one filled field
+// show up, so an untouched exam contributes nothing.
+function composeObjectiveFromExam(exam: Record<ExamField, string>): string {
+  const lines: string[] = [];
+
+  const keadaan = [
+    exam.generalCondition && `Keadaan umum: ${exam.generalCondition}`,
+    exam.consciousness && `Kesadaran: ${exam.consciousness}`,
+  ].filter(Boolean);
+  if (keadaan.length) lines.push(keadaan.join(', '));
+
+  const vital = [
+    exam.bloodPressureSystolic && exam.bloodPressureDiastolic && `TD ${exam.bloodPressureSystolic}/${exam.bloodPressureDiastolic} mmHg`,
+    exam.pulseRate && `Nadi ${exam.pulseRate}x/menit`,
+    exam.respiratoryRate && `RR ${exam.respiratoryRate}x/menit`,
+    exam.temperature && `Suhu ${exam.temperature}°C`,
+    exam.oxygenSaturation && `SpO2 ${exam.oxygenSaturation}%`,
+  ].filter(Boolean);
+  if (vital.length) lines.push(`Tanda vital: ${vital.join(', ')}`);
+
+  const umum = [
+    exam.cyanosis && `sianosis ${exam.cyanosis}`,
+    exam.edema && `edema ${exam.edema}`,
+    exam.anemia && `anemia ${exam.anemia}`,
+    exam.jaundice && `ikterik ${exam.jaundice}`,
+  ].filter(Boolean);
+  if (umum.length) lines.push(`Pemeriksaan umum: ${umum.join(', ')}`);
+
+  const generalisataFields: [ExamField, string][] = [
+    ['skin', 'Kulit'],
+    ['lymphNodes', 'KGB'],
+    ['head', 'Kepala'],
+    ['hair', 'Rambut'],
+    ['eyes', 'Mata'],
+    ['ears', 'Telinga'],
+    ['nose', 'Hidung'],
+    ['mouth', 'Mulut'],
+    ['neck', 'Leher'],
+  ];
+  const generalisata = generalisataFields.filter(([f]) => exam[f]).map(([f, label]) => `${label}: ${exam[f]}`);
+  if (generalisata.length) lines.push(`Status generalisata — ${generalisata.join('; ')}`);
+
+  const paru = [
+    exam.lungInspection && `inspeksi ${exam.lungInspection}`,
+    exam.lungPalpation && `palpasi ${exam.lungPalpation}`,
+    exam.lungPercussion && `perkusi ${exam.lungPercussion}`,
+    exam.lungAuscultation && `auskultasi ${exam.lungAuscultation}`,
+  ].filter(Boolean);
+  if (paru.length) lines.push(`Paru: ${paru.join('; ')}`);
+
+  const jantung = [
+    exam.heartInspection && `inspeksi ${exam.heartInspection}`,
+    exam.heartPalpation && `palpasi ${exam.heartPalpation}`,
+    exam.heartPercussion && `perkusi ${exam.heartPercussion}`,
+    exam.heartAuscultation && `auskultasi ${exam.heartAuscultation}`,
+  ].filter(Boolean);
+  if (jantung.length) lines.push(`Jantung: ${jantung.join('; ')}`);
+
+  const abdomen = [
+    exam.abdomenInspection && `inspeksi ${exam.abdomenInspection}`,
+    exam.abdomenPalpation && `palpasi ${exam.abdomenPalpation}`,
+    exam.abdomenPercussion && `perkusi ${exam.abdomenPercussion}`,
+    exam.abdomenAuscultation && `auskultasi ${exam.abdomenAuscultation}`,
+  ].filter(Boolean);
+  if (abdomen.length) lines.push(`Abdomen: ${abdomen.join('; ')}`);
+
+  const lainnya = [
+    exam.extremities && `Ekstremitas: ${exam.extremities}`,
+    exam.genitalia && `Genitalia: ${exam.genitalia}`,
+    exam.rectal && `Rectal toucher: ${exam.rectal}`,
+  ].filter(Boolean);
+  if (lainnya.length) lines.push(lainnya.join('; '));
+
+  return lines.join('\n');
+}
+
 function initialsFromName(name?: string) {
   if (!name) return '?';
   return (
@@ -154,7 +283,12 @@ export default function RekamMedisPage() {
   const [activeSection, setActiveSection] = useState<SectionId>('physical-exam');
 
   const [exam, setExam] = useState<Record<ExamField, string>>(EMPTY_EXAM);
+  const [examUpdatedAt, setExamUpdatedAt] = useState<string | null>(null);
   const [submittingExam, setSubmittingExam] = useState(false);
+  // Tracks the auto-generated block last written into Objective, so a
+  // re-save of the exam can replace just that block instead of clobbering
+  // whatever the doctor typed after it.
+  const lastAutoObjectiveRef = useRef('');
 
   const [subjective, setSubjective] = useState('');
   const [objective, setObjective] = useState('');
@@ -190,7 +324,16 @@ export default function RekamMedisPage() {
           setPlan(note.plan || '');
           setSignature(note.signature || null);
         }
-        setExam(examFromResponse(examData));
+        const loadedExam = examFromResponse(examData);
+        setExam(loadedExam);
+        setExamUpdatedAt(examData?.updatedAt || examData?.createdAt || null);
+        // If Objective already starts with what this exam data would
+        // compose to, remember it so the next save replaces that block
+        // instead of duplicating it.
+        const composed = composeObjectiveFromExam(loadedExam);
+        if (composed && note?.objective?.startsWith(composed)) {
+          lastAutoObjectiveRef.current = composed;
+        }
       } catch (err) {
         if (!isMounted.current) return;
         setLoadError(err instanceof ApiError ? err.message : 'Gagal memuat rekam medis');
@@ -207,6 +350,24 @@ export default function RekamMedisPage() {
     setExam((prev) => ({ ...prev, [field]: value }));
   };
 
+  const setExamValue = (field: ExamField) => (value: string) => {
+    setExam((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Prepends the freshly composed exam summary to Objective, replacing the
+  // previous auto-generated block (if the doctor hasn't since typed over
+  // it) so their own notes after it survive the update.
+  const applyExamToObjective = (examValues: Record<ExamField, string>) => {
+    const block = composeObjectiveFromExam(examValues);
+    if (!block) return;
+    setObjective((prev) => {
+      const prevAuto = lastAutoObjectiveRef.current;
+      const manual = prevAuto && prev.startsWith(prevAuto) ? prev.slice(prevAuto.length).replace(/^\s+/, '') : prev.trim() === '' ? '' : prev;
+      lastAutoObjectiveRef.current = block;
+      return manual ? `${block}\n\n${manual}` : block;
+    });
+  };
+
   const handleSaveExam = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmittingExam(true);
@@ -220,8 +381,10 @@ export default function RekamMedisPage() {
         }
         payload[field] = NUMERIC_EXAM_FIELDS.includes(field) ? Number(raw) : raw;
       });
-      await physicalExaminationApi.upsert(encounterId, payload);
-      success('Pemeriksaan fisik berhasil disimpan');
+      const saved = await physicalExaminationApi.upsert(encounterId, payload);
+      setExamUpdatedAt(saved?.updatedAt || new Date().toISOString());
+      applyExamToObjective(exam);
+      success('Pemeriksaan fisik berhasil disimpan, hasilnya ditambahkan ke Objective SOAP');
       setActiveSection('soap');
     } catch (err) {
       if (!isMounted.current) return;
@@ -304,7 +467,10 @@ export default function RekamMedisPage() {
                     <form onSubmit={handleSaveExam} className="rm-section">
                       <div className="rm-section-heading">
                         <h2>Pemeriksaan Fisik</h2>
-                        <p>Catat hasil pemeriksaan fisik lengkap untuk kunjungan ini</p>
+                        <p>
+                          Catat hasil pemeriksaan fisik lengkap untuk kunjungan ini
+                          {formatExamDate(examUpdatedAt) && ` · Terakhir diperiksa ${formatExamDate(examUpdatedAt)}`}
+                        </p>
                       </div>
 
                       <div className="rm-section-body">
@@ -316,21 +482,19 @@ export default function RekamMedisPage() {
                           <div className="rm-field-grid">
                             <div className="visit-form-field">
                               <label>Keadaan Umum</label>
-                              <input
-                                type="text"
+                              <ExamFindingSelect
                                 value={exam.generalCondition}
-                                onChange={setExamField('generalCondition')}
-                                placeholder="mis. Tampak sakit sedang"
+                                onChange={setExamValue('generalCondition')}
+                                options={EXAM_OPTIONS.generalCondition!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Kesadaran</label>
-                              <input
-                                type="text"
+                              <ExamFindingSelect
                                 value={exam.consciousness}
-                                onChange={setExamField('consciousness')}
-                                placeholder="mis. Komposmentis"
+                                onChange={setExamValue('consciousness')}
+                                options={EXAM_OPTIONS.consciousness!}
                                 disabled={submittingExam}
                               />
                             </div>
@@ -428,41 +592,37 @@ export default function RekamMedisPage() {
                           <div className="rm-field-grid cols-4">
                             <div className="visit-form-field">
                               <label>Sianosis</label>
-                              <input
-                                type="text"
+                              <ExamFindingSelect
                                 value={exam.cyanosis}
-                                onChange={setExamField('cyanosis')}
-                                placeholder="mis. (-)"
+                                onChange={setExamValue('cyanosis')}
+                                options={EXAM_OPTIONS.cyanosis!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Edema</label>
-                              <input
-                                type="text"
+                              <ExamFindingSelect
                                 value={exam.edema}
-                                onChange={setExamField('edema')}
-                                placeholder="mis. (-)"
+                                onChange={setExamValue('edema')}
+                                options={EXAM_OPTIONS.edema!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Anemia</label>
-                              <input
-                                type="text"
+                              <ExamFindingSelect
                                 value={exam.anemia}
-                                onChange={setExamField('anemia')}
-                                placeholder="mis. (-)"
+                                onChange={setExamValue('anemia')}
+                                options={EXAM_OPTIONS.anemia!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Ikterik</label>
-                              <input
-                                type="text"
+                              <ExamFindingSelect
                                 value={exam.jaundice}
-                                onChange={setExamField('jaundice')}
-                                placeholder="mis. (+) sklera & kulit"
+                                onChange={setExamValue('jaundice')}
+                                options={EXAM_OPTIONS.jaundice!}
                                 disabled={submittingExam}
                               />
                             </div>
@@ -477,44 +637,44 @@ export default function RekamMedisPage() {
                           <div className="rm-field-grid cols-3">
                             <div className="visit-form-field">
                               <label>Kulit</label>
-                              <input type="text" value={exam.skin} onChange={setExamField('skin')} disabled={submittingExam} />
+                              <ExamFindingSelect value={exam.skin} onChange={setExamValue('skin')} options={EXAM_OPTIONS.skin!} disabled={submittingExam} />
                             </div>
                             <div className="visit-form-field">
                               <label>Kelenjar Getah Bening</label>
-                              <input
-                                type="text"
+                              <ExamFindingSelect
                                 value={exam.lymphNodes}
-                                onChange={setExamField('lymphNodes')}
+                                onChange={setExamValue('lymphNodes')}
+                                options={EXAM_OPTIONS.lymphNodes!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Kepala</label>
-                              <input type="text" value={exam.head} onChange={setExamField('head')} disabled={submittingExam} />
+                              <ExamFindingSelect value={exam.head} onChange={setExamValue('head')} options={EXAM_OPTIONS.head!} disabled={submittingExam} />
                             </div>
                             <div className="visit-form-field">
                               <label>Rambut</label>
-                              <input type="text" value={exam.hair} onChange={setExamField('hair')} disabled={submittingExam} />
+                              <ExamFindingSelect value={exam.hair} onChange={setExamValue('hair')} options={EXAM_OPTIONS.hair!} disabled={submittingExam} />
                             </div>
                             <div className="visit-form-field">
                               <label>Mata</label>
-                              <input type="text" value={exam.eyes} onChange={setExamField('eyes')} disabled={submittingExam} />
+                              <ExamFindingSelect value={exam.eyes} onChange={setExamValue('eyes')} options={EXAM_OPTIONS.eyes!} disabled={submittingExam} />
                             </div>
                             <div className="visit-form-field">
                               <label>Telinga</label>
-                              <input type="text" value={exam.ears} onChange={setExamField('ears')} disabled={submittingExam} />
+                              <ExamFindingSelect value={exam.ears} onChange={setExamValue('ears')} options={EXAM_OPTIONS.ears!} disabled={submittingExam} />
                             </div>
                             <div className="visit-form-field">
                               <label>Hidung</label>
-                              <input type="text" value={exam.nose} onChange={setExamField('nose')} disabled={submittingExam} />
+                              <ExamFindingSelect value={exam.nose} onChange={setExamValue('nose')} options={EXAM_OPTIONS.nose!} disabled={submittingExam} />
                             </div>
                             <div className="visit-form-field">
                               <label>Mulut</label>
-                              <input type="text" value={exam.mouth} onChange={setExamField('mouth')} disabled={submittingExam} />
+                              <ExamFindingSelect value={exam.mouth} onChange={setExamValue('mouth')} options={EXAM_OPTIONS.mouth!} disabled={submittingExam} />
                             </div>
                             <div className="visit-form-field">
                               <label>Leher</label>
-                              <input type="text" value={exam.neck} onChange={setExamField('neck')} disabled={submittingExam} />
+                              <ExamFindingSelect value={exam.neck} onChange={setExamValue('neck')} options={EXAM_OPTIONS.neck!} disabled={submittingExam} />
                             </div>
                           </div>
                         </div>
@@ -527,34 +687,37 @@ export default function RekamMedisPage() {
                           <div className="rm-field-grid">
                             <div className="visit-form-field">
                               <label>Inspeksi</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.lungInspection}
-                                onChange={setExamField('lungInspection')}
+                                onChange={setExamValue('lungInspection')}
+                                options={EXAM_OPTIONS.lungInspection!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Palpasi</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.lungPalpation}
-                                onChange={setExamField('lungPalpation')}
+                                onChange={setExamValue('lungPalpation')}
+                                options={EXAM_OPTIONS.lungPalpation!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Perkusi</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.lungPercussion}
-                                onChange={setExamField('lungPercussion')}
+                                onChange={setExamValue('lungPercussion')}
+                                options={EXAM_OPTIONS.lungPercussion!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Auskultasi</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.lungAuscultation}
-                                onChange={setExamField('lungAuscultation')}
-                                placeholder="mis. Vesikuler, ronkhi -/-, wheezing -/-"
+                                onChange={setExamValue('lungAuscultation')}
+                                options={EXAM_OPTIONS.lungAuscultation!}
                                 disabled={submittingExam}
                               />
                             </div>
@@ -569,34 +732,37 @@ export default function RekamMedisPage() {
                           <div className="rm-field-grid">
                             <div className="visit-form-field">
                               <label>Inspeksi</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.heartInspection}
-                                onChange={setExamField('heartInspection')}
+                                onChange={setExamValue('heartInspection')}
+                                options={EXAM_OPTIONS.heartInspection!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Palpasi</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.heartPalpation}
-                                onChange={setExamField('heartPalpation')}
+                                onChange={setExamValue('heartPalpation')}
+                                options={EXAM_OPTIONS.heartPalpation!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Perkusi</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.heartPercussion}
-                                onChange={setExamField('heartPercussion')}
+                                onChange={setExamValue('heartPercussion')}
+                                options={EXAM_OPTIONS.heartPercussion!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Auskultasi</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.heartAuscultation}
-                                onChange={setExamField('heartAuscultation')}
-                                placeholder="mis. BJ I-II reguler, murmur (-), gallop (-)"
+                                onChange={setExamValue('heartAuscultation')}
+                                options={EXAM_OPTIONS.heartAuscultation!}
                                 disabled={submittingExam}
                               />
                             </div>
@@ -611,34 +777,37 @@ export default function RekamMedisPage() {
                           <div className="rm-field-grid">
                             <div className="visit-form-field">
                               <label>Inspeksi</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.abdomenInspection}
-                                onChange={setExamField('abdomenInspection')}
+                                onChange={setExamValue('abdomenInspection')}
+                                options={EXAM_OPTIONS.abdomenInspection!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Palpasi</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.abdomenPalpation}
-                                onChange={setExamField('abdomenPalpation')}
+                                onChange={setExamValue('abdomenPalpation')}
+                                options={EXAM_OPTIONS.abdomenPalpation!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Perkusi</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.abdomenPercussion}
-                                onChange={setExamField('abdomenPercussion')}
+                                onChange={setExamValue('abdomenPercussion')}
+                                options={EXAM_OPTIONS.abdomenPercussion!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Auskultasi</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.abdomenAuscultation}
-                                onChange={setExamField('abdomenAuscultation')}
-                                placeholder="mis. Bising usus (+) normal"
+                                onChange={setExamValue('abdomenAuscultation')}
+                                options={EXAM_OPTIONS.abdomenAuscultation!}
                                 disabled={submittingExam}
                               />
                             </div>
@@ -653,23 +822,30 @@ export default function RekamMedisPage() {
                           <div className="rm-field-grid cols-3">
                             <div className="visit-form-field">
                               <label>Ekstremitas</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.extremities}
-                                onChange={setExamField('extremities')}
+                                onChange={setExamValue('extremities')}
+                                options={EXAM_OPTIONS.extremities!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Genitalia</label>
-                              <textarea
+                              <ExamFindingSelect
                                 value={exam.genitalia}
-                                onChange={setExamField('genitalia')}
+                                onChange={setExamValue('genitalia')}
+                                options={EXAM_OPTIONS.genitalia!}
                                 disabled={submittingExam}
                               />
                             </div>
                             <div className="visit-form-field">
                               <label>Rectal Toucher</label>
-                              <textarea value={exam.rectal} onChange={setExamField('rectal')} disabled={submittingExam} />
+                              <ExamFindingSelect
+                                value={exam.rectal}
+                                onChange={setExamValue('rectal')}
+                                options={EXAM_OPTIONS.rectal!}
+                                disabled={submittingExam}
+                              />
                             </div>
                           </div>
                         </div>
