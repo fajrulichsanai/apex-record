@@ -10,7 +10,9 @@ import type {
 
 export interface CreatePaymentPayload {
   planId: number;
-  amount: number;
+  // Jumlah klinik yang dicover — hanya relevan untuk paket Multi Klinik.
+  // Amount dihitung di server dari plan.price * quantity + plan.ownerFee.
+  quantity?: number;
   notes?: string;
 }
 
@@ -66,7 +68,7 @@ export const paymentApi = {
     }
     const form = new FormData();
     form.append('planId', String(payload.planId));
-    form.append('amount', String(payload.amount));
+    if (payload.quantity) form.append('quantity', String(payload.quantity));
     if (payload.notes) form.append('notes', payload.notes);
     form.append('proof', proof);
     return apiClient.postForm<Payment>('/subscription-payments', form);

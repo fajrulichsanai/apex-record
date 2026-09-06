@@ -1,12 +1,20 @@
 export type SubscriptionStatus = 'active' | 'expired';
 export type PaymentStatus = 'pending' | 'confirmed' | 'rejected';
+export type SubscriptionPlanTier = 'basic' | 'pro' | 'multi_klinik';
+export type SubscriptionBillingCycle = 'monthly' | 'yearly';
 
 export interface SubscriptionPlan {
   id: number;
   name: string;
   durationDays: number;
+  // BASIC/PRO: flat price for the cycle. MULTI_KLINIK: price PER CLINIC —
+  // the actual amount charged multiplies this by the quantity chosen at
+  // checkout, then adds ownerFee once.
   price: number;
   isActive: boolean;
+  tier?: SubscriptionPlanTier | null;
+  billingCycle?: SubscriptionBillingCycle | null;
+  ownerFee?: number | null;
 }
 
 export interface ClinicSubscription {
@@ -31,6 +39,7 @@ export interface Payment {
   subscriptionId: number | null;
   planId: number;
   plan?: SubscriptionPlan;
+  quantity: number;
   amount: number;
   status: PaymentStatus;
   confirmedBy: number | null;

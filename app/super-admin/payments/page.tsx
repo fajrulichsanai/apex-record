@@ -98,6 +98,7 @@ export default function SuperAdminPaymentsPage() {
                 <th>Waktu</th>
                 <th>Klinik</th>
                 <th>Paket</th>
+                <th>Kuantitas</th>
                 <th>Jumlah</th>
                 <th>Status</th>
                 <th>Bukti</th>
@@ -106,15 +107,16 @@ export default function SuperAdminPaymentsPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="empty-row">Memuat...</td></tr>
+                <tr><td colSpan={8} className="empty-row">Memuat...</td></tr>
               ) : rows.length === 0 ? (
-                <tr><td colSpan={7} className="empty-row">Tidak ada klaim pembayaran untuk filter ini.</td></tr>
+                <tr><td colSpan={8} className="empty-row">Tidak ada klaim pembayaran untuk filter ini.</td></tr>
               ) : (
                 rows.map((row) => (
                   <tr key={row.id}>
                     <td className="col-time">{formatDateTime(row.createdAt)}</td>
                     <td style={{ fontWeight: 600 }}>{row.clinicName || `Klinik #${row.clinicId}`}</td>
                     <td>{row.plan?.name || '-'}</td>
+                    <td>{row.quantity > 1 ? `${row.quantity} klinik` : '-'}</td>
                     <td>Rp {formatCurrency(row.amount)}</td>
                     <td>
                       <span className={`tag ${tagClass(row.status)}`}>{tagLabel(row.status)}</span>
@@ -170,6 +172,11 @@ export default function SuperAdminPaymentsPage() {
               {reviewing.action === 'confirm' && (
                 <p style={{ fontSize: 13, color: 'var(--text-sub)' }}>
                   Konfirmasi akan memperpanjang langganan klinik ini sesuai durasi paket.
+                </p>
+              )}
+              {reviewing.action === 'confirm' && reviewing.payment.quantity > 1 && (
+                <p style={{ fontSize: 13, color: '#B8791A', background: 'rgba(245,166,35,.12)', padding: '10px 12px', borderRadius: 8 }}>
+                  Paket Multi Klinik ini mencakup <strong>{reviewing.payment.quantity} klinik</strong>. Hanya klinik pemohon ({reviewing.payment.clinicName || `Klinik #${reviewing.payment.clinicId}`}) yang diperpanjang otomatis — daftarkan/perpanjang {reviewing.payment.quantity - 1} klinik lainnya secara manual di halaman Klinik setelah ini.
                 </p>
               )}
               <div className="sa-field">
