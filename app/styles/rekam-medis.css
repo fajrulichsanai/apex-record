@@ -130,11 +130,75 @@
   gap: 10px;
 }
 
+/* ----- grouped fieldsets inside a section (Pemeriksaan Fisik) ----- */
+
+.rm-fieldset { display: flex; flex-direction: column; gap: 14px; }
+.rm-fieldset + .rm-fieldset {
+  padding-top: 20px;
+  border-top: 1px dashed var(--border);
+}
+
+.rm-fieldset-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rm-fieldset-title .material-symbols-rounded { font-size: 16px; }
+
+.rm-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px 16px;
+}
+
+.rm-field-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.rm-field-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.rm-input-unit { position: relative; }
+.rm-input-unit input { padding-right: 54px; }
+.rm-input-unit .unit {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.rm-bp-group { display: flex; align-items: center; gap: 8px; }
+.rm-bp-group input { text-align: center; }
+.rm-bp-group .rm-bp-sep { color: var(--text-muted); font-weight: 700; font-size: 15px; }
+.rm-bp-group .unit { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+
+/* Physical exam narrative fields (paru/jantung/abdomen/lainnya) stay
+   compact — there are ~19 of them, a 90px default height would make the
+   form unreasonably long. */
+.rm-field-grid .visit-form-field textarea {
+  min-height: 56px;
+  max-height: 160px;
+}
+
 @media (max-width: 860px) {
   .rm-layout { grid-template-columns: 1fr; }
   .rm-sidebar {
     position: static;
     flex-direction: row;
     overflow-x: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .rm-field-grid,
+  .rm-field-grid.cols-3,
+  .rm-field-grid.cols-4 {
+    grid-template-columns: 1fr;
   }
 }

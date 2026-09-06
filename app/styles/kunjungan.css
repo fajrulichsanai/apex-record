@@ -650,6 +650,39 @@
   box-shadow: 0 0 0 3px rgba(79,126,248,.12);
 }
 
+.visit-form-field input[type="text"],
+.visit-form-field input[type="number"] {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--bg);
+  outline: none;
+  width: 100%;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.visit-form-field input[type="number"] { -moz-appearance: textfield; }
+.visit-form-field input[type="number"]::-webkit-outer-spin-button,
+.visit-form-field input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.visit-form-field input::placeholder { color: var(--text-muted); }
+
+.visit-form-field input[type="text"]:focus,
+.visit-form-field input[type="number"]:focus {
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+}
+
+.visit-form-field input:disabled,
+.visit-form-field textarea:disabled { opacity: .65; cursor: not-allowed; }
+
 .visit-readonly-input {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
