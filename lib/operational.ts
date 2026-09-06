@@ -8,6 +8,10 @@ export type OperationalKategori =
   | 'gaji'
   | 'sewa'
   | 'internet'
+  | 'bahan_habis_pakai'
+  | 'alat_dental'
+  | 'barang_investasi'
+  | 'barang_hiburan'
   | 'lainnya';
 
 export interface OperationalRecord {
@@ -52,6 +56,10 @@ export const OPERASIONAL_KATEGORI_OPTIONS: { value: string; label: string }[] = 
   { value: 'gaji', label: 'Gaji & Honor' },
   { value: 'sewa', label: 'Sewa Tempat' },
   { value: 'internet', label: 'Internet & Komunikasi' },
+  { value: 'bahan_habis_pakai', label: 'Beli Bahan Habis Pakai' },
+  { value: 'alat_dental', label: 'Beli Alat Dental' },
+  { value: 'barang_investasi', label: 'Beli Barang Investasi' },
+  { value: 'barang_hiburan', label: 'Beli Barang Hiburan' },
   { value: 'lainnya', label: 'Lainnya' },
 ];
 
