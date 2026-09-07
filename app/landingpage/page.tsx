@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import PricingSection from './PricingSection';
 import './landingpage.css';
 
 export const metadata: Metadata = {
@@ -406,61 +407,7 @@ export default function LandingPage() {
         </section>
 
         {/* PRICING */}
-        <section id="harga">
-          <div className="wrap">
-            <div className="section-head center">
-              <span className="eyebrow">Investasi, bukan biaya</span>
-              <h2>Harga sederhana, tanpa biaya tersembunyi</h2>
-              <p>Semua paket sudah termasuk seluruh fitur — termasuk Laporan Keuangan Pro. Coba 15 hari gratis dulu, tanpa kartu kredit.</p>
-            </div>
-
-            <div className="price-grid">
-              <div className="price-card">
-                <div className="price-name">Bulanan</div>
-                <div className="price-amt"><span className="n">Rp150rb</span><span className="u">/ bulan</span></div>
-                <div className="price-sub">Ditagih tiap 30 hari</div>
-                <ul className="price-list">
-                  <li><CheckIcon />Semua fitur ApexRecord</li>
-                  <li><CheckIcon />Akses berbasis peran (RBAC)</li>
-                  <li><CheckIcon />Pengguna &amp; dokter tanpa batas</li>
-                  <li><CheckIcon />Bebas berhenti kapan saja</li>
-                </ul>
-                <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-block">Pilih Bulanan</a>
-              </div>
-
-              <div className="price-card feat">
-                <span className="price-badge">Paling hemat</span>
-                <div className="price-name">Tahunan</div>
-                <div className="price-amt"><span className="n">Rp125rb</span><span className="u">/ bulan</span></div>
-                <div className="price-sub">Rp1.500.000 ditagih per tahun &middot; hemat 17%</div>
-                <div className="price-perk">
-                  <CheckIcon />
-                  <span><b>Gratis request fitur custom</b> selama 1 tahun masa langganan</span>
-                </div>
-                <ul className="price-list">
-                  <li><CheckIcon />Semua fitur ApexRecord</li>
-                  <li><CheckIcon />Akses berbasis peran (RBAC)</li>
-                  <li><CheckIcon />Pengguna &amp; dokter tanpa batas</li>
-                  <li><CheckIcon />Harga terkunci setahun penuh</li>
-                </ul>
-                <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-grad btn-block">Pilih Tahunan</a>
-              </div>
-
-              <div className="price-card">
-                <div className="price-name">Triwulan</div>
-                <div className="price-amt"><span className="n">Rp133rb</span><span className="u">/ bulan</span></div>
-                <div className="price-sub">Rp400.000 ditagih per 3 bulan &middot; hemat 11%</div>
-                <ul className="price-list">
-                  <li><CheckIcon />Semua fitur ApexRecord</li>
-                  <li><CheckIcon />Akses berbasis peran (RBAC)</li>
-                  <li><CheckIcon />Pengguna &amp; dokter tanpa batas</li>
-                  <li><CheckIcon />Fleksibel, cocok untuk uji coba tim</li>
-                </ul>
-                <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-block">Pilih Triwulan</a>
-              </div>
-            </div>
-          </div>
-        </section>
+        <PricingSection />
 
         {/* FAQ */}
         <section id="faq">
