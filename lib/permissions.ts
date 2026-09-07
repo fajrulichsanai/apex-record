@@ -8,6 +8,7 @@ export type FeatureKey =
   | 'billing'
   | 'operasional'
   | 'share-fee-dokter'
+  | 'recall-reminder'
   | 'gudang'
   | 'laporan-kunjungan'
   | 'laporan-keuangan'
@@ -26,6 +27,7 @@ const FULL_ACCESS: FeatureKey[] = [
   'billing',
   'operasional',
   'share-fee-dokter',
+  'recall-reminder',
   'gudang',
   'laporan-kunjungan',
   'laporan-keuangan',
@@ -47,6 +49,7 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'kunjungan',
     'billing',
     'operasional',
+    'recall-reminder',
     'gudang',
     'laporan-kunjungan',
     'info-klinik',

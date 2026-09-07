@@ -25,6 +25,7 @@ import {
   FiChevronRight,
   FiShield,
   FiBox,
+  FiBell,
 } from 'react-icons/fi';
 import './sidebar.css';
 
@@ -99,6 +100,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { label: 'Catat Operasional', icon: <FiEdit3 />, href: '/catat-operasional', feature: 'operasional' },
         { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter', feature: 'share-fee-dokter' },
         { label: 'Gudang & Stok', icon: <FiBox />, href: '/gudang', feature: 'gudang' },
+        { label: 'Recall & Reminder', icon: <FiBell />, href: '/recall-reminder', feature: 'recall-reminder' },
       ],
     },
     {
