@@ -441,6 +441,36 @@ function ListKunjunganPageInner() {
 
             {loadError ? (
               <div style={{ padding: '16px', color: '#FF4D4F' }}>{loadError}</div>
+            ) : !loading && filteredVisits.length === 0 ? (
+              <div className="detail-empty" style={{ padding: '32px 16px' }}>
+                <div className="empty-icon-wrap">
+                  <span className="material-symbols-rounded">search_off</span>
+                </div>
+                {visits.length === 0 ? (
+                  <>
+                    <div className="empty-title">Belum ada kunjungan hari ini</div>
+                    <div className="empty-sub">Kunjungan baru akan muncul di sini setelah dibuat.</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="empty-title">Tidak ada kunjungan yang cocok</div>
+                    <div className="empty-sub">
+                      Filter atau kata kunci pencarian saat ini menyembunyikan {visits.length} kunjungan hari ini.
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-outline"
+                      style={{ marginTop: 12 }}
+                      onClick={() => {
+                        setCurrentFilter('semua');
+                        setSearchQuery('');
+                      }}
+                    >
+                      Reset Filter &amp; Pencarian
+                    </button>
+                  </>
+                )}
+              </div>
             ) : (
               <div className="visit-list">
                 {filteredVisits.map((visit) => {
