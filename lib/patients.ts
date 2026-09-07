@@ -119,6 +119,16 @@ export interface Encounter {
   practitionerName?: string;
 }
 
+export type TimelineItemType = 'kunjungan' | 'billing' | 'foto' | 'treatment_plan' | 'recall';
+
+export interface TimelineItem {
+  type: TimelineItemType;
+  date: string;
+  title: string;
+  subtitle?: string;
+  meta?: Record<string, unknown>;
+}
+
 export interface ReferralSummaryResponse {
   bySource: { sumberInformasi: SumberInformasi; count: number }[];
   byReferrer: { referrerPatientId: number; referrerName: string; referralCount: number }[];
@@ -175,6 +185,8 @@ export const patientsApi = {
   remove: (id: number) => apiClient.delete<void>(`/patients/${id}`),
 
   encounters: (id: number) => apiClient.get<Encounter[]>(`/patients/${id}/encounters`),
+
+  getTimeline: (id: number) => apiClient.get<TimelineItem[]>(`/patients/${id}/timeline`),
 
   getReferralSummary: () =>
     apiClient.get<ReferralSummaryResponse>('/patients/referral-summary'),

@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
-import { patientsApi, Patient, Encounter, ApiGender } from '@/lib/patients';
+import { patientsApi, Patient, Encounter, ApiGender, TimelineItem } from '@/lib/patients';
 import {
   treatmentPlanApi,
   TreatmentPlan,
@@ -80,6 +80,30 @@ const ENCOUNTER_STATUS_LABEL: Record<string, string> = {
   cancelled: 'Dibatalkan',
 };
 
+const TIMELINE_TYPE_META: Record<
+  TimelineItem['type'],
+  { label: string; icon: string; dot: string }
+> = {
+  kunjungan: { label: 'Kunjungan', icon: 'calendar_month', dot: '#4F7EF8' },
+  billing: { label: 'Invoice', icon: 'receipt_long', dot: '#2DCB8A' },
+  foto: { label: 'Foto Klinis', icon: 'photo_camera', dot: '#F5A623' },
+  treatment_plan: { label: 'Treatment Plan', icon: 'timeline', dot: '#8B5CF6' },
+  recall: { label: 'Recall', icon: 'event_repeat', dot: '#FF6B9D' },
+};
+
+function formatDateTime(dateStr?: string) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function ListPasienContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -101,6 +125,10 @@ function ListPasienContent() {
   const [treatmentPlansLoading, setTreatmentPlansLoading] = useState(false);
   const [showAddTreatmentPlan, setShowAddTreatmentPlan] = useState(false);
   const [showSoapModal, setShowSoapModal] = useState(false);
+
+  const [detailTab, setDetailTab] = useState<'ringkasan' | 'timeline'>('ringkasan');
+  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+  const [timelineLoading, setTimelineLoading] = useState(false);
 
   const loadPatients = useCallback(async () => {
     setLoading(true);
@@ -174,6 +202,26 @@ function ListPasienContent() {
     return loadTreatmentPlans(selectedPatient.id);
   }, [selectedPatient, loadTreatmentPlans]);
 
+  useEffect(() => {
+    if (!selectedPatient || detailTab !== 'timeline') return;
+    let active = true;
+    setTimelineLoading(true);
+    patientsApi
+      .getTimeline(selectedPatient.id)
+      .then((data) => {
+        if (active) setTimeline(data);
+      })
+      .catch(() => {
+        if (active) setTimeline([]);
+      })
+      .finally(() => {
+        if (active) setTimelineLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [selectedPatient, detailTab]);
+
   const totalCount = patients.length;
   const maleCount = patients.filter((p) => apiGenderToUi(p) === 'laki-laki').length;
   const femaleCount = patients.filter((p) => apiGenderToUi(p) === 'perempuan').length;
@@ -182,6 +230,7 @@ function ListPasienContent() {
   const handleSelectPatient = (id: number) => {
     setSelectedPatientId(id);
     setShowDetailOnMobile(true);
+    setDetailTab('ringkasan');
   };
 
   const handleSetFilter = (filter: FilterValue) => {
@@ -481,95 +530,153 @@ function ListPasienContent() {
                   </div>
                 </div>
 
-                <div className="detail-section">
-                  <div className="section-title">
-                    <span className="material-symbols-rounded">calendar_month</span>
-                    Riwayat Kunjungan
-                  </div>
-                  {encountersLoading && <div className="empty-sub">Memuat riwayat kunjungan…</div>}
-                  {!encountersLoading && encounters.length === 0 && (
-                    <div className="empty-sub">Belum ada riwayat kunjungan.</div>
-                  )}
-                  {!encountersLoading &&
-                    encounters.map((enc) => (
-                      <div className="visit-item" key={enc.id}>
-                        <div className="visit-dot" />
-                        <div className="visit-info">
-                          <div className="visit-type">{enc.serviceType}</div>
-                          <div className="visit-date">
-                            {formatDate(enc.arrivedTime)} ·{' '}
-                            {ENCOUNTER_STATUS_LABEL[enc.status] ?? enc.status}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                <div className="detail-tabs">
+                  <button
+                    type="button"
+                    className={`filter-tab ${detailTab === 'ringkasan' ? 'active' : ''}`}
+                    onClick={() => setDetailTab('ringkasan')}
+                  >
+                    Ringkasan
+                  </button>
+                  <button
+                    type="button"
+                    className={`filter-tab ${detailTab === 'timeline' ? 'active' : ''}`}
+                    onClick={() => setDetailTab('timeline')}
+                  >
+                    Timeline Aktivitas
+                  </button>
                 </div>
 
-                <div className="detail-section">
-                  <div className="section-title" style={{ justifyContent: 'space-between', display: 'flex' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className="material-symbols-rounded">timeline</span>
-                      Progress Treatment
-                    </span>
-                    <button
-                      type="button"
-                      className="btn-outline"
-                      style={{ padding: '4px 10px', fontSize: '13px' }}
-                      onClick={() => setShowAddTreatmentPlan(true)}
-                    >
-                      <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
-                        add
-                      </span>
-                      Tambah
-                    </button>
-                  </div>
-                  {treatmentPlansLoading && <div className="empty-sub">Memuat progress treatment…</div>}
-                  {!treatmentPlansLoading && treatmentPlans.length === 0 && (
-                    <div className="empty-sub">Belum ada treatment plan.</div>
-                  )}
-                  {!treatmentPlansLoading &&
-                    treatmentPlans.map((plan) => {
-                      const percent = plan.totalStages
-                        ? Math.min(100, Math.round((plan.currentStage / plan.totalStages) * 100))
-                        : null;
-                      return (
-                        <div className="visit-item" key={plan.id}>
-                          <div className="visit-dot" />
-                          <div className="visit-info" style={{ width: '100%' }}>
-                            <div className="visit-type">
-                              {plan.label || TREATMENT_TYPE_LABEL[plan.treatmentType]}
-                            </div>
-                            <div className="visit-date">
-                              {TREATMENT_PLAN_STATUS_LABEL[plan.status]} ·{' '}
-                              {plan.totalStages
-                                ? `Tahap ${plan.currentStage} dari ${plan.totalStages}`
-                                : `Tahap ke-${plan.currentStage}`}
-                            </div>
-                            {percent !== null && (
-                              <div
-                                style={{
-                                  height: '6px',
-                                  borderRadius: '4px',
-                                  background: 'var(--border, #e5e7eb)',
-                                  marginTop: '6px',
-                                  overflow: 'hidden',
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    height: '100%',
-                                    width: `${percent}%`,
-                                    borderRadius: '4px',
-                                    background: 'var(--primary, #2563eb)',
-                                  }}
-                                />
+                {detailTab === 'ringkasan' && (
+                  <>
+                    <div className="detail-section">
+                      <div className="section-title">
+                        <span className="material-symbols-rounded">calendar_month</span>
+                        Riwayat Kunjungan
+                      </div>
+                      {encountersLoading && <div className="empty-sub">Memuat riwayat kunjungan…</div>}
+                      {!encountersLoading && encounters.length === 0 && (
+                        <div className="empty-sub">Belum ada riwayat kunjungan.</div>
+                      )}
+                      {!encountersLoading &&
+                        encounters.map((enc) => (
+                          <div className="visit-item" key={enc.id}>
+                            <div className="visit-dot" />
+                            <div className="visit-info">
+                              <div className="visit-type">{enc.serviceType}</div>
+                              <div className="visit-date">
+                                {formatDate(enc.arrivedTime)} ·{' '}
+                                {ENCOUNTER_STATUS_LABEL[enc.status] ?? enc.status}
                               </div>
-                            )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                </div>
+                        ))}
+                    </div>
+
+                    <div className="detail-section">
+                      <div className="section-title" style={{ justifyContent: 'space-between', display: 'flex' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span className="material-symbols-rounded">timeline</span>
+                          Progress Treatment
+                        </span>
+                        <button
+                          type="button"
+                          className="btn-outline"
+                          style={{ padding: '4px 10px', fontSize: '13px' }}
+                          onClick={() => setShowAddTreatmentPlan(true)}
+                        >
+                          <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                            add
+                          </span>
+                          Tambah
+                        </button>
+                      </div>
+                      {treatmentPlansLoading && <div className="empty-sub">Memuat progress treatment…</div>}
+                      {!treatmentPlansLoading && treatmentPlans.length === 0 && (
+                        <div className="empty-sub">Belum ada treatment plan.</div>
+                      )}
+                      {!treatmentPlansLoading &&
+                        treatmentPlans.map((plan) => {
+                          const percent = plan.totalStages
+                            ? Math.min(100, Math.round((plan.currentStage / plan.totalStages) * 100))
+                            : null;
+                          return (
+                            <div className="visit-item" key={plan.id}>
+                              <div className="visit-dot" />
+                              <div className="visit-info" style={{ width: '100%' }}>
+                                <div className="visit-type">
+                                  {plan.label || TREATMENT_TYPE_LABEL[plan.treatmentType]}
+                                </div>
+                                <div className="visit-date">
+                                  {TREATMENT_PLAN_STATUS_LABEL[plan.status]} ·{' '}
+                                  {plan.totalStages
+                                    ? `Tahap ${plan.currentStage} dari ${plan.totalStages}`
+                                    : `Tahap ke-${plan.currentStage}`}
+                                </div>
+                                {percent !== null && (
+                                  <div
+                                    style={{
+                                      height: '6px',
+                                      borderRadius: '4px',
+                                      background: 'var(--border, #e5e7eb)',
+                                      marginTop: '6px',
+                                      overflow: 'hidden',
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        height: '100%',
+                                        width: `${percent}%`,
+                                        borderRadius: '4px',
+                                        background: 'var(--primary, #2563eb)',
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </>
+                )}
+
+                {detailTab === 'timeline' && (
+                  <div className="detail-section">
+                    <div className="section-title">
+                      <span className="material-symbols-rounded">history</span>
+                      Timeline Aktivitas Pasien
+                    </div>
+                    {timelineLoading && <div className="empty-sub">Memuat timeline aktivitas…</div>}
+                    {!timelineLoading && timeline.length === 0 && (
+                      <div className="empty-sub">Belum ada aktivitas tercatat.</div>
+                    )}
+                    {!timelineLoading &&
+                      timeline.map((item, idx) => {
+                        const meta = TIMELINE_TYPE_META[item.type];
+                        return (
+                          <div className="visit-item" key={`${item.type}-${idx}`}>
+                            <div className="visit-dot" style={{ background: meta.dot }} />
+                            <div className="visit-info">
+                              <div className="visit-type" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span
+                                  className="material-symbols-rounded"
+                                  style={{ fontSize: '14px', color: meta.dot }}
+                                >
+                                  {meta.icon}
+                                </span>
+                                {item.title}
+                              </div>
+                              <div className="visit-date">
+                                {formatDateTime(item.date)}
+                                {item.subtitle ? ` · ${item.subtitle}` : ''}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
             )}
           </div>
