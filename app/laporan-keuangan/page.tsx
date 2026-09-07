@@ -26,6 +26,7 @@ import {
   FiFileText,
   FiInfo,
   FiRepeat,
+  FiTarget,
   FiTrendingUp,
   FiTrendingDown,
   FiPercent,
@@ -194,7 +195,7 @@ function buildFinancialInsights(report: FinancialReportResponse | null): Insight
     list.push({ text: `Ada ${formatRupiah(report.summary.totalRefunded)} refund pada periode ini.`, tone: 'warn' });
   }
 
-  const { pareto, retention, dso, ltv } = report.businessMetrics;
+  const { pareto, retention, dso, ltv, marketing } = report.businessMetrics;
   if (pareto.patientCount >= 5) {
     if (pareto.top20PercentPatientShare >= 60) {
       list.push({
@@ -220,6 +221,20 @@ function buildFinancialInsights(report: FinancialReportResponse | null): Insight
 
   if (ltv.patientCount > 0) {
     list.push({ text: `Customer Lifetime Value rata-rata ${formatRupiah(ltv.averageLtv)} per pasien (${ltv.averageVisitsPerPatient}x kunjungan rata-rata).`, tone: 'neutral' });
+  }
+
+  if (marketing.cac !== null) {
+    list.push({ text: `Biaya akuisisi pasien baru (CAC) rata-rata ${formatRupiah(marketing.cac)} per pasien baru dari ${marketing.newPatients} pasien baru.`, tone: 'neutral' });
+
+    if (marketing.ltvCacRatio !== null) {
+      if (marketing.ltvCacRatio >= 3) {
+        list.push({ text: `Rasio LTV:CAC ${marketing.ltvCacRatio}x — akuisisi pasien sangat efisien dan sehat untuk pertumbuhan.`, tone: 'good' });
+      } else if (marketing.ltvCacRatio < 1) {
+        list.push({ text: `Rasio LTV:CAC hanya ${marketing.ltvCacRatio}x — biaya akuisisi pasien lebih besar dari nilai yang dihasilkan, perlu dievaluasi.`, tone: 'warn' });
+      } else {
+        list.push({ text: `Rasio LTV:CAC ${marketing.ltvCacRatio}x — masih dalam batas wajar, namun ada ruang untuk efisiensi iklan.`, tone: 'neutral' });
+      }
+    }
   }
 
   return list;
@@ -657,6 +672,31 @@ export default function LaporanKeuanganPage() {
                 icon={<FiAward />}
                 value={`${report.businessMetrics.ltv.averageVisitsPerPatient}x`}
                 label="Rata-rata Kunjungan / Pasien"
+              />
+              <StatCard
+                variant="expense"
+                icon={<FiTarget />}
+                value={
+                  report.businessMetrics.marketing.cac !== null
+                    ? formatRupiah(report.businessMetrics.marketing.cac)
+                    : '-'
+                }
+                label="Customer Acquisition Cost (CAC)"
+              />
+              <StatCard
+                variant={
+                  report.businessMetrics.marketing.ltvCacRatio !== null &&
+                  report.businessMetrics.marketing.ltvCacRatio >= 3
+                    ? 'income'
+                    : 'total'
+                }
+                icon={<FiTrendingUp />}
+                value={
+                  report.businessMetrics.marketing.ltvCacRatio !== null
+                    ? `${report.businessMetrics.marketing.ltvCacRatio}x`
+                    : '-'
+                }
+                label="Rasio LTV : CAC"
               />
             </div>
             <CategoryProfitabilityTable data={report.businessMetrics.categoryProfitability} />

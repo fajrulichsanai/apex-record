@@ -106,6 +106,12 @@ export interface FinancialReportResponse {
       labaBersih: number;
       marginPersen: number;
     }[];
+    marketing: {
+      totalAdSpend: number;
+      newPatients: number;
+      cac: number | null;
+      ltvCacRatio: number | null;
+    };
   };
 }
 
