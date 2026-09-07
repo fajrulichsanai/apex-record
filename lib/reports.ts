@@ -145,6 +145,15 @@ export interface FinancialReportProResponse extends FinancialReportResponse {
   };
 }
 
+export interface PatientOriginPoint {
+  kecamatan: string;
+  city: string;
+  count: number;
+  lat: number | null;
+  lng: number | null;
+  resolved: boolean;
+}
+
 export interface FinancialVisitDetailQuery {
   dateFrom: string;
   dateTo: string;
@@ -190,6 +199,9 @@ export const reportsApi = {
 
   getFinancialPro: (query: FinancialReportQuery) =>
     apiClient.get<FinancialReportProResponse>(`/reports/financial-pro?${toQueryString(query)}`),
+
+  getPatientOriginMap: () =>
+    apiClient.get<PatientOriginPoint[]>('/reports/financial-pro/patient-origin-map'),
 
   downloadFinancialProPdf: async (query: FinancialReportQuery) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;

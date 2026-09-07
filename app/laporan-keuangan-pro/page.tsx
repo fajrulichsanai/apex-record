@@ -32,6 +32,7 @@ import CategoryProfitabilityTable from '@/components/laporan/CategoryProfitabili
 import DiscountRankingTable from '@/components/laporan/DiscountRankingTable';
 import StockReportSection from '@/components/laporan/StockReportSection';
 import VisitHeatmap from '@/components/laporan/VisitHeatmap';
+import PatientOriginMap from '@/components/laporan/PatientOriginMap';
 import { reportsApi, FinancialReportProResponse } from '@/lib/reports';
 import { useToast } from '@/lib/toast-context';
 import '../styles/laporan.css';
@@ -282,6 +283,7 @@ export default function LaporanKeuanganProPage() {
             </div>
 
             {report && <VisitHeatmap data={report.visitHeatmap} />}
+            <PatientOriginMap />
           </div>
 
           {report && <DiscountRankingTable data={report.discountRanking} />}
