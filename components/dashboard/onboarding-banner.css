@@ -1,0 +1,57 @@
+.onboarding-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, #4F7EF8, #6D8FFA);
+  border-radius: 16px;
+  padding: 18px 22px;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+.onboarding-banner-title { font-size: 15px; font-weight: 700; margin: 0 0 8px; }
+
+.onboarding-banner-checklist { display: flex; gap: 16px; flex-wrap: wrap; }
+.onboarding-banner-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+}
+.onboarding-banner-item.done { color: #fff; }
+.onboarding-banner-item svg { width: 14px; height: 14px; }
+.onboarding-banner-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.75);
+  display: inline-block;
+}
+
+.onboarding-banner-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.onboarding-banner-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  color: #3B6CE6;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.onboarding-banner-dismiss {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}

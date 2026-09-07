@@ -19,7 +19,8 @@ export type FeatureKey =
   | 'user-management'
   | 'referral'
   | 'audit-log'
-  | 'langganan';
+  | 'langganan'
+  | 'onboarding';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',
@@ -46,7 +47,7 @@ const FULL_ACCESS: FeatureKey[] = [
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
   super_admin: FULL_ACCESS,
   multi_clinic_owner: [],
-  owner: FULL_ACCESS,
+  owner: [...FULL_ACCESS, 'onboarding'],
   admin: [
     'dashboard',
     'pasien',
