@@ -115,6 +115,36 @@ export interface FinancialReportResponse {
   };
 }
 
+export interface FinancialReportProResponse extends FinancialReportResponse {
+  labaKotor: number;
+  monthlyTrend: {
+    month: string;
+    revenue: number;
+    modal: number;
+    expense: number;
+    netProfit: number;
+    marginPercent: number;
+    visits: number;
+    newPatients: number;
+  }[];
+  byDoctorProfit: { practitionerName: string; revenue: number; doctorFeeShare: number; labaBersih: number }[];
+  discountRanking: {
+    tarifId: number;
+    namaTindakan: string;
+    modal: number;
+    hargaJual: number;
+    frekuensi: number;
+    totalDiskon: number;
+    labaBersih: number;
+  }[];
+  visitHeatmap: { dayOfWeek: number; hour: number; count: number }[];
+  stockReport: {
+    totalInventoryValue: number;
+    totalActiveItems: number;
+    usage: { barangId: number; barangName: string; satuan: string; qtyUsed: number; totalCost: number }[];
+  };
+}
+
 export interface FinancialVisitDetailQuery {
   dateFrom: string;
   dateTo: string;
@@ -157,6 +187,35 @@ export const reportsApi = {
     apiClient.get<FinancialVisitDetailResponse>(
       `/reports/financial/visit-detail?${toQueryString(query)}`,
     ),
+
+  getFinancialPro: (query: FinancialReportQuery) =>
+    apiClient.get<FinancialReportProResponse>(`/reports/financial-pro?${toQueryString(query)}`),
+
+  downloadFinancialProPdf: async (query: FinancialReportQuery) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const res = await fetch(`${API_URL}/reports/financial-pro/pdf?${toQueryString(query)}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+    if (!res.ok) {
+      let message = 'Gagal mengunduh laporan keuangan PDF';
+      try {
+        const body = await res.json();
+        if (body?.error?.message) message = body.error.message;
+      } catch {
+        // ignore — fall back to the generic message
+      }
+      throw new ApiError(message, res.status);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `laporan-keuangan_${query.dateFrom}_${query.dateTo}.pdf`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  },
 
   downloadInvestorReportPdf: async () => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;

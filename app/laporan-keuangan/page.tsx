@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Area,
   AreaChart,
@@ -32,6 +33,7 @@ import {
   FiPercent,
   FiUsers,
   FiZap,
+  FiArrowUpRight,
 } from 'react-icons/fi';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
@@ -241,6 +243,7 @@ function buildFinancialInsights(report: FinancialReportResponse | null): Insight
 }
 
 export default function LaporanKeuanganPage() {
+  const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [range, setRange] = useState<RangeOption>('bulanini');
   const [customFrom, setCustomFrom] = useState('');
@@ -248,8 +251,9 @@ export default function LaporanKeuanganPage() {
   const [report, setReport] = useState<FinancialReportResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
-  const [downloadingInvestor, setDownloadingInvestor] = useState(false);
   const { error: showError } = useToast();
+
+  const canViewPro = canAccessFeature(user?.role, 'laporan-keuangan-pro');
 
   const canView = canAccessFeature(user?.role, 'laporan-keuangan');
   const { dateFrom, dateTo } = getDateRange(range, customFrom, customTo);
@@ -371,17 +375,6 @@ export default function LaporanKeuanganPage() {
     }
   }
 
-  async function handleDownloadInvestorReport() {
-    setDownloadingInvestor(true);
-    try {
-      await reportsApi.downloadInvestorReportPdf();
-    } catch (err) {
-      showError(err instanceof Error ? err.message : 'Gagal mengunduh laporan investor');
-    } finally {
-      setDownloadingInvestor(false);
-    }
-  }
-
   const totalPendapatan = report?.summary.totalBilling ?? 0;
   const rataRataHarian = pendapatanHarian.length > 0 ? totalPendapatan / pendapatanHarian.length : 0;
   const belumLunas = report?.summary.totalOutstanding ?? 0;
@@ -439,16 +432,18 @@ export default function LaporanKeuanganPage() {
               <FiDownload />
               {exporting ? 'Mengekspor...' : 'Export Excel'}
             </button>
-            <button
-              type="button"
-              className="btn-outline"
-              onClick={handleDownloadInvestorReport}
-              disabled={downloadingInvestor}
-              title="Ringkasan kinerja 12 bulan terakhir, siap dibagikan ke investor/bank"
-            >
-              <FiAward />
-              {downloadingInvestor ? 'Menyiapkan...' : 'Laporan Investor (PDF)'}
-            </button>
+            {canViewPro && (
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => router.push('/laporan-keuangan-pro')}
+                title="Analitik lanjutan, laporan ke akuntan/investor, dan laporan stok"
+              >
+                <FiAward />
+                Laporan Keuangan Pro
+                <FiArrowUpRight />
+              </button>
+            )}
           </div>
         </div>
 
