@@ -60,6 +60,20 @@ function formatDate(value: string) {
   });
 }
 
+/**
+ * Timezone klinik dipatok ke +07:00 (WIB), sama seperti sisi backend
+ * (lihat `todayInClinicTimezone` di encounters.service.ts) — dipakai untuk
+ * memisahkan kunjungan selesai yang belum ditagih hari ini vs. backlog dari
+ * hari-hari sebelumnya.
+ */
+function clinicDate(value: string): string {
+  return new Date(new Date(value).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function todayInClinicTimezone(): string {
+  return new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 let rowKeySeq = 0;
 function emptyRow(): ItemRow {
   return { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal' };
@@ -129,22 +143,35 @@ function TransaksiPageInner() {
     loadBillings();
   }, [loadBillings]);
 
+  // unbilled: true supaya kunjungan selesai yang belum ditagih tetap muncul
+  // lintas semua tanggal, bukan cuma hari ini — sebelumnya kunjungan selesai
+  // kemarin yang belum dibuatkan tagihan jadi "hilang" dari dropdown ini
+  // begitu tengah malam lewat.
+  const loadUnbilledEncounters = useCallback(async () => {
+    try {
+      const res = await encounterApi.list({ status: 'finished', unbilled: true, limit: 100 });
+      setEncounters(res.data);
+      const fromQuery = searchParams.get('encounterId');
+      if (fromQuery && res.data.some((e) => e.encounterId === Number(fromQuery))) {
+        setSelectedEncounterId(Number(fromQuery));
+      }
+    } catch {
+      setEncounters([]);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
-    encounterApi
-      .list({ status: 'finished', limit: 100 })
-      .then((res) => {
-        setEncounters(res.data);
-        const fromQuery = searchParams.get('encounterId');
-        if (fromQuery && res.data.some((e) => e.encounterId === Number(fromQuery))) {
-          setSelectedEncounterId(Number(fromQuery));
-        }
-      })
-      .catch(() => setEncounters([]));
+    loadUnbilledEncounters();
     tarifApi
       .list({ limit: 200 })
       .then((res) => setTarifs(res.data.filter((t) => t.isActive)))
       .catch(() => setTarifs([]));
-  }, [searchParams]);
+  }, [loadUnbilledEncounters]);
+
+  const backlogEncounters = useMemo(() => {
+    const today = todayInClinicTimezone();
+    return encounters.filter((e) => clinicDate(e.arrivedTime) !== today);
+  }, [encounters]);
 
   const filteredBillings = useMemo(() => {
     const q = searchQuery.toLowerCase();
@@ -280,7 +307,7 @@ function TransaksiPageInner() {
       setAdditionalFee(0);
       setPaymentMethod('cash');
       setNotes('');
-      await loadBillings();
+      await Promise.all([loadBillings(), loadUnbilledEncounters()]);
       success('Transaksi berhasil disimpan');
     } catch (err) {
       setSubmitError(err instanceof ApiError ? err.message : 'Gagal membuat transaksi');
@@ -380,6 +407,45 @@ function TransaksiPageInner() {
           </div>
         </div>
 
+        {/* Backlog: kunjungan selesai belum ditagih dari hari-hari sebelumnya */}
+        {backlogEncounters.length > 0 && (
+          <div className="backlog-banner">
+            <div className="backlog-banner-header">
+              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                warning
+              </span>
+              <div>
+                <div className="backlog-banner-title">
+                  {backlogEncounters.length} Kunjungan Selesai Belum Ditagih dari Hari Sebelumnya
+                </div>
+                <div className="backlog-banner-sub">
+                  Kunjungan ini sudah selesai tapi belum dibuatkan tagihan. Pilih salah satu untuk langsung membuat tagihannya.
+                </div>
+              </div>
+            </div>
+            <div className="backlog-list">
+              {backlogEncounters.map((enc) => (
+                <div
+                  key={enc.encounterId}
+                  className={`backlog-item ${selectedEncounterId === enc.encounterId ? 'selected' : ''}`}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => setSelectedEncounterId(enc.encounterId)}
+                >
+                  <div className="backlog-item-info">
+                    <div className="backlog-item-name">{enc.patientName || `Pasien #${enc.patientId}`}</div>
+                    <div className="backlog-item-meta">
+                      {enc.noRM || '—'} · {enc.practitionerName || '—'} · {formatDate(enc.arrivedTime)}
+                    </div>
+                  </div>
+                  <button type="button" className="btn-outline" onClick={() => setSelectedEncounterId(enc.encounterId)}>
+                    Buat Tagihan
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Content */}
         <div className="content-area">
           {/* Input Transaksi Panel */}
@@ -402,7 +468,7 @@ function TransaksiPageInner() {
                     placeholder="Pilih kunjungan selesai…"
                   />
                   {encounters.length === 0 && (
-                    <span className="form-hint">Tidak ada kunjungan selesai hari ini</span>
+                    <span className="form-hint">Tidak ada kunjungan selesai yang belum ditagih</span>
                   )}
                 </div>
 
@@ -661,7 +727,10 @@ function TransaksiPageInner() {
           billingId={selectedBillingId}
           tarifs={tarifs}
           onClose={() => setSelectedBillingId(null)}
-          onUpdated={loadBillings}
+          onUpdated={() => {
+            loadBillings();
+            loadUnbilledEncounters();
+          }}
         />
       )}
       </FeatureGuard>

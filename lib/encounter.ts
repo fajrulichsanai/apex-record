@@ -76,7 +76,14 @@ export interface SyncResult {
 }
 
 export const encounterApi = {
-  list: (query?: { date?: string; status?: EncounterStatus; practitionerId?: number; page?: number; limit?: number }) =>
+  list: (query?: {
+    date?: string;
+    status?: EncounterStatus;
+    practitionerId?: number;
+    unbilled?: boolean;
+    page?: number;
+    limit?: number;
+  }) =>
     apiClient.get<EncounterListResponse>(
       '/encounters' +
         (query

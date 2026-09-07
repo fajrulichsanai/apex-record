@@ -52,6 +52,20 @@ function initialsFromName(name?: string) {
   );
 }
 
+/**
+ * Timezone klinik dipatok ke +07:00 (WIB), sama seperti sisi backend
+ * (lihat `todayInClinicTimezone` di encounters.service.ts) — dipakai agar
+ * batas "hari ini" di sini konsisten dengan yang dipakai backend saat
+ * memfilter daftar kunjungan hari ini.
+ */
+function clinicDate(value: string): string {
+  return new Date(new Date(value).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function todayInClinicTimezone(): string {
+  return new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 function formatDateTime(value?: string) {
   if (!value) return '—';
   const d = new Date(value);
@@ -74,6 +88,7 @@ function ListKunjunganPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [visits, setVisits] = useState<EncounterListItem[]>([]);
+  const [backlogVisits, setBacklogVisits] = useState<EncounterListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [currentFilter, setCurrentFilter] = useState<FilterValue>('semua');
@@ -103,13 +118,30 @@ function ListKunjunganPageInner() {
     setLoading(true);
     setLoadError(null);
     try {
-      const res = await encounterApi.list();
-      setVisits(res.data);
+      const [todayRes, arrivedRes, inProgressRes] = await Promise.all([
+        encounterApi.list(),
+        encounterApi.list({ status: 'arrived', limit: 100 }),
+        encounterApi.list({ status: 'in_progress', limit: 100 }),
+      ]);
+      setVisits(todayRes.data);
+
+      // Kunjungan yang masih menunggu/berlangsung dari hari-hari sebelumnya —
+      // dulu "hilang" karena daftar utama hanya menampilkan hari ini. Backend
+      // sekarang mengembalikan status arrived/in_progress lintas semua
+      // tanggal, jadi di sini kita saring yang bukan hari ini saja supaya
+      // tidak duplikat dengan daftar utama.
+      const today = todayInClinicTimezone();
+      const backlog = [...arrivedRes.data, ...inProgressRes.data].filter(
+        (v) => clinicDate(v.arrivedTime) !== today,
+      );
+      setBacklogVisits(backlog);
+
+      const combined = [...todayRes.data, ...backlog];
       const queryEncounterId = Number(searchParams.get('encounterId'));
-      const preselected = queryEncounterId && res.data.some((v) => v.encounterId === queryEncounterId)
+      const preselected = queryEncounterId && combined.some((v) => v.encounterId === queryEncounterId)
         ? queryEncounterId
         : null;
-      setSelectedVisitId((prev) => preselected ?? prev ?? res.data[0]?.encounterId ?? null);
+      setSelectedVisitId((prev) => preselected ?? prev ?? combined[0]?.encounterId ?? null);
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : 'Gagal memuat daftar kunjungan');
     } finally {
@@ -152,7 +184,10 @@ function ListKunjunganPageInner() {
   const doneCount = visits.filter((v) => v.status === 'finished').length;
   const cancelCount = visits.filter((v) => v.status === 'cancelled').length;
 
-  const selectedVisit = visits.find((v) => v.encounterId === selectedVisitId) ?? null;
+  const selectedVisit =
+    visits.find((v) => v.encounterId === selectedVisitId) ??
+    backlogVisits.find((v) => v.encounterId === selectedVisitId) ??
+    null;
 
   const handleSelectVisit = (id: number) => {
     setSelectedVisitId(id);
@@ -306,6 +341,49 @@ function ListKunjunganPageInner() {
             </div>
           </div>
         </div>
+
+        {/* Backlog: kunjungan belum selesai dari hari-hari sebelumnya */}
+        {backlogVisits.length > 0 && (
+          <div className="backlog-banner">
+            <div className="backlog-banner-header">
+              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                warning
+              </span>
+              <div>
+                <div className="backlog-banner-title">
+                  {backlogVisits.length} Kunjungan Belum Selesai dari Hari Sebelumnya
+                </div>
+                <div className="backlog-banner-sub">
+                  Kunjungan ini masih berstatus Menunggu/Berlangsung dan tidak akan hilang dari daftar sampai diselesaikan atau dibatalkan.
+                </div>
+              </div>
+            </div>
+            <div className="backlog-list">
+              {backlogVisits.map((visit) => {
+                const dt = formatDateTime(visit.arrivedTime);
+                return (
+                  <div
+                    key={visit.encounterId}
+                    className={`backlog-item ${visit.encounterId === selectedVisitId ? 'selected' : ''}`}
+                    onClick={() => handleSelectVisit(visit.encounterId)}
+                  >
+                    <div className="visit-avatar">{initialsFromName(visit.patientName)}</div>
+                    <div className="backlog-item-info">
+                      <div className="backlog-item-name">{visit.patientName || `Pasien #${visit.patientId}`}</div>
+                      <div className="backlog-item-meta">
+                        <span className={`tag ${statusTagClass(visit.status)}`}>{statusLabel(visit.status)}</span>
+                        {' · '}
+                        {visit.practitionerName || '—'} ·{' '}
+                        {typeof dt === 'string' ? dt : `${dt.date} ${dt.time}`}
+                      </div>
+                    </div>
+                    <span className="material-symbols-rounded chevron-icon">chevron_right</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Content */}
         <div className="content-area">

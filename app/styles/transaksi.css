@@ -464,6 +464,74 @@
 .transaksi-page .empty-title { font-size: 15px; font-weight: 600; color: var(--text-sub); }
 .transaksi-page .empty-sub { font-size: 13px; color: var(--text-muted); text-align: center; max-width: 220px; line-height: 1.5; }
 
+/* BACKLOG BANNER — kunjungan selesai belum ditagih, lintas tanggal */
+.transaksi-page .backlog-banner {
+  background: linear-gradient(135deg, rgba(245,166,35,.10), rgba(232,131,26,.04));
+  border: 1px solid rgba(245,166,35,.35);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+}
+
+.transaksi-page .backlog-banner-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.transaksi-page .backlog-banner-header .material-symbols-rounded {
+  color: var(--orange);
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.transaksi-page .backlog-banner-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.transaksi-page .backlog-banner-sub {
+  font-size: 12.5px;
+  color: var(--text-sub);
+  margin-top: 2px;
+}
+
+.transaksi-page .backlog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.transaksi-page .backlog-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+}
+
+.transaksi-page .backlog-item.selected {
+  border-color: var(--primary);
+  box-shadow: 0 2px 10px rgba(79,126,248,.15);
+}
+
+.transaksi-page .backlog-item-info { flex: 1; min-width: 0; }
+
+.transaksi-page .backlog-item-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.transaksi-page .backlog-item-meta {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
 /* RESPONSIVE */
 @media (max-width: 1100px) {
   .transaksi-page .stat-grid { grid-template-columns: repeat(2, 1fr); }
