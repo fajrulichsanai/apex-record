@@ -4,7 +4,14 @@ import { useEffect, useState } from 'react';
 import { ApiError } from '@/lib/api-client';
 import { patientsApi, type Patient } from '@/lib/patients';
 import { tarifApi, type Tarif } from '@/lib/tarif';
-import { consentTemplateApi, patientConsentApi, type ConsentTemplate, type PatientConsent } from '@/lib/consent';
+import {
+  consentTemplateApi,
+  patientConsentApi,
+  CONSENT_SIGNER_RELATION_LABEL,
+  type ConsentTemplate,
+  type ConsentSignerRelation,
+  type PatientConsent,
+} from '@/lib/consent';
 import { useToast } from '@/lib/toast-context';
 import SignaturePad from '@/components/form/SignaturePad';
 import CustomSelect from '@/components/form/CustomSelect';
@@ -50,6 +57,9 @@ export default function PatientConsentList() {
   const [signTarget, setSignTarget] = useState<SignTarget | null>(null);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [signerName, setSignerName] = useState('');
+  const [signerRelation, setSignerRelation] = useState<ConsentSignerRelation>('self');
+  const [signerAddress, setSignerAddress] = useState('');
+  const [signerPhone, setSignerPhone] = useState('');
   const [signing, setSigning] = useState(false);
 
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
@@ -107,6 +117,22 @@ export default function PatientConsentList() {
     setSignTarget({ consent, role });
     setSignatureData(null);
     setSignerName(role === 'patient' ? consent.patient?.name || '' : '');
+    setSignerRelation('self');
+    setSignerAddress(consent.patient?.address || '');
+    setSignerPhone(consent.patient?.phone || '');
+  };
+
+  const handleRelationChange = (relation: ConsentSignerRelation) => {
+    setSignerRelation(relation);
+    if (relation === 'self') {
+      setSignerName(signTarget?.consent.patient?.name || '');
+      setSignerAddress(signTarget?.consent.patient?.address || '');
+      setSignerPhone(signTarget?.consent.patient?.phone || '');
+    } else {
+      setSignerName('');
+      setSignerAddress('');
+      setSignerPhone('');
+    }
   };
 
   const handleSign = async () => {
@@ -120,6 +146,9 @@ export default function PatientConsentList() {
         role: signTarget.role,
         signatureDataUrl: signatureData,
         signerName: signTarget.role === 'patient' ? signerName || undefined : undefined,
+        signerRelation: signTarget.role === 'patient' ? signerRelation : undefined,
+        signerAddress: signTarget.role === 'patient' ? signerAddress || undefined : undefined,
+        signerPhone: signTarget.role === 'patient' ? signerPhone || undefined : undefined,
       });
       success('Tanda tangan berhasil disimpan');
       setSignTarget(null);
@@ -282,10 +311,35 @@ export default function PatientConsentList() {
             <div className="modal-body">
               <div className="consent-preview">{signTarget.consent.content}</div>
               {signTarget.role === 'patient' && (
-                <div className="form-field">
-                  <label>Nama Penanda Tangan (pasien/wali)</label>
-                  <input type="text" value={signerName} onChange={(e) => setSignerName(e.target.value)} />
-                </div>
+                <>
+                  <div className="form-field">
+                    <label>Hubungan dengan Pasien</label>
+                    <div className="relation-options">
+                      {(Object.keys(CONSENT_SIGNER_RELATION_LABEL) as ConsentSignerRelation[]).map((rel) => (
+                        <button
+                          key={rel}
+                          type="button"
+                          className={`relation-option ${signerRelation === rel ? 'active' : ''}`}
+                          onClick={() => handleRelationChange(rel)}
+                        >
+                          {CONSENT_SIGNER_RELATION_LABEL[rel]}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="form-field">
+                    <label>Nama Penanda Tangan (pasien/wali)</label>
+                    <input type="text" value={signerName} onChange={(e) => setSignerName(e.target.value)} />
+                  </div>
+                  <div className="form-field">
+                    <label>Alamat</label>
+                    <input type="text" value={signerAddress} onChange={(e) => setSignerAddress(e.target.value)} />
+                  </div>
+                  <div className="form-field">
+                    <label>No. Telp</label>
+                    <input type="text" value={signerPhone} onChange={(e) => setSignerPhone(e.target.value)} />
+                  </div>
+                </>
               )}
               <div className="form-field">
                 <label>Tanda Tangan</label>

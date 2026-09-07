@@ -12,6 +12,13 @@ export interface ConsentTemplate {
 }
 
 export type PatientConsentStatus = 'draft' | 'partial' | 'completed';
+export type ConsentSignerRelation = 'self' | 'parent' | 'guardian';
+
+export const CONSENT_SIGNER_RELATION_LABEL: Record<ConsentSignerRelation, string> = {
+  self: 'Pasien sendiri',
+  parent: 'Orang tua',
+  guardian: 'Wali',
+};
 
 export interface PatientConsent {
   id: number;
@@ -25,12 +32,23 @@ export interface PatientConsent {
   status: PatientConsentStatus;
   patientSignature: string | null;
   patientSignerName: string | null;
+  signerRelation: ConsentSignerRelation | null;
+  signerAddress: string | null;
+  signerPhone: string | null;
   patientSignedAt: string | null;
   doctorSignature: string | null;
   doctorSignedBy: number | null;
   doctorSignedAt: string | null;
   createdAt: string;
-  patient?: { id: number; name: string; noRm?: string };
+  patient?: {
+    id: number;
+    name: string;
+    noRm?: string;
+    address?: string;
+    phone?: string;
+    birthDate?: string;
+    gender?: 'male' | 'female';
+  };
   tarif?: { id: number; name: string } | null;
 }
 
@@ -77,8 +95,17 @@ export const patientConsentApi = {
   create: (payload: { patientId: number; encounterId?: number; tarifId?: number; templateId?: number }) =>
     apiClient.post<PatientConsent>('/patient-consents', payload),
 
-  sign: (id: number, payload: { role: 'patient' | 'doctor'; signatureDataUrl: string; signerName?: string }) =>
-    apiClient.patch<PatientConsent>(`/patient-consents/${id}/sign`, payload),
+  sign: (
+    id: number,
+    payload: {
+      role: 'patient' | 'doctor';
+      signatureDataUrl: string;
+      signerName?: string;
+      signerRelation?: ConsentSignerRelation;
+      signerAddress?: string;
+      signerPhone?: string;
+    },
+  ) => apiClient.patch<PatientConsent>(`/patient-consents/${id}/sign`, payload),
 
   downloadPdf: async (id: number) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
