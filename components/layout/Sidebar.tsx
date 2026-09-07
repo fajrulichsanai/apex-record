@@ -26,6 +26,7 @@ import {
   FiShield,
   FiBox,
   FiBell,
+  FiFileText,
 } from 'react-icons/fi';
 import './sidebar.css';
 
@@ -101,6 +102,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter', feature: 'share-fee-dokter' },
         { label: 'Gudang & Stok', icon: <FiBox />, href: '/gudang', feature: 'gudang' },
         { label: 'Recall & Reminder', icon: <FiBell />, href: '/recall-reminder', feature: 'recall-reminder' },
+        { label: 'Informed Consent', icon: <FiFileText />, href: '/informed-consent', feature: 'informed-consent' },
       ],
     },
     {

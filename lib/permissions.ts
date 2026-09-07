@@ -9,6 +9,7 @@ export type FeatureKey =
   | 'operasional'
   | 'share-fee-dokter'
   | 'recall-reminder'
+  | 'informed-consent'
   | 'gudang'
   | 'laporan-kunjungan'
   | 'laporan-keuangan'
@@ -28,6 +29,7 @@ const FULL_ACCESS: FeatureKey[] = [
   'operasional',
   'share-fee-dokter',
   'recall-reminder',
+  'informed-consent',
   'gudang',
   'laporan-kunjungan',
   'laporan-keuangan',
@@ -50,6 +52,7 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'billing',
     'operasional',
     'recall-reminder',
+    'informed-consent',
     'gudang',
     'laporan-kunjungan',
     'info-klinik',
@@ -57,7 +60,7 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'referral',
     'langganan',
   ],
-  dokter: ['pasien', 'reservasi', 'kunjungan'],
+  dokter: ['pasien', 'reservasi', 'kunjungan', 'informed-consent'],
   pending: [],
 };
 
