@@ -10,6 +10,7 @@ import PainScalePicker from '@/components/form/PainScalePicker';
 import BodyPainMap, { PainPoint } from '@/components/form/BodyPainMap';
 import PrescriptionPanel from '@/components/form/PrescriptionPanel';
 import CustomSelect from '@/components/form/CustomSelect';
+import VoiceDictationButton from '@/components/form/VoiceDictationButton';
 import SoapNoteView from '@/components/rekam-medis/SoapNoteView';
 import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
 import OdontogramChart from '@/components/odontogram/OdontogramChart';
@@ -1594,7 +1595,10 @@ export default function RekamMedisPage() {
                         </div>
 
                         <div className="visit-form-field">
-                          <label>Subjective</label>
+                          <label>
+                            Subjective
+                            <VoiceDictationButton value={subjective} onChange={setSubjective} disabled={submitting} />
+                          </label>
                           <textarea
                             value={subjective}
                             onChange={(e) => setSubjective(e.target.value)}
@@ -1604,7 +1608,10 @@ export default function RekamMedisPage() {
                         </div>
 
                         <div className="visit-form-field">
-                          <label>Objective</label>
+                          <label>
+                            Objective
+                            <VoiceDictationButton value={objective} onChange={setObjective} disabled={submitting} />
+                          </label>
                           <textarea
                             value={objective}
                             onChange={(e) => setObjective(e.target.value)}
@@ -1614,7 +1621,10 @@ export default function RekamMedisPage() {
                         </div>
 
                         <div className="visit-form-field">
-                          <label>Assessment</label>
+                          <label>
+                            Assessment
+                            <VoiceDictationButton value={assessment} onChange={setAssessment} disabled={submitting} />
+                          </label>
                           <textarea
                             value={assessment}
                             onChange={(e) => setAssessment(e.target.value)}
@@ -1629,7 +1639,10 @@ export default function RekamMedisPage() {
                             Treatment — tindakan pada kunjungan ini
                           </div>
                           <div className="visit-form-field">
-                            <label>Tindakan yang dilakukan</label>
+                            <label>
+                              Tindakan yang dilakukan
+                              <VoiceDictationButton value={treatment} onChange={setTreatment} disabled={submitting} />
+                            </label>
                             <textarea
                               value={treatment}
                               onChange={(e) => setTreatment(e.target.value)}
@@ -1640,7 +1653,10 @@ export default function RekamMedisPage() {
                         </div>
 
                         <div className="visit-form-field">
-                          <label>Plan</label>
+                          <label>
+                            Plan
+                            <VoiceDictationButton value={plan} onChange={setPlan} disabled={submitting} />
+                          </label>
                           <textarea
                             value={plan}
                             onChange={(e) => setPlan(e.target.value)}

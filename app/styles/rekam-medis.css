@@ -449,6 +449,10 @@
   gap: 8px;
 }
 
+.se-upload-fields-with-category {
+  grid-template-columns: 140px 140px 1fr 1fr;
+}
+
 .se-upload-notes input {
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
@@ -503,6 +507,7 @@
 }
 .se-badge-photo { background: rgba(79,126,248,.9); }
 .se-badge-xray { background: rgba(26,35,64,.9); }
+.se-badge-category { top: 6px; left: 6px; bottom: auto; background: rgba(45,203,138,.92); }
 
 .se-gallery-caption {
   font-size: 12px;
@@ -519,6 +524,77 @@
 
 .se-lightbox-box { max-width: 800px; }
 .se-lightbox-img { width: 100%; max-height: 70vh; object-fit: contain; border-radius: var(--radius-sm); }
+
+/* ----- Compare mode (before/after) ----- */
+.se-compare-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.se-compare-bar .btn-outline.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.se-compare-hint { font-size: 12.5px; color: var(--text-sub); }
+
+.se-gallery-item.se-selected .se-gallery-thumb { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.se-compare-check {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.9);
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.se-compare-check.checked { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+.se-compare-box { max-width: 900px; width: 100%; }
+
+.se-compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+
+.se-compare-pane { display: flex; flex-direction: column; gap: 8px; }
+
+.se-compare-pane img {
+  width: 100%;
+  max-height: 55vh;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.se-compare-pane-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+.se-compare-pane-label span { font-weight: 500; color: var(--text-sub); text-transform: none; letter-spacing: normal; }
+
+@media (max-width: 640px) {
+  .se-compare-grid { grid-template-columns: 1fr; }
+}
 
 @media (max-width: 860px) {
   .rm-layout { grid-template-columns: 1fr; }
@@ -540,4 +616,49 @@
 
   .rm-probing-grid { grid-template-columns: 1fr; }
   .se-upload-fields { grid-template-columns: 1fr; }
+}
+
+/* ----- Voice to Text (dikte suara) tombol di label field SOAP ----- */
+.voice-dictation-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg, #F5F6FA);
+  color: var(--text-sub, #6B7A99);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s ease, color .15s ease;
+}
+
+.voice-dictation-btn .material-symbols-rounded { font-size: 14px; }
+
+.voice-dictation-btn:hover:not(:disabled) { background: rgba(79,126,248,.12); color: var(--primary, #4F7EF8); }
+
+.voice-dictation-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.voice-dictation-btn.unsupported { color: var(--text-muted, #A0AEC0); }
+
+.voice-dictation-btn.recording {
+  background: #FF4D4F;
+  color: #fff;
+}
+
+.voice-dictation-btn.recording:hover { background: #FF4D4F; color: #fff; }
+
+.voice-dictation-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid #FF4D4F;
+  animation: voice-dictation-pulse 1.4s ease-out infinite;
+}
+
+@keyframes voice-dictation-pulse {
+  0% { transform: scale(.85); opacity: .8; }
+  100% { transform: scale(1.5); opacity: 0; }
 }
