@@ -1,11 +1,19 @@
 import { apiClient } from './api-client';
 
 export type SupportingExamImageType = 'photo' | 'xray';
+export type SupportingExamImageCategory =
+  | 'intraoral'
+  | 'extraoral'
+  | 'occlusal'
+  | 'before'
+  | 'progress'
+  | 'after';
 
 export interface SupportingExamImage {
   id: number;
   encounterId?: number;
   imageType: SupportingExamImageType;
+  category?: SupportingExamImageCategory | null;
   fileUrl: string;
   originalName?: string;
   notes?: string;
@@ -21,10 +29,12 @@ export const supportingExamApi = {
     file: File,
     imageType: SupportingExamImageType,
     notes?: string,
+    category?: SupportingExamImageCategory,
   ) => {
     const form = new FormData();
     form.append('image', file);
     form.append('imageType', imageType);
+    if (category) form.append('category', category);
     if (notes) form.append('notes', notes);
     return apiClient.postForm<SupportingExamImage>(
       `/encounters/${encounterId}/supporting-exam-images`,
