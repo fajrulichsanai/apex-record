@@ -4,17 +4,18 @@ import { useEffect, useState } from 'react';
 import { ApiError } from '@/lib/api-client';
 import { patientsApi, type Patient } from '@/lib/patients';
 import { tarifApi, type Tarif } from '@/lib/tarif';
+import { clinicApi, type ClinicResponse } from '@/lib/clinic';
 import {
   consentTemplateApi,
   patientConsentApi,
-  CONSENT_SIGNER_RELATION_LABEL,
   type ConsentTemplate,
   type ConsentSignerRelation,
   type PatientConsent,
 } from '@/lib/consent';
 import { useToast } from '@/lib/toast-context';
-import SignaturePad from '@/components/form/SignaturePad';
+import { useAuth } from '@/lib/auth-context';
 import CustomSelect from '@/components/form/CustomSelect';
+import ConsentDocument from './ConsentDocument';
 
 const STATUS_LABEL: Record<PatientConsent['status'], string> = {
   draft: 'Belum Ditandatangani',
@@ -42,12 +43,14 @@ interface SignTarget {
 
 export default function PatientConsentList() {
   const { success, error } = useToast();
+  const { user } = useAuth();
   const [consents, setConsents] = useState<PatientConsent[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [patients, setPatients] = useState<Patient[]>([]);
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
   const [templates, setTemplates] = useState<ConsentTemplate[]>([]);
+  const [clinic, setClinic] = useState<ClinicResponse | null>(null);
 
   const [showCreate, setShowCreate] = useState(false);
   const [createPatientId, setCreatePatientId] = useState('');
@@ -78,11 +81,12 @@ export default function PatientConsentList() {
 
   useEffect(() => {
     load();
-    Promise.all([patientsApi.listAll(), tarifApi.list(), consentTemplateApi.list()])
-      .then(([patientList, tarifRes, templateList]) => {
+    Promise.all([patientsApi.listAll(), tarifApi.list(), consentTemplateApi.list(), clinicApi.get()])
+      .then(([patientList, tarifRes, templateList, clinicRes]) => {
         setPatients(patientList);
         setTarifs(tarifRes.data);
         setTemplates(templateList);
+        setClinic(clinicRes);
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -295,56 +299,36 @@ export default function PatientConsentList() {
 
       {signTarget && (
         <div className="consent-modal-overlay" onClick={() => !signing && setSignTarget(null)}>
-          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-box doc-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div className="modal-header-title">
                 <div className="modal-header-icon"><span className="material-symbols-rounded">draw</span></div>
                 <div>
                   <h2>{signTarget.role === 'patient' ? 'Tanda Tangan Pasien' : 'Tanda Tangan Dokter'}</h2>
-                  <p>{signTarget.consent.title}</p>
+                  <p>Tanda tangani langsung pada kolom yang tersedia di bawah, seperti menandatangani kertas.</p>
                 </div>
               </div>
               <button className="modal-close" onClick={() => setSignTarget(null)} aria-label="Tutup">
                 <span className="material-symbols-rounded">close</span>
               </button>
             </div>
-            <div className="modal-body">
-              <div className="consent-preview">{signTarget.consent.content}</div>
-              {signTarget.role === 'patient' && (
-                <>
-                  <div className="form-field">
-                    <label>Hubungan dengan Pasien</label>
-                    <div className="relation-options">
-                      {(Object.keys(CONSENT_SIGNER_RELATION_LABEL) as ConsentSignerRelation[]).map((rel) => (
-                        <button
-                          key={rel}
-                          type="button"
-                          className={`relation-option ${signerRelation === rel ? 'active' : ''}`}
-                          onClick={() => handleRelationChange(rel)}
-                        >
-                          {CONSENT_SIGNER_RELATION_LABEL[rel]}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="form-field">
-                    <label>Nama Penanda Tangan (pasien/wali)</label>
-                    <input type="text" value={signerName} onChange={(e) => setSignerName(e.target.value)} />
-                  </div>
-                  <div className="form-field">
-                    <label>Alamat</label>
-                    <input type="text" value={signerAddress} onChange={(e) => setSignerAddress(e.target.value)} />
-                  </div>
-                  <div className="form-field">
-                    <label>No. Telp</label>
-                    <input type="text" value={signerPhone} onChange={(e) => setSignerPhone(e.target.value)} />
-                  </div>
-                </>
-              )}
-              <div className="form-field">
-                <label>Tanda Tangan</label>
-                <SignaturePad value={signatureData || undefined} onChange={setSignatureData} />
-              </div>
+            <div className="modal-body doc-modal-body">
+              <ConsentDocument
+                consent={signTarget.consent}
+                clinic={clinic}
+                activeRole={signTarget.role}
+                doctorName={signTarget.role === 'doctor' ? user?.name : undefined}
+                signerName={signerName}
+                onSignerNameChange={setSignerName}
+                signerRelation={signerRelation}
+                onSignerRelationChange={handleRelationChange}
+                signerAddress={signerAddress}
+                onSignerAddressChange={setSignerAddress}
+                signerPhone={signerPhone}
+                onSignerPhoneChange={setSignerPhone}
+                signatureData={signatureData}
+                onSignatureChange={setSignatureData}
+              />
             </div>
             <div className="modal-footer">
               <button type="button" className="btn-outline" onClick={() => setSignTarget(null)} disabled={signing}>Batal</button>

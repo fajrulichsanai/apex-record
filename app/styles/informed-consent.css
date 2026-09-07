@@ -183,19 +183,75 @@
   border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,126,248,.12);
 }
 
-.consent-modal-overlay .relation-options { display: flex; gap: 8px; flex-wrap: wrap; }
-.consent-modal-overlay .relation-option {
-  border: 1.5px solid var(--border); border-radius: 999px; padding: 7px 14px;
-  font-size: 12.5px; font-weight: 600; color: var(--text-sub); background: var(--surface);
-  cursor: pointer; transition: border-color var(--transition), color var(--transition), background var(--transition);
-}
-.consent-modal-overlay .relation-option:hover { border-color: var(--primary); color: var(--primary); }
-.consent-modal-overlay .relation-option.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.consent-modal-overlay .modal-box.doc-modal { max-width: 720px; }
+.consent-modal-overlay .modal-body.doc-modal-body { padding: 20px; background: var(--bg); }
 
-.consent-modal-overlay .consent-preview {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
-  padding: 16px; font-size: 13px; line-height: 1.6; color: var(--text-main);
-  white-space: pre-wrap; max-height: 220px; overflow-y: auto;
+/* ---------- Consent document (looks like the printed form) ---------- */
+.consent-doc {
+  background: #fff;
+  border-radius: 4px;
+  padding: 36px 40px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, .08), 0 10px 30px rgba(15, 23, 42, .06);
+  font-size: 12.5px;
+  color: #1a1a1a;
+  line-height: 1.55;
+}
+
+.consent-doc-header { display: flex; align-items: center; gap: 12px; justify-content: center; text-align: center; }
+.consent-doc-logo { width: 44px; height: 44px; object-fit: contain; flex-shrink: 0; }
+.consent-doc-clinic-name { font-size: 15px; font-weight: 700; }
+.consent-doc-clinic-meta { font-size: 10.5px; color: #4a5568; margin-top: 1px; }
+
+.consent-doc-rule { border-top: 2px solid #1a1a1a; border-bottom: 1px solid #1a1a1a; height: 3px; margin: 12px 0 18px; }
+
+.consent-doc-title { font-size: 14px; font-weight: 800; text-align: center; margin: 0; letter-spacing: .01em; }
+.consent-doc-subtitle { font-size: 12px; font-weight: 700; text-align: center; margin: 2px 0 20px; }
+
+.consent-doc-text { margin: 0 0 8px; }
+.consent-doc-note { font-style: italic; color: #4a5568; }
+
+.consent-doc-block { margin: 0 0 14px; display: flex; flex-direction: column; gap: 3px; }
+.consent-doc-row { display: flex; align-items: baseline; gap: 6px; }
+.consent-doc-row-label { width: 168px; flex-shrink: 0; color: #1a1a1a; }
+.consent-doc-row-colon { flex-shrink: 0; }
+.consent-doc-row-value { flex: 1; }
+.consent-doc-row-input {
+  flex: 1; border: none; border-bottom: 1px dotted #94a3b8; background: transparent;
+  font: inherit; color: #1a1a1a; padding: 0 0 2px; outline: none; min-width: 0;
+}
+.consent-doc-row-input:focus { border-bottom-color: var(--primary, #4F7EF8); }
+
+.consent-doc-relation-options { display: flex; gap: 6px; flex-wrap: wrap; }
+.consent-doc-relation-chip {
+  border: 1px solid #cbd5e1; border-radius: 999px; padding: 3px 10px; font-size: 11px; font-weight: 600;
+  color: #4a5568; background: #fff; cursor: pointer; transition: all .15s;
+}
+.consent-doc-relation-chip.active { background: var(--primary, #4F7EF8); border-color: var(--primary, #4F7EF8); color: #fff; }
+
+.consent-doc-list { margin: 0 0 16px; padding-left: 20px; }
+.consent-doc-list li { margin-bottom: 6px; }
+
+.consent-doc-signatures { display: flex; gap: 24px; margin-top: 28px; }
+.consent-doc-sigbox { flex: 1; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.consent-doc-sig-label { font-weight: 700; font-size: 12px; margin-bottom: 8px; }
+.consent-doc-sigbox .signature-pad-wrap { width: 100%; }
+.consent-doc-sigbox .signature-pad-canvas {
+  border: 1.5px dashed #cbd5e1; border-radius: 6px; background: #fff;
+}
+.consent-doc-sig-static {
+  width: 100%; height: 130px; border: 1.5px dashed #cbd5e1; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; background: #fafafa;
+}
+.consent-doc-sig-static img { max-width: 100%; max-height: 100%; }
+.consent-doc-sig-empty { font-size: 11px; font-style: italic; color: #94a3b8; }
+.consent-doc-sig-line { width: 80%; border-top: 1px solid #1a1a1a; margin: 10px 0 6px; }
+.consent-doc-sig-name { font-weight: 700; font-size: 12px; }
+
+@media (max-width: 640px) {
+  .consent-doc { padding: 24px 18px; }
+  .consent-doc-row { flex-wrap: wrap; }
+  .consent-doc-row-label { width: 100%; font-weight: 600; }
+  .consent-doc-signatures { flex-direction: column; }
 }
 
 .consent-modal-overlay .modal-footer {
