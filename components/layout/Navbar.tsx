@@ -11,6 +11,7 @@ interface NavbarProps {
 
 const ROLE_LABEL: Record<string, string> = {
   super_admin: 'Super Admin',
+  multi_clinic_owner: 'Multi-Klinik Owner',
   owner: 'Owner',
   admin: 'Admin',
   dokter: 'Dokter',

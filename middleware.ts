@@ -19,6 +19,15 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  if (pathname.startsWith('/multi-klinik')) {
+    const role = request.cookies.get('role')?.value;
+    if (role !== 'multi_clinic_owner') {
+      const url = request.nextUrl.clone();
+      url.pathname = role ? '/dashboard' : '/';
+      return NextResponse.redirect(url);
+    }
+  }
+
   return NextResponse.next();
 }
 

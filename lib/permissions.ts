@@ -43,6 +43,7 @@ const FULL_ACCESS: FeatureKey[] = [
 
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
   super_admin: FULL_ACCESS,
+  multi_clinic_owner: [],
   owner: FULL_ACCESS,
   admin: [
     'dashboard',
@@ -84,6 +85,7 @@ export function canSeeHargaModal(role: UserRole | undefined): boolean {
 
 export function defaultRouteForRole(role: UserRole | undefined): string {
   if (role === 'super_admin') return '/super-admin/dashboard';
+  if (role === 'multi_clinic_owner') return '/multi-klinik/dashboard';
   if (role === 'dokter') return '/list-pasien';
   return '/dashboard';
 }
