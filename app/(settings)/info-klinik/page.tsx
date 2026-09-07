@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
@@ -162,6 +162,9 @@ export default function InfoKlinikPage() {
   const [saving, setSaving] = useState(false);
   const [info, setInfo] = useState<ClinicInfo>(EMPTY_INFO);
   const [days, setDays] = useState<DayHours[]>(operationalHoursToDays());
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const loadClinic = useCallback(async () => {
     try {
@@ -179,6 +182,7 @@ export default function InfoKlinikPage() {
         nomorSip: clinic.sipNumber ?? '',
       });
       setDays(operationalHoursToDays(clinic.operationalHours));
+      setLogoUrl(clinic.logoUrl ?? null);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Gagal memuat info klinik';
       error(message);
@@ -229,6 +233,33 @@ export default function InfoKlinikPage() {
     }
   }
 
+  async function handleLogoSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      error('File harus berupa gambar (JPG, PNG, atau WEBP)');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      error('Ukuran gambar maksimal 5MB');
+      return;
+    }
+
+    try {
+      setUploadingLogo(true);
+      const res = await clinicApi.uploadLogo(file);
+      setLogoUrl(res.logoUrl);
+      success('Logo klinik berhasil diunggah');
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Gagal mengunggah logo klinik';
+      error(message);
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
   return (
     <DashboardLayout>
       <FeatureGuard feature="info-klinik">
@@ -271,6 +302,57 @@ export default function InfoKlinikPage() {
             <div className="grid-two">
               {/* LEFT COLUMN */}
               <div>
+                {/* Logo Klinik */}
+                <div className="card">
+                  <div className="card-header">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <circle cx="8.5" cy="8.5" r="1.5" />
+                      <polyline points="21 15 16 10 5 21" />
+                    </svg>
+                    Logo Klinik
+                  </div>
+                  <div className="card-body logo-card-body">
+                    <div className="logo-preview">
+                      {logoUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={logoUrl} alt="Logo klinik" />
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                          <rect x="3" y="3" width="18" height="18" rx="2" />
+                          <circle cx="8.5" cy="8.5" r="1.5" />
+                          <polyline points="21 15 16 10 5 21" />
+                        </svg>
+                      )}
+                    </div>
+                    {!viewOnly && (
+                      <div className="logo-actions">
+                        <p>Ditampilkan pada dokumen &amp; laporan klinik. Format JPG/PNG/WEBP, maks. 5MB.</p>
+                        <button
+                          type="button"
+                          className="logo-upload-btn"
+                          onClick={() => logoInputRef.current?.click()}
+                          disabled={uploadingLogo}
+                        >
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                          </svg>
+                          <span>{uploadingLogo ? 'Mengunggah...' : logoUrl ? 'Ganti Logo' : 'Unggah Logo'}</span>
+                        </button>
+                        <input
+                          ref={logoInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          hidden
+                          onChange={handleLogoSelected}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Informasi Dasar */}
                 <div className="card">
                   <div className="card-header">
