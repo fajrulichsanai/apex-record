@@ -17,9 +17,18 @@ import {
   FiAward,
   FiDownload,
   FiFileText,
+  FiUsers,
+  FiDollarSign,
+  FiRepeat,
+  FiClock,
+  FiPercent,
+  FiTarget,
+  FiTrendingUp,
 } from 'react-icons/fi';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
+import StatCard from '@/components/laporan/StatCard';
+import CategoryProfitabilityTable from '@/components/laporan/CategoryProfitabilityTable';
 import DiscountRankingTable from '@/components/laporan/DiscountRankingTable';
 import StockReportSection from '@/components/laporan/StockReportSection';
 import VisitHeatmap from '@/components/laporan/VisitHeatmap';
@@ -277,6 +286,83 @@ export default function LaporanKeuanganProPage() {
 
           {report && <DiscountRankingTable data={report.discountRanking} />}
           {report && <StockReportSection data={report.stockReport} />}
+
+          {report && (
+            <div className="laporan-section">
+              <div className="laporan-section-title">
+                <h2>Analisis Bisnis Lanjutan</h2>
+                <span>Unit economics &amp; kesehatan keuangan klinik</span>
+              </div>
+              <div className="stat-grid">
+                <StatCard
+                  variant="income"
+                  icon={<FiUsers />}
+                  value={formatRupiah(report.businessMetrics.ltv.averageLtv)}
+                  label="Customer Lifetime Value (LTV)"
+                />
+                <StatCard
+                  variant="total"
+                  icon={<FiDollarSign />}
+                  value={formatRupiah(report.businessMetrics.arpv)}
+                  label="Avg. Revenue / Kunjungan (ARPV)"
+                />
+                <StatCard
+                  variant="lunas"
+                  icon={<FiRepeat />}
+                  value={
+                    report.businessMetrics.retention.retentionRatePercent !== null
+                      ? `${report.businessMetrics.retention.retentionRatePercent}%`
+                      : '-'
+                  }
+                  label="Retensi Pasien"
+                />
+                <StatCard
+                  variant="pending"
+                  icon={<FiClock />}
+                  value={`${report.businessMetrics.dso.averageDays} hari`}
+                  label="Days Sales Outstanding (DSO)"
+                />
+                <StatCard
+                  variant="expense"
+                  icon={<FiPercent />}
+                  value={`${report.businessMetrics.pareto.top20PercentPatientShare}%`}
+                  label="Konsentrasi 20% Pasien Teratas"
+                />
+                <StatCard
+                  variant="margin"
+                  icon={<FiAward />}
+                  value={`${report.businessMetrics.ltv.averageVisitsPerPatient}x`}
+                  label="Rata-rata Kunjungan / Pasien"
+                />
+                <StatCard
+                  variant="expense"
+                  icon={<FiTarget />}
+                  value={
+                    report.businessMetrics.marketing.cac !== null
+                      ? formatRupiah(report.businessMetrics.marketing.cac)
+                      : '-'
+                  }
+                  label="Customer Acquisition Cost (CAC)"
+                />
+                <StatCard
+                  variant={
+                    report.businessMetrics.marketing.ltvCacRatio !== null &&
+                    report.businessMetrics.marketing.ltvCacRatio >= 3
+                      ? 'income'
+                      : 'total'
+                  }
+                  icon={<FiTrendingUp />}
+                  value={
+                    report.businessMetrics.marketing.ltvCacRatio !== null
+                      ? `${report.businessMetrics.marketing.ltvCacRatio}x`
+                      : '-'
+                  }
+                  label="Rasio LTV : CAC"
+                />
+              </div>
+              <CategoryProfitabilityTable data={report.businessMetrics.categoryProfitability} />
+            </div>
+          )}
         </main>
       </FeatureGuard>
     </DashboardLayout>
