@@ -47,6 +47,7 @@
   font-weight: 700;
 }
 .langganan-page .tag-active { background: rgba(45,203,138,.12); color: var(--green); }
+.langganan-page .tag-trial { background: rgba(245,166,35,.14); color: var(--orange); }
 .langganan-page .tag-expired { background: rgba(255,77,79,.14); color: var(--red); }
 .langganan-page .tag-pending { background: rgba(245,166,35,.14); color: var(--orange); }
 .langganan-page .tag-confirmed { background: rgba(45,203,138,.12); color: var(--green); }

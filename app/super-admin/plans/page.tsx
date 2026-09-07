@@ -25,7 +25,8 @@ const EMPTY_FORM: PlanForm = { name: '', durationDays: '', price: '', isActive: 
 
 const TIER_OPTIONS = [
   { value: '', label: '— Tanpa tier (legacy) —' },
-  { value: 'basic', label: 'Basic' },
+  { value: 'trial', label: 'Free Trial' },
+  { value: 'basic', label: 'Starter' },
   { value: 'pro', label: 'Pro' },
   { value: 'multi_klinik', label: 'Multi Klinik' },
 ];
@@ -37,7 +38,8 @@ const CYCLE_OPTIONS = [
 ];
 
 function tierLabel(tier?: SubscriptionPlanTier | null) {
-  if (tier === 'basic') return 'Basic';
+  if (tier === 'trial') return 'Free Trial';
+  if (tier === 'basic') return 'Starter';
   if (tier === 'pro') return 'Pro';
   if (tier === 'multi_klinik') return 'Multi Klinik';
   return '-';
@@ -142,7 +144,7 @@ export default function SuperAdminPlansPage() {
               <h1>Paket Langganan</h1>
               <span className="badge-count">{plans.length}</span>
             </div>
-            <p className="page-subtitle">Kelola paket Basic, Pro, dan Multi Klinik untuk siklus bulanan &amp; tahunan.</p>
+            <p className="page-subtitle">Kelola paket Free Trial, Starter, Pro, dan Multi Klinik untuk siklus bulanan &amp; tahunan.</p>
           </div>
           <button type="button" className="btn-primary" onClick={openCreate}>
             + Tambah Paket

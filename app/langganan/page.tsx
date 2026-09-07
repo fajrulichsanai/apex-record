@@ -31,7 +31,7 @@ interface TierMeta {
 const TIERS: TierMeta[] = [
   {
     tier: 'basic',
-    label: 'Basic',
+    label: 'Starter',
     tagline: 'Untuk klinik yang baru memulai',
     icon: '🩺',
     features: [
@@ -49,7 +49,7 @@ const TIERS: TierMeta[] = [
     icon: '⭐',
     highlight: true,
     features: [
-      'Semua fitur Basic',
+      'Semua fitur Starter',
       'User management multi-role',
       'Dukungan prioritas',
       'Backup data berkala',
@@ -184,12 +184,18 @@ function LanggananPageInner() {
               <>
                 <div className="status-top-row">
                   <span className={`tag ${isActive ? 'tag-active' : 'tag-expired'}`}>{isActive ? 'Aktif' : 'Kadaluarsa'}</span>
+                  {isActive && subscription.plan?.tier === 'trial' && (
+                    <span className="tag tag-trial">Free Trial</span>
+                  )}
                   <span className="status-plan-name">{subscription.plan?.name || '-'}</span>
                 </div>
                 <p className="status-period">
                   Berlaku sampai <strong>{formatDate(subscription.endDate)}</strong>
                   {urgent && <span className="status-days-left"> · {daysUntilExpiry} hari lagi</span>}
                 </p>
+                {isActive && subscription.plan?.tier === 'trial' && (
+                  <p className="status-period">Upgrade kapan saja sebelum trial berakhir agar data klinik tidak terkunci.</p>
+                )}
               </>
             ) : (
               <>

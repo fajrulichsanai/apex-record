@@ -1,6 +1,6 @@
 export type SubscriptionStatus = 'active' | 'expired';
 export type PaymentStatus = 'pending' | 'confirmed' | 'rejected';
-export type SubscriptionPlanTier = 'basic' | 'pro' | 'multi_klinik';
+export type SubscriptionPlanTier = 'trial' | 'basic' | 'pro' | 'multi_klinik';
 export type SubscriptionBillingCycle = 'monthly' | 'yearly';
 
 export interface SubscriptionPlan {
