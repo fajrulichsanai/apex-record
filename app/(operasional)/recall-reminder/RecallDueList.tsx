@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { ApiError } from '@/lib/api-client';
 import { patientRecallApi, type PatientRecall, type PatientRecallStatus } from '@/lib/recall';
 import { useToast } from '@/lib/toast-context';
@@ -143,15 +144,25 @@ export default function RecallDueList({ clinicName }: RecallDueListProps) {
                               Hubungi via WA
                             </a>
                           )}
-                          {recall.status !== 'sudah_booking_ulang' && (
-                            <button
-                              type="button"
+                          {recall.upcomingReservation ? (
+                            <Link
                               className="btn-row-save"
-                              disabled={updatingId === recall.id}
-                              onClick={() => handleUpdateStatus(recall, 'sudah_booking_ulang')}
+                              href={`/reservasi?search=${encodeURIComponent(recall.patient?.phone || '')}`}
                             >
-                              Sudah Booking
-                            </button>
+                              <span className="material-symbols-rounded" style={{ fontSize: 16 }}>event_available</span>
+                              Lihat Reservasi
+                            </Link>
+                          ) : (
+                            recall.status !== 'sudah_booking_ulang' && (
+                              <button
+                                type="button"
+                                className="btn-row-save"
+                                disabled={updatingId === recall.id}
+                                onClick={() => handleUpdateStatus(recall, 'sudah_booking_ulang')}
+                              >
+                                Sudah Booking
+                              </button>
+                            )
                           )}
                         </div>
                       </td>

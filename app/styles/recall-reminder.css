@@ -74,9 +74,10 @@
 .recall-page .fee-suffix { font-size: 12px; color: var(--text-muted); }
 
 .recall-page .btn-row-save {
+  display: inline-flex; align-items: center; gap: 6px;
   border: none; background: rgba(79,126,248,.1); color: var(--primary);
   border-radius: 8px; padding: 7px 14px; font-size: 12.5px; font-weight: 600;
-  cursor: pointer; transition: all var(--transition);
+  cursor: pointer; text-decoration: none; transition: all var(--transition);
 }
 .recall-page .btn-row-save:hover { background: rgba(79,126,248,.18); }
 .recall-page .btn-row-save:disabled { opacity: .5; cursor: not-allowed; }

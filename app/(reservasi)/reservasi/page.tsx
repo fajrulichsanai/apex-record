@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import InputModal from '@/components/feedback/InputModal';
@@ -76,13 +76,14 @@ export default function ReservasiPage() {
 
 function ReservasiPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { error: showError } = useToast();
   const [reservations, setReservations] = useState<ReservationItem[]>([]);
   const [listTotal, setListTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [currentFilter, setCurrentFilter] = useState<FilterValue>('semua');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(() => searchParams.get('search') || '');
   const [dateScope, setDateScope] = useState<DateScope>('all');
   const [customDate, setCustomDate] = useState('');
   const [stats, setStats] = useState<ReservationStats>(EMPTY_STATS);

@@ -45,7 +45,7 @@ export default function RecallReminderPage() {
           <div className="page-header">
             <div className="page-title-block">
               <div className="page-title">
-                <h1>Recall &amp; Reminder</h1>
+                <h1>Follow Up Pasien</h1>
               </div>
               <p className="page-subtitle">Pasien yang sudah waktunya kontrol kembali, dijadwalkan otomatis dari tindakan yang punya interval recall.</p>
             </div>

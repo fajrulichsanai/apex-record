@@ -24,6 +24,7 @@ export interface PatientRecall {
   createdAt: string;
   patient?: { id: number; name: string; phone?: string; noRm?: string };
   tarif?: { id: number; name: string } | null;
+  upcomingReservation: { id: number; reservationDate: string } | null;
 }
 
 export interface PatientRecallListResponse {

@@ -79,7 +79,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: 'Reservasi',
       groupId: 'reservasi',
       icon: <FiCalendar />,
-      items: [{ label: 'Daftar Reservasi', icon: <FiCalendar />, href: '/reservasi', feature: 'reservasi' }],
+      items: [
+        { label: 'Buat Reservasi', icon: <FiCalendar />, href: '/reservasi', feature: 'reservasi' },
+        { label: 'Follow Up Pasien', icon: <FiBell />, href: '/recall-reminder', feature: 'recall-reminder' },
+      ],
     },
     {
       title: 'Kunjungan',
@@ -101,7 +104,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { label: 'Catat Operasional', icon: <FiEdit3 />, href: '/catat-operasional', feature: 'operasional' },
         { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter', feature: 'share-fee-dokter' },
         { label: 'Gudang & Stok', icon: <FiBox />, href: '/gudang', feature: 'gudang' },
-        { label: 'Recall & Reminder', icon: <FiBell />, href: '/recall-reminder', feature: 'recall-reminder' },
         { label: 'Informed Consent', icon: <FiFileText />, href: '/informed-consent', feature: 'informed-consent' },
       ],
     },
