@@ -72,7 +72,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: 'Pasien',
       groupId: 'pasien',
       icon: <FiUsers />,
-      items: [{ label: 'Daftar & Tambah Pasien', icon: <FiEdit3 />, href: '/list-pasien', feature: 'pasien' }],
+      items: [{ label: 'Pasien', icon: <FiEdit3 />, href: '/list-pasien', feature: 'pasien' }],
     },
     {
       title: 'Reservasi',
@@ -87,7 +87,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: 'Kunjungan',
       groupId: 'kunjungan',
       icon: <FiClipboard />,
-      items: [{ label: 'Daftar & Buat Kunjungan', icon: <FiEdit3 />, href: '/list-kunjungan', feature: 'kunjungan' }],
+      items: [{ label: 'Kunjungan', icon: <FiEdit3 />, href: '/list-kunjungan', feature: 'kunjungan' }],
     },
     {
       title: 'Billing & Kasir',

@@ -50,11 +50,11 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
   multi_clinic_owner: [],
   owner: [...FULL_ACCESS, 'onboarding'],
   admin: [
-    'dashboard',
     'pasien',
     'reservasi',
     'kunjungan',
     'billing',
+    'operasional',
     'recall-reminder',
     'informed-consent',
     'gudang',
@@ -90,5 +90,6 @@ export function defaultRouteForRole(role: UserRole | undefined): string {
   if (role === 'super_admin') return '/super-admin/dashboard';
   if (role === 'multi_clinic_owner') return '/multi-klinik/dashboard';
   if (role === 'dokter') return '/list-pasien';
+  if (role === 'admin') return '/list-kunjungan';
   return '/dashboard';
 }

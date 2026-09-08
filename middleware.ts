@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { defaultRouteForRole } from '@/lib/permissions';
+import type { UserRole } from '@/types/user';
 
 // `role` is a plain, non-httpOnly cookie mirroring the logged-in user's role
 // (set in lib/auth-context.tsx). It is NOT a security boundary — it's only
@@ -14,7 +16,7 @@ export function middleware(request: NextRequest) {
     const role = request.cookies.get('role')?.value;
     if (role !== 'super_admin') {
       const url = request.nextUrl.clone();
-      url.pathname = role ? '/dashboard' : '/';
+      url.pathname = role ? defaultRouteForRole(role as UserRole) : '/';
       return NextResponse.redirect(url);
     }
   }
@@ -23,7 +25,7 @@ export function middleware(request: NextRequest) {
     const role = request.cookies.get('role')?.value;
     if (role !== 'multi_clinic_owner') {
       const url = request.nextUrl.clone();
-      url.pathname = role ? '/dashboard' : '/';
+      url.pathname = role ? defaultRouteForRole(role as UserRole) : '/';
       return NextResponse.redirect(url);
     }
   }
