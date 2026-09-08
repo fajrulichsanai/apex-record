@@ -11,6 +11,7 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { authApi } from '@/lib/auth-api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
+import { defaultRouteForRole } from '@/lib/permissions';
 import { formatCurrency } from '@/lib/format';
 import '../../../styles/super-admin.css';
 
@@ -98,7 +99,7 @@ export default function SuperAdminClinicDetailPage() {
       const { accessToken, user } = await authApi.impersonate(target.id);
       startImpersonation(accessToken, user);
       success(`Masuk sebagai ${target.name}`);
-      router.push('/dashboard');
+      router.push(defaultRouteForRole(user.role));
     } catch (err) {
       showError(err instanceof ApiError ? err.message : 'Gagal login sebagai pengguna ini');
     } finally {

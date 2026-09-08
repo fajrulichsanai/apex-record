@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { ToastContainer, ToastItem, ToastType } from '@/components/feedback/Toast';
 
 interface ToastContextValue {
@@ -33,13 +33,19 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     [removeToast]
   );
 
-  const value: ToastContextValue = {
-    showToast,
-    success: (message, duration) => showToast(message, 'success', duration),
-    error: (message, duration) => showToast(message, 'error', duration),
-    warning: (message, duration) => showToast(message, 'warning', duration),
-    info: (message, duration) => showToast(message, 'info', duration),
-  };
+  // Memoized so components that depend on these functions (e.g. a useCallback
+  // data-loader with `error`/`success` in its deps) don't see a new identity
+  // — and refetch — every time any toast anywhere in the app shows or hides.
+  const value: ToastContextValue = useMemo(
+    () => ({
+      showToast,
+      success: (message, duration) => showToast(message, 'success', duration),
+      error: (message, duration) => showToast(message, 'error', duration),
+      warning: (message, duration) => showToast(message, 'warning', duration),
+      info: (message, duration) => showToast(message, 'info', duration),
+    }),
+    [showToast]
+  );
 
   return (
     <ToastContext.Provider value={value}>
