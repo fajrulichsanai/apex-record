@@ -19,29 +19,7 @@ function formatRupiah(value: number) {
   return `Rp ${value.toLocaleString('id-ID')}`;
 }
 
-interface StatsGridProps {
-  revenueTrendPercent?: number | null;
-  visitsTrendPercent?: number | null;
-}
-
-function TrendBadge({ percent }: { percent: number | null | undefined }) {
-  if (percent === null || percent === undefined) return null;
-  const isUp = percent >= 0;
-  return (
-    <span className={`stat-trend-badge ${isUp ? 'up' : 'down'}`}>
-      <svg viewBox="0 0 24 24" fill="none">
-        {isUp ? (
-          <path d="M6 16l6-8 6 8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-        ) : (
-          <path d="M6 8l6 8 6-8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-        )}
-      </svg>
-      {Math.abs(percent).toFixed(1)}%
-    </span>
-  );
-}
-
-export default function StatsGrid({ revenueTrendPercent, visitsTrendPercent }: StatsGridProps) {
+export default function StatsGrid() {
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
 
   useEffect(() => {
@@ -56,7 +34,6 @@ export default function StatsGrid({ revenueTrendPercent, visitsTrendPercent }: S
       id: 1,
       title: 'Total Pasien',
       value: summary ? String(summary.totalPatients) : '-',
-      trendPercent: undefined as number | null | undefined,
       color: 'purple',
       icon: (
         <svg viewBox="0 0 24 24" fill="none">
@@ -81,7 +58,6 @@ export default function StatsGrid({ revenueTrendPercent, visitsTrendPercent }: S
       id: 2,
       title: 'Pendapatan Bulan Ini',
       value: summary ? formatRupiah(summary.monthlyRevenue) : '-',
-      trendPercent: revenueTrendPercent,
       color: 'green',
       icon: (
         <svg viewBox="0 0 24 24" fill="none">
@@ -103,7 +79,6 @@ export default function StatsGrid({ revenueTrendPercent, visitsTrendPercent }: S
       id: 3,
       title: 'Kunjungan Hari Ini',
       value: summary ? String(summary.todayVisits) : '-',
-      trendPercent: visitsTrendPercent,
       color: 'blue',
       icon: (
         <svg viewBox="0 0 24 24" fill="none">
@@ -129,7 +104,6 @@ export default function StatsGrid({ revenueTrendPercent, visitsTrendPercent }: S
       id: 4,
       title: 'Dokter Aktif',
       value: summary ? String(summary.activePractitioners) : '-',
-      trendPercent: undefined as number | null | undefined,
       color: 'orange',
       icon: (
         <svg viewBox="0 0 24 24" fill="none">
@@ -164,14 +138,8 @@ export default function StatsGrid({ revenueTrendPercent, visitsTrendPercent }: S
         <div key={stat.id} className={`stat-card ${stat.color}`}>
           <div className="stat-icon">{stat.icon}</div>
           <div>
-            <div className="stat-dash-row">
-              <div className="stat-dash">{stat.value}</div>
-              <TrendBadge percent={stat.trendPercent} />
-            </div>
+            <div className="stat-dash">{stat.value}</div>
             <div className="stat-label">{stat.title}</div>
-            {stat.trendPercent !== undefined && stat.trendPercent !== null && (
-              <div className="stat-trend-caption">vs 30 hari lalu</div>
-            )}
           </div>
         </div>
       ))}
