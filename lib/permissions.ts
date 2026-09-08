@@ -8,6 +8,7 @@ export type FeatureKey =
   | 'billing'
   | 'operasional'
   | 'share-fee-dokter'
+  | 'share-fee-saya'
   | 'recall-reminder'
   | 'informed-consent'
   | 'gudang'
@@ -64,7 +65,7 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'referral',
     'langganan',
   ],
-  dokter: ['pasien', 'reservasi', 'kunjungan', 'informed-consent'],
+  dokter: ['pasien', 'reservasi', 'kunjungan', 'informed-consent', 'share-fee-saya'],
   pending: [],
 };
 

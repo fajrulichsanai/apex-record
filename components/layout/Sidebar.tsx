@@ -103,6 +103,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       items: [
         { label: 'Catat Operasional', icon: <FiEdit3 />, href: '/catat-operasional', feature: 'operasional' },
         { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter', feature: 'share-fee-dokter' },
+        { label: 'Share Fee Saya', icon: <FiDollarSign />, href: '/share-fee-saya', feature: 'share-fee-saya' },
         { label: 'Gudang & Stok', icon: <FiBox />, href: '/gudang', feature: 'gudang' },
         { label: 'Informed Consent', icon: <FiFileText />, href: '/informed-consent', feature: 'informed-consent' },
       ],

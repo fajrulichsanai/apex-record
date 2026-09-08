@@ -70,7 +70,17 @@ const exportReportToExcel = (reports: DoctorMonthlyShareReport[], year: number, 
   document.body.removeChild(link);
 };
 
-export default function MonthlyReportPanel() {
+interface MonthlyReportPanelProps {
+  /**
+   * Restricted mode for the dokter's own "Share Fee Saya" page: the backend
+   * already scopes the API response to just the caller's own practitionerId
+   * (see reports.controller.ts), so there is only ever one entry — hide the
+   * multi-doctor picker list and show the breakdown directly, full width.
+   */
+  selfView?: boolean;
+}
+
+export default function MonthlyReportPanel({ selfView = false }: MonthlyReportPanelProps) {
   const { success, error, warning } = useToast();
   const now = new Date();
   const [year, setYear] = useState(String(now.getFullYear()));
@@ -148,10 +158,14 @@ export default function MonthlyReportPanel() {
             <span className="material-symbols-rounded">search_off</span>
           </div>
           <div className="empty-title">Tidak ada tindakan pada periode ini</div>
-          <div className="empty-sub">Pilih bulan/tahun lain atau pastikan tindakan sudah dicatat</div>
+          <div className="empty-sub">
+            {selfView
+              ? 'Belum ada tindakan Anda yang tercatat pada bulan/tahun ini'
+              : 'Pilih bulan/tahun lain atau pastikan tindakan sudah dicatat'}
+          </div>
         </div>
       ) : (
-        <div className="report-layout">
+        <div className={`report-layout ${selfView ? 'self-view' : ''}`}>
           <div className="dokter-list">
             {reports.map((r) => (
               <div

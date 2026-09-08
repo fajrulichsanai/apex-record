@@ -112,6 +112,12 @@
 /* MASTER-DETAIL */
 .share-fee-page .report-layout { display: grid; grid-template-columns: 320px 1fr; min-height: 420px; }
 .share-fee-page .dokter-list { border-right: 1px solid var(--border); overflow-y: auto; max-height: 600px; }
+
+/* Dokter's own "Share Fee Saya" view: backend already scopes the response
+   to one practitioner, so the picker list would just show a redundant
+   single row — hide it and let the breakdown take the full width. */
+.share-fee-page .report-layout.self-view { grid-template-columns: 1fr; }
+.share-fee-page .report-layout.self-view .dokter-list { display: none; }
 .share-fee-page .dokter-row {
   display: flex; align-items: center; gap: 12px; padding: 14px 16px;
   border-bottom: 1px solid var(--border); cursor: pointer; transition: background var(--transition);
