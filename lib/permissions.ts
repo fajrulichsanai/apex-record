@@ -55,7 +55,6 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'reservasi',
     'kunjungan',
     'billing',
-    'operasional',
     'recall-reminder',
     'informed-consent',
     'gudang',

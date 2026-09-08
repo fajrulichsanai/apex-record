@@ -13,6 +13,7 @@ import CustomSelect from '@/components/form/CustomSelect';
 import VoiceDictationButton from '@/components/form/VoiceDictationButton';
 import SoapNoteView from '@/components/rekam-medis/SoapNoteView';
 import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
+import InformedConsentPanel from '@/components/rekam-medis/InformedConsentPanel';
 import OdontogramChart from '@/components/odontogram/OdontogramChart';
 import { UPPER_ROW, LOWER_ROW, ALL_TEETH } from '@/components/odontogram/odontogramData';
 import { encounterApi, EncounterDetail } from '@/lib/encounter';
@@ -27,13 +28,16 @@ import '../../../../styles/kunjungan.css';
 import '../../../../styles/rekam-medis.css';
 import '../../../../styles/odontogram.css';
 
-// Rekam Medis is a book: one chapter per kind of clinical record. Pemeriksaan
-// Fisik comes first (what the doctor observes), Odontogram documents the
-// dentist's tooth-by-tooth findings, Pemeriksaan Gigi Lanjutan adds the
-// dentist's indices (OHI-S/GI/PCR/probing depth) on top of that, Pemeriksaan
-// Penunjang holds supporting images (foto/rontgen), Resep Obat stands on its
-// own (printable independently), SOAP comes last (the doctor's conclusion).
+// Rekam Medis is a book: one chapter per kind of clinical record. Informed
+// Consent comes first (persetujuan tindakan harus ada sebelum pemeriksaan
+// dilakukan), then Pemeriksaan Fisik (what the doctor observes), Odontogram
+// documents the dentist's tooth-by-tooth findings, Pemeriksaan Gigi Lanjutan
+// adds the dentist's indices (OHI-S/GI/PCR/probing depth) on top of that,
+// Pemeriksaan Penunjang holds supporting images (foto/rontgen), Resep Obat
+// stands on its own (printable independently), SOAP comes last (the
+// doctor's conclusion).
 type SectionId =
+  | 'informed-consent'
   | 'physical-exam'
   | 'odontogram'
   | 'dental-exam'
@@ -42,6 +46,7 @@ type SectionId =
   | 'soap';
 
 const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
+  { id: 'informed-consent', label: 'Informed Consent', icon: 'draw' },
   { id: 'physical-exam', label: 'Pemeriksaan Fisik', icon: 'stethoscope' },
   { id: 'odontogram', label: 'Odontogram', icon: 'dentistry' },
   { id: 'dental-exam', label: 'Pemeriksaan Gigi Lanjutan', icon: 'cleaning_services' },
@@ -807,6 +812,22 @@ export default function RekamMedisPage() {
                 </nav>
 
                 <div className="rm-content">
+                  {activeSection === 'informed-consent' && (
+                    <div className="rm-section">
+                      <div className="rm-section-heading">
+                        <h2>Informed Consent</h2>
+                        <p>Formulir persetujuan tindakan medis untuk kunjungan ini. Tidak dikirim otomatis ke pasien.</p>
+                      </div>
+                      <div className="rm-section-body">
+                        {detail.patient ? (
+                          <InformedConsentPanel patientId={detail.patient.id} encounterId={encounterId} />
+                        ) : (
+                          <div className="rm-loading">Data pasien tidak ditemukan</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   {activeSection === 'physical-exam' && (
                     <form onSubmit={handleSaveExam} className="rm-section">
                       <div className="rm-section-heading">

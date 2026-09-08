@@ -33,12 +33,6 @@ function statusLabel(status: EncounterStatus) {
   return 'Batal';
 }
 
-function syncStatusLabel(status?: string) {
-  if (status === 'synced') return 'Tersinkron ke Satu Sehat';
-  if (status === 'failed') return 'Gagal sinkron Satu Sehat';
-  return 'Belum sinkron Satu Sehat';
-}
-
 function initialsFromName(name?: string) {
   if (!name) return '?';
   return (
@@ -98,7 +92,6 @@ function ListKunjunganPageInner() {
   const [detail, setDetail] = useState<EncounterDetail | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [syncLoading, setSyncLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [preselectReservationId, setPreselectReservationId] = useState<number | null>(null);
@@ -252,21 +245,6 @@ function ListKunjunganPageInner() {
     if (pendingStatusChange) {
       performStatusChange(pendingStatusChange, reason);
       setPendingStatusChange(null);
-    }
-  };
-
-  const handleSyncSatusehat = async () => {
-    if (!selectedVisitId) return;
-    setActionError(null);
-    setSyncLoading(true);
-    try {
-      await encounterApi.syncToSatusehat(selectedVisitId);
-      const refreshed = await encounterApi.detail(selectedVisitId);
-      setDetail(refreshed);
-    } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Gagal sinkron ke Satu Sehat');
-    } finally {
-      setSyncLoading(false);
     }
   };
 
@@ -560,10 +538,6 @@ function ListKunjunganPageInner() {
                     <div className="info-label">Keluhan Utama</div>
                     <div className="info-value">{selectedVisit.chiefComplaint || '—'}</div>
                   </div>
-                  <div className="info-cell" style={{ gridColumn: '1/-1' }}>
-                    <div className="info-label">Status Satu Sehat</div>
-                    <div className="info-value">{syncStatusLabel(detail?.syncStatus)}</div>
-                  </div>
                 </div>
 
                 <div className="detail-section">
@@ -624,19 +598,6 @@ function ListKunjunganPageInner() {
                           receipt
                         </span>
                         Buat Tagihan
-                      </button>
-                    )}
-                    {selectedVisit.status === 'finished' && detail?.syncStatus !== 'synced' && (
-                      <button
-                        className="btn-outline"
-                        style={{ fontSize: '12.5px' }}
-                        disabled={syncLoading}
-                        onClick={handleSyncSatusehat}
-                      >
-                        <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                          sync
-                        </span>
-                        {syncLoading ? 'Mensinkronkan…' : 'Sync ke Satu Sehat'}
                       </button>
                     )}
                   </div>

@@ -26,7 +26,6 @@ import {
   FiShield,
   FiBox,
   FiBell,
-  FiFileText,
 } from 'react-icons/fi';
 import './sidebar.css';
 
@@ -105,7 +104,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter', feature: 'share-fee-dokter' },
         { label: 'Share Fee Saya', icon: <FiDollarSign />, href: '/share-fee-saya', feature: 'share-fee-saya' },
         { label: 'Gudang & Stok', icon: <FiBox />, href: '/gudang', feature: 'gudang' },
-        { label: 'Informed Consent', icon: <FiFileText />, href: '/informed-consent', feature: 'informed-consent' },
       ],
     },
     {
@@ -191,11 +189,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 href={group.items[0].href!}
                 className={`nav-item ${pathname === group.items[0].href ? 'active' : ''}`}
                 onClick={handleNavItemClick}
-                title={group.title}
+                title={group.items[0].label}
               >
                 <div className="nav-item-left">
-                  <span className="nav-icon">{group.icon}</span>
-                  <span className="nav-label">{group.title}</span>
+                  <span className="nav-icon">{group.items[0].icon}</span>
+                  <span className="nav-label">{group.items[0].label}</span>
                 </div>
               </Link>
             ) : (
