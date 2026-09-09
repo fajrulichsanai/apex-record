@@ -678,6 +678,7 @@
 .list-pasien-modal-overlay .btn-outline {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
   border-radius: var(--radius-md);
   padding: 10px 18px;
@@ -686,6 +687,10 @@
   cursor: pointer;
   white-space: nowrap;
   transition: background var(--transition), color var(--transition);
+}
+.list-pasien-modal-overlay .modal-footer .btn-primary,
+.list-pasien-modal-overlay .modal-footer .btn-outline {
+  min-width: 128px;
 }
 .list-pasien-modal-overlay .btn-primary { background: var(--primary); color: #fff; border: none; }
 .list-pasien-modal-overlay .btn-primary:hover { background: var(--primary-dk); }
@@ -990,6 +995,12 @@
 
 .wizard-footer { justify-content: space-between; }
 .wizard-footer-left, .wizard-footer-right { display: flex; gap: 10px; }
+.wizard-footer-left .btn-outline,
+.wizard-footer-right .btn-outline,
+.wizard-footer-right .btn-primary {
+  min-width: 128px;
+  justify-content: center;
+}
 
 .wizard-switch-field {
   flex-direction: row !important;
@@ -1082,30 +1093,55 @@
   .wizard-footer-left, .wizard-footer-right { width: 100%; justify-content: space-between; }
 }
 
-.rekam-medis-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* REKAM MEDIS MODAL (TTV + CPPT) */
+.list-pasien-modal-overlay .rekam-medis-modal { max-width: 1080px; }
+
+.rm-view-section { display: flex; flex-direction: column; gap: 10px; }
+.rm-view-section:not(:first-child) { margin-top: 6px; }
+.rm-view-section h3 { font-size: 14px; font-weight: 700; color: var(--text-main); }
+
+.rm-table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); }
+
+.ttv-table,
+.cppt-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 12.5px;
 }
 
-.rekam-medis-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px;
-  border: 1px solid var(--border, #e5e7eb);
-  border-radius: var(--radius-md, 14px);
-  background: var(--surface, #fff);
+.ttv-table th,
+.ttv-table td,
+.cppt-table th,
+.cppt-table td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
 }
 
-.rekam-medis-row-info { min-width: 0; }
-.rekam-medis-row-title { font-size: 13.5px; font-weight: 600; color: var(--text-main); }
-.rekam-medis-row-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
-
-.rekam-medis-row .btn-outline { flex-shrink: 0; }
-
-@media (max-width: 520px) {
-  .rekam-medis-row { flex-direction: column; align-items: stretch; }
-  .rekam-medis-row .btn-outline { justify-content: center; }
+.ttv-table th,
+.cppt-table th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  background: var(--bg);
 }
+
+.ttv-table tbody tr:last-child td,
+.cppt-table tbody tr:last-child td { border-bottom: none; }
+
+.cppt-table td { color: var(--text-main); }
+.cppt-date { white-space: nowrap; font-weight: 600; }
+.cppt-status { display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: 2px; }
+
+.cppt-cell-row { display: flex; gap: 8px; padding: 3px 0; }
+.cppt-cell-row:not(:last-child) { border-bottom: 1px dashed var(--border); }
+.cppt-cell-row b { flex-shrink: 0; width: 44px; color: var(--primary); font-size: 11.5px; }
+.cppt-cell-row span { white-space: pre-wrap; }
+
+.cppt-dpjp { min-width: 140px; }
+.cppt-signature { display: block; height: 30px; margin-top: 6px; background: #fff; border-radius: 4px; }

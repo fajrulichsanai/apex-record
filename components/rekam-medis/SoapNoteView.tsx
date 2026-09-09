@@ -7,6 +7,7 @@ interface SoapNoteViewProps {
   assessment?: string;
   treatment?: string;
   plan?: string;
+  controlPlan?: string;
   signature?: string | null;
   updatedAtLabel?: string | null;
   onEdit: () => void;
@@ -35,6 +36,7 @@ export default function SoapNoteView({
   assessment,
   treatment,
   plan,
+  controlPlan,
   signature,
   updatedAtLabel,
   onEdit,
@@ -61,6 +63,7 @@ export default function SoapNoteView({
         <ViewField label="Assessment" value={assessment} />
         <ViewField label="Treatment — tindakan pada kunjungan ini" value={treatment} />
         <ViewField label="Plan (kunjungan berikutnya)" value={plan} />
+        <ViewField label="Kontrol berikutnya" value={controlPlan} />
 
         <div className="rm-view-field">
           <label>Tanda Tangan Dokter</label>

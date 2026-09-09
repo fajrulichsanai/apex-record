@@ -502,6 +502,7 @@ export default function RekamMedisPage() {
   const [assessment, setAssessment] = useState('');
   const [treatment, setTreatment] = useState('');
   const [plan, setPlan] = useState('');
+  const [savedControlPlan, setSavedControlPlan] = useState('');
   const [signature, setSignature] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [soapUpdatedAt, setSoapUpdatedAt] = useState<string | null>(null);
@@ -553,6 +554,7 @@ export default function RekamMedisPage() {
           setAssessment(note.assessment || '');
           setTreatment(note.treatment || '');
           setPlan(note.plan || '');
+          setSavedControlPlan(note.controlPlan || '');
           setSignature(note.signature || null);
           setSoapUpdatedAt(note.updatedAt || note.createdAt || null);
           setHasSavedNote(true);
@@ -731,15 +733,21 @@ export default function RekamMedisPage() {
     }
     setSubmitting(true);
     try {
+      const controlPlanText =
+        controlOption !== 'none' && effectiveControlDate
+          ? formatDateOnly(effectiveControlDate)
+          : undefined;
       const saved = await encounterSoapApi.upsert(encounterId, {
         subjective: subjective.trim() || undefined,
         objective: objective.trim() || undefined,
         assessment: assessment.trim() || undefined,
         treatment: treatment.trim() || undefined,
         plan: plan.trim() || undefined,
+        controlPlan: controlPlanText,
         signature,
       });
       setSoapUpdatedAt(saved?.updatedAt || new Date().toISOString());
+      setSavedControlPlan(saved?.controlPlan || controlPlanText || '');
       setHasSavedNote(true);
       success('Catatan SOAP berhasil disimpan');
 
@@ -1585,6 +1593,7 @@ export default function RekamMedisPage() {
                       assessment={assessment}
                       treatment={treatment}
                       plan={plan}
+                      controlPlan={savedControlPlan}
                       signature={signature}
                       updatedAtLabel={formatExamDate(soapUpdatedAt)}
                       onEdit={() => setSoapMode('edit')}

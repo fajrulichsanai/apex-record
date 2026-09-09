@@ -593,8 +593,8 @@ function ListPasienContent() {
 
       {showRekamMedisModal && selectedPatient && (
         <PatientRekamMedisModal
+          patientId={selectedPatient.id}
           patientName={selectedPatient.name}
-          encounters={encounters}
           onClose={() => setShowRekamMedisModal(false)}
         />
       )}

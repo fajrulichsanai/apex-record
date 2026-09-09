@@ -8,6 +8,7 @@ export interface SoapNote {
   assessment?: string;
   treatment?: string;
   plan?: string;
+  controlPlan?: string;
   signature?: string;
   updatedAt?: string;
   createdAt?: string;
@@ -19,6 +20,7 @@ export interface UpsertSoapNotePayload {
   assessment?: string;
   treatment?: string;
   plan?: string;
+  controlPlan?: string;
   signature?: string;
 }
 
