@@ -1,4 +1,5 @@
-.sa-page {
+.sa-page,
+.sa-modal-overlay {
   --primary:      #4F7EF8;
   --primary-dk:   #3B6CE6;
   --green:        #2DCB8A;
@@ -13,7 +14,9 @@
   --radius-sm:    8px;
   --radius-md:    14px;
   --radius-lg:    20px;
+}
 
+.sa-page {
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -27,7 +30,10 @@
 
 .sa-page .btn-primary,
 .sa-page .btn-outline,
-.sa-page .btn-danger {
+.sa-page .btn-danger,
+.sa-modal-overlay .btn-primary,
+.sa-modal-overlay .btn-outline,
+.sa-modal-overlay .btn-danger {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -39,15 +45,24 @@
   white-space: nowrap;
   transition: background 0.2s ease, transform 0.2s ease;
 }
-.sa-page .btn-primary { background: var(--primary); color: #fff; border: none; box-shadow: 0 4px 14px rgba(79,126,248,.35); }
-.sa-page .btn-primary:hover { background: var(--primary-dk); }
-.sa-page .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
-.sa-page .btn-outline { background: var(--surface); color: var(--text-main); border: 1.5px solid var(--border); }
-.sa-page .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
-.sa-page .btn-outline:disabled { opacity: 0.6; cursor: not-allowed; }
-.sa-page .btn-danger { background: #fff; color: var(--red); border: 1.5px solid rgba(255,77,79,.35); }
-.sa-page .btn-danger:hover { background: rgba(255,77,79,.08); }
-.sa-page .btn-sm { padding: 7px 14px; font-size: 12.5px; }
+.sa-page .btn-primary,
+.sa-modal-overlay .btn-primary { background: var(--primary); color: #fff; border: none; box-shadow: 0 4px 14px rgba(79,126,248,.35); }
+.sa-page .btn-primary:hover,
+.sa-modal-overlay .btn-primary:hover { background: var(--primary-dk); }
+.sa-page .btn-primary:disabled,
+.sa-modal-overlay .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+.sa-page .btn-outline,
+.sa-modal-overlay .btn-outline { background: var(--surface); color: var(--text-main); border: 1.5px solid var(--border); }
+.sa-page .btn-outline:hover,
+.sa-modal-overlay .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.sa-page .btn-outline:disabled,
+.sa-modal-overlay .btn-outline:disabled { opacity: 0.6; cursor: not-allowed; }
+.sa-page .btn-danger,
+.sa-modal-overlay .btn-danger { background: #fff; color: var(--red); border: 1.5px solid rgba(255,77,79,.35); }
+.sa-page .btn-danger:hover,
+.sa-modal-overlay .btn-danger:hover { background: rgba(255,77,79,.08); }
+.sa-page .btn-sm,
+.sa-modal-overlay .btn-sm { padding: 7px 14px; font-size: 12.5px; }
 
 .sa-page .filter-bar {
   display: flex;
