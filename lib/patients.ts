@@ -150,10 +150,35 @@ export interface MedicalRecordSoap {
   signature?: string;
 }
 
+export interface MedicalRecordDentalExam {
+  ohisDebris?: number;
+  ohisCalculus?: number;
+  gingivalIndex?: number;
+  plaqueSurfacesWithPlaque?: number;
+  plaqueSurfacesExamined?: number;
+}
+
+export interface MedicalRecordPrescription {
+  drugName: string;
+  dosage?: string;
+  frequency?: string;
+  quantity?: string;
+}
+
+export interface MedicalRecordSupportingImage {
+  id: number;
+  fileUrl: string;
+  imageType: 'photo' | 'xray';
+  category: string | null;
+}
+
 export interface MedicalRecordEntry {
   encounter: Encounter;
   vitals: MedicalRecordVitals | null;
   soap: MedicalRecordSoap | null;
+  dentalExam: MedicalRecordDentalExam | null;
+  prescriptions: MedicalRecordPrescription[];
+  supportingExamImages: MedicalRecordSupportingImage[];
 }
 
 export interface ReferralSummaryResponse {

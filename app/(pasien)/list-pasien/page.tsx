@@ -6,7 +6,6 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import { patientsApi, Patient, Encounter, ApiGender, TimelineItem } from '@/lib/patients';
 import { ApiError } from '@/lib/api-client';
-import PatientRekamMedisModal from './PatientRekamMedisModal';
 import '../../styles/list-pasien.css';
 
 type UiGender = 'laki-laki' | 'perempuan' | 'bayi';
@@ -114,7 +113,6 @@ function ListPasienContent() {
   const [encounters, setEncounters] = useState<Encounter[]>([]);
   const [encountersLoading, setEncountersLoading] = useState(false);
 
-  const [showRekamMedisModal, setShowRekamMedisModal] = useState(false);
 
   const [detailTab, setDetailTab] = useState<'ringkasan' | 'timeline'>('ringkasan');
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
@@ -447,7 +445,10 @@ function ListPasienContent() {
                     </div>
                   </div>
                   <div className="detail-actions">
-                    <button className="btn-outline" onClick={() => setShowRekamMedisModal(true)}>
+                    <button
+                      className="btn-outline"
+                      onClick={() => router.push(`/list-pasien/${selectedPatient.id}/rekam-medis`)}
+                    >
                       <span className="material-symbols-rounded">folder_shared</span>
                       Rekam Medis
                     </button>
@@ -590,14 +591,6 @@ function ListPasienContent() {
           </div>
         </div>
       </main>
-
-      {showRekamMedisModal && selectedPatient && (
-        <PatientRekamMedisModal
-          patientId={selectedPatient.id}
-          patientName={selectedPatient.name}
-          onClose={() => setShowRekamMedisModal(false)}
-        />
-      )}
 
       {showDeleteConfirm && selectedPatient && (
         <div className="list-pasien-modal-overlay" onClick={() => setShowDeleteConfirm(false)}>

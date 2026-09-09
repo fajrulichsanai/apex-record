@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import { Patient, PatientPayload, patientsApi } from '@/lib/patients';
 import { masterDataApi, WilayahItem } from '@/lib/master-data';
+import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 
 type UiGender = 'laki-laki' | 'perempuan';
@@ -283,6 +284,8 @@ export default function PatientWizard({
   const [provinceCode, setProvinceCode] = useState('');
   const [cityCode, setCityCode] = useState('');
   const [districtCode, setDistrictCode] = useState('');
+  const [provincesError, setProvincesError] = useState<string | null>(null);
+  const [provincesLoading, setProvincesLoading] = useState(false);
 
   const hydrated = useRef(false);
 
@@ -311,13 +314,28 @@ export default function PatientWizard({
     }
   }, [initialPatient, prefill]);
 
-  // Load provinces on mount
-  useEffect(() => {
+  // Load provinces on mount. This depends on the backend's SatuSehat global
+  // OAuth master-data lookup (SATUSEHAT_GLOBAL_CLIENT_ID/SECRET); surfacing
+  // the real error here (instead of silently leaving the dropdown empty)
+  // is the only way to tell "server config missing" apart from "no network".
+  const loadProvinces = useCallback(() => {
+    setProvincesLoading(true);
+    setProvincesError(null);
     masterDataApi
       .getProvinces()
       .then((data) => setProvinces(Array.isArray(data) ? data : []))
-      .catch(() => setProvinces([]));
+      .catch((err) => {
+        setProvinces([]);
+        setProvincesError(
+          err instanceof ApiError ? err.message : 'Gagal memuat daftar provinsi',
+        );
+      })
+      .finally(() => setProvincesLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadProvinces();
+  }, [loadProvinces]);
 
   // Load cities when province changes
   useEffect(() => {
@@ -706,10 +724,19 @@ export default function PatientWizard({
                     update('kelurahan', '');
                   }}
                   options={[
-                    { value: '', label: 'Pilih provinsi' },
+                    { value: '', label: provincesLoading ? 'Memuat provinsi…' : 'Pilih provinsi' },
                     ...provinces.map((p) => ({ value: p.code, label: p.name })),
                   ]}
+                  disabled={provincesLoading}
                 />
+                {provincesError && (
+                  <span className="field-error">
+                    {provincesError} —{' '}
+                    <button type="button" className="wizard-inline-retry" onClick={loadProvinces}>
+                      Coba lagi
+                    </button>
+                  </span>
+                )}
               </div>
               <div className={`form-field ${fieldErrors.city ? 'error' : ''}`}>
                 <label>Kota / Kabupaten *</label>

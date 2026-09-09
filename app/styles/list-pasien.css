@@ -993,6 +993,17 @@
 .wizard-error { border-color: #FFCCC7; }
 .wizard-error div { font-size: 12.5px; color: #FF4D4F; }
 
+.wizard-inline-retry {
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .wizard-footer { justify-content: space-between; }
 .wizard-footer-left, .wizard-footer-right { display: flex; gap: 10px; }
 .wizard-footer-left .btn-outline,
@@ -1093,55 +1104,3 @@
   .wizard-footer-left, .wizard-footer-right { width: 100%; justify-content: space-between; }
 }
 
-/* REKAM MEDIS MODAL (TTV + CPPT) */
-.list-pasien-modal-overlay .rekam-medis-modal { max-width: 1080px; }
-
-.rm-view-section { display: flex; flex-direction: column; gap: 10px; }
-.rm-view-section:not(:first-child) { margin-top: 6px; }
-.rm-view-section h3 { font-size: 14px; font-weight: 700; color: var(--text-main); }
-
-.rm-table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); }
-
-.ttv-table,
-.cppt-table {
-  width: 100%;
-  min-width: 640px;
-  border-collapse: collapse;
-  font-size: 12.5px;
-}
-
-.ttv-table th,
-.ttv-table td,
-.cppt-table th,
-.cppt-table td {
-  text-align: left;
-  padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: top;
-}
-
-.ttv-table th,
-.cppt-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  font-size: 11.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  background: var(--bg);
-}
-
-.ttv-table tbody tr:last-child td,
-.cppt-table tbody tr:last-child td { border-bottom: none; }
-
-.cppt-table td { color: var(--text-main); }
-.cppt-date { white-space: nowrap; font-weight: 600; }
-.cppt-status { display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: 2px; }
-
-.cppt-cell-row { display: flex; gap: 8px; padding: 3px 0; }
-.cppt-cell-row:not(:last-child) { border-bottom: 1px dashed var(--border); }
-.cppt-cell-row b { flex-shrink: 0; width: 44px; color: var(--primary); font-size: 11.5px; }
-.cppt-cell-row span { white-space: pre-wrap; }
-
-.cppt-dpjp { min-width: 140px; }
-.cppt-signature { display: block; height: 30px; margin-top: 6px; background: #fff; border-radius: 4px; }
