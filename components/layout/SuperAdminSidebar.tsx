@@ -12,6 +12,7 @@ import {
   FiShield,
   FiKey,
   FiUsers,
+  FiUploadCloud,
   FiChevronLeft,
   FiChevronRight,
 } from 'react-icons/fi';
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { label: 'Klinik', icon: <FiHome />, href: '/super-admin/clinics' },
   { label: 'Multi-Klinik Owner', icon: <FiUsers />, href: '/super-admin/multi-clinic-owners' },
   { label: 'Owner Code', icon: <FiKey />, href: '/super-admin/owner-codes' },
+  { label: 'Migrasi Data Pasien', icon: <FiUploadCloud />, href: '/super-admin/patient-migration' },
   { label: 'Paket Langganan', icon: <FiDollarSign />, href: '/super-admin/plans' },
   { label: 'Konfirmasi Pembayaran', icon: <FiCreditCard />, href: '/super-admin/payments' },
   { label: 'Laporan', icon: <FiBarChart2 />, href: '/super-admin/reports' },
