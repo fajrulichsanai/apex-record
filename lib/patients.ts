@@ -129,6 +129,58 @@ export interface TimelineItem {
   meta?: Record<string, unknown>;
 }
 
+export interface MedicalRecordVitals {
+  bloodPressureSystolic?: number;
+  bloodPressureDiastolic?: number;
+  pulseRate?: number;
+  respiratoryRate?: number;
+  temperature?: number;
+  oxygenSaturation?: number;
+  weight?: number;
+  height?: number;
+}
+
+export interface MedicalRecordSoap {
+  subjective?: string;
+  objective?: string;
+  assessment?: string;
+  treatment?: string;
+  plan?: string;
+  controlPlan?: string;
+  signature?: string;
+}
+
+export interface MedicalRecordDentalExam {
+  ohisDebris?: number;
+  ohisCalculus?: number;
+  gingivalIndex?: number;
+  plaqueSurfacesWithPlaque?: number;
+  plaqueSurfacesExamined?: number;
+}
+
+export interface MedicalRecordPrescription {
+  drugName: string;
+  dosage?: string;
+  frequency?: string;
+  quantity?: string;
+}
+
+export interface MedicalRecordSupportingImage {
+  id: number;
+  fileUrl: string;
+  imageType: 'photo' | 'xray';
+  category: string | null;
+}
+
+export interface MedicalRecordEntry {
+  encounter: Encounter;
+  vitals: MedicalRecordVitals | null;
+  soap: MedicalRecordSoap | null;
+  dentalExam: MedicalRecordDentalExam | null;
+  prescriptions: MedicalRecordPrescription[];
+  supportingExamImages: MedicalRecordSupportingImage[];
+}
+
 export interface ReferralSummaryResponse {
   bySource: { sumberInformasi: SumberInformasi; count: number }[];
   byReferrer: { referrerPatientId: number; referrerName: string; referralCount: number }[];
@@ -187,6 +239,9 @@ export const patientsApi = {
   encounters: (id: number) => apiClient.get<Encounter[]>(`/patients/${id}/encounters`),
 
   getTimeline: (id: number) => apiClient.get<TimelineItem[]>(`/patients/${id}/timeline`),
+
+  getMedicalRecord: (id: number) =>
+    apiClient.get<MedicalRecordEntry[]>(`/patients/${id}/medical-record`),
 
   getReferralSummary: () =>
     apiClient.get<ReferralSummaryResponse>('/patients/referral-summary'),

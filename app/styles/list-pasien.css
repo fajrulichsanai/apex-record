@@ -465,8 +465,9 @@
 
 @media (max-width: 900px) {
   .list-pasien-page .content-area { grid-template-columns: 1fr; }
+  .list-pasien-page .panel { max-height: 42vh; }
   .list-pasien-page .detail-panel { display: none; }
-  .list-pasien-page .detail-panel.show { display: flex; }
+  .list-pasien-page .detail-panel.show { display: flex; scroll-margin-top: 16px; }
 }
 
 /* ADD PATIENT MODAL */
@@ -677,6 +678,7 @@
 .list-pasien-modal-overlay .btn-outline {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 7px;
   border-radius: var(--radius-md);
   padding: 10px 18px;
@@ -685,6 +687,10 @@
   cursor: pointer;
   white-space: nowrap;
   transition: background var(--transition), color var(--transition);
+}
+.list-pasien-modal-overlay .modal-footer .btn-primary,
+.list-pasien-modal-overlay .modal-footer .btn-outline {
+  min-width: 128px;
 }
 .list-pasien-modal-overlay .btn-primary { background: var(--primary); color: #fff; border: none; }
 .list-pasien-modal-overlay .btn-primary:hover { background: var(--primary-dk); }
@@ -987,8 +993,25 @@
 .wizard-error { border-color: #FFCCC7; }
 .wizard-error div { font-size: 12.5px; color: #FF4D4F; }
 
+.wizard-inline-retry {
+  border: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .wizard-footer { justify-content: space-between; }
 .wizard-footer-left, .wizard-footer-right { display: flex; gap: 10px; }
+.wizard-footer-left .btn-outline,
+.wizard-footer-right .btn-outline,
+.wizard-footer-right .btn-primary {
+  min-width: 128px;
+  justify-content: center;
+}
 
 .wizard-switch-field {
   flex-direction: row !important;
@@ -1081,34 +1104,3 @@
   .wizard-footer-left, .wizard-footer-right { width: 100%; justify-content: space-between; }
 }
 
-.soap-history-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12.5px;
-  min-width: 720px;
-}
-
-.soap-history-table th,
-.soap-history-table td {
-  text-align: left;
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border, #e5e7eb);
-  vertical-align: top;
-}
-
-.soap-history-table th {
-  color: var(--text-muted);
-  font-weight: 600;
-  white-space: nowrap;
-  background: var(--bg, #f9fafb);
-}
-
-.soap-history-table td {
-  color: var(--text-main);
-  max-width: 220px;
-  white-space: pre-wrap;
-}
-
-.soap-history-table tbody tr:last-child td {
-  border-bottom: none;
-}
