@@ -1,4 +1,5 @@
 import { apiClient } from './api-client';
+import type { ClinicResponse, UpdateClinicPayload } from './clinic';
 
 export interface OwnedClinic {
   id: number;
@@ -51,4 +52,16 @@ export const multiClinicApi = {
 
   unlinkClinic: (ownerId: number, clinicId: number) =>
     apiClient.delete(`/multi-clinic/owners/${ownerId}/clinics/${clinicId}`),
+
+  /** Multi-klinik owner: view/edit one of their own linked clinics' Info Klinik. */
+  getClinic: (clinicId: number) => apiClient.get<ClinicResponse>(`/multi-clinic/clinics/${clinicId}`),
+
+  updateClinic: (clinicId: number, payload: UpdateClinicPayload) =>
+    apiClient.put<ClinicResponse>(`/multi-clinic/clinics/${clinicId}`, payload),
+
+  uploadClinicLogo: (clinicId: number, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return apiClient.postForm<{ logoUrl: string }>(`/multi-clinic/clinics/${clinicId}/logo`, form);
+  },
 };
