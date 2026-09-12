@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FiGrid, FiHome, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiGrid, FiHome, FiCreditCard, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import './sidebar.css';
 
 interface MultiClinicSidebarProps {
@@ -14,6 +14,7 @@ interface MultiClinicSidebarProps {
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: <FiGrid />, href: '/multi-klinik/dashboard' },
   { label: 'Info Klinik', icon: <FiHome />, href: '/multi-klinik/info-klinik' },
+  { label: 'Langganan', icon: <FiCreditCard />, href: '/multi-klinik/langganan' },
 ];
 
 export default function MultiClinicSidebar({ isOpen, onClose }: MultiClinicSidebarProps) {

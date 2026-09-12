@@ -34,8 +34,13 @@ export interface ClinicSubscription {
 
 export interface Payment {
   id: number;
-  clinicId: number;
+  clinicId: number | null;
   clinicName?: string;
+  // Set instead of clinicId for a Multi-Klinik Owner's own consolidated
+  // payment — covers every clinic in coveredClinicIds, frozen at claim time.
+  ownerId?: number | null;
+  ownerName?: string | null;
+  coveredClinicIds?: number[] | null;
   subscriptionId: number | null;
   planId: number;
   plan?: SubscriptionPlan;

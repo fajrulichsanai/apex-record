@@ -114,7 +114,11 @@ export default function SuperAdminPaymentsPage() {
                 rows.map((row) => (
                   <tr key={row.id}>
                     <td className="col-time">{formatDateTime(row.createdAt)}</td>
-                    <td style={{ fontWeight: 600 }}>{row.clinicName || `Klinik #${row.clinicId}`}</td>
+                    <td style={{ fontWeight: 600 }}>
+                      {row.ownerId
+                        ? `${row.ownerName || `Owner #${row.ownerId}`} (Multi-Klinik)`
+                        : row.clinicName || `Klinik #${row.clinicId}`}
+                    </td>
                     <td>{row.plan?.name || '-'}</td>
                     <td>{row.quantity > 1 ? `${row.quantity} klinik` : '-'}</td>
                     <td>Rp {formatCurrency(row.amount)}</td>
@@ -167,16 +171,19 @@ export default function SuperAdminPaymentsPage() {
             </div>
             <div className="sa-modal-body">
               <p style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>
-                {reviewing.payment.clinicName || `Klinik #${reviewing.payment.clinicId}`} &middot; {reviewing.payment.plan?.name} &middot; Rp {formatCurrency(reviewing.payment.amount)}
+                {reviewing.payment.ownerId
+                  ? `${reviewing.payment.ownerName || `Owner #${reviewing.payment.ownerId}`} (Multi-Klinik)`
+                  : reviewing.payment.clinicName || `Klinik #${reviewing.payment.clinicId}`}
+                {' '}&middot; {reviewing.payment.plan?.name} &middot; Rp {formatCurrency(reviewing.payment.amount)}
               </p>
-              {reviewing.action === 'confirm' && (
+              {reviewing.action === 'confirm' && !reviewing.payment.ownerId && (
                 <p style={{ fontSize: 13, color: 'var(--text-sub)' }}>
                   Konfirmasi akan memperpanjang langganan klinik ini sesuai durasi paket.
                 </p>
               )}
-              {reviewing.action === 'confirm' && reviewing.payment.quantity > 1 && (
+              {reviewing.action === 'confirm' && reviewing.payment.ownerId && (
                 <p style={{ fontSize: 13, color: '#B8791A', background: 'rgba(245,166,35,.12)', padding: '10px 12px', borderRadius: 8 }}>
-                  Paket Multi Klinik ini mencakup <strong>{reviewing.payment.quantity} klinik</strong>. Hanya klinik pemohon ({reviewing.payment.clinicName || `Klinik #${reviewing.payment.clinicId}`}) yang diperpanjang otomatis — daftarkan/perpanjang {reviewing.payment.quantity - 1} klinik lainnya secara manual di halaman Klinik setelah ini.
+                  Pembayaran Multi Klinik ini mencakup <strong>{reviewing.payment.quantity} klinik</strong> yang terhubung ke akun ini. Konfirmasi akan memperpanjang langganan semua {reviewing.payment.quantity} klinik tersebut sekaligus.
                 </p>
               )}
               <div className="sa-field">
