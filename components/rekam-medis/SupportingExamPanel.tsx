@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import ConfirmationModal from '@/components/feedback/ConfirmationModal';
-import { apiFileUrl, ApiError } from '@/lib/api-client';
+import { fetchProtectedFileUrl, ApiError } from '@/lib/api-client';
 import {
   supportingExamApi,
   type SupportingExamImage,
@@ -53,6 +53,7 @@ export default function SupportingExamPanel({ encounterId }: SupportingExamPanel
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [images, setImages] = useState<SupportingExamImage[]>([]);
+  const [imageUrls, setImageUrls] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [imageType, setImageType] = useState<string>('photo');
@@ -79,6 +80,36 @@ export default function SupportingExamPanel({ encounterId }: SupportingExamPanel
   useEffect(() => {
     load();
   }, [load]);
+
+  // Image files are served from an authenticated route, so they can't be used
+  // directly as an <img src> — fetch each one with the JWT and swap in a blob
+  // URL. createdUrls tracks every object URL ever created in this run so the
+  // cleanup can revoke all of them, even ones that resolve after unmount.
+  useEffect(() => {
+    let cancelled = false;
+    const createdUrls: string[] = [];
+
+    (async () => {
+      const entries = await Promise.all(
+        images.map(async (img) => {
+          try {
+            const url = await fetchProtectedFileUrl(img.fileUrl);
+            createdUrls.push(url);
+            return [img.id, url] as const;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      if (cancelled) return;
+      setImageUrls(Object.fromEntries(entries.filter((e): e is readonly [number, string] => e !== null)));
+    })();
+
+    return () => {
+      cancelled = true;
+      createdUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [images]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedFile(e.target.files?.[0] || null);
@@ -218,7 +249,7 @@ export default function SupportingExamPanel({ encounterId }: SupportingExamPanel
                   onClick={() => (compareMode ? toggleCompareSelect(img) : setViewImage(img))}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element -- backend-hosted upload, not a Next-optimizable static asset */}
-                  <img src={apiFileUrl(img.fileUrl)} alt={img.originalName || typeLabel(img.imageType)} />
+                  <img src={imageUrls[img.id]} alt={img.originalName || typeLabel(img.imageType)} />
                   <span className={`se-badge se-badge-${img.imageType}`}>{typeLabel(img.imageType)}</span>
                   {img.category && (
                     <span className="se-badge se-badge-category">{CATEGORY_LABELS[img.category]}</span>
@@ -263,7 +294,7 @@ export default function SupportingExamPanel({ encounterId }: SupportingExamPanel
                     {img.createdAt && <span> · {new Date(img.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</span>}
                   </div>
                   {/* eslint-disable-next-line @next/next/no-img-element -- backend-hosted upload, not a Next-optimizable static asset */}
-                  <img src={apiFileUrl(img.fileUrl)} alt={img.originalName || typeLabel(img.imageType)} />
+                  <img src={imageUrls[img.id]} alt={img.originalName || typeLabel(img.imageType)} />
                   {img.notes && <p className="se-gallery-caption">{img.notes}</p>}
                 </div>
               ))}
@@ -285,7 +316,7 @@ export default function SupportingExamPanel({ encounterId }: SupportingExamPanel
               </button>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element -- backend-hosted upload, not a Next-optimizable static asset */}
-            <img src={apiFileUrl(viewImage.fileUrl)} alt={viewImage.originalName || typeLabel(viewImage.imageType)} className="se-lightbox-img" />
+            <img src={imageUrls[viewImage.id]} alt={viewImage.originalName || typeLabel(viewImage.imageType)} className="se-lightbox-img" />
           </div>
         </div>
       )}

@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { isFeatureViewOnly } from '@/lib/permissions';
 import { paymentApi, subscriptionPlanApi } from '@/lib/subscription';
 import type { Payment, SubscriptionBillingCycle, SubscriptionPlan, SubscriptionPlanTier } from '@/types/subscription';
-import { ApiError, apiFileUrl } from '@/lib/api-client';
+import { ApiError, openProtectedFile } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency } from '@/lib/format';
 import { useSubscriptionGate } from '@/lib/subscription-gate-context';
@@ -392,9 +392,13 @@ function LanggananPageInner() {
                       </td>
                       <td>
                         {p.proofUrl ? (
-                          <a href={apiFileUrl(p.proofUrl)} target="_blank" rel="noopener noreferrer">
+                          <button
+                            type="button"
+                            style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary, #2563eb)', textDecoration: 'underline', cursor: 'pointer' }}
+                            onClick={() => openProtectedFile(p.proofUrl!).catch(() => showError('Gagal memuat bukti pembayaran'))}
+                          >
                             Lihat
-                          </a>
+                          </button>
                         ) : (
                           '-'
                         )}

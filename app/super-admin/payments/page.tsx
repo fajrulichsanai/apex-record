@@ -5,7 +5,7 @@ import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
 import CustomSelect from '@/components/form/CustomSelect';
 import { paymentApi } from '@/lib/subscription';
 import type { Payment } from '@/types/subscription';
-import { ApiError, apiFileUrl } from '@/lib/api-client';
+import { ApiError, openProtectedFile } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency } from '@/lib/format';
 import '../../styles/super-admin.css';
@@ -123,9 +123,13 @@ export default function SuperAdminPaymentsPage() {
                     </td>
                     <td>
                       {row.proofUrl ? (
-                        <a href={apiFileUrl(row.proofUrl)} target="_blank" rel="noopener noreferrer">
+                        <button
+                          type="button"
+                          style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary, #2563eb)', textDecoration: 'underline', cursor: 'pointer' }}
+                          onClick={() => openProtectedFile(row.proofUrl!).catch(() => showError('Gagal memuat bukti pembayaran'))}
+                        >
                           Lihat
-                        </a>
+                        </button>
                       ) : (
                         '-'
                       )}
