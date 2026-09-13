@@ -74,6 +74,26 @@ function todayInClinicTimezone(): string {
   return new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
+type DateRangeKey = 'today' | '7d' | '30d' | 'all';
+
+const DATE_RANGE_LABELS: Record<DateRangeKey, string> = {
+  today: 'Hari Ini',
+  '7d': '7 Hari Terakhir',
+  '30d': '1 Bulan Terakhir',
+  all: 'Semua',
+};
+
+function computeDateRange(key: DateRangeKey): { dateFrom?: string; dateTo?: string } {
+  if (key === 'all') return {};
+  const today = todayInClinicTimezone();
+  if (key === 'today') return { dateFrom: today, dateTo: today };
+
+  const daysBack = key === '7d' ? 6 : 29;
+  const from = new Date(Date.now() + 7 * 60 * 60 * 1000);
+  from.setUTCDate(from.getUTCDate() - daysBack);
+  return { dateFrom: from.toISOString().slice(0, 10), dateTo: today };
+}
+
 let rowKeySeq = 0;
 function emptyRow(): ItemRow {
   return { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal' };
@@ -101,7 +121,12 @@ function TransaksiPageInner() {
   const [listError, setListError] = useState<string | null>(null);
 
   const [currentFilter, setCurrentFilter] = useState<FilterValue>('semua');
+  const [dateRangeKey, setDateRangeKey] = useState<DateRangeKey>('all');
+  const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const [stats, setStats] = useState({ total: 0, paid: 0, partial: 0, unpaid: 0 });
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const [encounters, setEncounters] = useState<EncounterListItem[]>([]);
   const [tarifs, setTarifs] = useState<Tarif[]>([]);
@@ -121,14 +146,19 @@ function TransaksiPageInner() {
 
   const { success, error: showError } = useToast();
 
+  const LIST_LIMIT = 20;
+
   const loadBillings = useCallback(async () => {
     setLoadingList(true);
     setListError(null);
     try {
+      const { dateFrom, dateTo } = computeDateRange(dateRangeKey);
       const res = await billingApi.list({
         status: currentFilter === 'semua' ? undefined : currentFilter,
-        page: 1,
-        limit: 50,
+        dateFrom,
+        dateTo,
+        page,
+        limit: LIST_LIMIT,
       });
       setBillings(res.data);
       setMeta(res.meta);
@@ -137,11 +167,53 @@ function TransaksiPageInner() {
     } finally {
       setLoadingList(false);
     }
-  }, [currentFilter]);
+  }, [currentFilter, dateRangeKey, page]);
 
   useEffect(() => {
     loadBillings();
   }, [loadBillings]);
+
+  // Ringkasan 4 kartu statistik di atas — dihitung terpisah dari daftar
+  // (yang dipaginasi & difilter status) supaya selalu menampilkan total
+  // sebenarnya untuk rentang tanggal yang dipilih, bukan cuma isi halaman
+  // yang sedang dilihat.
+  const loadStats = useCallback(async () => {
+    setStatsLoading(true);
+    try {
+      const { dateFrom, dateTo } = computeDateRange(dateRangeKey);
+      const [total, paid, partial, unpaid] = await Promise.all([
+        billingApi.list({ dateFrom, dateTo, page: 1, limit: 1 }),
+        billingApi.list({ status: 'paid', dateFrom, dateTo, page: 1, limit: 1 }),
+        billingApi.list({ status: 'partial', dateFrom, dateTo, page: 1, limit: 1 }),
+        billingApi.list({ status: 'unpaid', dateFrom, dateTo, page: 1, limit: 1 }),
+      ]);
+      setStats({
+        total: total.meta.total,
+        paid: paid.meta.total,
+        partial: partial.meta.total,
+        unpaid: unpaid.meta.total,
+      });
+    } catch {
+      // Statistik gagal dimuat bukan hal fatal — daftar transaksi di
+      // bawahnya tetap bisa dipakai, jadi cukup biarkan angka lama/nol.
+    } finally {
+      setStatsLoading(false);
+    }
+  }, [dateRangeKey]);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
+
+  function handleFilterChange(value: FilterValue) {
+    setCurrentFilter(value);
+    setPage(1);
+  }
+
+  function handleDateRangeChange(value: DateRangeKey) {
+    setDateRangeKey(value);
+    setPage(1);
+  }
 
   // unbilled: true supaya kunjungan selesai yang belum ditagih tetap muncul
   // lintas semua tanggal, bukan cuma hari ini — sebelumnya kunjungan selesai
@@ -183,13 +255,6 @@ function TransaksiPageInner() {
     );
   }, [billings, searchQuery]);
 
-  const totalCount = meta.total;
-  const totalIncome = useMemo(
-    () => billings.reduce((sum, b) => sum + Number(b.paidAmount || 0), 0),
-    [billings],
-  );
-  const pendingCount = billings.filter((b) => b.status === 'partial' || b.status === 'unpaid').length;
-  const lunasCount = billings.filter((b) => b.status === 'paid').length;
 
   function updateRow(key: number, patch: Partial<ItemRow>) {
     setItems((prev) =>
@@ -307,7 +372,7 @@ function TransaksiPageInner() {
       setAdditionalFee(0);
       setPaymentMethod('cash');
       setNotes('');
-      await Promise.all([loadBillings(), loadUnbilledEncounters()]);
+      await Promise.all([loadBillings(), loadUnbilledEncounters(), loadStats()]);
       success('Transaksi berhasil disimpan');
     } catch (err) {
       setSubmitError(err instanceof ApiError ? err.message : 'Gagal membuat transaksi');
@@ -333,7 +398,7 @@ function TransaksiPageInner() {
     setPayingId(pendingPaymentBilling.billingId);
     try {
       await billingApi.createPayment(pendingPaymentBilling.billingId, { method: 'cash', amount });
-      await loadBillings();
+      await Promise.all([loadBillings(), loadStats()]);
       success('Pembayaran berhasil dicatat');
       setShowPaymentModal(false);
       setPendingPaymentBilling(null);
@@ -353,13 +418,14 @@ function TransaksiPageInner() {
           <div className="page-title-block">
             <div className="page-title">
               <h1>Transaksi</h1>
-              <span className="badge-count">{totalCount}</span>
+              <span className="badge-count">{statsLoading ? '…' : stats.total}</span>
             </div>
             <p className="page-subtitle">Input pembayaran baru dan pantau riwayat transaksi klinik</p>
           </div>
         </div>
 
-        {/* Stats */}
+        {/* Stats — 1:1 dengan 4 kategori filter di bawah (Semua/Lunas/Sebagian/Belum Bayar),
+            dihitung untuk rentang tanggal yang aktif, bukan cuma isi halaman yang terlihat */}
         <div className="stat-grid">
           <div className="stat-card total">
             <div className="stat-icon">
@@ -368,30 +434,8 @@ function TransaksiPageInner() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{totalCount}</div>
+              <div className="stat-value">{statsLoading ? '…' : stats.total}</div>
               <div className="stat-label">Total Transaksi</div>
-            </div>
-          </div>
-          <div className="stat-card income">
-            <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-                payments
-              </span>
-            </div>
-            <div className="stat-info">
-              <div className="stat-value">{formatRupiah(totalIncome)}</div>
-              <div className="stat-label">Total Pendapatan</div>
-            </div>
-          </div>
-          <div className="stat-card pending">
-            <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-                hourglass_empty
-              </span>
-            </div>
-            <div className="stat-info">
-              <div className="stat-value">{pendingCount}</div>
-              <div className="stat-label">Menunggu Pembayaran</div>
             </div>
           </div>
           <div className="stat-card lunas">
@@ -401,8 +445,30 @@ function TransaksiPageInner() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{lunasCount}</div>
+              <div className="stat-value">{statsLoading ? '…' : stats.paid}</div>
               <div className="stat-label">Lunas</div>
+            </div>
+          </div>
+          <div className="stat-card pending">
+            <div className="stat-icon">
+              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                hourglass_empty
+              </span>
+            </div>
+            <div className="stat-info">
+              <div className="stat-value">{statsLoading ? '…' : stats.partial}</div>
+              <div className="stat-label">Sebagian</div>
+            </div>
+          </div>
+          <div className="stat-card unpaid">
+            <div className="stat-icon">
+              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                credit_card_off
+              </span>
+            </div>
+            <div className="stat-info">
+              <div className="stat-value">{statsLoading ? '…' : stats.unpaid}</div>
+              <div className="stat-label">Belum Bayar</div>
             </div>
           </div>
         </div>
@@ -602,30 +668,42 @@ function TransaksiPageInner() {
                 />
               </div>
               <div className="filter-tabs">
+                {(Object.keys(DATE_RANGE_LABELS) as DateRangeKey[]).map((key) => (
+                  <button
+                    key={key}
+                    className={`filter-tab ${dateRangeKey === key ? 'active' : ''}`}
+                    onClick={() => handleDateRangeChange(key)}
+                    type="button"
+                  >
+                    {DATE_RANGE_LABELS[key]}
+                  </button>
+                ))}
+              </div>
+              <div className="filter-tabs">
                 <button
                   className={`filter-tab ${currentFilter === 'semua' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('semua')}
+                  onClick={() => handleFilterChange('semua')}
                   type="button"
                 >
                   Semua
                 </button>
                 <button
                   className={`filter-tab ${currentFilter === 'paid' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('paid')}
+                  onClick={() => handleFilterChange('paid')}
                   type="button"
                 >
                   Lunas
                 </button>
                 <button
                   className={`filter-tab ${currentFilter === 'partial' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('partial')}
+                  onClick={() => handleFilterChange('partial')}
                   type="button"
                 >
                   Sebagian
                 </button>
                 <button
                   className={`filter-tab ${currentFilter === 'unpaid' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('unpaid')}
+                  onClick={() => handleFilterChange('unpaid')}
                   type="button"
                 >
                   Belum Bayar
@@ -635,7 +713,11 @@ function TransaksiPageInner() {
 
             <div className="panel-sort">
               <span className="sort-label">
-                {loadingList ? 'Memuat…' : `${filteredBillings.length} transaksi ditemukan`}
+                {loadingList
+                  ? 'Memuat…'
+                  : searchQuery
+                    ? `${filteredBillings.length} hasil pencarian di halaman ini`
+                    : `${meta.total} transaksi ditemukan`}
               </span>
               <button type="button" className="btn-outline" onClick={loadBillings}>
                 <span className="material-symbols-rounded">refresh</span>
@@ -701,6 +783,32 @@ function TransaksiPageInner() {
                 })}
               </div>
             )}
+
+            {!searchQuery && !listError && meta.totalPages > 1 && (
+              <div className="pagination">
+                <button
+                  type="button"
+                  className="btn-outline"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1 || loadingList}
+                >
+                  <span className="material-symbols-rounded">chevron_left</span>
+                  Sebelumnya
+                </button>
+                <span className="pagination-label">
+                  Halaman {meta.page} dari {meta.totalPages}
+                </span>
+                <button
+                  type="button"
+                  className="btn-outline"
+                  onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+                  disabled={page >= meta.totalPages || loadingList}
+                >
+                  Selanjutnya
+                  <span className="material-symbols-rounded">chevron_right</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </main>
@@ -730,6 +838,7 @@ function TransaksiPageInner() {
           onUpdated={() => {
             loadBillings();
             loadUnbilledEncounters();
+            loadStats();
           }}
         />
       )}

@@ -254,13 +254,19 @@ export default function LaporanKeuanganPage() {
   const canView = canAccessFeature(user?.role, 'laporan-keuangan');
   const { dateFrom, dateTo } = getDateRange(range, customFrom, customTo);
 
+  const awaitingCustomRange = range === 'custom' && (!customFrom || !customTo);
+  const showPlaceholder = loading || awaitingCustomRange;
+
   useEffect(() => {
     async function loadReport() {
       if (!canView) {
         setLoading(false);
         return;
       }
-      if (range === 'custom' && (!customFrom || !customTo)) {
+      if (awaitingCustomRange) {
+        // Belum kedua tanggal terisi — jangan biarkan angka dari rentang
+        // sebelumnya nyangkut di layar, seolah rentang kustom tidak berbuat apa-apa.
+        setReport(null);
         setLoading(false);
         return;
       }
@@ -417,6 +423,9 @@ export default function LaporanKeuanganPage() {
                 <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
                 <span>–</span>
                 <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
+                {awaitingCustomRange && (
+                  <span className="custom-range-hint">Pilih tanggal awal &amp; akhir</span>
+                )}
               </div>
             )}
             <button
@@ -466,13 +475,13 @@ export default function LaporanKeuanganPage() {
           <StatCard
             variant="income"
             icon={<FiFileText />}
-            value={loading ? '...' : formatRupiah(totalPendapatan)}
+            value={showPlaceholder ? '...' : formatRupiah(totalPendapatan)}
             label="Total Ditagih"
           />
           <StatCard
             variant="lunas"
             icon={<FiCreditCard />}
-            value={loading ? '...' : formatRupiah(totalLunas)}
+            value={showPlaceholder ? '...' : formatRupiah(totalLunas)}
             label="Total Diterima (Lunas)"
             trend={
               !loading && comparisonPercent !== null ? (
@@ -487,37 +496,37 @@ export default function LaporanKeuanganPage() {
           <StatCard
             variant="pending"
             icon={<FiClock />}
-            value={loading ? '...' : formatRupiah(belumLunas)}
+            value={showPlaceholder ? '...' : formatRupiah(belumLunas)}
             label="Belum Lunas (Piutang)"
           />
           <StatCard
             variant="expense"
             icon={<FiTrendingDown />}
-            value={loading ? '...' : formatRupiah(report?.ringkasan.modal ?? 0)}
+            value={showPlaceholder ? '...' : formatRupiah(report?.ringkasan.modal ?? 0)}
             label="Modal (HPP)"
           />
           <StatCard
             variant="expense"
             icon={<FiCreditCard />}
-            value={loading ? '...' : formatRupiah(report?.ringkasan.pengeluaran ?? 0)}
+            value={showPlaceholder ? '...' : formatRupiah(report?.ringkasan.pengeluaran ?? 0)}
             label="Pengeluaran Operasional"
           />
           <StatCard
             variant="margin"
             icon={<FiTrendingUp />}
-            value={loading ? '...' : formatRupiah(report?.ringkasan.labaBersih ?? 0)}
+            value={showPlaceholder ? '...' : formatRupiah(report?.ringkasan.labaBersih ?? 0)}
             label="Laba Bersih"
           />
           <StatCard
             variant="total"
             icon={<FiPercent />}
-            value={loading ? '...' : `${report?.ringkasan.marginPersen ?? 0}%`}
+            value={showPlaceholder ? '...' : `${report?.ringkasan.marginPersen ?? 0}%`}
             label="Margin Keuntungan"
           />
           <StatCard
             variant="total"
             icon={<FiDollarSign />}
-            value={loading ? '...' : formatRupiah(Math.round(rataRataHarian))}
+            value={showPlaceholder ? '...' : formatRupiah(Math.round(rataRataHarian))}
             label="Rata-rata Pendapatan / Hari"
           />
         </div>
@@ -627,7 +636,7 @@ export default function LaporanKeuanganPage() {
         )}
 
         {report && <TindakanTerlarisTable tindakan={report.tindakanTerlaris} />}
-        {!loading && <VisitDetailTable dateFrom={dateFrom} dateTo={dateTo} />}
+        {!loading && !awaitingCustomRange && <VisitDetailTable dateFrom={dateFrom} dateTo={dateTo} />}
       </main>
       </FeatureGuard>
     </DashboardLayout>

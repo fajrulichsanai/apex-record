@@ -93,7 +93,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: 'Billing & Kasir',
       groupId: 'billing',
       icon: <FiCreditCard />,
-      items: [{ label: 'Riwayat Transaksi', icon: <FiClock />, href: '/transaksi', feature: 'billing' }],
+      items: [{ label: 'Transaksi', icon: <FiClock />, href: '/transaksi', feature: 'billing' }],
     },
     {
       title: 'Operasional',

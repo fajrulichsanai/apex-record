@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Map as LeafletMap, LayerGroup } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { reportsApi, PatientOriginPoint } from '@/lib/reports';
+import { reportsApi, PatientOriginPoint, PatientOriginKelurahanPoint } from '@/lib/reports';
 
 const INDONESIA_CENTER: [number, number] = [-2.5, 118];
+
+type Tab = 'kecamatan' | 'kelurahan';
 
 function radiusFor(count: number, maxCount: number) {
   if (maxCount <= 0) return 8;
@@ -23,6 +25,11 @@ export default function PatientOriginMap() {
   const [error, setError] = useState<string | null>(null);
   const [activeKey, setActiveKey] = useState<string | null>(null);
 
+  const [activeTab, setActiveTab] = useState<Tab>('kecamatan');
+  const [kelurahanPoints, setKelurahanPoints] = useState<PatientOriginKelurahanPoint[] | null>(null);
+  const [kelurahanLoading, setKelurahanLoading] = useState(true);
+  const [kelurahanError, setKelurahanError] = useState<string | null>(null);
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
@@ -35,6 +42,26 @@ export default function PatientOriginMap() {
         if (!cancelled) setError('Gagal memuat peta sebaran asal pasien');
       } finally {
         if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setKelurahanLoading(true);
+      setKelurahanError(null);
+      try {
+        const res = await reportsApi.getPatientOriginByKelurahan();
+        if (!cancelled) setKelurahanPoints(res);
+      } catch {
+        if (!cancelled) setKelurahanError('Gagal memuat data per kelurahan');
+      } finally {
+        if (!cancelled) setKelurahanLoading(false);
       }
     }
     load();
@@ -119,14 +146,21 @@ export default function PatientOriginMap() {
     };
   }, [points]);
 
-  const resolvedPoints = (points ?? [])
-    .filter((p) => p.resolved && p.lat !== null && p.lng !== null)
-    .sort((a, b) => b.count - a.count);
-  const unresolvedPoints = (points ?? []).filter((p) => !p.resolved);
-  const totalPatients = resolvedPoints.reduce((sum, p) => sum + p.count, 0);
-  const maxCount = resolvedPoints.reduce((max, p) => Math.max(max, p.count), 0);
+  // Semua kecamatan (yang berhasil dipetakan maupun tidak) digabung jadi satu
+  // tabel terurut — sebelumnya kecamatan yang gagal di-geocode cuma disebut
+  // dalam satu baris teks panjang di bawah peta, padahal seringkali itu
+  // justru mayoritas data (rural/kecamatan kecil jarang dikenali Nominatim).
+  const allKecamatanPoints = (points ?? []).slice().sort((a, b) => b.count - a.count);
+  const kecamatanTotal = allKecamatanPoints.reduce((sum, p) => sum + p.count, 0);
+  const kecamatanMax = allKecamatanPoints.reduce((max, p) => Math.max(max, p.count), 0);
+  const unresolvedCount = allKecamatanPoints.filter((p) => !p.resolved).length;
+
+  const sortedKelurahanPoints = (kelurahanPoints ?? []).slice().sort((a, b) => b.count - a.count);
+  const kelurahanTotal = sortedKelurahanPoints.reduce((sum, p) => sum + p.count, 0);
+  const kelurahanMax = sortedKelurahanPoints.reduce((max, p) => Math.max(max, p.count), 0);
 
   const focusPoint = (p: PatientOriginPoint) => {
+    if (!p.resolved) return;
     const key = `${p.kecamatan}|${p.city}`;
     setActiveKey(key);
     const marker = markerByKeyRef.current.get(key);
@@ -149,7 +183,24 @@ export default function PatientOriginMap() {
         <div className="empty-list"><div className="empty-title">Belum ada data alamat pasien</div></div>
       )}
 
-      {!loading && resolvedPoints.length > 0 && (
+      <div className="range-tabs pom-tabs">
+        <button
+          type="button"
+          className={`range-tab ${activeTab === 'kecamatan' ? 'active' : ''}`}
+          onClick={() => setActiveTab('kecamatan')}
+        >
+          Per Kecamatan
+        </button>
+        <button
+          type="button"
+          className={`range-tab ${activeTab === 'kelurahan' ? 'active' : ''}`}
+          onClick={() => setActiveTab('kelurahan')}
+        >
+          Per Kelurahan
+        </button>
+      </div>
+
+      {activeTab === 'kecamatan' && !loading && allKecamatanPoints.length > 0 && (
         <div className="laporan-table-wrap patient-origin-table-wrap">
           <table className="laporan-table">
             <thead>
@@ -161,17 +212,25 @@ export default function PatientOriginMap() {
               </tr>
             </thead>
             <tbody>
-              {resolvedPoints.map((p) => {
+              {allKecamatanPoints.map((p) => {
                 const key = `${p.kecamatan}|${p.city}`;
-                const percent = totalPatients > 0 ? Math.round((p.count / totalPatients) * 100) : 0;
-                const barPercent = maxCount > 0 ? Math.round((p.count / maxCount) * 100) : 0;
+                const percent = kecamatanTotal > 0 ? Math.round((p.count / kecamatanTotal) * 100) : 0;
+                const barPercent = kecamatanMax > 0 ? Math.round((p.count / kecamatanMax) * 100) : 0;
                 return (
                   <tr
                     key={key}
                     className={activeKey === key ? 'active' : ''}
                     onClick={() => focusPoint(p)}
+                    style={{ cursor: p.resolved ? 'pointer' : 'default' }}
                   >
-                    <td className="pom-kecamatan">{p.kecamatan}</td>
+                    <td className="pom-kecamatan">
+                      {p.kecamatan}
+                      {!p.resolved && (
+                        <span className="pom-unmapped-badge" title="Nama lokasi tidak dikenali layanan peta">
+                          belum di peta
+                        </span>
+                      )}
+                    </td>
                     <td>{p.city}</td>
                     <td className="pom-num">
                       {p.count} <span className="pom-percent">({percent}%)</span>
@@ -189,11 +248,60 @@ export default function PatientOriginMap() {
         </div>
       )}
 
-      {!loading && unresolvedPoints.length > 0 && (
+      {activeTab === 'kecamatan' && !loading && unresolvedCount > 0 && (
         <div className="patient-origin-map-note">
-          {unresolvedPoints.length} kecamatan belum berhasil dipetakan (nama lokasi tidak dikenali layanan peta):{' '}
-          {unresolvedPoints.map((p) => `${p.kecamatan} (${p.count})`).join(', ')}
+          {unresolvedCount} dari {allKecamatanPoints.length} kecamatan belum berhasil dipetakan ke peta (ditandai
+          &quot;belum di peta&quot; di atas) — nama lokasinya tidak dikenali layanan peta, tapi jumlah pasiennya
+          tetap dihitung di tabel.
         </div>
+      )}
+
+      {activeTab === 'kelurahan' && (
+        <>
+          {kelurahanError && (
+            <div className="empty-list"><div className="empty-title">{kelurahanError}</div></div>
+          )}
+          {kelurahanLoading && <div className="patient-origin-map-loading">Memuat data per kelurahan...</div>}
+          {!kelurahanLoading && sortedKelurahanPoints.length === 0 && !kelurahanError && (
+            <div className="empty-list"><div className="empty-title">Belum ada data kelurahan pasien</div></div>
+          )}
+          {!kelurahanLoading && sortedKelurahanPoints.length > 0 && (
+            <div className="laporan-table-wrap patient-origin-table-wrap">
+              <table className="laporan-table">
+                <thead>
+                  <tr>
+                    <th>Kelurahan</th>
+                    <th>Kecamatan</th>
+                    <th>Kota</th>
+                    <th className="pom-num">Pasien</th>
+                    <th className="pom-bar-col"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedKelurahanPoints.map((p, i) => {
+                    const percent = kelurahanTotal > 0 ? Math.round((p.count / kelurahanTotal) * 100) : 0;
+                    const barPercent = kelurahanMax > 0 ? Math.round((p.count / kelurahanMax) * 100) : 0;
+                    return (
+                      <tr key={`${p.kelurahan}|${p.kecamatan}|${p.city}|${i}`}>
+                        <td className="pom-kecamatan">{p.kelurahan}</td>
+                        <td>{p.kecamatan || '—'}</td>
+                        <td>{p.city || '—'}</td>
+                        <td className="pom-num">
+                          {p.count} <span className="pom-percent">({percent}%)</span>
+                        </td>
+                        <td className="pom-bar-col">
+                          <div className="pom-bar-track">
+                            <div className="pom-bar-fill" style={{ width: `${barPercent}%` }} />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

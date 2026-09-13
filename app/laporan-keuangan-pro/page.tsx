@@ -93,10 +93,15 @@ export default function LaporanKeuanganProPage() {
   const { error: showError } = useToast();
 
   const { dateFrom, dateTo } = getDateRange(range, customFrom, customTo);
+  const awaitingCustomRange = range === 'custom' && (!customFrom || !customTo);
+  const showPlaceholder = loading || awaitingCustomRange;
 
   useEffect(() => {
     async function loadReport() {
-      if (range === 'custom' && (!customFrom || !customTo)) {
+      if (awaitingCustomRange) {
+        // Belum kedua tanggal terisi — jangan biarkan angka dari rentang
+        // sebelumnya nyangkut di layar, seolah rentang kustom tidak berbuat apa-apa.
+        setReport(null);
         setLoading(false);
         return;
       }
@@ -189,6 +194,9 @@ export default function LaporanKeuanganProPage() {
                   <input type="date" value={customFrom} onChange={(e) => setCustomFrom(e.target.value)} />
                   <span>–</span>
                   <input type="date" value={customTo} onChange={(e) => setCustomTo(e.target.value)} />
+                  {awaitingCustomRange && (
+                    <span className="custom-range-hint">Pilih tanggal awal &amp; akhir</span>
+                  )}
                 </div>
               )}
               <button
@@ -214,11 +222,11 @@ export default function LaporanKeuanganProPage() {
             </div>
           </div>
 
-          <div className="stat-grid">
+          <div className="stat-grid stat-grid--single">
             <div className="stat-card total">
               <div className="stat-icon"><FiFileText /></div>
               <div className="stat-info">
-                <div className="stat-value">{loading ? '...' : formatRupiah(report?.labaKotor ?? 0)}</div>
+                <div className="stat-value">{showPlaceholder ? '...' : formatRupiah(report?.labaKotor ?? 0)}</div>
                 <div className="stat-label">Laba Kotor (Pendapatan − Modal)</div>
               </div>
             </div>

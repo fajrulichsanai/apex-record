@@ -154,6 +154,13 @@ export interface PatientOriginPoint {
   resolved: boolean;
 }
 
+export interface PatientOriginKelurahanPoint {
+  kelurahan: string;
+  kecamatan: string | null;
+  city: string | null;
+  count: number;
+}
+
 export interface FinancialVisitDetailQuery {
   dateFrom: string;
   dateTo: string;
@@ -202,6 +209,9 @@ export const reportsApi = {
 
   getPatientOriginMap: () =>
     apiClient.get<PatientOriginPoint[]>('/reports/financial-pro/patient-origin-map'),
+
+  getPatientOriginByKelurahan: () =>
+    apiClient.get<PatientOriginKelurahanPoint[]>('/reports/financial-pro/patient-origin-kelurahan'),
 
   downloadFinancialProPdf: async (query: FinancialReportQuery) => {
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
