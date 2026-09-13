@@ -1,0 +1,149 @@
+.keamanan-panel {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+
+.keamanan-panel h1 {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+.keamanan-subtitle {
+  color: #6b7280;
+  margin-bottom: 20px;
+}
+
+.keamanan-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.keamanan-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.keamanan-status-on {
+  color: #16a34a;
+  font-weight: 600;
+}
+
+.keamanan-status-off {
+  color: #6b7280;
+}
+
+.keamanan-qr {
+  display: block;
+  width: 200px;
+  height: 200px;
+  margin: 16px 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.keamanan-manual {
+  font-size: 0.875rem;
+  color: #6b7280;
+  word-break: break-all;
+}
+
+.keamanan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.keamanan-disable-form {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 16px;
+}
+
+.keamanan-form label {
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+.keamanan-form input {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.keamanan-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.keamanan-panel .btn-primary {
+  padding: 9px 18px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.keamanan-panel .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+.keamanan-panel .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.keamanan-panel .btn-outline {
+  padding: 9px 16px;
+  background: var(--surface);
+  color: var(--text-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.keamanan-panel .btn-outline:hover:not(:disabled) { background: var(--bg); }
+.keamanan-panel .btn-outline:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.keamanan-panel .btn-danger {
+  padding: 9px 18px;
+  background: var(--danger, #dc2626);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.keamanan-panel .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+.keamanan-panel .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.keamanan-backup-codes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 16px 0;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.keamanan-backup-codes code {
+  font-size: 0.95rem;
+  text-align: center;
+  padding: 6px;
+}
+
+@media (max-width: 480px) {
+  .keamanan-backup-codes {
+    grid-template-columns: 1fr;
+  }
+}

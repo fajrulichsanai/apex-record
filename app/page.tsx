@@ -31,6 +31,9 @@ const LoginPage = () => {
 
   const [loading, setLoading] = useState(false);
 
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
+
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
@@ -56,6 +59,23 @@ const LoginPage = () => {
 
     if (!res.ok || !body.success) {
       throw new Error(body?.error?.message || 'Login gagal');
+    }
+
+    return body.data;
+  };
+
+  const handleVerifyMfa = async () => {
+    const endpoint = `${LOCAL_API}/auth/mfa/verify-login`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mfaToken, code: mfaCode }),
+    });
+
+    const body = await res.json();
+
+    if (!res.ok || !body.success) {
+      throw new Error(body?.error?.message || 'Kode tidak valid');
     }
 
     return body.data;
@@ -100,6 +120,10 @@ const LoginPage = () => {
         }, 2000);
       } else {
         const data = await handleLogin();
+        if (data.mfaRequired) {
+          setMfaToken(data.mfaToken);
+          return;
+        }
         success('Selamat datang! Anda akan diarahkan...');
         setTimeout(() => {
           login(data.accessToken, data.user);
@@ -108,6 +132,24 @@ const LoginPage = () => {
       }
     } catch (err) {
       error(err instanceof Error ? err.message : 'Terjadi kesalahan');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMfaSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const data = await handleVerifyMfa();
+      success('Selamat datang! Anda akan diarahkan...');
+      setTimeout(() => {
+        login(data.accessToken, data.user);
+        router.push(defaultRouteForRole(data.user?.role));
+      }, 1500);
+    } catch (err) {
+      error(err instanceof Error ? err.message : 'Kode tidak valid');
     } finally {
       setLoading(false);
     }
@@ -175,6 +217,48 @@ const LoginPage = () => {
         </button>
 
         <div className="form-wrap">
+          {mfaToken ? (
+            <>
+              <h2>Verifikasi Dua Langkah</h2>
+              <p className="subtitle">Masukkan kode dari aplikasi autentikator Anda, atau salah satu kode cadangan</p>
+
+              <form onSubmit={handleMfaSubmit}>
+                <div className="field">
+                  <label htmlFor="mfaCode">Kode Autentikasi</label>
+                  <div className="input-wrap">
+                    <input
+                      type="text"
+                      id="mfaCode"
+                      placeholder="123456"
+                      value={mfaCode}
+                      onChange={(e) => setMfaCode(e.target.value)}
+                      autoFocus
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {loading ? 'Memverifikasi...' : 'Verifikasi'}
+                </button>
+              </form>
+
+              <p className="signup-text">
+                <a
+                  href="#"
+                  className="link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMfaToken(null);
+                    setMfaCode('');
+                  }}
+                >
+                  Kembali ke login
+                </a>
+              </p>
+            </>
+          ) : (
+          <>
           {mode === 'login' ? (
             <>
               <h2>Selamat datang</h2>
@@ -302,6 +386,8 @@ const LoginPage = () => {
                 Masuk di sini
               </a>
             </p>
+          )}
+          </>
           )}
 
           <p className="version-text">ApexRecord STG v1.0.1</p>

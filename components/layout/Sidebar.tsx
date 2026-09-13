@@ -26,6 +26,7 @@ import {
   FiShield,
   FiBox,
   FiBell,
+  FiLock,
 } from 'react-icons/fi';
 import './sidebar.css';
 
@@ -128,6 +129,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { label: 'Tarif & Tindakan', icon: <FiDollarSign />, href: '/tarif', feature: 'tarif' },
         { label: 'Log Aktivitas', icon: <FiShield />, href: '/audit-log', feature: 'audit-log' as FeatureKey },
         { label: 'Langganan', icon: <FiCreditCard />, href: '/langganan', feature: 'langganan' as FeatureKey },
+        { label: 'Keamanan Akun', icon: <FiLock />, href: '/keamanan', feature: 'keamanan' as FeatureKey },
       ],
     },
   ];
