@@ -66,6 +66,16 @@ export function setOnSubscriptionExpired(handler: (() => void) | null) {
   onSubscriptionExpired = handler;
 }
 
+// Set by MfaGateProvider so an MFA_SETUP_REQUIRED response from any request
+// — anywhere in the app — routes the user to the setup screen, covering an
+// already-open session for a role that just became MFA-enforced (a fresh
+// login/verify already gets mfaSetupRequired directly in its response).
+let onMfaSetupRequired: (() => void) | null = null;
+
+export function setOnMfaSetupRequired(handler: (() => void) | null) {
+  onMfaSetupRequired = handler;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   // FormData bodies must NOT get an explicit Content-Type — the browser sets
@@ -87,6 +97,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const code = body?.error?.code;
     if (code === 'SUBSCRIPTION_EXPIRED') {
       onSubscriptionExpired?.();
+    }
+    if (code === 'MFA_SETUP_REQUIRED') {
+      onMfaSetupRequired?.();
     }
     throw new ApiError(body?.error?.message || 'Terjadi kesalahan', res.status, code);
   }

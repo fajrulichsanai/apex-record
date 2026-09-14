@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 import { defaultRouteForRole } from '@/lib/permissions';
+import type { User } from '@/types/user';
 import './styles/page.css';
 
 const LOCAL_API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -124,11 +125,7 @@ const LoginPage = () => {
           setMfaToken(data.mfaToken);
           return;
         }
-        success('Selamat datang! Anda akan diarahkan...');
-        setTimeout(() => {
-          login(data.accessToken, data.user);
-          router.push(defaultRouteForRole(data.user?.role));
-        }, 1500);
+        completeLogin(data);
       }
     } catch (err) {
       error(err instanceof Error ? err.message : 'Terjadi kesalahan');
@@ -137,17 +134,24 @@ const LoginPage = () => {
     }
   };
 
+  // Shared by the normal login path and the post-MFA-verify path: stores the
+  // session, then routes to the MFA setup screen instead of the dashboard if
+  // this role requires MFA and hasn't set it up yet.
+  const completeLogin = (data: { accessToken: string; user: User; mfaSetupRequired?: boolean }) => {
+    success('Selamat datang! Anda akan diarahkan...');
+    setTimeout(() => {
+      login(data.accessToken, data.user);
+      router.push(data.mfaSetupRequired ? '/keamanan' : defaultRouteForRole(data.user?.role));
+    }, 1500);
+  };
+
   const handleMfaSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
 
     try {
       const data = await handleVerifyMfa();
-      success('Selamat datang! Anda akan diarahkan...');
-      setTimeout(() => {
-        login(data.accessToken, data.user);
-        router.push(defaultRouteForRole(data.user?.role));
-      }, 1500);
+      completeLogin(data);
     } catch (err) {
       error(err instanceof Error ? err.message : 'Kode tidak valid');
     } finally {

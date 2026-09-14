@@ -5,12 +5,15 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { ApiError } from '@/lib/api-client';
 import { mfaApi, type MfaSetupResult } from '@/lib/mfa';
 import { useToast } from '@/lib/toast-context';
+import { useAuth } from '@/lib/auth-context';
+import { MFA_ENFORCED_ROLES } from '@/lib/mfa-gate-context';
 import '../../styles/keamanan.css';
 
 type Step = 'idle' | 'setup' | 'backup-codes';
 
 export default function KeamananPage() {
   const { success, error } = useToast();
+  const { user, token, login } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [mfaEnabled, setMfaEnabled] = useState(false);
@@ -62,6 +65,10 @@ export default function KeamananPage() {
       setStep('backup-codes');
       setMfaEnabled(true);
       setConfirmCode('');
+      // Keep the locally-stored user in sync so MfaGateProvider's redirect
+      // check (which reads user.mfaEnabled) doesn't keep sending an
+      // MFA-enforced-role user back here after they've just finished setup.
+      if (user && token) login(token, { ...user, mfaEnabled: true });
     } catch (err) {
       error(err instanceof ApiError ? err.message : 'Kode tidak valid');
     } finally {
@@ -84,6 +91,7 @@ export default function KeamananPage() {
       setMfaEnabled(false);
       setShowDisableForm(false);
       setDisablePassword('');
+      if (user && token) login(token, { ...user, mfaEnabled: false });
       success('MFA telah dinonaktifkan');
     } catch (err) {
       error(err instanceof ApiError ? err.message : 'Password salah');
@@ -104,6 +112,13 @@ export default function KeamananPage() {
         <p className="keamanan-subtitle">
           Kelola verifikasi dua langkah (MFA) untuk akun Anda. Sangat disarankan untuk akun dengan akses admin/owner.
         </p>
+
+        {!loading && !mfaEnabled && user && MFA_ENFORCED_ROLES.includes(user.role) && (
+          <div className="keamanan-mandatory-notice">
+            Peran Anda ({user.role}) wajib mengaktifkan MFA. Halaman lain tidak bisa diakses sampai Anda menyelesaikan
+            setup di bawah ini.
+          </div>
+        )}
 
         {loading ? (
           <div className="keamanan-card">Memuat...</div>
