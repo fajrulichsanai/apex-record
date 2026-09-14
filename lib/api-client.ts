@@ -76,6 +76,16 @@ export function setOnMfaSetupRequired(handler: (() => void) | null) {
   onMfaSetupRequired = handler;
 }
 
+// Set by AuthProvider so a 401 from any request — a missing, invalid, or
+// expired token — clears the stale session and bounces to login instead of
+// leaving the user stuck on a protected page where every action now fails
+// with a raw "unauthorized" error.
+let onUnauthorized: (() => void) | null = null;
+
+export function setOnUnauthorized(handler: (() => void) | null) {
+  onUnauthorized = handler;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   // FormData bodies must NOT get an explicit Content-Type — the browser sets
@@ -100,6 +110,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     }
     if (code === 'MFA_SETUP_REQUIRED') {
       onMfaSetupRequired?.();
+    }
+    if (res.status === 401 && token) {
+      // Only a *previously logged-in* session going 401 (token now invalid/
+      // expired) should force a logout — a request made with no token at all
+      // is handled by the page-level auth guard instead, so it doesn't loop
+      // this handler before the user has ever logged in.
+      onUnauthorized?.();
     }
     throw new ApiError(body?.error?.message || 'Terjadi kesalahan', res.status, code);
   }

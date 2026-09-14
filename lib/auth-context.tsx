@@ -1,7 +1,8 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import type { User } from '@/types/user';
+import { setOnUnauthorized } from './api-client';
 
 interface AuthState {
   user: User | null;
@@ -71,6 +72,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setImpersonating(false);
   };
+
+  // Kept fresh every render so the module-level handler below (registered
+  // once) always calls the current logout, without re-subscribing on every
+  // render the way including `logout` in the effect's deps would.
+  const logoutRef = useRef(logout);
+  useEffect(() => {
+    logoutRef.current = logout;
+  });
+
+  useEffect(() => {
+    setOnUnauthorized(() => logoutRef.current());
+    return () => setOnUnauthorized(null);
+  }, []);
 
   const startImpersonation = (newToken: string, newUser: User) => {
     if (token && user) {
