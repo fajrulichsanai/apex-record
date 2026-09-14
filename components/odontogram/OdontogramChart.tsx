@@ -7,7 +7,7 @@ import { useToast } from '@/lib/toast-context';
 import ToothBox from './ToothBox';
 import ToothDetailModal from './ToothDetailModal';
 import BridgeManager from './BridgeManager';
-import { UPPER_ROW, LOWER_ROW } from './odontogramData';
+import { UPPER_ROW, LOWER_ROW, UPPER_ROW_DECIDUOUS, LOWER_ROW_DECIDUOUS, PERMANENT_TEETH, DECIDUOUS_TEETH, calculateDentalIndex } from './odontogramData';
 
 interface OdontogramChartProps {
   patientId: number;
@@ -61,17 +61,19 @@ export default function OdontogramChart({ patientId }: OdontogramChartProps) {
     }
   };
 
-  const renderRow = (teeth: number[], rowName: 'upper' | 'lower') => {
-    const bridgesInRow = data.bridges
-      .map((b) => {
-        const from = rowIndexOf(b.fromTooth);
-        const to = rowIndexOf(b.toTooth);
-        if (!from || !to || from.row !== rowName || to.row !== rowName) return null;
-        const start = Math.min(from.index, to.index);
-        const end = Math.max(from.index, to.index);
-        return { ...b, start, end };
-      })
-      .filter((b): b is NonNullable<typeof b> => b !== null);
+  const renderRow = (teeth: number[], rowName: 'upper' | 'lower' | null) => {
+    const bridgesInRow = rowName
+      ? data.bridges
+          .map((b) => {
+            const from = rowIndexOf(b.fromTooth);
+            const to = rowIndexOf(b.toTooth);
+            if (!from || !to || from.row !== rowName || to.row !== rowName) return null;
+            const start = Math.min(from.index, to.index);
+            const end = Math.max(from.index, to.index);
+            return { ...b, start, end };
+          })
+          .filter((b): b is NonNullable<typeof b> => b !== null)
+      : [];
 
     return (
       <div className="odt-row" style={{ gridTemplateColumns: `repeat(${teeth.length}, 1fr)` }}>
@@ -98,26 +100,61 @@ export default function OdontogramChart({ patientId }: OdontogramChartProps) {
     return <div className="rm-loading">Memuat odontogram…</div>;
   }
 
+  const dmft = calculateDentalIndex(PERMANENT_TEETH, conditionOf);
+  const deft = calculateDentalIndex(DECIDUOUS_TEETH, conditionOf);
+
   return (
     <div className="odt-chart">
       <div className="odt-legend">
-        <span className="odt-legend-item"><span className="odt-swatch" style={{ background: '#FF4D4F' }} /> Karies</span>
-        <span className="odt-legend-item"><span className="odt-swatch" style={{ background: '#4F7EF8' }} /> Tumpatan</span>
-        <span className="odt-legend-item"><span className="odt-swatch odt-swatch-x">✕</span> Hilang/Dicabut</span>
-        <span className="odt-legend-item"><span className="odt-badge-sample" style={{ background: '#8B5E34' }}>SA</span> Sisa Akar</span>
+        <span className="odt-legend-item"><span className="odt-swatch" style={{ background: '#1A1A1A' }} /> Karies</span>
+        <span className="odt-legend-item"><span className="odt-swatch" style={{ background: '#10B981' }} /> Komposit</span>
+        <span className="odt-legend-item"><span className="odt-swatch" style={{ background: '#EC4899' }} /> GIC</span>
+        <span className="odt-legend-item"><span className="odt-swatch odt-swatch-x">✕</span> Hilang/Dicabut (MISSING)</span>
         <span className="odt-legend-item"><span className="odt-badge-sample" style={{ background: '#1A2340' }}>RCT</span> Perawatan Saluran Akar</span>
-        <span className="odt-legend-item"><span className="odt-badge-sample" style={{ background: '#4F7EF8' }}>MHK</span> Mahkota</span>
-        <span className="odt-legend-item"><span className="odt-badge-sample" style={{ background: '#F5A623' }}>IMP</span> Impaksi</span>
+        <span className="odt-legend-item"><span className="odt-teks-sample" style={{ color: '#34A853' }}>SOU</span> Sound (sehat)</span>
+        <span className="odt-legend-item"><span className="odt-teks-sample" style={{ color: '#EA4335' }}>CFR/RRX</span> Fraktur/Sisa Akar</span>
+        <span className="odt-legend-item"><span className="odt-teks-sample" style={{ color: '#FBBC04' }}>ANO/NON</span> Anomali/Non-vital</span>
+      </div>
+
+      <div className="odt-summary">
+        <div className="odt-summary-group">
+          <span className="odt-summary-title">DMFT (Gigi Permanen)</span>
+          <div className="odt-summary-values">
+            <span>D: {dmft.decayed}</span>
+            <span>M: {dmft.missingOrExtracted}</span>
+            <span>F: {dmft.filled}</span>
+            <strong>DMFT: {dmft.total}</strong>
+          </div>
+        </div>
+        <div className="odt-summary-group">
+          <span className="odt-summary-title">deft (Gigi Susu)</span>
+          <div className="odt-summary-values">
+            <span>d: {deft.decayed}</span>
+            <span>e: {deft.missingOrExtracted}</span>
+            <span>f: {deft.filled}</span>
+            <strong>deft: {deft.total}</strong>
+          </div>
+        </div>
       </div>
 
       <div className="odt-arch">
-        <div className="odt-arch-label">Rahang Atas</div>
+        <div className="odt-arch-label">Rahang Atas — Permanen</div>
         <div className="odt-row-scroll">{renderRow(UPPER_ROW, 'upper')}</div>
+      </div>
+
+      <div className="odt-arch odt-arch-deciduous">
+        <div className="odt-arch-label">Rahang Atas — Susu</div>
+        <div className="odt-row-scroll">{renderRow(UPPER_ROW_DECIDUOUS, null)}</div>
+      </div>
+
+      <div className="odt-arch odt-arch-deciduous">
+        <div className="odt-row-scroll">{renderRow(LOWER_ROW_DECIDUOUS, null)}</div>
+        <div className="odt-arch-label">Rahang Bawah — Susu</div>
       </div>
 
       <div className="odt-arch">
         <div className="odt-row-scroll">{renderRow(LOWER_ROW, 'lower')}</div>
-        <div className="odt-arch-label">Rahang Bawah</div>
+        <div className="odt-arch-label">Rahang Bawah — Permanen</div>
       </div>
 
       <BridgeManager patientId={patientId} bridges={data.bridges} onChange={load} />

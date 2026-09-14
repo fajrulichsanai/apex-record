@@ -10,6 +10,7 @@ export interface User {
   emailVerifiedAt?: string | null;
   lastLoginAt?: string | null;
   createdAt: string;
+  mfaEnabled?: boolean;
 }
 
 export interface RoleOption {

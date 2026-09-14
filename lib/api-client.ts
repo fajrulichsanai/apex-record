@@ -5,6 +5,41 @@ export function apiFileUrl(path: string) {
   return `${API_URL}${path}`;
 }
 
+/**
+ * Fetches a backend-hosted file (payment proofs, supporting-exam images) with
+ * the caller's JWT and returns an object URL for it. These files are served
+ * from authenticated, ownership-checked routes — plain `<img src>`/`<a href>`
+ * navigation never carries the Authorization header, so callers must fetch
+ * through here and revoke the returned URL (`URL.revokeObjectURL`) once done.
+ */
+export async function fetchProtectedFileUrl(path: string): Promise<string> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const res = await fetch(apiFileUrl(path), {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    throw new ApiError('Gagal memuat file', res.status);
+  }
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
+/**
+ * Opens a backend-hosted authenticated file in a new tab. Opens the tab
+ * synchronously (before the fetch) so browsers don't treat it as a blocked
+ * popup, then navigates it to the fetched blob once ready.
+ */
+export async function openProtectedFile(path: string): Promise<void> {
+  const win = typeof window !== 'undefined' ? window.open('', '_blank') : null;
+  try {
+    const url = await fetchProtectedFileUrl(path);
+    if (win) win.location.href = url;
+  } catch (err) {
+    win?.close();
+    throw err;
+  }
+}
+
 export class ApiError extends Error {
   code?: string;
   status: number;
@@ -31,6 +66,16 @@ export function setOnSubscriptionExpired(handler: (() => void) | null) {
   onSubscriptionExpired = handler;
 }
 
+// Set by MfaGateProvider so an MFA_SETUP_REQUIRED response from any request
+// — anywhere in the app — routes the user to the setup screen, covering an
+// already-open session for a role that just became MFA-enforced (a fresh
+// login/verify already gets mfaSetupRequired directly in its response).
+let onMfaSetupRequired: (() => void) | null = null;
+
+export function setOnMfaSetupRequired(handler: (() => void) | null) {
+  onMfaSetupRequired = handler;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   // FormData bodies must NOT get an explicit Content-Type — the browser sets
@@ -52,6 +97,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const code = body?.error?.code;
     if (code === 'SUBSCRIPTION_EXPIRED') {
       onSubscriptionExpired?.();
+    }
+    if (code === 'MFA_SETUP_REQUIRED') {
+      onMfaSetupRequired?.();
     }
     throw new ApiError(body?.error?.message || 'Terjadi kesalahan', res.status, code);
   }
