@@ -1,10 +1,21 @@
 // FDI/ISO 3950 two-digit tooth numbering (also the Indonesian Permenkes
 // 269/2008 odontogram standard, itself FDI-based): first digit = quadrant
-// (1 upper-right, 2 upper-left, 3 lower-left, 4 lower-right), second digit
-// = position from the midline (1 central incisor ... 8 third molar).
+// (1 upper-right, 2 upper-left, 3 lower-left, 4 lower-right permanent;
+// 5 upper-right, 6 upper-left, 7 lower-left, 8 lower-right deciduous),
+// second digit = position from the midline (1 central incisor ... 8 third
+// molar permanent, ... 5 second molar deciduous).
 export const UPPER_ROW = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
 export const LOWER_ROW = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
-export const ALL_TEETH = [...UPPER_ROW, ...LOWER_ROW];
+export const UPPER_ROW_DECIDUOUS = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
+export const LOWER_ROW_DECIDUOUS = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
+export const PERMANENT_TEETH = [...UPPER_ROW, ...LOWER_ROW];
+export const DECIDUOUS_TEETH = [...UPPER_ROW_DECIDUOUS, ...LOWER_ROW_DECIDUOUS];
+export const ALL_TEETH = [...PERMANENT_TEETH, ...DECIDUOUS_TEETH];
+
+export function isDeciduousTooth(tooth: number): boolean {
+  const q = Math.floor(tooth / 10);
+  return q === 5 || q === 6 || q === 7 || q === 8;
+}
 
 export type SurfaceKey = 'mesial' | 'distal' | 'vestibular' | 'lingual' | 'occlusal';
 
@@ -19,26 +30,31 @@ export interface ToothLayout {
   lingualLabel: string;
   isUpper: boolean;
   isAnterior: boolean;
+  isDeciduous: boolean;
 }
 
 /**
  * Maps each of the 5 international charting surfaces (Mesial, Distal,
  * Vestibular, Lingual/Palatal, Oklusal/Insisal) onto a position in the
  * tooth's on-screen "windowpane" (top/bottom/left/right/center), given how
- * this chart lays teeth out left-to-right (see UPPER_ROW/LOWER_ROW above).
- * Mesial always faces the dental midline; vestibular always faces outward
- * (up for the upper arch, down for the lower arch) — the classic mirrored
- * layout where the two arches "face" each other across the chart's middle.
+ * this chart lays teeth out left-to-right. Mesial always faces the dental
+ * midline; vestibular always faces outward (up for the upper arch, down
+ * for the lower arch) — the classic mirrored layout where the two arches
+ * "face" each other across the chart's middle. Deciduous quadrants (5-8)
+ * mirror their permanent counterparts (5→1, 6→2, 7→3, 8→4).
  */
 export function getToothLayout(tooth: number): ToothLayout {
   const quadrant = Math.floor(tooth / 10);
   const pos = tooth % 10;
-  const isUpper = quadrant === 1 || quadrant === 2;
-  // In our left-to-right row order, quadrants 2 and 3 increase in number
-  // moving away from the midline, so their mesial side is on the left;
-  // quadrants 1 and 4 decrease moving away from the midline (drawn
-  // right-to-left toward the midline), so their mesial side is on the right.
-  const mesialOnLeft = quadrant === 2 || quadrant === 3;
+  const deciduous = isDeciduousTooth(tooth);
+  const normalizedQuadrant = deciduous ? quadrant - 4 : quadrant;
+  const isUpper = normalizedQuadrant === 1 || normalizedQuadrant === 2;
+  // In our left-to-right row order, quadrants 2 and 3 (or their deciduous
+  // equivalents 6 and 7) increase in number moving away from the midline,
+  // so their mesial side is on the left; quadrants 1 and 4 (5 and 8)
+  // decrease moving away from the midline (drawn right-to-left toward the
+  // midline), so their mesial side is on the right.
+  const mesialOnLeft = normalizedQuadrant === 2 || normalizedQuadrant === 3;
   const isAnterior = pos >= 1 && pos <= 3;
 
   return {
@@ -50,6 +66,7 @@ export function getToothLayout(tooth: number): ToothLayout {
     lingualLabel: isUpper ? 'Palatal' : 'Lingual',
     isUpper,
     isAnterior,
+    isDeciduous: deciduous,
   };
 }
 
@@ -63,36 +80,110 @@ export const SURFACE_FIELD: Record<SurfaceKey, 'surfaceMesial' | 'surfaceDistal'
 
 export const SURFACE_OPTIONS = [
   { value: '', label: 'Sehat' },
-  { value: 'caries', label: 'Karies' },
-  { value: 'filling', label: 'Tumpatan' },
+  { value: 'karies', label: 'Karies' },
+  { value: 'komposit', label: 'Komposit' },
+  { value: 'gic', label: 'GIC' },
 ];
 
 export const SURFACE_COLORS: Record<string, string> = {
-  caries: '#FF4D4F',
-  filling: '#4F7EF8',
+  karies: '#1A1A1A',
+  komposit: '#10B981',
+  gic: '#EC4899',
 };
 
-export const WHOLE_CONDITION_OPTIONS = [
-  { value: '', label: 'Normal' },
-  { value: 'missing', label: 'Hilang / Dicabut' },
-  { value: 'to_be_extracted', label: 'Indikasi Pencabutan' },
-  { value: 'root_remnant', label: 'Sisa Akar' },
-  { value: 'root_canal_treated', label: 'Sudah Perawatan Saluran Akar (RCT)' },
-  { value: 'crown', label: 'Mahkota (Crown)' },
-  { value: 'impacted', label: 'Impaksi' },
-  { value: 'implant', label: 'Implan' },
-  { value: 'unerupted', label: 'Belum Erupsi' },
+/** Annotation shown above the tooth. */
+export const TEKS_ATAS_OPTIONS = [
+  { value: '', label: 'Tidak ada' },
+  { value: 'SOU', label: 'SOU — Sound (sehat)' },
+  { value: 'ATT', label: 'ATT — Atrisi' },
+  { value: 'PRE', label: 'PRE — Erupsi sebagian' },
+  { value: 'UNE', label: 'UNE — Belum erupsi' },
+  { value: 'ANO', label: 'ANO — Anomali' },
+  { value: 'NON', label: 'NON — Non-vital' },
 ];
 
-export const WHOLE_CONDITION_BADGE: Record<string, { label: string; color: string }> = {
-  root_remnant: { label: 'SA', color: '#8B5E34' },
-  root_canal_treated: { label: 'RCT', color: '#1A2340' },
-  crown: { label: 'MHK', color: '#4F7EF8' },
-  impacted: { label: 'IMP', color: '#F5A623' },
-  implant: { label: 'IPL', color: '#2DCB8A' },
-  unerupted: { label: 'UE', color: '#A0AEC0' },
+/** Annotation shown below the tooth. */
+export const TEKS_BAWAH_OPTIONS = [
+  { value: '', label: 'Tidak ada' },
+  { value: 'MISSING', label: 'MISSING — Hilang/dicabut' },
+  { value: 'CFR', label: 'CFR — Fraktur mahkota' },
+  { value: 'RRX', label: 'RRX — Sisa akar' },
+];
+
+const TEKS_DESCRIPTIONS: Record<string, string> = {
+  SOU: 'Sound - gigi dalam kondisi sehat sepenuhnya',
+  ATT: 'Attrition - permukaan gigi aus',
+  PRE: 'Partially erupted - gigi erupsi sebagian',
+  UNE: 'Unerupted - gigi belum muncul',
+  ANO: 'Anomaly - kelainan bentuk gigi',
+  NON: 'Non-vital - gigi tidak vital',
+  MISSING: 'Gigi hilang/dicabut atau kongenital tidak ada',
+  CFR: 'Fraktur pada mahkota gigi',
+  RRX: 'Sisa akar (akar tertinggal)',
 };
 
-export function wholeConditionLabel(value?: string): string {
-  return WHOLE_CONDITION_OPTIONS.find((o) => o.value === value)?.label || 'Normal';
+export function teksDescription(code?: string): string {
+  return (code && TEKS_DESCRIPTIONS[code]) || '';
+}
+
+/** Badge color for teks_atas/teks_bawah codes, mirroring the reference chart's legend. */
+export function teksBadgeColor(code?: string): string {
+  switch (code) {
+    case 'SOU':
+      return '#34A853';
+    case 'MISSING':
+    case 'RRX':
+    case 'CFR':
+      return '#EA4335';
+    case 'NON':
+    case 'ANO':
+      return '#FBBC04';
+    default:
+      return '#4285F4';
+  }
+}
+
+/** Decayed/Missing/Filled tooth counts — DMFT (permanent) and deft (deciduous). */
+export interface DentalIndex {
+  decayed: number;
+  missingOrExtracted: number;
+  filled: number;
+  total: number;
+}
+
+function hasSurfaceValue(condition: { surfaceMesial?: string; surfaceDistal?: string; surfaceVestibular?: string; surfaceLingual?: string; surfaceOcclusal?: string } | undefined, value: string): boolean {
+  if (!condition) return false;
+  return (
+    condition.surfaceMesial === value ||
+    condition.surfaceDistal === value ||
+    condition.surfaceVestibular === value ||
+    condition.surfaceLingual === value ||
+    condition.surfaceOcclusal === value
+  );
+}
+
+export function calculateDentalIndex(
+  teeth: number[],
+  conditionOf: (tooth: number) => { teksBawah?: string; surfaceMesial?: string; surfaceDistal?: string; surfaceVestibular?: string; surfaceLingual?: string; surfaceOcclusal?: string } | undefined,
+): DentalIndex {
+  let decayed = 0;
+  let missingOrExtracted = 0;
+  let filled = 0;
+
+  for (const tooth of teeth) {
+    const condition = conditionOf(tooth);
+    if (condition?.teksBawah === 'MISSING') {
+      missingOrExtracted++;
+      continue;
+    }
+    if (hasSurfaceValue(condition, 'komposit') || hasSurfaceValue(condition, 'gic')) {
+      filled++;
+      continue;
+    }
+    if (hasSurfaceValue(condition, 'karies')) {
+      decayed++;
+    }
+  }
+
+  return { decayed, missingOrExtracted, filled, total: decayed + missingOrExtracted + filled };
 }

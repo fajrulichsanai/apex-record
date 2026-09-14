@@ -59,11 +59,59 @@
   font-weight: 700;
 }
 
+.odt-teks-sample {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* ----- DMFT / deft summary ----- */
+
+.odt-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.odt-summary-group {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.odt-summary-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.odt-summary-values {
+  display: flex;
+  gap: 14px;
+  font-size: 12.5px;
+  color: var(--text-sub);
+  font-weight: 600;
+}
+
+.odt-summary-values strong {
+  color: var(--text-main);
+}
+
 .odt-arch {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
+
+.odt-arch-deciduous .odt-arch-label { color: #C99A2E; }
 
 .odt-arch-label {
   font-size: 10.5px;
@@ -143,6 +191,13 @@
 
 .tooth-number { font-size: 10.5px; font-weight: 700; color: var(--text-sub); }
 
+.tooth-teks {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+}
+
 .tooth-badge {
   position: absolute;
   top: -4px;
@@ -159,18 +214,15 @@
   justify-content: center;
 }
 
-.tooth-crown .tooth-grid { box-shadow: 0 0 0 2px var(--primary); }
-.tooth-unerupted .tooth-grid { border-style: dashed; opacity: .6; }
+.tooth-badge-rct { background: #1A2340; }
 
-.tooth-missing,
-.tooth-extract {
+.tooth-missing {
   width: 44px;
   height: 40px;
   justify-content: center;
 }
 
-.tooth-missing .material-symbols-rounded,
-.tooth-extract .material-symbols-rounded {
+.tooth-missing .material-symbols-rounded {
   width: 40px;
   height: 22px;
   display: flex;
@@ -178,10 +230,10 @@
   justify-content: center;
   border-radius: 6px;
   font-size: 18px;
+  background: var(--bg);
+  color: var(--text-muted);
+  border: 1.5px dashed var(--border);
 }
-
-.tooth-missing .material-symbols-rounded { background: var(--bg); color: var(--text-muted); border: 1.5px dashed var(--border); }
-.tooth-extract .material-symbols-rounded { background: rgba(255,77,79,.1); color: #FF4D4F; border: 1.5px solid #FF4D4F; }
 
 /* ----- bridge manager ----- */
 
@@ -234,6 +286,22 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   margin-top: 4px;
+}
+
+.odt-teks-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+
+.odt-rct-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
 }
 
 @media (max-width: 640px) {

@@ -4,7 +4,9 @@ export interface ToothCondition {
   id?: number;
   patientId?: number;
   toothNumber: number;
-  wholeCondition?: string;
+  teksAtas?: string;
+  teksBawah?: string;
+  rct?: boolean;
   surfaceMesial?: string;
   surfaceDistal?: string;
   surfaceVestibular?: string;
@@ -28,7 +30,9 @@ export interface OdontogramData {
 }
 
 export interface UpsertToothConditionPayload {
-  wholeCondition?: string;
+  teksAtas?: string;
+  teksBawah?: string;
+  rct?: boolean;
   surfaceMesial?: string;
   surfaceDistal?: string;
   surfaceVestibular?: string;

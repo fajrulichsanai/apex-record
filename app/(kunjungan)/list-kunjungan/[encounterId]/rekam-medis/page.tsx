@@ -15,7 +15,7 @@ import SoapNoteView from '@/components/rekam-medis/SoapNoteView';
 import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
 import InformedConsentPanel from '@/components/rekam-medis/InformedConsentPanel';
 import OdontogramChart from '@/components/odontogram/OdontogramChart';
-import { UPPER_ROW, LOWER_ROW, ALL_TEETH } from '@/components/odontogram/odontogramData';
+import { UPPER_ROW, LOWER_ROW, PERMANENT_TEETH } from '@/components/odontogram/odontogramData';
 import { encounterApi, EncounterDetail } from '@/lib/encounter';
 import { encounterSoapApi } from '@/lib/encounter-soap';
 import { physicalExaminationApi, PhysicalExamination } from '@/lib/physical-examination';
@@ -361,7 +361,7 @@ interface ProbingRow {
 }
 
 function emptyProbingRows(): ProbingRow[] {
-  return ALL_TEETH.map((toothNumber) => ({ toothNumber, buccal: '', lingual: '' }));
+  return PERMANENT_TEETH.map((toothNumber) => ({ toothNumber, buccal: '', lingual: '' }));
 }
 
 function dentalExamFromResponse(data: DentalExamination | null): DentalExamState {

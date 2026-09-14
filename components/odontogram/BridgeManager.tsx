@@ -6,7 +6,7 @@ import ConfirmationModal from '@/components/feedback/ConfirmationModal';
 import { ApiError } from '@/lib/api-client';
 import { odontogramApi, type DentalBridge } from '@/lib/odontogram';
 import { useToast } from '@/lib/toast-context';
-import { ALL_TEETH } from './odontogramData';
+import { PERMANENT_TEETH } from './odontogramData';
 
 interface BridgeManagerProps {
   patientId: number;
@@ -14,7 +14,7 @@ interface BridgeManagerProps {
   onChange: () => void;
 }
 
-const TOOTH_OPTIONS = ALL_TEETH.map((t) => ({ value: String(t), label: String(t) }));
+const TOOTH_OPTIONS = PERMANENT_TEETH.map((t) => ({ value: String(t), label: String(t) }));
 
 /** Gigi Tiruan Cekat (fixed bridge) spans a range of teeth, so it's managed
  * separately from a single tooth's own conditions — a connecting bar is
