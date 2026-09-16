@@ -11,6 +11,8 @@ import { UPPER_ROW, LOWER_ROW, QUADRANT_ROWS, PERMANENT_TEETH, DECIDUOUS_TEETH, 
 
 interface OdontogramChartProps {
   patientId: number;
+  /** Fired with the full teeth list right after a tooth is saved, so a parent SOAP note can fold findings into Objective. */
+  onToothSaved?: (teeth: ToothCondition[]) => void;
 }
 
 const LEGEND_ITEMS: { swatch?: string; symbol?: string; label: string }[] = [
@@ -31,7 +33,7 @@ function rowIndexOf(tooth: number): { row: 'upper' | 'lower'; index: number } | 
   return null;
 }
 
-export default function OdontogramChart({ patientId }: OdontogramChartProps) {
+export default function OdontogramChart({ patientId, onToothSaved }: OdontogramChartProps) {
   const { success, error: showError } = useToast();
   const [data, setData] = useState<OdontogramData>({ teeth: [], bridges: [] });
   const [loading, setLoading] = useState(true);
@@ -39,13 +41,15 @@ export default function OdontogramChart({ patientId }: OdontogramChartProps) {
   const [submitting, setSubmitting] = useState(false);
   const [showLegend, setShowLegend] = useState(false);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (): Promise<OdontogramData | null> => {
     try {
       setLoading(true);
       const result = await odontogramApi.get(patientId);
       setData(result);
+      return result;
     } catch (err) {
       showError(err instanceof ApiError ? err.message : 'Gagal memuat odontogram');
+      return null;
     } finally {
       setLoading(false);
     }
@@ -64,7 +68,8 @@ export default function OdontogramChart({ patientId }: OdontogramChartProps) {
       await odontogramApi.upsertTooth(patientId, selectedTooth, payload);
       success(`Kondisi gigi ${selectedTooth} berhasil disimpan`);
       setSelectedTooth(null);
-      await load();
+      const refreshed = await load();
+      if (refreshed) onToothSaved?.(refreshed.teeth);
     } catch (err) {
       showError(err instanceof ApiError ? err.message : 'Gagal menyimpan kondisi gigi');
     } finally {

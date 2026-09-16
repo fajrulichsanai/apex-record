@@ -15,9 +15,10 @@ import SoapNoteView from '@/components/rekam-medis/SoapNoteView';
 import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
 import InformedConsentPanel from '@/components/rekam-medis/InformedConsentPanel';
 import OdontogramChart from '@/components/odontogram/OdontogramChart';
-import { UPPER_ROW, LOWER_ROW, PERMANENT_TEETH } from '@/components/odontogram/odontogramData';
+import { UPPER_ROW, LOWER_ROW, PERMANENT_TEETH, getToothLayout } from '@/components/odontogram/odontogramData';
 import { encounterApi, EncounterDetail } from '@/lib/encounter';
 import { encounterSoapApi } from '@/lib/encounter-soap';
+import type { ToothCondition } from '@/lib/odontogram';
 import { physicalExaminationApi, PhysicalExamination } from '@/lib/physical-examination';
 import { dentalExaminationApi, DentalExamination, ProbingDepthEntry } from '@/lib/dental-examination';
 import { reservationsApi } from '@/lib/reservations';
@@ -449,6 +450,48 @@ function composeObjectiveFromDentalExam(exam: DentalExamState, probing: ProbingR
   return ['Pemeriksaan Gigi Lanjutan:', ...lines].join('\n');
 }
 
+// ----- Odontogram: folds per-tooth karies/tambalan findings into Objective
+// alongside the two exams above. A tooth with karies on any surface also
+// gets the standard baseline diagnostic-test findings for an uncomplicated,
+// vital tooth (sondasi/perkusi/palpasi/termal/druk/mobility/pendarahan) —
+// the dentist edits these in Objective's free text if the actual case
+// differs (e.g. pulp/periapical involvement).
+const KARIES_BASELINE_FINDINGS =
+  'Sondasi (+), Perkusi (-), Palpasi (-), Termal (+), Druk (-), Mobility (-), Pendarahan (-)';
+
+function composeObjectiveFromOdontogram(teeth: ToothCondition[]): string {
+  const lines: string[] = [];
+
+  for (const tooth of teeth) {
+    const layout = getToothLayout(tooth.toothNumber);
+    const surfaces: [string | undefined, string][] = [
+      [tooth.surfaceMesial, 'mesial'],
+      [tooth.surfaceDistal, 'distal'],
+      [tooth.surfaceVestibular, 'vestibular'],
+      [tooth.surfaceLingual, layout.lingualLabel.toLowerCase()],
+      [tooth.surfaceOcclusal, layout.centerLabel.toLowerCase()],
+    ];
+
+    const kariesSurfaces = surfaces.filter(([v]) => v === 'karies').map(([, label]) => label);
+    const kompositSurfaces = surfaces.filter(([v]) => v === 'komposit').map(([, label]) => label);
+    const gicSurfaces = surfaces.filter(([v]) => v === 'gic').map(([, label]) => label);
+
+    if (!kariesSurfaces.length && !kompositSurfaces.length && !gicSurfaces.length) continue;
+
+    const parts: string[] = [];
+    if (kariesSurfaces.length) parts.push(`Karies (${kariesSurfaces.join(', ')})`);
+    if (kompositSurfaces.length) parts.push(`Tambalan komposit (${kompositSurfaces.join(', ')})`);
+    if (gicSurfaces.length) parts.push(`Tambalan GIC (${gicSurfaces.join(', ')})`);
+
+    let line = `Gigi ${tooth.toothNumber}: ${parts.join('; ')}.`;
+    if (kariesSurfaces.length) line += ` ${KARIES_BASELINE_FINDINGS}.`;
+    lines.push(line);
+  }
+
+  if (!lines.length) return '';
+  return ['Pemeriksaan Odontogram:', ...lines].join('\n');
+}
+
 function initialsFromName(name?: string) {
   if (!name) return '?';
   return (
@@ -490,11 +533,17 @@ export default function RekamMedisPage() {
   const [dentalExamUpdatedAt, setDentalExamUpdatedAt] = useState<string | null>(null);
   const [probingDepths, setProbingDepths] = useState<ProbingRow[]>(emptyProbingRows());
   const [submittingDentalExam, setSubmittingDentalExam] = useState(false);
+  // Mirrors OdontogramChart's own teeth list — reported via onToothSaved —
+  // just so composeObjectiveFromOdontogram has fresh data to recompute from
+  // whenever the *other* two exams are saved (see applyExamToObjective /
+  // applyDentalExamToObjective below).
+  const [odontogramTeeth, setOdontogramTeeth] = useState<ToothCondition[]>([]);
 
   // Tracks the combined auto-generated block (Pemeriksaan Fisik + Pemeriksaan
-  // Gigi Lanjutan) last written into Objective, so saving either exam can
-  // replace just that block instead of clobbering whatever the doctor typed
-  // after it, or duplicating the other exam's contribution.
+  // Gigi Lanjutan + Pemeriksaan Odontogram) last written into Objective, so
+  // saving any one of the three can replace just that block instead of
+  // clobbering whatever the doctor typed after it, or duplicating the
+  // others' contribution.
   const lastAutoObjectiveRef = useRef('');
 
   const [subjective, setSubjective] = useState('');
@@ -649,13 +698,23 @@ export default function RekamMedisPage() {
   const applyExamToObjective = (examValues: Record<ExamField, string>, painPointCount: number) => {
     const physicalBlock = composeObjectiveFromExam(examValues, painPointCount);
     const dentalBlock = composeObjectiveFromDentalExam(dentalExam, probingDepths);
-    mergeAutoBlockIntoObjective([physicalBlock, dentalBlock].filter(Boolean).join('\n\n'));
+    const odontogramBlock = composeObjectiveFromOdontogram(odontogramTeeth);
+    mergeAutoBlockIntoObjective([physicalBlock, dentalBlock, odontogramBlock].filter(Boolean).join('\n\n'));
   };
 
   const applyDentalExamToObjective = (dentalValues: DentalExamState, probingValues: ProbingRow[]) => {
     const physicalBlock = composeObjectiveFromExam(exam, painPoints.length);
     const dentalBlock = composeObjectiveFromDentalExam(dentalValues, probingValues);
-    mergeAutoBlockIntoObjective([physicalBlock, dentalBlock].filter(Boolean).join('\n\n'));
+    const odontogramBlock = composeObjectiveFromOdontogram(odontogramTeeth);
+    mergeAutoBlockIntoObjective([physicalBlock, dentalBlock, odontogramBlock].filter(Boolean).join('\n\n'));
+  };
+
+  const applyOdontogramToObjective = (teeth: ToothCondition[]) => {
+    setOdontogramTeeth(teeth);
+    const physicalBlock = composeObjectiveFromExam(exam, painPoints.length);
+    const dentalBlock = composeObjectiveFromDentalExam(dentalExam, probingDepths);
+    const odontogramBlock = composeObjectiveFromOdontogram(teeth);
+    mergeAutoBlockIntoObjective([physicalBlock, dentalBlock, odontogramBlock].filter(Boolean).join('\n\n'));
   };
 
   const handleSaveExam = async (e: React.FormEvent) => {
@@ -1304,7 +1363,7 @@ export default function RekamMedisPage() {
                       </div>
                       <div className="rm-section-body">
                         {detail.patient ? (
-                          <OdontogramChart patientId={detail.patient.id} />
+                          <OdontogramChart patientId={detail.patient.id} onToothSaved={applyOdontogramToObjective} />
                         ) : (
                           <div className="rm-loading">Data pasien tidak ditemukan</div>
                         )}
