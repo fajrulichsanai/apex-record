@@ -463,6 +463,18 @@ function ListKunjunganPageInner() {
                         Batalkan
                       </button>
                     )}
+                    {(selectedVisit.status === 'in_progress' || selectedVisit.status === 'finished') && (
+                      <button
+                        className="btn-outline"
+                        style={{ fontSize: '12.5px' }}
+                        onClick={() => router.push(`/odontogram?encounterId=${selectedVisit.encounterId}`)}
+                      >
+                        <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                          dentistry
+                        </span>
+                        Odontogram
+                      </button>
+                    )}
                     {selectedVisit.status === 'finished' && (
                       <button
                         className="btn-outline"
