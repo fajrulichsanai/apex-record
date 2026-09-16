@@ -86,10 +86,51 @@ export const SURFACE_OPTIONS = [
 ];
 
 export const SURFACE_COLORS: Record<string, string> = {
-  karies: '#1A1A1A',
-  komposit: '#10B981',
+  karies: '#1A2340',
+  komposit: '#2DCB8A',
   gic: '#EC4899',
 };
+
+export interface QuadrantRow {
+  left: number[];
+  right: number[];
+  leftLabel: string;
+  rightLabel: string;
+  /** Bridges (fixed prosthesis) only apply to permanent teeth; null = deciduous row, no bridge bar rendered. */
+  bridgeRow: 'upper' | 'lower' | null;
+}
+
+/** Row order top-to-bottom: permanent upper, deciduous upper, deciduous lower, permanent lower — deciduous rows nested inside the permanent arch, matching how mixed dentition is charted. */
+export const QUADRANT_ROWS: QuadrantRow[] = [
+  {
+    left: UPPER_ROW.slice(0, 8),
+    right: UPPER_ROW.slice(8),
+    leftLabel: 'Kuadran 1 (Kanan Atas Permanen)',
+    rightLabel: 'Kuadran 2 (Kiri Atas Permanen)',
+    bridgeRow: 'upper',
+  },
+  {
+    left: UPPER_ROW_DECIDUOUS.slice(0, 5),
+    right: UPPER_ROW_DECIDUOUS.slice(5),
+    leftLabel: 'Kuadran 5 (Kanan Atas Desidui)',
+    rightLabel: 'Kuadran 6 (Kiri Atas Desidui)',
+    bridgeRow: null,
+  },
+  {
+    left: LOWER_ROW_DECIDUOUS.slice(0, 5),
+    right: LOWER_ROW_DECIDUOUS.slice(5),
+    leftLabel: 'Kuadran 8 (Kanan Bawah Desidui)',
+    rightLabel: 'Kuadran 7 (Kiri Bawah Desidui)',
+    bridgeRow: null,
+  },
+  {
+    left: LOWER_ROW.slice(0, 8),
+    right: LOWER_ROW.slice(8),
+    leftLabel: 'Kuadran 4 (Kanan Bawah Permanen)',
+    rightLabel: 'Kuadran 3 (Kiri Bawah Permanen)',
+    bridgeRow: 'lower',
+  },
+];
 
 /** Annotation shown above the tooth. */
 export const TEKS_ATAS_OPTIONS = [

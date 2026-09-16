@@ -7,11 +7,21 @@ import { useToast } from '@/lib/toast-context';
 import ToothBox from './ToothBox';
 import ToothDetailModal from './ToothDetailModal';
 import BridgeManager from './BridgeManager';
-import { UPPER_ROW, LOWER_ROW, UPPER_ROW_DECIDUOUS, LOWER_ROW_DECIDUOUS, PERMANENT_TEETH, DECIDUOUS_TEETH, calculateDentalIndex } from './odontogramData';
+import { UPPER_ROW, LOWER_ROW, QUADRANT_ROWS, PERMANENT_TEETH, DECIDUOUS_TEETH, calculateDentalIndex } from './odontogramData';
 
 interface OdontogramChartProps {
   patientId: number;
 }
+
+const LEGEND_ITEMS: { swatch?: string; symbol?: string; label: string }[] = [
+  { swatch: '#1A2340', label: 'Karies' },
+  { swatch: '#2DCB8A', label: 'Komposit' },
+  { swatch: '#EC4899', label: 'GIC' },
+  { symbol: '✕', label: 'Missing' },
+  { symbol: '#', label: 'CFR (Fraktur mahkota)' },
+  { symbol: '✓', label: 'RRX (Sisa akar)' },
+  { symbol: '▽', label: 'RCT (Perawatan saluran akar)' },
+];
 
 function rowIndexOf(tooth: number): { row: 'upper' | 'lower'; index: number } | null {
   let idx = UPPER_ROW.indexOf(tooth);
@@ -27,6 +37,7 @@ export default function OdontogramChart({ patientId }: OdontogramChartProps) {
   const [loading, setLoading] = useState(true);
   const [selectedTooth, setSelectedTooth] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showLegend, setShowLegend] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -61,13 +72,14 @@ export default function OdontogramChart({ patientId }: OdontogramChartProps) {
     }
   };
 
-  const renderRow = (teeth: number[], rowName: 'upper' | 'lower' | null) => {
-    const bridgesInRow = rowName
+  const renderRowGroup = (row: (typeof QUADRANT_ROWS)[number], key: number) => {
+    const teeth = [...row.left, ...row.right];
+    const bridgesInRow = row.bridgeRow
       ? data.bridges
           .map((b) => {
             const from = rowIndexOf(b.fromTooth);
             const to = rowIndexOf(b.toTooth);
-            if (!from || !to || from.row !== rowName || to.row !== rowName) return null;
+            if (!from || !to || from.row !== row.bridgeRow || to.row !== row.bridgeRow) return null;
             const start = Math.min(from.index, to.index);
             const end = Math.max(from.index, to.index);
             return { ...b, start, end };
@@ -76,22 +88,33 @@ export default function OdontogramChart({ patientId }: OdontogramChartProps) {
       : [];
 
     return (
-      <div className="odt-row" style={{ gridTemplateColumns: `repeat(${teeth.length}, 1fr)` }}>
-        {teeth.map((tooth, i) => (
-          <div key={tooth} className="odt-tooth-cell" style={{ gridColumn: i + 1, gridRow: 1 }}>
-            <ToothBox toothNumber={tooth} condition={conditionOf(tooth)} onClick={() => setSelectedTooth(tooth)} />
-          </div>
-        ))}
-        {bridgesInRow.map((b) => (
-          <div
-            key={b.id}
-            className="odt-bridge-bar"
-            style={{ gridColumn: `${b.start + 1} / ${b.end + 2}`, gridRow: 2 }}
-            title={`${b.label}: ${b.fromTooth}–${b.toTooth}`}
-          >
-            {b.label}
-          </div>
-        ))}
+      <div className="odontogram-row-group" key={key}>
+        <div className="odontogram-quadrant-labels">
+          <span>{row.leftLabel}</span>
+          <span>{row.rightLabel}</span>
+        </div>
+        <div className="odontogram-row" style={{ gridTemplateColumns: `repeat(${teeth.length}, 1fr)` }}>
+          {teeth.map((tooth, i) => (
+            <div key={tooth} className="odontogram-row-cell" style={{ gridColumn: i + 1, gridRow: 1 }}>
+              <ToothBox
+                toothNumber={tooth}
+                condition={conditionOf(tooth)}
+                isSelected={selectedTooth === tooth}
+                onClick={() => setSelectedTooth(tooth)}
+              />
+            </div>
+          ))}
+          {bridgesInRow.map((b) => (
+            <div
+              key={b.id}
+              className="odt-bridge-bar"
+              style={{ gridColumn: `${b.start + 1} / ${b.end + 2}`, gridRow: 2 }}
+              title={`${b.label}: ${b.fromTooth}–${b.toTooth}`}
+            >
+              {b.label}
+            </div>
+          ))}
+        </div>
       </div>
     );
   };
@@ -105,56 +128,92 @@ export default function OdontogramChart({ patientId }: OdontogramChartProps) {
 
   return (
     <div className="odt-chart">
-      <div className="odt-legend">
-        <span className="odt-legend-item"><span className="odt-swatch" style={{ background: '#1A1A1A' }} /> Karies</span>
-        <span className="odt-legend-item"><span className="odt-swatch" style={{ background: '#10B981' }} /> Komposit</span>
-        <span className="odt-legend-item"><span className="odt-swatch" style={{ background: '#EC4899' }} /> GIC</span>
-        <span className="odt-legend-item"><span className="odt-swatch odt-swatch-x">✕</span> Hilang/Dicabut (MISSING)</span>
-        <span className="odt-legend-item"><span className="odt-badge-sample" style={{ background: '#1A2340' }}>RCT</span> Perawatan Saluran Akar</span>
-        <span className="odt-legend-item"><span className="odt-teks-sample" style={{ color: '#34A853' }}>SOU</span> Sound (sehat)</span>
-        <span className="odt-legend-item"><span className="odt-teks-sample" style={{ color: '#EA4335' }}>CFR/RRX</span> Fraktur/Sisa Akar</span>
-        <span className="odt-legend-item"><span className="odt-teks-sample" style={{ color: '#FBBC04' }}>ANO/NON</span> Anomali/Non-vital</span>
+      <div className="odontogram-toolbar">
+        <button type="button" className="icon-btn" title="Legenda" onClick={() => setShowLegend((v) => !v)}>
+          <span className="material-symbols-rounded">help_outline</span>
+        </button>
+        <button type="button" className="icon-btn" title="Muat ulang" onClick={load}>
+          <span className="material-symbols-rounded">refresh</span>
+        </button>
       </div>
 
-      <div className="odt-summary">
-        <div className="odt-summary-group">
-          <span className="odt-summary-title">DMFT (Gigi Permanen)</span>
-          <div className="odt-summary-values">
-            <span>D: {dmft.decayed}</span>
-            <span>M: {dmft.missingOrExtracted}</span>
-            <span>F: {dmft.filled}</span>
-            <strong>DMFT: {dmft.total}</strong>
+      {showLegend && (
+        <div className="odontogram-legend">
+          {LEGEND_ITEMS.map((item) => (
+            <div className="odontogram-legend-item" key={item.label}>
+              {item.swatch ? (
+                <span className="odontogram-legend-swatch" style={{ background: item.swatch }} />
+              ) : (
+                <span className="odontogram-legend-symbol">{item.symbol}</span>
+              )}
+              {item.label}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="odontogram-chart">{QUADRANT_ROWS.map((row, i) => renderRowGroup(row, i))}</div>
+
+      <div className="odontogram-index-grid">
+        <div className="odontogram-index-card" style={{ '--index-color': '#4F7EF8' } as React.CSSProperties}>
+          <div className="odontogram-index-heading">
+            <div>
+              <div className="odontogram-index-title">DMFT</div>
+              <div className="odontogram-index-subtitle">Gigi Permanen</div>
+            </div>
+            <div className="odontogram-index-total">
+              <span>Total</span> {dmft.total}
+            </div>
+          </div>
+          <div className="odontogram-index-divider" />
+          <div className="odontogram-index-stats">
+            <div className="odontogram-index-stat">
+              <div className="odontogram-index-stat-value">{dmft.decayed}</div>
+              <div className="odontogram-index-stat-label">D</div>
+              <div className="odontogram-index-stat-desc">Decayed</div>
+            </div>
+            <div className="odontogram-index-stat">
+              <div className="odontogram-index-stat-value">{dmft.missingOrExtracted}</div>
+              <div className="odontogram-index-stat-label">M</div>
+              <div className="odontogram-index-stat-desc">Missing</div>
+            </div>
+            <div className="odontogram-index-stat">
+              <div className="odontogram-index-stat-value">{dmft.filled}</div>
+              <div className="odontogram-index-stat-label">F</div>
+              <div className="odontogram-index-stat-desc">Filled</div>
+            </div>
           </div>
         </div>
-        <div className="odt-summary-group">
-          <span className="odt-summary-title">deft (Gigi Susu)</span>
-          <div className="odt-summary-values">
-            <span>d: {deft.decayed}</span>
-            <span>e: {deft.missingOrExtracted}</span>
-            <span>f: {deft.filled}</span>
-            <strong>deft: {deft.total}</strong>
+
+        <div className="odontogram-index-card" style={{ '--index-color': '#2DCB8A' } as React.CSSProperties}>
+          <div className="odontogram-index-heading">
+            <div>
+              <div className="odontogram-index-title">deft</div>
+              <div className="odontogram-index-subtitle">Gigi Susu</div>
+            </div>
+            <div className="odontogram-index-total">
+              <span>Total</span> {deft.total}
+            </div>
+          </div>
+          <div className="odontogram-index-divider" />
+          <div className="odontogram-index-stats">
+            <div className="odontogram-index-stat">
+              <div className="odontogram-index-stat-value">{deft.decayed}</div>
+              <div className="odontogram-index-stat-label">d</div>
+              <div className="odontogram-index-stat-desc">Decayed</div>
+            </div>
+            <div className="odontogram-index-stat">
+              <div className="odontogram-index-stat-value">{deft.missingOrExtracted}</div>
+              <div className="odontogram-index-stat-label">e</div>
+              <div className="odontogram-index-stat-desc">Extracted</div>
+            </div>
+            <div className="odontogram-index-stat">
+              <div className="odontogram-index-stat-value">{deft.filled}</div>
+              <div className="odontogram-index-stat-label">f</div>
+              <div className="odontogram-index-stat-desc">Filled</div>
+            </div>
           </div>
         </div>
-      </div>
-
-      <div className="odt-arch">
-        <div className="odt-arch-label">Rahang Atas — Permanen</div>
-        <div className="odt-row-scroll">{renderRow(UPPER_ROW, 'upper')}</div>
-      </div>
-
-      <div className="odt-arch odt-arch-deciduous">
-        <div className="odt-arch-label">Rahang Atas — Susu</div>
-        <div className="odt-row-scroll">{renderRow(UPPER_ROW_DECIDUOUS, null)}</div>
-      </div>
-
-      <div className="odt-arch odt-arch-deciduous">
-        <div className="odt-row-scroll">{renderRow(LOWER_ROW_DECIDUOUS, null)}</div>
-        <div className="odt-arch-label">Rahang Bawah — Susu</div>
-      </div>
-
-      <div className="odt-arch">
-        <div className="odt-row-scroll">{renderRow(LOWER_ROW, 'lower')}</div>
-        <div className="odt-arch-label">Rahang Bawah — Permanen</div>
       </div>
 
       <BridgeManager patientId={patientId} bridges={data.bridges} onChange={load} />
