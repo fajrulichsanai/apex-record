@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Reveal from './Reveal';
 
 const APP_URL = 'https://staging.apexrecord.my.id';
 
@@ -8,6 +9,33 @@ function CheckIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none">
       <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function StarterIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M9 3a3 3 0 013 3c0 1.5-1 2.2-1 3.5 0 .6.2 1 .2 1.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+      <path d="M15 3a3 3 0 00-3 3c0 1.5 1 2.2 1 3.5 0 3-1.5 4-1.5 8.5a2.5 2.5 0 005 0c0-2 .3-3.2.5-4" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function ProIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M12 3l2.4 5.5L20 9l-4.2 3.8L17 19l-5-3.2L7 19l1.2-6.2L4 9l5.6-.5L12 3z" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function MultiIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M3 21V8l7-4 7 4v13" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" />
+      <path d="M14 21V11l7-3v13" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" />
+      <path d="M8 12h1M8 15h1M8 18h1" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
     </svg>
   );
 }
@@ -62,8 +90,8 @@ export default function PricingSection() {
 
         <div className="price-grid">
           {/* STARTER */}
-          <div className="price-card">
-            <div className="price-icon">🩺</div>
+          <Reveal className="price-card">
+            <div className="price-icon"><StarterIcon /></div>
             <div className="price-name">Starter</div>
             <div className="price-sub-desc">Untuk klinik yang baru memulai</div>
             <div className="price-amt">
@@ -81,12 +109,12 @@ export default function PricingSection() {
               <li><CheckIcon />1 klinik</li>
             </ul>
             <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-block">Pilih Paket</a>
-          </div>
+          </Reveal>
 
           {/* PRO */}
-          <div className="price-card feat">
+          <Reveal delay={80} className="price-card feat">
             <span className="price-badge">Paling Direkomendasikan</span>
-            <div className="price-icon">⭐</div>
+            <div className="price-icon"><ProIcon /></div>
             <div className="price-name">Pro</div>
             <div className="price-sub-desc">Untuk klinik yang terus berkembang</div>
             <div className="price-amt">
@@ -104,11 +132,11 @@ export default function PricingSection() {
               <li><CheckIcon />1 klinik</li>
             </ul>
             <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-grad btn-block">Pilih Paket</a>
-          </div>
+          </Reveal>
 
           {/* MULTI KLINIK */}
-          <div className="price-card">
-            <div className="price-icon">🏥</div>
+          <Reveal delay={160} className="price-card">
+            <div className="price-icon"><MultiIcon /></div>
             <div className="price-name">Multi Klinik</div>
             <div className="price-sub-desc">Untuk jaringan atau grup klinik</div>
             <div className="price-amt">
@@ -129,7 +157,7 @@ export default function PricingSection() {
               <li><CheckIcon />Aktivasi dibantu tim ApexRecord</li>
             </ul>
             <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-block">Pilih Paket</a>
-          </div>
+          </Reveal>
         </div>
       </div>
     </section>
