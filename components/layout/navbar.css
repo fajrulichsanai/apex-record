@@ -37,7 +37,7 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: #f5f6fb;
+  background: #FAF9F6;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,8 +70,8 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #e3e6fb;
-  color: var(--primary);
+  background: var(--accent-soft);
+  color: var(--accent);
   font-size: 12px;
   font-weight: 700;
   display: flex;
