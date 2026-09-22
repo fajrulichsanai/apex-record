@@ -1,23 +1,25 @@
 .user-mgmt-page {
-  --bg:        #F5F6FA;
+  --bg:        #FAF9F6;
   --surface:   #FFFFFF;
-  --border:    #E8EAF0;
-  --primary:   #4F7EF8;
-  --primary-light: #EEF2FF;
-  --primary-hover: #3B6CE6;
-  --success:   #22C55E;
-  --warning:   #F59E0B;
-  --danger:    #EF4444;
-  --text-1:    #111827;
-  --text-2:    #6B7280;
-  --text-3:    #9CA3AF;
-  --badge-admin:  #EEF2FF;
-  --badge-admin-text: #4F7EF8;
-  --badge-doc:    #F0FDF4;
-  --badge-doc-text:   #16A34A;
+  --border:    #E7E4DD;
+  --primary:   #16150F;
+  --primary-light: #E3F3DA;
+  --primary-hover: #262419;
+  --accent:    #3E8E36;
+  --info:      #1D5FAE;
+  --success:   #3E8E36;
+  --warning:   #8A5A00;
+  --danger:    #C1381F;
+  --text-1:    #17160F;
+  --text-2:    #55534A;
+  --text-3:    #8D8B7E;
+  --badge-admin:  #DCEAFB;
+  --badge-admin-text: #1D5FAE;
+  --badge-doc:    #E3F3DA;
+  --badge-doc-text:   #2F7328;
   --radius:    12px;
-  --shadow-sm: 0 1px 3px rgba(0,0,0,.07);
-  --shadow-md: 0 4px 16px rgba(0,0,0,.10);
+  --shadow-sm: 0 1px 3px rgba(23,22,15,.06);
+  --shadow-md: 0 4px 16px rgba(23,22,15,.1);
   font-family: 'Inter', sans-serif;
   color: var(--text-1);
 }
@@ -31,7 +33,7 @@
   background: var(--primary-light);
   display: grid; place-items: center; flex-shrink: 0;
 }
-.user-mgmt-page .page-header-icon svg { width: 22px; height: 22px; color: var(--primary); }
+.user-mgmt-page .page-header-icon svg { width: 22px; height: 22px; color: var(--accent); }
 .user-mgmt-page .page-header-text h1 { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
 .user-mgmt-page .page-header-text p { font-size: 13.5px; color: var(--text-2); margin-top: 2px; }
 .user-mgmt-page .page-header-actions { margin-left: auto; display: flex; gap: 10px; align-items: center; }
@@ -49,7 +51,7 @@
   font-size: 12.5px; font-weight: 500; color: var(--text-2);
 }
 .user-mgmt-page .stat-dot { width: 8px; height: 8px; border-radius: 50%; }
-.user-mgmt-page .dot-blue  { background: var(--primary); }
+.user-mgmt-page .dot-blue  { background: var(--info); }
 .user-mgmt-page .dot-green { background: var(--success); }
 .user-mgmt-page .dot-purple{ background: #A855F7; }
 .user-mgmt-page .stat-pill strong { color: var(--text-1); }
@@ -102,8 +104,8 @@
 }
 .user-mgmt-page .search-box input::placeholder { color: var(--text-3); }
 .user-mgmt-page .search-box input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(62,142,54,.12);
 }
 .user-mgmt-page .search-icon {
   position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
@@ -122,8 +124,8 @@
 }
 .user-mgmt-page .filter-btn.active {
   background: var(--primary-light);
-  border-color: var(--primary);
-  color: var(--primary);
+  border-color: var(--accent);
+  color: var(--accent);
   font-weight: 600;
 }
 .user-mgmt-page .filter-btn:hover:not(.active) { background: var(--bg); }
@@ -139,7 +141,7 @@
 }
 .user-mgmt-page .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
 .user-mgmt-page .btn-primary:disabled {
-  background: #D1D5DB; color: #9CA3AF;
+  background: #D6D3C9; color: #9CA3AF;
   cursor: not-allowed; opacity: 0.6;
 }
 .user-mgmt-page .btn-primary svg { width: 15px; height: 15px; }
@@ -171,7 +173,7 @@
 }
 .user-mgmt-page .user-card:hover {
   box-shadow: var(--shadow-md);
-  border-color: #D1D5DB;
+  border-color: #D6D3C9;
 }
 .user-mgmt-page .user-avatar {
   width: 44px; height: 44px; border-radius: 12px;
@@ -179,9 +181,9 @@
   font-size: 15px; font-weight: 700; color: #fff;
   flex-shrink: 0; position: relative;
 }
-.user-mgmt-page .avatar-admin { background: linear-gradient(135deg,#4F7EF8,#7B5CFA); }
-.user-mgmt-page .avatar-doc   { background: linear-gradient(135deg,#10B981,#059669); }
-.user-mgmt-page .avatar-default { background: linear-gradient(135deg,#64748B,#475569); }
+.user-mgmt-page .avatar-admin { background: var(--info); }
+.user-mgmt-page .avatar-doc   { background: var(--accent); }
+.user-mgmt-page .avatar-default { background: #6B6A5F; }
 .user-mgmt-page .status-dot {
   position: absolute; bottom: -2px; right: -2px;
   width: 12px; height: 12px; border-radius: 50%;
@@ -217,9 +219,9 @@
 }
 .user-mgmt-page .badge-admin { background: var(--badge-admin); color: var(--badge-admin-text); }
 .user-mgmt-page .badge-dokter { background: var(--badge-doc); color: var(--badge-doc-text); }
-.user-mgmt-page .badge-pending { background: #FEF3C7; color: #D97706; }
-.user-mgmt-page .badge-aktif { background: #F0FDF4; color: #16A34A; }
-.user-mgmt-page .badge-nonaktif { background: #F9FAFB; color: var(--text-2); }
+.user-mgmt-page .badge-pending { background: #FCEACB; color: var(--warning); }
+.user-mgmt-page .badge-aktif { background: var(--badge-doc); color: var(--accent); }
+.user-mgmt-page .badge-nonaktif { background: #F1EFE9; color: var(--text-2); }
 
 .user-mgmt-page .user-actions {
   display: flex; gap: 8px; align-items: center; flex-shrink: 0;
@@ -234,7 +236,7 @@
   position: relative;
 }
 .user-mgmt-page .user-action-btn:hover { background: var(--bg); color: var(--text-1); }
-.user-mgmt-page .user-action-btn.edit:hover { border-color: var(--primary); color: var(--primary); }
+.user-mgmt-page .user-action-btn.edit:hover { border-color: var(--accent); color: var(--accent); }
 .user-mgmt-page .user-action-btn.delete:hover { border-color: var(--danger); color: var(--danger); }
 .user-mgmt-page .user-action-btn svg { width: 15px; height: 15px; }
 
@@ -306,7 +308,7 @@
 }
 .user-mgmt-page .satusehat-logo {
   width: 36px; height: 36px; border-radius: 10px;
-  background: linear-gradient(135deg,#0EA5E9,#2563EB);
+  background: var(--info);
   display: grid; place-items: center;
 }
 .user-mgmt-page .satusehat-logo svg { width: 18px; height: 18px; color: #fff; }
@@ -327,7 +329,7 @@
   text-align: left;
 }
 .user-mgmt-page .method-btn.active {
-  border-color: var(--primary);
+  border-color: var(--accent);
   background: var(--primary-light);
 }
 .user-mgmt-page .method-btn-label {
@@ -335,7 +337,7 @@
   color: var(--text-1);
   display: flex; align-items: center; gap: 6px;
 }
-.user-mgmt-page .method-btn.active .method-btn-label { color: var(--primary); }
+.user-mgmt-page .method-btn.active .method-btn-label { color: var(--accent); }
 .user-mgmt-page .method-btn-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
 .user-mgmt-page .method-btn svg { width: 14px; height: 14px; }
 
@@ -349,8 +351,8 @@
   outline: none; transition: all .15s;
 }
 .user-mgmt-page .search-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(62,142,54,.12);
 }
 .user-mgmt-page .search-input::placeholder { color: var(--text-3); }
 .user-mgmt-page .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -365,8 +367,8 @@
   outline: none; transition: all .15s;
 }
 .user-mgmt-page .form-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(62,142,54,.12);
   background: #fff;
 }
 .user-mgmt-page .form-input::placeholder { color: var(--text-3); }
@@ -384,7 +386,7 @@
 }
 .user-mgmt-page .search-result-card {
   background: var(--bg);
-  border: 1.5px solid var(--primary);
+  border: 1.5px solid var(--accent);
   border-radius: var(--radius);
   padding: 16px 18px;
   display: flex; align-items: center; gap: 14px;
@@ -398,7 +400,7 @@
 }
 .user-mgmt-page .result-avatar {
   width: 44px; height: 44px; border-radius: 10px;
-  background: linear-gradient(135deg,#0EA5E9,#2563EB);
+  background: var(--info);
   display: grid; place-items: center;
   color: #fff; font-weight: 700; font-size: 14px; flex-shrink: 0;
 }
@@ -429,7 +431,7 @@
 /* ── Modal ── */
 .user-mgmt-page .modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,.35); backdrop-filter: blur(2px);
+  background: rgba(23,22,15,.4); backdrop-filter: blur(2px);
   display: flex; align-items: center; justify-content: center;
   z-index: 100;
   opacity: 0; pointer-events: none; transition: opacity .2s;
@@ -446,7 +448,7 @@
 .user-mgmt-page .modal-overlay.open .modal { transform: scale(1) translateY(0); }
 .user-mgmt-page .modal-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
 .user-mgmt-page .modal-icon { width: 40px; height: 40px; }
-.user-mgmt-page .modal-icon-satusehat { background: linear-gradient(135deg,#0EA5E9,#2563EB); }
+.user-mgmt-page .modal-icon-satusehat { background: var(--info); }
 .user-mgmt-page .modal-icon-satusehat svg { color: #fff; }
 .user-mgmt-page .modal-title { font-size: 16px; font-weight: 700; }
 .user-mgmt-page .modal-subtitle { font-size: 13px; color: var(--text-2); margin-top: 2px; }
@@ -480,7 +482,7 @@
   border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   margin: 0 auto 20px;
-  background: #F3F4F6;
+  background: #F1EFE9;
 }
 .user-mgmt-page .confirmation-icon-wrapper svg { width: 32px; height: 32px; }
 .user-mgmt-page .confirmation-title {
@@ -500,7 +502,7 @@
   background: var(--danger);
 }
 .user-mgmt-page .confirmation-buttons .btn-danger:hover:not(:disabled) {
-  background: #DC2626;
+  background: #A32E19;
 }
 
 .user-mgmt-page .role-selector { display: flex; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
@@ -510,14 +512,14 @@
   border-radius: 10px; cursor: pointer;
   text-align: center; transition: all .15s;
 }
-.user-mgmt-page .role-card:hover { border-color: var(--primary); }
-.user-mgmt-page .role-card.selected { border-color: var(--primary); background: var(--primary-light); }
+.user-mgmt-page .role-card:hover { border-color: var(--accent); }
+.user-mgmt-page .role-card.selected { border-color: var(--accent); background: var(--primary-light); }
 .user-mgmt-page .role-card-icon {
   width: 36px; height: 36px; border-radius: 8px;
   display: grid; place-items: center; margin: 0 auto 8px;
   background: var(--bg);
 }
-.user-mgmt-page .role-card.selected .role-card-icon { background: var(--primary); }
+.user-mgmt-page .role-card.selected .role-card-icon { background: var(--accent); }
 .user-mgmt-page .role-card.selected .role-card-icon svg { color: #fff; }
 .user-mgmt-page .role-card-icon svg { width: 18px; height: 18px; color: var(--text-2); }
 .user-mgmt-page .role-card-label { font-size: 13px; font-weight: 600; color: var(--text-1); }

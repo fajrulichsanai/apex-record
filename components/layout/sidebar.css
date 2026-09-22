@@ -1,7 +1,7 @@
 /* ---------- SIDEBAR ---------- */
 .sidebar {
   width: 264px;
-  background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg) 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfaf6 60%, #f6f4ee 100%);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -11,7 +11,7 @@
   top: 0;
   height: 100vh;
   overflow-y: auto;
-  box-shadow: inset -1px 0 0 rgba(0, 0, 0, 0.02);
+  box-shadow: 1px 0 0 rgba(23, 22, 15, 0.03), 6px 0 24px -12px rgba(23, 22, 15, 0.12);
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -20,8 +20,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 0 8px 32px 8px;
-  margin-bottom: 8px;
+  padding: 0 8px 24px 8px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
 }
 
 .logo {

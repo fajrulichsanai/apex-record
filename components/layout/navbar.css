@@ -4,8 +4,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 36px;
-  border-bottom: 1px solid var(--border);
   background: #fff;
+  box-shadow: 0 1px 0 rgba(23, 22, 15, 0.05), 0 6px 20px -14px rgba(23, 22, 15, 0.12);
+  position: relative;
+  z-index: 5;
 }
 
 .topbar-title {
