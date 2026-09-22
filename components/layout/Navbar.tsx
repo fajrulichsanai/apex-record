@@ -99,9 +99,9 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                 top: '100%',
                 right: 0,
                 background: '#fff',
-                border: '1px solid #e5e7eb',
+                border: '1px solid #E7E4DD',
                 borderRadius: 8,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                boxShadow: '0 4px 12px rgba(23,22,15,0.08)',
                 minWidth: 140,
                 zIndex: 50,
               }}
