@@ -739,7 +739,7 @@ export default function UserManagementPage() {
           }}
         >
           <div className="confirmation-modal">
-            <div className="confirmation-icon-wrapper" style={{ color: confirmModal.isDangerous ? '#EF4444' : '#3B82F6' }}>
+            <div className="confirmation-icon-wrapper" style={{ color: confirmModal.isDangerous ? '#C1381F' : '#1D5FAE' }}>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 {confirmModal.isDangerous ? (
                   <path
