@@ -88,13 +88,6 @@ function ResetPasswordContent() {
           <h1>Kelola klinik<br/>lebih <span className="accent">cerdas.</span></h1>
           <p>Platform manajemen klinik end-to-end — rekam medis, antrian, farmasi, billing, dan analitik bisnis dalam satu ekosistem yang terintegrasi penuh.</p>
         </div>
-
-        <div className="footer-row">
-          <span className="badge">
-            <span className="dot-green"></span>
-            Terintegrasi SATUSEHAT &middot; Kemenkes RI
-          </span>
-        </div>
       </div>
 
       {/* RIGHT PANEL */}
