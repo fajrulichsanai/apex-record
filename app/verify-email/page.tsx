@@ -69,6 +69,14 @@ function VerifyEmailContent() {
 
   return (
     <div className="verify-page">
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      {/* eslint-disable-next-line @next/next/no-page-custom-font -- scoped intentionally to the auth pages */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+
       {/* LEFT PANEL */}
       <div className="left-panel">
         <div className="brand">
@@ -82,7 +90,7 @@ function VerifyEmailContent() {
         </div>
 
         <div className="hero">
-          <h1>Kelola klinik<br/>lebih cerdas.</h1>
+          <h1>Kelola klinik<br/>lebih <span className="accent">cerdas.</span></h1>
           <p>Platform manajemen klinik end-to-end — rekam medis, antrian, farmasi, billing, dan analitik bisnis dalam satu ekosistem yang terintegrasi penuh.</p>
 
           <div className="feature-pills">
@@ -210,6 +218,13 @@ function VerifyEmailPage() {
 function LoadingFallback() {
   return (
     <div className="verify-page">
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      {/* eslint-disable-next-line @next/next/no-page-custom-font -- scoped intentionally to the auth pages */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
       <div className="left-panel">
         <div className="brand">
           <div className="brand-icon">

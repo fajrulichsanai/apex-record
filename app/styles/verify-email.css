@@ -1,16 +1,35 @@
 :root {
-  --blue-700: #4f5fe0;
-  --blue-600: #5b6cf0;
-  --blue-500: #6b7bf5;
-  --blue-light: #818cf8;
-  --cyan: #38bdf8;
-  --text-dark: #1e1b2e;
-  --text-gray: #6b7280;
-  --border-light: #e5e7eb;
-  --bg-input: #f3f4f6;
-  --success-color: #15803d;
-  --error-color: #b91c1c;
-  --warning-color: #d97706;
+  --bg: #EEECE6;
+  --surface: #FFFFFF;
+  --surface-soft: #FAF9F6;
+  --ink: #17160F;
+  --ink-2: #55534A;
+  --ink-3: #8D8B7E;
+  --line: rgba(23, 22, 15, 0.08);
+  --line-strong: rgba(23, 22, 15, 0.14);
+  --accent: #3E8E36;
+  --accent-solid: #7ED957;
+  --accent-soft: #E3F3DA;
+  --accent-ink: #2B6B22;
+  --danger-soft: #FBE1DE;
+  --danger-ink: #C1381F;
+  --warn-soft: #FCEACB;
+  --warn-ink: #8A5A00;
+  --btn-ink: #16150F;
+  --btn-ink-hover: #262419;
+  --radius-lg: 22px;
+  --radius-md: 14px;
+  --display: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
+  --sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  /* Kept for back-compat with any inline reference. */
+  --text-dark: var(--ink);
+  --text-gray: var(--ink-2);
+  --border-light: var(--line-strong);
+  --bg-input: var(--surface-soft);
+  --success-color: var(--accent-ink);
+  --error-color: var(--danger-ink);
+  --warning-color: var(--warn-ink);
 }
 
 * {
@@ -20,8 +39,9 @@
 }
 
 body {
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--sans);
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
 }
 
 .verify-page {
@@ -34,13 +54,11 @@ body {
 .left-panel {
   flex: 1 1 55%;
   position: relative;
-  background:
-    linear-gradient(160deg, #4f5fe0 0%, #5b6cf0 35%, #5a8bf0 65%, #38bdf8 100%);
+  background: var(--btn-ink);
   background-image:
-    linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(255,255,255,0.06) 1px, transparent 1px),
-    linear-gradient(160deg, #4f5fe0 0%, #5b6cf0 35%, #5a8bf0 65%, #38bdf8 100%);
-  background-size: 60px 60px, 60px 60px, 100% 100%;
+    linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
   color: #fff;
   padding: 48px 64px;
   display: flex;
@@ -76,18 +94,19 @@ body {
 
 .brand-text {
   line-height: 1.1;
+  font-family: var(--display);
 }
 
 .brand-text .name {
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   display: block;
 }
 
 .brand-text .sub {
   font-size: 14px;
   font-weight: 400;
-  color: rgba(255,255,255,0.7);
+  color: rgba(255, 255, 255, 0.7);
   display: block;
 }
 
@@ -96,17 +115,22 @@ body {
 }
 
 .hero h1 {
+  font-family: var(--display);
   font-size: 56px;
-  font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: -1px;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
   margin-bottom: 24px;
+}
+
+.hero h1 .accent {
+  color: var(--accent-solid);
 }
 
 .hero p {
   font-size: 18px;
   line-height: 1.6;
-  color: rgba(255,255,255,0.85);
+  color: rgba(255, 255, 255, 0.72);
   max-width: 540px;
   margin-bottom: 32px;
 }
@@ -122,14 +146,13 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
   padding: 10px 18px;
   font-size: 14px;
   font-weight: 600;
   color: #fff;
-  backdrop-filter: blur(4px);
 }
 
 .pill svg {
@@ -146,8 +169,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 999px;
   padding: 10px 18px;
   font-size: 14px;
@@ -159,14 +182,14 @@ body {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #34d399;
-  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.25);
+  background: var(--accent-solid);
+  box-shadow: 0 0 0 3px rgba(126, 217, 87, 0.25);
 }
 
 /* ===== RIGHT PANEL ===== */
 .right-panel {
   flex: 1 1 45%;
-  background: #ffffff;
+  background: var(--surface);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -181,16 +204,17 @@ body {
 }
 
 .form-wrap h2 {
+  font-family: var(--display);
   font-size: 30px;
-  font-weight: 800;
-  color: var(--text-dark);
+  font-weight: 700;
+  color: var(--ink);
   margin-bottom: 16px;
   text-align: center;
 }
 
 .form-wrap > p.subtitle {
   font-size: 15px;
-  color: var(--text-gray);
+  color: var(--ink-2);
   margin-bottom: 32px;
 }
 
@@ -224,36 +248,36 @@ body {
 }
 
 .verify-icon.loading {
-  background: #f0f3ff;
-  color: var(--blue-600);
+  background: var(--accent-soft);
+  color: var(--accent);
   animation: spin 2s linear infinite;
 }
 
 .verify-icon.success {
-  background: #f0fdf4;
-  color: var(--success-color);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
 }
 
 .verify-icon.error {
-  background: #fef2f2;
-  color: var(--error-color);
+  background: var(--danger-soft);
+  color: var(--danger-ink);
 }
 
 .verify-icon.expired {
-  background: #fffbeb;
-  color: var(--warning-color);
+  background: var(--warn-soft);
+  color: var(--warn-ink);
 }
 
 .verify-message {
   font-size: 15px;
-  color: var(--text-gray);
+  color: var(--ink-2);
   margin-bottom: 16px;
   line-height: 1.6;
 }
 
 .verify-subtitle {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--ink-3);
   margin-bottom: 24px;
 }
 
@@ -265,11 +289,12 @@ body {
 
 .btn-primary {
   width: 100%;
-  background: linear-gradient(90deg, var(--blue-700), var(--blue-500));
+  background: var(--btn-ink);
   color: #fff;
   border: none;
-  border-radius: 12px;
+  border-radius: 999px;
   padding: 16px;
+  font-family: var(--sans);
   font-size: 16px;
   font-weight: 700;
   display: flex;
@@ -277,11 +302,11 @@ body {
   justify-content: center;
   gap: 10px;
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: background 0.15s ease;
 }
 
 .btn-primary:hover {
-  opacity: 0.9;
+  background: var(--btn-ink-hover);
 }
 
 .btn-primary svg {
@@ -292,7 +317,7 @@ body {
 .version-text {
   text-align: center;
   font-size: 13px;
-  color: #c7cad1;
+  color: var(--ink-3);
   margin-top: 64px;
 }
 
