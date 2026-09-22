@@ -95,14 +95,6 @@ function VerifyEmailContent() {
 
           <div className="feature-pills">
             <span className="pill">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="white" strokeWidth="2" strokeLinejoin="round"/><path d="M14 2v6h6" stroke="white" strokeWidth="2" strokeLinejoin="round"/></svg>
-              Rekam Medis FHIR-R4
-            </span>
-            <span className="pill">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="3" stroke="white" strokeWidth="2"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>
-              Integrasi SATUSEHAT
-            </span>
-            <span className="pill">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2" stroke="white" strokeWidth="2"/><path d="M3 9h18M8 4v16" stroke="white" strokeWidth="2"/></svg>
               Farmasi &amp; Resep
             </span>
@@ -119,13 +111,6 @@ function VerifyEmailContent() {
               Manajemen Antrian
             </span>
           </div>
-        </div>
-
-        <div className="footer-row">
-          <span className="badge">
-            <span className="dot-green"></span>
-            Terintegrasi SATUSEHAT &middot; Kemenkes RI
-          </span>
         </div>
       </div>
 
