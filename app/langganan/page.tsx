@@ -169,7 +169,7 @@ function LanggananPageInner() {
 
   return (
     <>
-      <div className="langganan-page">
+      <main className="content langganan-page">
         <div className="page-header">
           <div className="page-title-block">
             <div className="page-title"><h1>Langganan</h1></div>
@@ -410,7 +410,7 @@ function LanggananPageInner() {
             </table>
           </div>
         </div>
-      </div>
+      </main>
     </>
   );
 }
