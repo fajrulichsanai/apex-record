@@ -60,17 +60,17 @@ export default function StatsGrid({ revenueTrendPercent, visitsTrendPercent }: S
       color: 'purple',
       icon: (
         <svg viewBox="0 0 24 24" fill="none">
-          <circle cx="9" cy="8" r="3.2" stroke="white" strokeWidth="1.8" />
+          <circle cx="9" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.8" />
           <path
             d="M3.5 19c0-3 2.5-5.2 5.5-5.2s5.5 2.2 5.5 5.2"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="1.8"
             strokeLinecap="round"
           />
-          <circle cx="17" cy="9" r="2.4" stroke="white" strokeWidth="1.8" />
+          <circle cx="17" cy="9" r="2.4" stroke="currentColor" strokeWidth="1.8" />
           <path
             d="M15.5 13.6c2.3.3 4 2.1 4 4.4"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="1.8"
             strokeLinecap="round"
           />
@@ -91,11 +91,11 @@ export default function StatsGrid({ revenueTrendPercent, visitsTrendPercent }: S
             width="17"
             height="14"
             rx="2"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="1.8"
           />
-          <path d="M3.5 10h17" stroke="white" strokeWidth="1.8" />
-          <circle cx="8" cy="14.5" r="1.4" fill="white" />
+          <path d="M3.5 10h17" stroke="currentColor" strokeWidth="1.8" />
+          <circle cx="8" cy="14.5" r="1.4" fill="currentColor" />
         </svg>
       ),
     },
@@ -113,12 +113,12 @@ export default function StatsGrid({ revenueTrendPercent, visitsTrendPercent }: S
             width="17"
             height="16"
             rx="2"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="1.8"
           />
           <path
             d="M12 9v6M9 12h6"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="1.8"
             strokeLinecap="round"
           />
@@ -139,17 +139,17 @@ export default function StatsGrid({ revenueTrendPercent, visitsTrendPercent }: S
             width="16"
             height="13"
             rx="2"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="1.8"
           />
           <path
             d="M9 6V5a3 3 0 016 0v1"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="1.8"
           />
           <path
             d="M12 11v4M10 13h4"
-            stroke="white"
+            stroke="currentColor"
             strokeWidth="1.8"
             strokeLinecap="round"
           />

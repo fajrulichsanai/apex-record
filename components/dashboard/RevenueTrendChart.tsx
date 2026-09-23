@@ -61,8 +61,8 @@ export default function RevenueTrendChart({ data, loading }: RevenueTrendChartPr
             <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
               <defs>
                 <linearGradient id="revenueTrendFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1fbf7a" stopOpacity={0.3} />
-                  <stop offset="100%" stopColor="#1fbf7a" stopOpacity={0} />
+                  <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="var(--border)" vertical={false} />
@@ -80,12 +80,17 @@ export default function RevenueTrendChart({ data, loading }: RevenueTrendChartPr
                 width={40}
                 tickFormatter={formatRupiahCompact}
               />
-              <Tooltip formatter={(value) => formatRupiah(Number(value))} />
+              <Tooltip
+                formatter={(value) => formatRupiah(Number(value))}
+                contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12.5 }}
+                labelStyle={{ color: 'var(--text-main)' }}
+                itemStyle={{ color: 'var(--text-sub)' }}
+              />
               <Area
                 type="monotone"
                 dataKey="revenue"
                 name="Pendapatan"
-                stroke="#1fbf7a"
+                stroke="var(--accent)"
                 strokeWidth={2.5}
                 fill="url(#revenueTrendFill)"
               />
@@ -93,7 +98,7 @@ export default function RevenueTrendChart({ data, loading }: RevenueTrendChartPr
                 type="monotone"
                 dataKey="collected"
                 name="Terkumpul"
-                stroke="#0a9be0"
+                stroke="var(--info)"
                 strokeWidth={2}
                 dot={false}
               />

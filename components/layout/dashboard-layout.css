@@ -15,6 +15,8 @@
   --red-soft: #FBE1DE;
   --info: #1D5FAE;
   --info-soft: #DCEAFB;
+  --violet: #6A4FC2;
+  --violet-soft: rgba(106,79,194,.12);
   --bg: #EEECE6;
   --surface: #FFFFFF;
   --sidebar-bg: #ffffff;
@@ -48,6 +50,8 @@
   --red-soft: #3A1F17;
   --info: #5B9BE0;
   --info-soft: #1B2A3A;
+  --violet: #A78EE0;
+  --violet-soft: rgba(106,79,194,.22);
   --bg: #17160F;
   --surface: #242320;
   --sidebar-bg: #1C1B17;
