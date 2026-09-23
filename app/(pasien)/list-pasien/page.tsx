@@ -76,10 +76,10 @@ const TIMELINE_TYPE_META: Record<
   TimelineItem['type'],
   { label: string; icon: string; dot: string }
 > = {
-  kunjungan: { label: 'Kunjungan', icon: 'calendar_month', dot: '#4F7EF8' },
-  billing: { label: 'Invoice', icon: 'receipt_long', dot: '#2DCB8A' },
-  foto: { label: 'Foto Klinis', icon: 'photo_camera', dot: '#F5A623' },
-  treatment_plan: { label: 'Treatment Plan', icon: 'timeline', dot: '#8B5CF6' },
+  kunjungan: { label: 'Kunjungan', icon: 'calendar_month', dot: 'var(--info)' },
+  billing: { label: 'Invoice', icon: 'receipt_long', dot: 'var(--accent)' },
+  foto: { label: 'Foto Klinis', icon: 'photo_camera', dot: 'var(--orange)' },
+  treatment_plan: { label: 'Treatment Plan', icon: 'timeline', dot: 'var(--violet)' },
   recall: { label: 'Recall', icon: 'event_repeat', dot: '#FF6B9D' },
 };
 
@@ -425,7 +425,9 @@ function ListPasienContent() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', flex: 1 }}>
                 <div className="detail-header">
-                  <div className="detail-avatar">{initialsFromName(selectedPatient.name)}</div>
+                  <div className={`detail-avatar ${genderTagClass(apiGenderToUi(selectedPatient))}`}>
+                    {initialsFromName(selectedPatient.name)}
+                  </div>
                   <div className="detail-name-block">
                     <div className="detail-name">{selectedPatient.name}</div>
                     <div className="detail-rm">No. Rekam Medis: {selectedPatient.noRm}</div>
@@ -458,7 +460,7 @@ function ListPasienContent() {
                     </button>
                     <button
                       className="btn-outline danger"
-                      style={{ color: '#FF4D4F', borderColor: '#FFCCC7' }}
+                      style={{ color: 'var(--red)', borderColor: 'rgba(193,56,31,.35)' }}
                       onClick={() => {
                         setDeleteError(null);
                         setShowDeleteConfirm(true);
@@ -638,7 +640,7 @@ function ListPasienContent() {
               <button
                 type="button"
                 className="btn-primary"
-                style={{ background: '#FF4D4F', borderColor: '#FF4D4F' }}
+                style={{ background: 'var(--red)', borderColor: 'var(--red)' }}
                 onClick={handleDeletePatient}
                 disabled={deleting}
               >

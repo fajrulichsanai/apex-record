@@ -19,15 +19,10 @@ import {
   FiActivity,
   FiTrendingUp,
   FiSettings,
-  FiHome,
-  FiUserCheck,
   FiChevronLeft,
   FiChevronRight,
-  FiShield,
   FiBox,
   FiBell,
-  FiLock,
-  FiSun,
 } from 'react-icons/fi';
 import './sidebar.css';
 
@@ -53,7 +48,6 @@ interface NavGroupDef {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const canManageUsers = user?.role === 'owner' || user?.role === 'super_admin';
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -118,23 +112,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { label: 'Referral', icon: <FiUsers />, href: '/referral', feature: 'referral' },
       ],
     },
-    {
-      title: 'Pengaturan',
-      groupId: 'pengaturan',
-      icon: <FiSettings />,
-      items: [
-        { label: 'Info Klinik', icon: <FiHome />, href: '/info-klinik', feature: 'info-klinik' },
-        ...(canManageUsers
-          ? [{ label: 'User Management', icon: <FiUserCheck />, href: '/user-management', feature: 'user-management' as FeatureKey }]
-          : []),
-        { label: 'Tarif & Tindakan', icon: <FiDollarSign />, href: '/tarif', feature: 'tarif' },
-        { label: 'Log Aktivitas', icon: <FiShield />, href: '/audit-log', feature: 'audit-log' as FeatureKey },
-        { label: 'Langganan', icon: <FiCreditCard />, href: '/langganan', feature: 'langganan' as FeatureKey },
-        { label: 'Tampilan', icon: <FiSun />, href: '/tampilan', feature: 'tampilan' as FeatureKey },
-        { label: 'Keamanan Akun', icon: <FiLock />, href: '/keamanan', feature: 'keamanan' as FeatureKey },
-      ],
-    },
   ];
+
+  const SETTINGS_ROUTES = ['/pengaturan', '/info-klinik', '/user-management', '/tarif', '/audit-log', '/langganan', '/tampilan', '/keamanan'];
+  const isSettingsActive = SETTINGS_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   // Buang item tanpa href/tanpa akses, lalu buang grup yang jadi kosong.
   const visibleGroups = groupDefs
@@ -214,6 +195,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               />
             )
           )}
+
+          <Link
+            href="/pengaturan"
+            className={`nav-item ${isSettingsActive ? 'active' : ''}`}
+            onClick={handleNavItemClick}
+            title="Pengaturan"
+          >
+            <div className="nav-item-left">
+              <span className="nav-icon">
+                <FiSettings />
+              </span>
+              <span className="nav-label">Pengaturan</span>
+            </div>
+          </Link>
         </nav>
       </aside>
     </>

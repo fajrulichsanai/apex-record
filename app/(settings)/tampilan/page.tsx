@@ -3,6 +3,7 @@
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import { useTheme, type ThemePreference } from '@/lib/theme-context';
+import SettingsTabs from '@/components/settings/SettingsTabs';
 import '../../styles/tampilan.css';
 
 const OPTIONS: { value: ThemePreference; label: string; desc: string }[] = [
@@ -32,6 +33,7 @@ function TampilanPageInner() {
 
   return (
     <main className="content tampilan-page">
+      <SettingsTabs />
       <div className="page-header">
         <div className="page-title-block">
           <div className="page-title"><h1>Tampilan</h1></div>

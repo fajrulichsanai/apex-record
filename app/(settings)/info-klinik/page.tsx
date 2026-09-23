@@ -8,6 +8,7 @@ import { clinicApi } from '@/lib/clinic';
 import { useAuth } from '@/lib/auth-context';
 import { isFeatureViewOnly } from '@/lib/permissions';
 import { useSubscriptionGate } from '@/lib/subscription-gate-context';
+import SettingsTabs from '@/components/settings/SettingsTabs';
 
 function formatSubscriptionDate(value?: string) {
   if (!value) return '-';
@@ -73,6 +74,7 @@ export default function InfoKlinikPage() {
     <DashboardLayout>
       <FeatureGuard feature="info-klinik">
         <main className="content">
+          <SettingsTabs />
           <ClinicInfoForm
             canEdit={!viewOnly}
             fetchClinic={clinicApi.get}

@@ -9,6 +9,7 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import type { User, RoleOption } from '@/types/user';
 import type { Clinic } from '@/types/clinic';
+import SettingsTabs from '@/components/settings/SettingsTabs';
 import '../styles/user-management.css';
 
 const ROLE_LABEL: Record<string, string> = {
@@ -249,6 +250,7 @@ export default function UserManagementPage() {
     <DashboardLayout>
       <FeatureGuard feature="user-management">
       <main className="content user-mgmt-page">
+        <SettingsTabs />
         {/* Page header */}
         <div className="page-header">
           <div className="page-header-icon">
