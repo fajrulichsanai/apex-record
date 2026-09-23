@@ -15,6 +15,7 @@ import { useToast } from '@/lib/toast-context';
 import { useAuth } from '@/lib/auth-context';
 import { isFeatureViewOnly } from '@/lib/permissions';
 import { useSubscriptionGate } from '@/lib/subscription-gate-context';
+import SettingsTabs from '@/components/settings/SettingsTabs';
 import '../../styles/info-klinik.css';
 
 function formatSubscriptionDate(value?: string) {
@@ -264,6 +265,7 @@ export default function InfoKlinikPage() {
     <DashboardLayout>
       <FeatureGuard feature="info-klinik">
       <main className="content">
+        <SettingsTabs />
         <div className="info-klinik-page">
           <div className="page-content">
             <div className="page-title-row">

@@ -11,6 +11,7 @@ import { ApiError, openProtectedFile } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency } from '@/lib/format';
 import { useSubscriptionGate } from '@/lib/subscription-gate-context';
+import SettingsTabs from '@/components/settings/SettingsTabs';
 import './langganan.css';
 
 function formatDate(value?: string) {
@@ -170,6 +171,7 @@ function LanggananPageInner() {
   return (
     <>
       <main className="content langganan-page">
+        <SettingsTabs />
         <div className="page-header">
           <div className="page-title-block">
             <div className="page-title"><h1>Langganan</h1></div>

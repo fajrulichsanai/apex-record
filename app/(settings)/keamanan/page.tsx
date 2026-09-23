@@ -7,6 +7,7 @@ import { mfaApi, type MfaSetupResult } from '@/lib/mfa';
 import { useToast } from '@/lib/toast-context';
 import { useAuth } from '@/lib/auth-context';
 import { MFA_ENFORCED_ROLES } from '@/lib/mfa-gate-context';
+import SettingsTabs from '@/components/settings/SettingsTabs';
 import '../../styles/keamanan.css';
 
 type Step = 'idle' | 'setup' | 'backup-codes';
@@ -108,6 +109,7 @@ export default function KeamananPage() {
   return (
     <DashboardLayout>
       <main className="content keamanan-page">
+      <SettingsTabs />
       <div className="keamanan-panel">
         <h1>Keamanan Akun</h1>
         <p className="keamanan-subtitle">

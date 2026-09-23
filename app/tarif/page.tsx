@@ -11,6 +11,7 @@ import { tarifApi, type Tarif } from '@/lib/tarif';
 import { useToast } from '@/lib/toast-context';
 import { useAuth } from '@/lib/auth-context';
 import { isFeatureViewOnly, canSeeHargaModal } from '@/lib/permissions';
+import SettingsTabs from '@/components/settings/SettingsTabs';
 import '../styles/tarif.css';
 
 // Simple function to export CSV (Excel compatible)
@@ -140,6 +141,7 @@ export default function TarifPage() {
     <DashboardLayout>
       <FeatureGuard feature="tarif">
       <main className="content tarif-page">
+        <SettingsTabs />
         {/* Header */}
         <div className="page-header">
           <div className="page-title-block">

@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import CustomSelect from '@/components/form/CustomSelect';
 import AuditLogDetailModal from './AuditLogDetailModal';
+import SettingsTabs from '@/components/settings/SettingsTabs';
 import '../../styles/audit-log.css';
 import { ApiError } from '@/lib/api-client';
 import { auditLogApi, AuditLogEntry, AuditActionType } from '@/lib/audit-log';
@@ -158,6 +159,7 @@ function AuditLogPageInner() {
     <DashboardLayout>
       <FeatureGuard feature="audit-log">
         <main className="content audit-log-page">
+          <SettingsTabs />
           <div className="page-header">
             <div className="page-title-block">
               <div className="page-title">
