@@ -437,15 +437,15 @@ function ReservasiPageInner() {
             <span className="sort-label">
               {loading ? 'Memuat…' : `${reservations.length} reservasi ditemukan`}
             </span>
-            {actionError && <span style={{ color: '#FF4D4F', fontSize: '12px' }}>{actionError}</span>}
+            {actionError && <span style={{ color: 'var(--tag-cancel)', fontSize: '12px' }}>{actionError}</span>}
           </div>
 
           {loadError ? (
-            <div style={{ padding: '16px', color: '#FF4D4F' }}>{loadError}</div>
+            <div style={{ padding: '16px', color: 'var(--tag-cancel)' }}>{loadError}</div>
           ) : (
             <div className="reservation-card-grid">
               {reservations.length === 0 ? (
-                <div style={{ padding: '40px 20px', textAlign: 'center', color: '#A0AEC0' }}>
+                <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
                   Tidak ada reservasi
                 </div>
               ) : (

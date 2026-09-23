@@ -1,17 +1,28 @@
 .reservasi-page {
-  --primary:      #4F7EF8;
-  --primary-dk:   #3B6CE6;
-  --green:        #2DCB8A;
-  --bg:           #F5F6FA;
+  --primary:      #16150F;
+  --primary-dk:   #262419;
+  --accent:       #3E8E36;
+  --accent-solid: #7ED957;
+  --accent-soft:  #E3F3DA;
+  --green:        #3E8E36;
+  --orange:       #8A5A00;
+  --orange-soft:  #FCEACB;
+  --red:          #C1381F;
+  --red-soft:     #FBE1DE;
+  --info:         #1D5FAE;
+  --info-soft:    #DCEAFB;
+  --violet:       #6A4FC2;
+  --violet-soft:  rgba(106,79,194,.12);
+  --bg:           #FAF9F6;
   --surface:      #FFFFFF;
-  --text-main:    #1A2340;
-  --text-sub:     #6B7A99;
-  --text-muted:   #A0AEC0;
-  --border:       #E8ECF4;
-  --tag-pending:  #F5A623;
-  --tag-confirmed:#7B5CFA;
-  --tag-done:     #2DCB8A;
-  --tag-cancel:   #FF4D4F;
+  --text-main:    #17160F;
+  --text-sub:     #55534A;
+  --text-muted:   #8D8B7E;
+  --border:       #E7E4DD;
+  --tag-pending:  #8A5A00;
+  --tag-confirmed:#6A4FC2;
+  --tag-done:     #3E8E36;
+  --tag-cancel:   #C1381F;
   --radius-sm:    8px;
   --radius-md:    14px;
   --radius-lg:    20px;
@@ -46,8 +57,8 @@
 }
 
 .reservasi-page .badge-count {
-  background: var(--primary);
-  color: #fff;
+  background: var(--accent-solid);
+  color: #17160F;
   font-size: 12px;
   font-weight: 700;
   padding: 2px 9px;
@@ -69,13 +80,13 @@
   font-weight: 600;
   cursor: pointer;
   transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
-  box-shadow: 0 4px 14px rgba(79,126,248,.35);
+  box-shadow: 0 4px 14px rgba(23,22,15,.3);
   white-space: nowrap;
 }
 
 .reservasi-page .btn-primary:hover {
   background: var(--primary-dk);
-  box-shadow: 0 6px 20px rgba(79,126,248,.45);
+  box-shadow: 0 6px 20px rgba(23,22,15,.4);
   transform: translateY(-1px);
 }
 
@@ -87,56 +98,40 @@
 }
 
 .reservasi-page .stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 20px;
   display: flex;
   align-items: center;
   gap: 14px;
-  color: #fff;
+  color: var(--text-main);
   position: relative;
-  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(23,22,15,.04), 0 10px 24px -16px rgba(23,22,15,.12);
   cursor: pointer;
   transition: transform var(--transition), box-shadow var(--transition);
 }
 
-.reservasi-page .stat-card:hover { transform: translateY(-3px); }
+.reservasi-page .stat-card:hover { transform: translateY(-2px); box-shadow: 0 1px 2px rgba(23,22,15,.05), 0 16px 28px -14px rgba(23,22,15,.16); }
 
-.reservasi-page .stat-card::before {
-  content: '';
-  position: absolute;
-  top: -20px; right: -20px;
-  width: 90px; height: 90px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.12);
-}
-
-.reservasi-page .stat-card::after {
-  content: '';
-  position: absolute;
-  bottom: -30px; right: 20px;
-  width: 60px; height: 60px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.08);
-}
-
-.reservasi-page .stat-card.total     { background: linear-gradient(135deg,#4F7EF8,#7B5CFA); box-shadow: 0 6px 20px rgba(79,126,248,.3); }
-.reservasi-page .stat-card.pending   { background: linear-gradient(135deg,#F5A623,#E8831A); box-shadow: 0 6px 20px rgba(245,166,35,.3); }
-.reservasi-page .stat-card.confirmed { background: linear-gradient(135deg,#7B5CFA,#5C3AC8); box-shadow: 0 6px 20px rgba(123,92,250,.3); }
-.reservasi-page .stat-card.done      { background: linear-gradient(135deg,#2DCB8A,#1BA876); box-shadow: 0 6px 20px rgba(45,203,138,.3); }
+.reservasi-page .stat-card.total     { --stat-tint-bg: var(--info-soft); --stat-tint-ink: var(--info); }
+.reservasi-page .stat-card.pending   { --stat-tint-bg: var(--orange-soft); --stat-tint-ink: var(--orange); }
+.reservasi-page .stat-card.confirmed { --stat-tint-bg: var(--violet-soft); --stat-tint-ink: var(--violet); }
+.reservasi-page .stat-card.done      { --stat-tint-bg: var(--accent-soft); --stat-tint-ink: var(--accent); }
 
 .reservasi-page .stat-icon {
   width: 46px; height: 46px;
   border-radius: 14px;
-  background: rgba(255,255,255,.22);
+  background: var(--stat-tint-bg);
+  color: var(--stat-tint-ink);
   display: flex; align-items: center; justify-content: center;
   font-size: 22px;
   flex-shrink: 0;
-  position: relative; z-index: 1;
 }
 
-.reservasi-page .stat-info { position: relative; z-index: 1; }
-.reservasi-page .stat-value { font-size: 28px; font-weight: 800; line-height: 1; }
-.reservasi-page .stat-label { font-size: 12px; font-weight: 500; opacity: .85; margin-top: 3px; }
+.reservasi-page .stat-info { min-width: 0; }
+.reservasi-page .stat-value { font-size: 28px; font-weight: 800; line-height: 1; color: var(--text-main); }
+.reservasi-page .stat-label { font-size: 12px; font-weight: 500; color: var(--text-sub); margin-top: 3px; }
 
 /* PANEL */
 .reservasi-page .panel {
@@ -177,8 +172,8 @@
 }
 
 .reservasi-page .search-box:focus-within {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(62,142,54,.12);
 }
 
 .reservasi-page .search-box .material-symbols-rounded { font-size: 18px; color: var(--text-muted); }
@@ -209,8 +204,8 @@
   transition: all var(--transition);
 }
 
-.reservasi-page .filter-tab:hover { border-color: var(--primary); color: var(--primary); }
-.reservasi-page .filter-tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.reservasi-page .filter-tab:hover { border-color: var(--accent); color: var(--accent); }
+.reservasi-page .filter-tab.active { background: var(--accent-solid); border-color: var(--accent-solid); color: #17160F; }
 
 /* Groups the "Rentang Waktu" and "Status" filter rows under their own
    caption so they read as two distinct filter dimensions instead of one
@@ -244,8 +239,8 @@
   transition: all var(--transition);
 }
 
-.reservasi-page .date-pick:hover { border-color: var(--primary); color: var(--primary); }
-.reservasi-page .date-pick.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.reservasi-page .date-pick:hover { border-color: var(--accent); color: var(--accent); }
+.reservasi-page .date-pick.active { background: var(--accent-solid); border-color: var(--accent-solid); color: #17160F; }
 .reservasi-page .date-pick .material-symbols-rounded { font-size: 15px; }
 
 .reservasi-page .date-pick input[type="date"] {
@@ -260,7 +255,6 @@
 }
 
 .reservasi-page .date-pick input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
-.reservasi-page .date-pick.active input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1) brightness(2); }
 
 .reservasi-page .panel-sort {
   padding: 10px 16px;
@@ -285,7 +279,7 @@
 }
 
 .reservasi-page .reservation-row-item:last-child { border-bottom: none; }
-.reservasi-page .reservation-row-item:hover { background: #F8F9FE; }
+.reservasi-page .reservation-row-item:hover { background: #FAF9F6; }
 
 .reservasi-page .reservation-date-block {
   display: flex;
@@ -315,7 +309,7 @@
 .reservasi-page .reservation-time {
   font-size: 11px;
   font-weight: 600;
-  color: var(--primary);
+  color: var(--accent);
   margin-top: 4px;
 }
 
@@ -353,10 +347,10 @@
   white-space: nowrap;
 }
 
-.reservasi-page .reservation-status-tag.pending   { background: rgba(245,166,35,.12); color: var(--tag-pending); }
-.reservasi-page .reservation-status-tag.confirmed { background: rgba(123,92,250,.12); color: var(--tag-confirmed); }
-.reservasi-page .reservation-status-tag.completed { background: rgba(45,203,138,.12); color: var(--tag-done); }
-.reservasi-page .reservation-status-tag.cancelled { background: rgba(255,77,79,.12); color: var(--tag-cancel); }
+.reservasi-page .reservation-status-tag.pending   { background: var(--orange-soft); color: var(--tag-pending); }
+.reservasi-page .reservation-status-tag.confirmed { background: var(--violet-soft); color: var(--tag-confirmed); }
+.reservasi-page .reservation-status-tag.completed { background: var(--accent-soft); color: var(--tag-done); }
+.reservasi-page .reservation-status-tag.cancelled { background: var(--red-soft); color: var(--tag-cancel); }
 
 .reservasi-page .reservation-source-tag {
   background: var(--bg);
@@ -376,6 +370,8 @@
   align-items: center;
   gap: 5px;
   border: none;
+  background: var(--bg);
+  color: var(--text-sub);
   border-radius: var(--radius-sm);
   padding: 8px 12px;
   font-size: 12px;
@@ -385,15 +381,17 @@
   white-space: nowrap;
 }
 
+.reservasi-page .btn-row-action:hover:not(:disabled) { background: var(--border); color: var(--text-main); }
+
 .reservasi-page .btn-row-action .material-symbols-rounded { font-size: 15px; }
 
-.reservasi-page .btn-row-action.confirm { background: rgba(45,203,138,.12); color: var(--tag-done); }
+.reservasi-page .btn-row-action.confirm { background: var(--accent-soft); color: var(--tag-done); }
 .reservasi-page .btn-row-action.confirm:hover { background: var(--tag-done); color: #fff; }
 
-.reservasi-page .btn-row-action.complete { background: rgba(79,126,248,.12); color: var(--primary); }
-.reservasi-page .btn-row-action.complete:hover { background: var(--primary); color: #fff; }
+.reservasi-page .btn-row-action.complete { background: var(--info-soft); color: var(--info); }
+.reservasi-page .btn-row-action.complete:hover { background: var(--info); color: #fff; }
 
-.reservasi-page .btn-row-action.cancel { background: rgba(255,77,79,.1); color: var(--tag-cancel); }
+.reservasi-page .btn-row-action.cancel { background: var(--red-soft); color: var(--tag-cancel); }
 .reservasi-page .btn-row-action.cancel:hover { background: var(--tag-cancel); color: #fff; }
 
 .reservasi-page .btn-row-action.delete {
@@ -428,8 +426,8 @@
 }
 
 .reservasi-page .reservation-card:hover {
-  border-color: var(--primary);
-  box-shadow: 0 6px 20px rgba(79,126,248,.12);
+  border-color: var(--accent);
+  box-shadow: 0 6px 20px rgba(62,142,54,.12);
 }
 
 .reservasi-page .reservation-card-top {
@@ -478,17 +476,53 @@
   .reservasi-page .page-title h1 { font-size: 18px; }
 }
 
+/* ---------- DARK MODE ---------- */
+:root[data-theme="dark"] .reservasi-page {
+  --primary: #3E8E36;
+  --primary-dk: #4FA345;
+  --accent: #4FA345;
+  --accent-solid: #7ED957;
+  --accent-soft: #23361F;
+  --green: #4FA345;
+  --orange: #E8A930;
+  --orange-soft: #3A2C10;
+  --red: #C1381F;
+  --red-soft: #3A1F17;
+  --info: #5B9BE0;
+  --info-soft: #1B2A3A;
+  --violet: #A78EE0;
+  --violet-soft: rgba(167,142,224,.2);
+  --bg: #17160F;
+  --surface: #242320;
+  --text-main: #F3F1EA;
+  --text-sub: #B8B5A9;
+  --text-muted: #85826F;
+  --border: #38362F;
+  --tag-pending: #E8A930;
+  --tag-confirmed: #A78EE0;
+  --tag-done: #4FA345;
+  --tag-cancel: #E5573C;
+}
+
+:root[data-theme="dark"] .reservasi-page .reservation-row-item:hover { background: #2A2924; }
+:root[data-theme="dark"] .reservasi-page .btn-row-action.wa { background: rgba(37,211,102,.18); }
+:root[data-theme="dark"] .reservasi-page .btn-row-action.wa:hover { background: #25D366; }
+:root[data-theme="dark"] .reservasi-page input[type="date"],
+:root[data-theme="dark"] .reservasi-page input[type="time"] { color-scheme: dark; }
+
 /* MODAL */
 .reservation-modal-overlay {
-  --primary:      #4F7EF8;
-  --primary-dk:   #3B6CE6;
-  --bg:           #F5F6FA;
+  --primary:      #16150F;
+  --primary-dk:   #262419;
+  --accent:       #3E8E36;
+  --bg:           #FAF9F6;
   --surface:      #FFFFFF;
-  --text-main:    #1A2340;
-  --text-sub:     #6B7A99;
-  --text-muted:   #A0AEC0;
-  --border:       #E8ECF4;
-  --tag-cancel:   #FF4D4F;
+  --text-main:    #17160F;
+  --text-sub:     #55534A;
+  --text-muted:   #8D8B7E;
+  --border:       #E7E4DD;
+  --tag-cancel:   #C1381F;
+  --red-soft:     #FBE1DE;
   --radius-sm:    8px;
   --radius-md:    14px;
   --radius-lg:    20px;
@@ -496,7 +530,7 @@
 
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, .55);
+  background: rgba(23, 22, 15, .55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -609,9 +643,9 @@
 
 .reservation-form-input:focus,
 .reservation-form-textarea:focus {
-  border-color: var(--primary);
+  border-color: var(--accent);
   background: var(--surface);
-  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+  box-shadow: 0 0 0 3px rgba(62,142,54,.12);
 }
 
 .reservation-form-textarea {
@@ -657,6 +691,23 @@
 @media (max-width: 560px) {
   .reservation-form-row { grid-template-columns: 1fr; }
 }
+
+:root[data-theme="dark"] .reservation-modal-overlay {
+  --primary: #3E8E36;
+  --primary-dk: #4FA345;
+  --accent: #4FA345;
+  --bg: #17160F;
+  --surface: #242320;
+  --text-main: #F3F1EA;
+  --text-sub: #B8B5A9;
+  --text-muted: #85826F;
+  --border: #38362F;
+  --tag-cancel: #E5573C;
+  --red-soft: #3A1F17;
+}
+
+:root[data-theme="dark"] .reservation-modal-overlay input[type="date"],
+:root[data-theme="dark"] .reservation-modal-overlay input[type="time"] { color-scheme: dark; }
 
 /* CALENDAR VIEW */
 .reservation-calendar {
@@ -731,7 +782,7 @@
   overflow: hidden;
 }
 
-.res-week-day.is-today { border-color: var(--primary); }
+.res-week-day.is-today { border-color: var(--accent); }
 
 .res-week-day-header {
   all: unset;
@@ -746,7 +797,7 @@
   text-align: center;
 }
 
-.res-week-day.is-today .res-week-day-header { background: rgba(79, 126, 248, 0.1); }
+.res-week-day.is-today .res-week-day-header { background: rgba(62, 142, 54, 0.1); }
 
 .res-week-day-name { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
 .res-week-day-num { font-size: 16px; font-weight: 700; color: var(--text-main); }
@@ -759,7 +810,7 @@
   height: 18px;
   padding: 0 5px;
   border-radius: 9px;
-  background: var(--primary);
+  background: var(--accent);
   color: #fff;
   font-size: 10.5px;
   font-weight: 700;
@@ -788,7 +839,7 @@
   flex-direction: column;
   gap: 2px;
   padding: 6px 8px;
-  border-left: 3px solid var(--primary);
+  border-left: 3px solid var(--accent);
   background: var(--bg);
   border-radius: 6px;
   transition: var(--transition);
@@ -845,7 +896,7 @@
 }
 
 .res-month-cell.is-blank { border: none; min-height: 96px; }
-.res-month-cell.is-today { border-color: var(--primary); }
+.res-month-cell.is-today { border-color: var(--accent); }
 
 .res-month-cell-header {
   all: unset;
@@ -857,7 +908,7 @@
   border-bottom: 1px solid var(--border);
 }
 
-.res-month-cell.is-today .res-month-cell-header { background: rgba(79, 126, 248, 0.1); }
+.res-month-cell.is-today .res-month-cell-header { background: rgba(62, 142, 54, 0.1); }
 
 .res-month-cell-num { font-size: 12.5px; font-weight: 700; color: var(--text-main); }
 
@@ -876,7 +927,7 @@
   display: block;
   font-size: 10.5px;
   color: var(--text-sub);
-  border-left: 2.5px solid var(--primary);
+  border-left: 2.5px solid var(--accent);
   padding: 2px 5px;
   border-radius: 4px;
   background: var(--bg);
@@ -891,7 +942,7 @@
   all: unset;
   cursor: pointer;
   font-size: 10px;
-  color: var(--primary);
+  color: var(--accent);
   font-weight: 600;
   padding: 2px 5px;
 }

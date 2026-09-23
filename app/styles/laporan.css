@@ -519,3 +519,4 @@
 :root[data-theme="dark"] .laporan-page .laporan-table tbody tr:hover { background: #2A2924; }
 :root[data-theme="dark"] .laporan-page .stat-card.lunas   { --stat-tint-bg: rgba(31,138,138,.22); --stat-tint-ink: #4FC7C7; }
 :root[data-theme="dark"] .laporan-page .stat-card.margin  { --stat-tint-bg: rgba(106,79,194,.22); --stat-tint-ink: #A78EE0; }
+:root[data-theme="dark"] .laporan-page input[type="date"] { color-scheme: dark; }

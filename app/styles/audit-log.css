@@ -255,3 +255,5 @@
   --text-muted: #85826F;
   --border: #38362F;
 }
+
+:root[data-theme="dark"] .audit-log-page input[type="date"] { color-scheme: dark; }

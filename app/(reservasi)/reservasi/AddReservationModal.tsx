@@ -171,7 +171,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
         </div>
 
         {loading ? (
-          <div style={{ padding: '40px 20px', textAlign: 'center', color: '#A0AEC0' }}>
+          <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
             <div style={{ fontSize: '14px' }}>Memuat data...</div>
           </div>
         ) : (
@@ -188,7 +188,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
                       setPatientName('');
                     }}
                   />
-                  <span style={{ fontSize: '13px', color: '#6B7A99' }}>Pilih dari daftar</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-sub)' }}>Pilih dari daftar</span>
                 </label>
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, cursor: 'pointer' }}>
                   <input
@@ -200,7 +200,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
                       setPatientId('');
                     }}
                   />
-                  <span style={{ fontSize: '13px', color: '#6B7A99' }}>Entri manual (telepon)</span>
+                  <span style={{ fontSize: '13px', color: 'var(--text-sub)' }}>Entri manual (telepon)</span>
                 </label>
               </div>
 
@@ -222,7 +222,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
                         alignItems: 'center',
                         gap: '12px',
                         padding: '12px',
-                        background: '#F5F6FA',
+                        background: 'var(--bg)',
                         borderRadius: '8px',
                         marginTop: '8px',
                       }}
@@ -232,7 +232,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
                           width: '40px',
                           height: '40px',
                           borderRadius: '10px',
-                          background: 'linear-gradient(135deg,#4F7EF8,#3B6CE6)',
+                          background: 'var(--primary)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -245,10 +245,10 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
                         {initialsFromName(selectedPatient.name)}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '13px', fontWeight: '600', color: '#1A2340' }}>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-main)' }}>
                           {selectedPatient.name}
                         </div>
-                        <div style={{ fontSize: '12px', color: '#A0AEC0', marginTop: '2px' }}>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                           {selectedPatient.noRm && `RM: ${selectedPatient.noRm}`}
                         </div>
                       </div>
@@ -334,7 +334,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
               </div>
 
               {error && (
-                <div style={{ padding: '10px', background: 'rgba(255,77,79,.08)', color: '#FF4D4F', borderRadius: '6px', fontSize: '12px' }}>
+                <div style={{ padding: '10px', background: 'var(--red-soft)', color: 'var(--tag-cancel)', borderRadius: '6px', fontSize: '12px' }}>
                   {error}
                 </div>
               )}

@@ -7,10 +7,10 @@ import { ApiError } from '@/lib/api-client';
 type ViewMode = 'week' | 'month';
 
 const STATUS_COLOR: Record<ReservationStatus, string> = {
-  pending: '#F5A623',
-  confirmed: '#7B5CFA',
-  completed: '#2DCB8A',
-  cancelled: '#FF4D4F',
+  pending: 'var(--orange)',
+  confirmed: 'var(--violet)',
+  completed: 'var(--accent)',
+  cancelled: 'var(--tag-cancel)',
 };
 
 const STATUS_LABEL: Record<ReservationStatus, string> = {

@@ -89,15 +89,15 @@ export default function EditReservationModal({ reservation, onClose, onUpdated }
               alignItems: 'center',
               gap: '12px',
               padding: '12px',
-              background: '#F5F6FA',
+              background: 'var(--bg)',
               borderRadius: '8px',
             }}
           >
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: '#1A2340' }}>
+              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-main)' }}>
                 {reservation.patientName}
               </div>
-              <div style={{ fontSize: '12px', color: '#A0AEC0', marginTop: '2px' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                 {reservation.patientPhone}
               </div>
             </div>
@@ -129,7 +129,7 @@ export default function EditReservationModal({ reservation, onClose, onUpdated }
           </div>
 
           {error && (
-            <div style={{ padding: '10px', background: 'rgba(255,77,79,.08)', color: '#FF4D4F', borderRadius: '6px', fontSize: '12px' }}>
+            <div style={{ padding: '10px', background: 'var(--red-soft)', color: 'var(--tag-cancel)', borderRadius: '6px', fontSize: '12px' }}>
               {error}
             </div>
           )}

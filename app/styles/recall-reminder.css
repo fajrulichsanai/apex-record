@@ -1,16 +1,23 @@
 .recall-page {
-  --primary:      #4F7EF8;
-  --primary-dk:   #3B6CE6;
-  --green:        #2DCB8A;
-  --orange:       #F5A623;
-  --red:          #E74C3C;
+  --primary:      #16150F;
+  --primary-dk:   #262419;
+  --accent:       #3E8E36;
+  --accent-solid: #7ED957;
+  --accent-soft:  #E3F3DA;
+  --green:        #3E8E36;
+  --orange:       #8A5A00;
+  --orange-soft:  #FCEACB;
+  --red:          #C1381F;
+  --red-soft:     #FBE1DE;
+  --info:         #1D5FAE;
+  --info-soft:    #DCEAFB;
   --wa:           #25D366;
-  --bg:           #F5F6FA;
+  --bg:           #FAF9F6;
   --surface:      #FFFFFF;
-  --text-main:    #1A2340;
-  --text-sub:     #6B7A99;
-  --text-muted:   #A0AEC0;
-  --border:       #E8ECF4;
+  --text-main:    #17160F;
+  --text-sub:     #55534A;
+  --text-muted:   #8D8B7E;
+  --border:       #E7E4DD;
   --radius-sm:    8px;
   --radius-md:    14px;
   --radius-lg:    20px;
@@ -32,24 +39,25 @@
   cursor: pointer; border: 1.5px solid var(--border); background: var(--surface);
   color: var(--text-sub); transition: all var(--transition);
 }
-.recall-page .filter-tab:hover { border-color: var(--primary); color: var(--primary); }
-.recall-page .filter-tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.recall-page .filter-tab:hover { border-color: var(--accent); color: var(--accent); }
+.recall-page .filter-tab.active { background: var(--accent-solid); border-color: var(--accent-solid); color: #17160F; }
 
 .recall-page .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .recall-page .stat-card {
+  background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: 20px; display: flex; align-items: center; gap: 14px;
-  color: #fff; position: relative; overflow: hidden;
+  color: var(--text-main); position: relative;
+  box-shadow: 0 1px 2px rgba(23,22,15,.04), 0 10px 24px -16px rgba(23,22,15,.12);
   transition: transform var(--transition), box-shadow var(--transition);
 }
-.recall-page .stat-card:hover { transform: translateY(-3px); }
-.recall-page .stat-card::before { content: ''; position: absolute; top: -20px; right: -20px; width: 90px; height: 90px; border-radius: 50%; background: rgba(255,255,255,.12); }
-.recall-page .stat-card.total  { background: linear-gradient(135deg,#4F7EF8,#7B5CFA); box-shadow: 0 6px 20px rgba(79,126,248,.3); }
-.recall-page .stat-card.warn   { background: linear-gradient(135deg,#F5A623,#E8831A); box-shadow: 0 6px 20px rgba(245,166,35,.3); }
-.recall-page .stat-card.done   { background: linear-gradient(135deg,#2DCB8A,#1BA876); box-shadow: 0 6px 20px rgba(45,203,138,.3); }
-.recall-page .stat-icon { width: 46px; height: 46px; border-radius: 14px; background: rgba(255,255,255,.22); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; position: relative; z-index: 1; }
-.recall-page .stat-info { position: relative; z-index: 1; min-width: 0; }
-.recall-page .stat-value { font-size: 22px; font-weight: 800; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.recall-page .stat-label { font-size: 12px; font-weight: 500; opacity: .85; margin-top: 3px; }
+.recall-page .stat-card:hover { transform: translateY(-2px); box-shadow: 0 1px 2px rgba(23,22,15,.05), 0 16px 28px -14px rgba(23,22,15,.16); }
+.recall-page .stat-card.total  { --stat-tint-bg: var(--info-soft); --stat-tint-ink: var(--info); }
+.recall-page .stat-card.warn   { --stat-tint-bg: var(--orange-soft); --stat-tint-ink: var(--orange); }
+.recall-page .stat-card.done   { --stat-tint-bg: var(--accent-soft); --stat-tint-ink: var(--accent); }
+.recall-page .stat-icon { width: 46px; height: 46px; border-radius: 14px; background: var(--stat-tint-bg); color: var(--stat-tint-ink); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.recall-page .stat-info { min-width: 0; }
+.recall-page .stat-value { font-size: 22px; font-weight: 800; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); }
+.recall-page .stat-label { font-size: 12px; font-weight: 500; color: var(--text-sub); margin-top: 3px; }
 
 .recall-page .panel { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
 .recall-page .panel-toolbar { padding: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
@@ -58,7 +66,7 @@
 .recall-page .fee-table { width: 100%; border-collapse: collapse; }
 .recall-page .fee-table th { text-align: left; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
 .recall-page .fee-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13.5px; color: var(--text-main); vertical-align: middle; }
-.recall-page .fee-table tbody tr:hover { background: #F8F9FE; }
+.recall-page .fee-table tbody tr:hover { background: #FAF9F6; }
 .recall-page .fee-table tbody tr:last-child td { border-bottom: none; }
 .recall-page .fee-table .tarif-name { font-weight: 600; }
 .recall-page .fee-table .tarif-kategori { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
@@ -70,25 +78,25 @@
   font-size: 13px; font-family: inherit; color: var(--text-main); background: var(--surface); outline: none;
   transition: all var(--transition);
 }
-.recall-page .fee-value-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,126,248,.1); }
+.recall-page .fee-value-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(62,142,54,.1); }
 .recall-page .fee-suffix { font-size: 12px; color: var(--text-muted); }
 
 .recall-page .btn-row-save {
   display: inline-flex; align-items: center; gap: 6px;
-  border: none; background: rgba(79,126,248,.1); color: var(--primary);
+  border: none; background: var(--accent-soft); color: var(--accent);
   border-radius: 8px; padding: 7px 14px; font-size: 12.5px; font-weight: 600;
   cursor: pointer; text-decoration: none; transition: all var(--transition);
 }
-.recall-page .btn-row-save:hover { background: rgba(79,126,248,.18); }
+.recall-page .btn-row-save:hover { background: rgba(62,142,54,.28); }
 .recall-page .btn-row-save:disabled { opacity: .5; cursor: not-allowed; }
 
 .recall-page .tag {
   display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px;
   font-size: 11.5px; font-weight: 700;
 }
-.recall-page .tag-belum { background: rgba(231,76,60,.12); color: var(--red); }
-.recall-page .tag-dihubungi { background: rgba(245,166,35,.14); color: var(--orange); }
-.recall-page .tag-booking { background: rgba(45,203,138,.12); color: var(--green); }
+.recall-page .tag-belum { background: var(--red-soft); color: var(--red); }
+.recall-page .tag-dihubungi { background: var(--orange-soft); color: var(--orange); }
+.recall-page .tag-booking { background: var(--accent-soft); color: var(--green); }
 
 .recall-page .btn-wa {
   display: inline-flex; align-items: center; gap: 6px;
@@ -107,7 +115,7 @@
   border-radius: var(--radius-md); padding: 11px 20px;
   font-size: 14px; font-weight: 600; cursor: pointer;
   transition: background var(--transition);
-  box-shadow: 0 4px 14px rgba(79,126,248,.35);
+  box-shadow: 0 4px 14px rgba(23,22,15,.3);
 }
 .recall-page .btn-primary:hover { background: var(--primary-dk); }
 .recall-page .btn-outline {
@@ -117,7 +125,7 @@
   font-size: 13.5px; font-weight: 600; color: var(--text-sub);
   cursor: pointer; transition: all var(--transition);
 }
-.recall-page .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.recall-page .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
 
 .recall-page .empty-list { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 60px 20px; text-align: center; }
 .recall-page .empty-icon-wrap { width: 70px; height: 70px; border-radius: 50%; background: var(--bg); border: 2px dashed var(--border); display: flex; align-items: center; justify-content: center; }
@@ -128,3 +136,30 @@
 @media (max-width: 1100px) {
   .recall-page .stat-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ---------- DARK MODE ---------- */
+:root[data-theme="dark"] .recall-page {
+  --primary: #3E8E36;
+  --primary-dk: #4FA345;
+  --accent: #4FA345;
+  --accent-solid: #7ED957;
+  --accent-soft: #23361F;
+  --green: #4FA345;
+  --orange: #E8A930;
+  --orange-soft: #3A2C10;
+  --red: #E5573C;
+  --red-soft: #3A1F17;
+  --info: #5B9BE0;
+  --info-soft: #1B2A3A;
+  --bg: #17160F;
+  --surface: #242320;
+  --text-main: #F3F1EA;
+  --text-sub: #B8B5A9;
+  --text-muted: #85826F;
+  --border: #38362F;
+}
+
+:root[data-theme="dark"] .recall-page .fee-table tbody tr:hover { background: #2A2924; }
+:root[data-theme="dark"] .recall-page .btn-row-save:hover { background: rgba(62,142,54,.35); }
+:root[data-theme="dark"] .recall-page .btn-wa { background: rgba(37,211,102,.18); }
+:root[data-theme="dark"] .recall-page .btn-wa:hover { background: rgba(37,211,102,.3); }
