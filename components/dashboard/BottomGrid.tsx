@@ -40,16 +40,16 @@ const quickActions = [
     color: 'purple',
     icon: (
       <svg viewBox="0 0 24 24" fill="none">
-        <circle cx="9" cy="8" r="3" stroke="white" strokeWidth="1.8" />
+        <circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.8" />
         <path
           d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"
-          stroke="white"
+          stroke="currentColor"
           strokeWidth="1.8"
           strokeLinecap="round"
         />
         <path
           d="M16 8h4M18 6v4"
-          stroke="white"
+          stroke="currentColor"
           strokeWidth="1.8"
           strokeLinecap="round"
         />
@@ -69,12 +69,12 @@ const quickActions = [
           width="17"
           height="16"
           rx="2"
-          stroke="white"
+          stroke="currentColor"
           strokeWidth="1.8"
         />
         <path
           d="M12 9v6M9 12h6"
-          stroke="white"
+          stroke="currentColor"
           strokeWidth="1.8"
           strokeLinecap="round"
         />
@@ -90,7 +90,7 @@ const quickActions = [
       <svg viewBox="0 0 24 24" fill="none">
         <path
           d="M4 19V11M10 19V5M16 19v-7M20 19V9"
-          stroke="white"
+          stroke="currentColor"
           strokeWidth="1.8"
           strokeLinecap="round"
         />
@@ -104,22 +104,22 @@ const quickActions = [
     color: 'orange',
     icon: (
       <svg viewBox="0 0 24 24" fill="none">
-        <circle cx="8.5" cy="8" r="2.6" stroke="white" strokeWidth="1.8" />
+        <circle cx="8.5" cy="8" r="2.6" stroke="currentColor" strokeWidth="1.8" />
         <path
           d="M3.5 18c0-2.5 2.2-4.3 5-4.3s5 1.8 5 4.3"
-          stroke="white"
+          stroke="currentColor"
           strokeWidth="1.8"
           strokeLinecap="round"
         />
         <path
           d="M16 9.5c1 0 1.8-.8 1.8-1.8S17 6 16 6"
-          stroke="white"
+          stroke="currentColor"
           strokeWidth="1.8"
           strokeLinecap="round"
         />
         <path
           d="M14.8 13.7c1.8.3 3.2 1.6 3.2 4.3"
-          stroke="white"
+          stroke="currentColor"
           strokeWidth="1.8"
           strokeLinecap="round"
         />

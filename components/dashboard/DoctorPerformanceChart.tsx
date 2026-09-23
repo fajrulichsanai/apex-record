@@ -78,15 +78,20 @@ export default function DoctorPerformanceChart({ mode, data, loading }: DoctorPe
                 tickLine={false}
                 width={110}
               />
-              <Tooltip formatter={(value) => (mode === 'revenue' ? formatRupiah(Number(value)) : `${Number(value)} kunjungan`)} />
-              {mode === 'revenue' && <Legend />}
+              <Tooltip
+                formatter={(value) => (mode === 'revenue' ? formatRupiah(Number(value)) : `${Number(value)} kunjungan`)}
+                contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12.5 }}
+                labelStyle={{ color: 'var(--text-main)' }}
+                itemStyle={{ color: 'var(--text-sub)' }}
+              />
+              {mode === 'revenue' && <Legend wrapperStyle={{ color: 'var(--text-sub)', fontSize: 12.5 }} />}
               {mode === 'revenue' ? (
                 <>
-                  <Bar dataKey="Pendapatan" fill="#5b62e0" radius={[0, 6, 6, 0]} barSize={14} />
-                  <Bar dataKey="Fee Dokter" fill="#f5970e" radius={[0, 6, 6, 0]} barSize={14} />
+                  <Bar dataKey="Pendapatan" fill="var(--accent)" radius={[0, 6, 6, 0]} barSize={14} />
+                  <Bar dataKey="Fee Dokter" fill="var(--orange)" radius={[0, 6, 6, 0]} barSize={14} />
                 </>
               ) : (
-                <Bar dataKey="Kunjungan" fill="#0a9be0" radius={[0, 6, 6, 0]} barSize={16} />
+                <Bar dataKey="Kunjungan" fill="var(--info)" radius={[0, 6, 6, 0]} barSize={16} />
               )}
             </BarChart>
           </ResponsiveContainer>

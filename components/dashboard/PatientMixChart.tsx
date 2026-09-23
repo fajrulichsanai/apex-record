@@ -8,7 +8,7 @@ interface PatientMixChartProps {
   loading?: boolean;
 }
 
-const COLORS = { new: '#5b62e0', returning: '#1fbf7a' };
+const COLORS = { new: 'var(--violet)', returning: 'var(--accent)' };
 
 export default function PatientMixChart({ data, loading }: PatientMixChartProps) {
   const total = (data?.new ?? 0) + (data?.returning ?? 0);
@@ -56,7 +56,12 @@ export default function PatientMixChart({ data, loading }: PatientMixChartProps)
                       <Cell key={entry.name} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value, name) => [`${Number(value)} pasien`, name]} />
+                  <Tooltip
+                    formatter={(value, name) => [`${Number(value)} pasien`, name]}
+                    contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12.5 }}
+                    labelStyle={{ color: 'var(--text-main)' }}
+                    itemStyle={{ color: 'var(--text-sub)' }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
               <div className="donut-center">

@@ -50,8 +50,8 @@ export default function VisitTrendChart({ data, loading }: VisitTrendChartProps)
             <AreaChart data={chartData} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="visitTrendFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#5b62e0" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#5b62e0" stopOpacity={0} />
+                  <stop offset="0%" stopColor="var(--violet)" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="var(--violet)" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid stroke="var(--border)" vertical={false} />
@@ -72,12 +72,15 @@ export default function VisitTrendChart({ data, loading }: VisitTrendChartProps)
               <Tooltip
                 formatter={(value) => [`${Number(value)} kunjungan`, '']}
                 labelFormatter={(label) => label}
+                contentStyle={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 10, fontSize: 12.5 }}
+                labelStyle={{ color: 'var(--text-main)' }}
+                itemStyle={{ color: 'var(--text-sub)' }}
               />
               <Area
                 type="monotone"
                 dataKey="count"
                 name="Kunjungan"
-                stroke="#5b62e0"
+                stroke="var(--violet)"
                 strokeWidth={2.5}
                 fill="url(#visitTrendFill)"
               />
