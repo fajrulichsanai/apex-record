@@ -1,34 +1,73 @@
+.keamanan-page {
+  --primary:      #16150F;
+  --primary-dk:   #262419;
+  --accent:       #3E8E36;
+  --accent-solid: #7ED957;
+  --accent-soft:  #E3F3DA;
+  --green:        #3E8E36;
+  --orange:       #8A5A00;
+  --orange-soft:  #FCEACB;
+  --red:          #C1381F;
+  --red-soft:     #FBE1DE;
+  --info:         #1D5FAE;
+  --info-soft:    #DCEAFB;
+  --bg:           #FAF9F6;
+  --surface:      #FFFFFF;
+  --text-main:    #17160F;
+  --text-sub:     #55534A;
+  --text-muted:   #8D8B7E;
+  --border:       #E7E4DD;
+  --radius-sm:    8px;
+  --radius-md:    14px;
+  --radius-lg:    20px;
+  --transition:   0.2s ease;
+}
+
 .keamanan-panel {
   max-width: 640px;
   margin: 0 auto;
-  padding: 24px 16px;
 }
 
 .keamanan-panel h1 {
-  font-size: 1.5rem;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text-main);
   margin-bottom: 4px;
 }
 
 .keamanan-subtitle {
-  color: #6b7280;
+  color: var(--text-sub);
+  font-size: 13.5px;
   margin-bottom: 20px;
 }
 
 .keamanan-mandatory-notice {
-  background: #fef3c7;
-  border: 1px solid #fbbf24;
-  color: #92400e;
-  border-radius: 8px;
+  background: var(--orange-soft);
+  border: 1px solid rgba(138,90,0,.3);
+  color: var(--orange);
+  border-radius: var(--radius-sm);
   padding: 12px 16px;
   margin-bottom: 16px;
-  font-size: 0.875rem;
+  font-size: 13.5px;
 }
 
 .keamanan-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
   padding: 24px;
+}
+
+.keamanan-card h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.keamanan-card > p {
+  color: var(--text-sub);
+  font-size: 13.5px;
 }
 
 .keamanan-status-row {
@@ -40,12 +79,12 @@
 }
 
 .keamanan-status-on {
-  color: #16a34a;
+  color: var(--accent);
   font-weight: 600;
 }
 
 .keamanan-status-off {
-  color: #6b7280;
+  color: var(--text-sub);
 }
 
 .keamanan-qr {
@@ -53,14 +92,20 @@
   width: 200px;
   height: 200px;
   margin: 16px 0;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  padding: 8px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
 }
 
 .keamanan-manual {
-  font-size: 0.875rem;
-  color: #6b7280;
+  font-size: 12.5px;
+  color: var(--text-sub);
   word-break: break-all;
+}
+
+.keamanan-manual code {
+  color: var(--text-main);
 }
 
 .keamanan-form {
@@ -71,20 +116,31 @@
 }
 
 .keamanan-disable-form {
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--border);
   padding-top: 16px;
 }
 
 .keamanan-form label {
-  font-weight: 500;
-  font-size: 0.875rem;
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-main);
 }
 
 .keamanan-form input {
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 1rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--surface);
+  color: var(--text-main);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.keamanan-form input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(62,142,54,.12);
 }
 
 .keamanan-actions {
@@ -99,41 +155,41 @@
   background: var(--primary);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--transition);
 }
-.keamanan-panel .btn-primary:hover:not(:disabled) { background: var(--primary-hover); }
+.keamanan-panel .btn-primary:hover:not(:disabled) { background: var(--primary-dk); }
 .keamanan-panel .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .keamanan-panel .btn-outline {
   padding: 9px 16px;
   background: var(--surface);
-  color: var(--text-1);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  color: var(--text-main);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
   font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all var(--transition);
 }
-.keamanan-panel .btn-outline:hover:not(:disabled) { background: var(--bg); }
+.keamanan-panel .btn-outline:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .keamanan-panel .btn-outline:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .keamanan-panel .btn-danger {
   padding: 9px 18px;
-  background: var(--danger, #dc2626);
+  background: var(--red);
   color: #fff;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background var(--transition);
 }
-.keamanan-panel .btn-danger:hover:not(:disabled) { background: #b91c1c; }
+.keamanan-panel .btn-danger:hover:not(:disabled) { background: #9E2E19; }
 .keamanan-panel .btn-danger:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .keamanan-backup-codes {
@@ -142,12 +198,13 @@
   gap: 8px;
   margin: 16px 0;
   padding: 16px;
-  background: #f9fafb;
-  border-radius: 8px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
 }
 
 .keamanan-backup-codes code {
-  font-size: 0.95rem;
+  font-size: 13.5px;
+  color: var(--text-main);
   text-align: center;
   padding: 6px;
 }
@@ -157,3 +214,27 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---------- DARK MODE ---------- */
+:root[data-theme="dark"] .keamanan-page {
+  --primary: #3E8E36;
+  --primary-dk: #4FA345;
+  --accent: #4FA345;
+  --accent-solid: #7ED957;
+  --accent-soft: #23361F;
+  --green: #4FA345;
+  --orange: #E8A930;
+  --orange-soft: #3A2C10;
+  --red: #E5573C;
+  --red-soft: #3A1F17;
+  --info: #5B9BE0;
+  --info-soft: #1B2A3A;
+  --bg: #17160F;
+  --surface: #242320;
+  --text-main: #F3F1EA;
+  --text-sub: #B8B5A9;
+  --text-muted: #85826F;
+  --border: #38362F;
+}
+
+:root[data-theme="dark"] .keamanan-panel .btn-danger:hover:not(:disabled) { background: #C1381F; }
