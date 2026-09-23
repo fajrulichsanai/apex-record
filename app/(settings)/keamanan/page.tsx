@@ -107,6 +107,7 @@ export default function KeamananPage() {
 
   return (
     <DashboardLayout>
+      <main className="content keamanan-page">
       <div className="keamanan-panel">
         <h1>Keamanan Akun</h1>
         <p className="keamanan-subtitle">
@@ -217,6 +218,7 @@ export default function KeamananPage() {
           </div>
         )}
       </div>
+      </main>
     </DashboardLayout>
   );
 }
