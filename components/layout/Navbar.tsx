@@ -246,8 +246,8 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                 position: 'absolute',
                 top: '100%',
                 right: 0,
-                background: '#fff',
-                border: '1px solid #E7E4DD',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
                 borderRadius: 8,
                 boxShadow: '0 4px 12px rgba(23,22,15,0.08)',
                 minWidth: 140,
@@ -256,7 +256,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
             >
               <div
                 onClick={handleLogout}
-                style={{ padding: '10px 14px', cursor: 'pointer', color: '#dc2626' }}
+                style={{ padding: '10px 14px', cursor: 'pointer', color: 'var(--red, #dc2626)' }}
               >
                 Logout
               </div>

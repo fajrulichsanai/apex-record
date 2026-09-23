@@ -107,7 +107,7 @@
 
 .info-klinik-page .field-input-real {
   width: 100%;
-  background: #fff;
+  background: var(--card-bg);
   border: 1.5px solid var(--accent);
   border-radius: 10px;
   padding: 10px 14px;
@@ -268,7 +268,7 @@
   transition: border-color .15s, background .15s;
 }
 .info-klinik-page .time-picker.active {
-  background: #fff;
+  background: var(--card-bg);
   border-color: var(--accent);
 }
 .info-klinik-page .time-picker.active:focus-within {
@@ -339,3 +339,29 @@
   .info-klinik-page .page-title-row { flex-wrap: wrap; gap: 12px; }
   .info-klinik-page .page-title-text h1 { font-size: 17px; }
 }
+
+/* ---------- DARK MODE ---------- */
+:root[data-theme="dark"] .info-klinik-page {
+  --primary:       #3E8E36;
+  --primary-dark:  #4FA345;
+  --primary-light: #23361F;
+  --accent:        #4FA345;
+  --accent-dark:   #7ED957;
+  --card-bg:       #242320;
+  --border:        #38362F;
+  --input-bg:      #17160F;
+  --input-dis:     #2A2924;
+  --text-dark:     #F3F1EA;
+  --text-mid:      #B8B5A9;
+  --text-light:    #85826F;
+  --toggle-off:    #4A4739;
+  --info-bg:       #1B2A3A;
+  --info-text:     #5B9BE0;
+  --save-bg:       #3E8E36;
+  --save-dark:     #4FA345;
+}
+
+:root[data-theme="dark"] .info-klinik-page .logo-upload-btn:hover { background: #23361F; }
+:root[data-theme="dark"] .info-klinik-page .sub-tag-expired { background: rgba(229,87,60,.16); color: #E5573C; }
+:root[data-theme="dark"] .info-klinik-page .subscription-hint.warning { color: #E8A930; }
+:root[data-theme="dark"] .info-klinik-page .subscription-hint.expired { color: #E5573C; }

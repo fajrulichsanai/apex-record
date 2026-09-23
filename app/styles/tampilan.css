@@ -1,0 +1,189 @@
+.tampilan-page {
+  --primary:      #16150F;
+  --primary-dk:   #262419;
+  --accent:       #3E8E36;
+  --accent-solid: #7ED957;
+  --accent-soft:  #E3F3DA;
+  --green:        #3E8E36;
+  --orange:       #8A5A00;
+  --orange-soft:  #FCEACB;
+  --red:          #C1381F;
+  --red-soft:     #FBE1DE;
+  --info:         #1D5FAE;
+  --info-soft:    #DCEAFB;
+  --bg:           #FAF9F6;
+  --surface:      #FFFFFF;
+  --text-main:    #17160F;
+  --text-sub:     #55534A;
+  --text-muted:   #8D8B7E;
+  --border:       #E7E4DD;
+  --radius-sm:    8px;
+  --radius-md:    14px;
+  --radius-lg:    20px;
+  --transition:   0.2s ease;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tampilan-page .page-header { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.tampilan-page .page-title-block { flex: 1; }
+.tampilan-page .page-title { display: flex; align-items: center; gap: 10px; }
+.tampilan-page .page-title h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; color: var(--text-main); }
+.tampilan-page .page-subtitle { font-size: 13.5px; color: var(--text-sub); margin-top: 4px; }
+
+.tampilan-page .panel {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tampilan-page .panel-header h2 { font-size: 15px; font-weight: 700; color: var(--text-main); }
+
+.tampilan-page .theme-option-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.tampilan-page .theme-option {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: border-color var(--transition), box-shadow var(--transition), transform var(--transition);
+}
+
+.tampilan-page .theme-option:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+.tampilan-page .theme-option.selected {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 4px 16px rgba(62,142,54,.15);
+}
+
+.tampilan-page .theme-option-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tampilan-page .theme-option-label { font-size: 14px; font-weight: 700; color: var(--text-main); }
+.tampilan-page .theme-option-check {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent-solid);
+  color: #17160F;
+  font-size: 11px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tampilan-page .theme-option-desc { font-size: 12px; color: var(--text-sub); line-height: 1.4; margin: 0; }
+
+.tampilan-page .theme-current-hint { font-size: 13px; color: var(--text-sub); margin: 0; }
+.tampilan-page .theme-current-hint strong { color: var(--text-main); }
+
+/* ---------- Mini theme preview swatch ---------- */
+.tampilan-page .theme-preview {
+  width: 100%;
+  height: 92px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  display: flex;
+  flex-shrink: 0;
+}
+
+.tampilan-page .theme-preview-sidebar { width: 26%; }
+.tampilan-page .theme-preview-body { flex: 1; display: flex; flex-direction: column; }
+.tampilan-page .theme-preview-topbar { height: 18px; }
+.tampilan-page .theme-preview-card {
+  flex: 1;
+  margin: 8px;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  justify-content: center;
+}
+.tampilan-page .theme-preview-line { height: 5px; border-radius: 3px; }
+.tampilan-page .theme-preview-line.long { width: 70%; }
+.tampilan-page .theme-preview-line.short { width: 40%; }
+
+.tampilan-page .theme-preview-light {
+  background: #EEECE6;
+}
+.tampilan-page .theme-preview-light .theme-preview-sidebar { background: #FFFFFF; border-right: 1px solid #E7E4DD; }
+.tampilan-page .theme-preview-light .theme-preview-topbar { background: #FFFFFF; border-bottom: 1px solid #E7E4DD; }
+.tampilan-page .theme-preview-light .theme-preview-card { background: #FFFFFF; border: 1px solid #E7E4DD; }
+.tampilan-page .theme-preview-light .theme-preview-line { background: #D8D5CB; }
+.tampilan-page .theme-preview-light .theme-preview-line.long { background: #3E8E36; }
+
+.tampilan-page .theme-preview-dark {
+  background: #17160F;
+}
+.tampilan-page .theme-preview-dark .theme-preview-sidebar { background: #1C1B17; border-right: 1px solid #38362F; }
+.tampilan-page .theme-preview-dark .theme-preview-topbar { background: #242320; border-bottom: 1px solid #38362F; }
+.tampilan-page .theme-preview-dark .theme-preview-card { background: #242320; border: 1px solid #38362F; }
+.tampilan-page .theme-preview-dark .theme-preview-line { background: #4A4739; }
+.tampilan-page .theme-preview-dark .theme-preview-line.long { background: #4FA345; }
+
+.tampilan-page .theme-preview-system {
+  background: linear-gradient(90deg, #EEECE6 0%, #EEECE6 50%, #17160F 50%, #17160F 100%);
+}
+.tampilan-page .theme-preview-system .theme-preview-sidebar {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFFFFF 100%);
+  border-right: 1px solid #E7E4DD;
+}
+.tampilan-page .theme-preview-system .theme-preview-topbar {
+  background: linear-gradient(90deg, #FFFFFF 0%, #FFFFFF 50%, #242320 50%, #242320 100%);
+  border-bottom: 1px solid #E7E4DD;
+}
+.tampilan-page .theme-preview-system .theme-preview-card {
+  background: linear-gradient(90deg, #FFFFFF 0%, #FFFFFF 50%, #242320 50%, #242320 100%);
+  border: 1px solid #E7E4DD;
+}
+.tampilan-page .theme-preview-system .theme-preview-line { background: #9C9A8E; }
+.tampilan-page .theme-preview-system .theme-preview-line.long { background: linear-gradient(90deg, #3E8E36 0%, #3E8E36 50%, #4FA345 50%, #4FA345 100%); }
+
+/* ---------- DARK MODE (page chrome itself) ---------- */
+:root[data-theme="dark"] .tampilan-page {
+  --primary: #3E8E36;
+  --primary-dk: #4FA345;
+  --accent: #4FA345;
+  --accent-solid: #7ED957;
+  --accent-soft: #23361F;
+  --green: #4FA345;
+  --orange: #E8A930;
+  --orange-soft: #3A2C10;
+  --red: #E5573C;
+  --red-soft: #3A1F17;
+  --info: #5B9BE0;
+  --info-soft: #1B2A3A;
+  --bg: #17160F;
+  --surface: #242320;
+  --text-main: #F3F1EA;
+  --text-sub: #B8B5A9;
+  --text-muted: #85826F;
+  --border: #38362F;
+}
+
+@media (max-width: 600px) {
+  .tampilan-page .page-title h1 { font-size: 20px; }
+}

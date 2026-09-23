@@ -98,7 +98,7 @@
 
 .nav-item.active {
   background: var(--accent-solid);
-  color: var(--text-dark);
+  color: #17160F;
   font-weight: 600;
   box-shadow: none;
 }
@@ -171,7 +171,7 @@
 }
 
 .sub-item.active {
-  color: var(--text-dark);
+  color: #17160F;
   font-weight: 600;
   background: var(--accent-solid);
   box-shadow: none;
@@ -322,4 +322,23 @@
     transform: translateX(0);
     box-shadow: 12px 0 32px rgba(23, 22, 15, 0.15);
   }
+}
+
+/* ---------- DARK MODE ---------- */
+:root[data-theme="dark"] .sidebar {
+  background: linear-gradient(180deg, #1C1B17 0%, #201F1A 60%, #211F1A 100%);
+}
+
+:root[data-theme="dark"] .logo-icon {
+  background: var(--surface);
+}
+
+:root[data-theme="dark"] .collapse-btn {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02));
+}
+
+:root[data-theme="dark"] .nav-item:hover,
+:root[data-theme="dark"] .sub-item:hover,
+:root[data-theme="dark"] .nav-toggle.expanded {
+  background: rgba(79, 163, 69, 0.16);
 }

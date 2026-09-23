@@ -53,7 +53,7 @@
 
 .tarif-page .badge-count {
   background: var(--accent-solid);
-  color: var(--text-main);
+  color: #17160F;
   font-size: 12px;
   font-weight: 700;
   padding: 2px 9px;
@@ -242,7 +242,7 @@
 }
 
 .tarif-page .filter-tab:hover { border-color: var(--accent); color: var(--accent); }
-.tarif-page .filter-tab.active { background: var(--accent-solid); border-color: var(--accent-solid); color: var(--text-main); }
+.tarif-page .filter-tab.active { background: var(--accent-solid); border-color: var(--accent-solid); color: #17160F; }
 
 .tarif-page .panel-sort {
   padding: 10px 16px;
@@ -993,3 +993,28 @@
     right: 8px;
   }
 }
+
+/* ---------- DARK MODE ---------- */
+:root[data-theme="dark"] .tarif-page {
+  --primary: #3E8E36;
+  --primary-dk: #4FA345;
+  --accent: #4FA345;
+  --accent-solid: #7ED957;
+  --accent-soft: #23361F;
+  --green: #4FA345;
+  --orange: #E8A930;
+  --orange-soft: #3A2C10;
+  --red: #E5573C;
+  --info: #5B9BE0;
+  --info-soft: #1B2A3A;
+  --bg: #17160F;
+  --surface: #242320;
+  --text-main: #F3F1EA;
+  --text-sub: #B8B5A9;
+  --text-muted: #85826F;
+  --border: #38362F;
+}
+
+:root[data-theme="dark"] .tarif-page .stat-card.termahal { --stat-tint-bg: #38362F; }
+:root[data-theme="dark"] .tarif-page .tarif-item:hover,
+:root[data-theme="dark"] .tarif-page .tarif-table tbody tr:hover { background: #2A2924; }

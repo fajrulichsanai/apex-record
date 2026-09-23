@@ -36,10 +36,35 @@
   overflow-x: hidden;
   position: relative;
 }
+
+:root[data-theme="dark"] .lp {
+  --bg: #17160F;
+  --bg-deep: #100F0B;
+  --surface: #242320;
+  --surface-soft: #2A2924;
+  --ink: #F3F1EA;
+  --ink-2: #B8B5A9;
+  --ink-3: #85826F;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --accent: #4FA345;
+  --accent-solid: #7ED957;
+  --accent-soft: #23361F;
+  --accent-ink: #6BC85F;
+  --warn-soft: #3A2C10;
+  --warn-ink: #E8A930;
+  --danger-soft: #3A1F17;
+  --danger-ink: #E5573C;
+  --info-soft: #1B2A3A;
+  --info-ink: #5B9BE0;
+  --btn-ink: #4FA345;
+  --btn-ink-hover: #5DB852;
+}
+
 .lp *{ box-sizing: border-box; }
 .lp img{ max-width: 100%; display: block; }
 .lp a{ color: inherit; }
-.lp ::selection{ background: var(--accent-solid); color: var(--ink); }
+.lp ::selection{ background: var(--accent-solid); color: #17160F; }
 
 .lp .wrap{ max-width: 1180px; margin: 0 auto; padding: 0 28px; }
 
@@ -333,7 +358,7 @@
 }
 .lp .price-badge{
   position: absolute; top: -13px; left: 26px;
-  background: var(--accent-solid); color: var(--ink); font-size: 11px; font-weight: 700;
+  background: var(--accent-solid); color: #17160F; font-size: 11px; font-weight: 700;
   padding: 5px 12px; border-radius: 999px; letter-spacing: .01em; white-space: nowrap;
 }
 .lp .price-icon{

@@ -22,7 +22,8 @@ export type FeatureKey =
   | 'audit-log'
   | 'langganan'
   | 'onboarding'
-  | 'keamanan';
+  | 'keamanan'
+  | 'tampilan';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',
@@ -45,11 +46,12 @@ const FULL_ACCESS: FeatureKey[] = [
   'audit-log',
   'langganan',
   'keamanan',
+  'tampilan',
 ];
 
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
   super_admin: FULL_ACCESS,
-  multi_clinic_owner: ['keamanan'],
+  multi_clinic_owner: ['keamanan', 'tampilan'],
   owner: [...FULL_ACCESS, 'onboarding'],
   admin: [
     'pasien',
@@ -66,9 +68,10 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'referral',
     'langganan',
     'keamanan',
+    'tampilan',
   ],
-  dokter: ['pasien', 'reservasi', 'kunjungan', 'informed-consent', 'share-fee-saya', 'keamanan'],
-  pending: ['keamanan'],
+  dokter: ['pasien', 'reservasi', 'kunjungan', 'informed-consent', 'share-fee-saya', 'keamanan', 'tampilan'],
+  pending: ['keamanan', 'tampilan'],
 };
 
 const VIEW_ONLY_FEATURES: Partial<Record<UserRole, FeatureKey[]>> = {
