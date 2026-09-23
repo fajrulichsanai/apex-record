@@ -27,6 +27,25 @@
   --bg-input: var(--surface-soft);
 }
 
+:root[data-theme="dark"] {
+  --bg: #17160F;
+  --surface: #242320;
+  --surface-soft: #2A2924;
+  --ink: #F3F1EA;
+  --ink-2: #B8B5A9;
+  --ink-3: #85826F;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --accent: #4FA345;
+  --accent-solid: #7ED957;
+  --accent-soft: #23361F;
+  --accent-ink: #6BC85F;
+  --danger-soft: #3A1F17;
+  --danger-ink: #E5573C;
+  --btn-ink: #4FA345;
+  --btn-ink-hover: #5DB852;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -280,7 +299,7 @@ body {
 
 .input-wrap input:focus {
   border-color: var(--accent);
-  background: #fff;
+  background: var(--surface);
 }
 
 .input-wrap .toggle-eye {

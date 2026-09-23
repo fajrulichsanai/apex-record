@@ -37,7 +37,7 @@
 
 .audit-log-page .page-title { display: flex; align-items: center; gap: 10px; }
 .audit-log-page .page-title h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; color: var(--text-main); }
-.audit-log-page .badge-count { background: var(--accent-solid); color: var(--text-main); font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
+.audit-log-page .badge-count { background: var(--accent-solid); color: #17160F; font-size: 12px; font-weight: 700; padding: 2px 9px; border-radius: 20px; }
 .audit-log-page .page-subtitle { font-size: 13.5px; color: var(--text-sub); margin-top: 4px; }
 
 .audit-log-page .btn-primary,
@@ -71,7 +71,9 @@
 }
 
 .audit-log-page .search-input,
-.audit-log-page .date-input {
+.audit-log-page .date-input,
+.audit-log-page .filter-select {
+  background: var(--surface);
   border: 1.5px solid var(--border);
   border-radius: var(--radius-sm);
   padding: 10px 12px;
@@ -190,7 +192,7 @@
   padding: 20px;
 }
 .audit-modal {
-  background: #FFFFFF;
+  background: var(--surface, #FFFFFF);
   border-radius: 20px;
   max-width: 720px;
   width: 100%;
@@ -203,10 +205,10 @@
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid #E7E4DD;
+  border-bottom: 1px solid var(--border, #E7E4DD);
 }
-.audit-modal-header h2 { font-size: 18px; font-weight: 700; color: #17160F; }
-.audit-modal-close { background: none; border: none; font-size: 24px; line-height: 1; cursor: pointer; color: #55534A; }
+.audit-modal-header h2 { font-size: 18px; font-weight: 700; color: var(--text-main, #17160F); }
+.audit-modal-close { background: none; border: none; font-size: 24px; line-height: 1; cursor: pointer; color: var(--text-sub, #55534A); }
 .audit-modal-body { padding: 20px 24px; }
 
 .audit-detail-grid {
@@ -215,18 +217,41 @@
   gap: 16px 24px;
   margin-bottom: 20px;
 }
-.detail-label { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: #8D8B7E; margin-bottom: 4px; }
-.detail-value { font-size: 13.5px; color: #17160F; }
-.detail-sub { color: #55534A; font-size: 12px; }
+.detail-label { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted, #8D8B7E); margin-bottom: 4px; }
+.detail-value { font-size: 13.5px; color: var(--text-main, #17160F); }
+.detail-sub { color: var(--text-sub, #55534A); font-size: 12px; }
 
-.audit-diff-section h3 { font-size: 14px; font-weight: 700; color: #17160F; margin-bottom: 10px; }
+.audit-diff-section h3 { font-size: 14px; font-weight: 700; color: var(--text-main, #17160F); margin-bottom: 10px; }
 .diff-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.diff-table th { text-align: left; padding: 8px 10px; background: #FAF9F6; color: #55534A; font-size: 12px; font-weight: 600; }
-.diff-table td { padding: 8px 10px; border-bottom: 1px solid #E7E4DD; vertical-align: top; word-break: break-word; }
-.diff-field { font-weight: 600; color: #17160F; white-space: nowrap; }
-.diff-before { color: #C1381F; background: rgba(193,56,31,.05); }
-.diff-after { color: #3E8E36; background: rgba(62,142,54,.06); }
+.diff-table th { text-align: left; padding: 8px 10px; background: var(--bg, #FAF9F6); color: var(--text-sub, #55534A); font-size: 12px; font-weight: 600; }
+.diff-table td { padding: 8px 10px; border-bottom: 1px solid var(--border, #E7E4DD); vertical-align: top; word-break: break-word; }
+.diff-field { font-weight: 600; color: var(--text-main, #17160F); white-space: nowrap; }
+.diff-before { color: var(--red, #C1381F); background: rgba(193,56,31,.05); }
+.diff-after { color: var(--accent, #3E8E36); background: rgba(62,142,54,.06); }
 
 @media (max-width: 640px) {
   .audit-detail-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- DARK MODE ---------- */
+:root[data-theme="dark"] .audit-log-page {
+  --primary: #3E8E36;
+  --primary-dk: #4FA345;
+  --accent: #4FA345;
+  --accent-solid: #7ED957;
+  --accent-soft: #23361F;
+  --green: #4FA345;
+  --green-soft: #23361F;
+  --orange: #E8A930;
+  --orange-soft: #3A2C10;
+  --red: #E5573C;
+  --red-soft: #3A1F17;
+  --info: #5B9BE0;
+  --info-soft: #1B2A3A;
+  --bg: #17160F;
+  --surface: #242320;
+  --text-main: #F3F1EA;
+  --text-sub: #B8B5A9;
+  --text-muted: #85826F;
+  --border: #38362F;
 }

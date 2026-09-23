@@ -60,3 +60,5 @@
 
 .referral-page .referral-table a { color: var(--accent, #3E8E36); text-decoration: none; font-weight: 600; }
 .referral-page .referral-table a:hover { text-decoration: underline; }
+
+:root[data-theme="dark"] .referral-page .referral-table tbody tr:hover { background: #2A2924; }

@@ -148,7 +148,7 @@
   left: 50%;
   transform: translateX(-50%);
   background: var(--accent-solid);
-  color: var(--text-main);
+  color: #17160F;
   font-size: 11px;
   font-weight: 700;
   padding: 5px 14px;
@@ -315,3 +315,28 @@
   .langganan-page .payment-actions button { width: 100%; justify-content: center; }
   .langganan-page .checkout-summary { max-width: 100%; }
 }
+
+/* ---------- DARK MODE ---------- */
+:root[data-theme="dark"] .langganan-page {
+  --primary: #3E8E36;
+  --primary-dk: #4FA345;
+  --accent: #4FA345;
+  --accent-solid: #7ED957;
+  --accent-soft: #23361F;
+  --green: #4FA345;
+  --green-soft: #23361F;
+  --orange: #E8A930;
+  --orange-soft: #3A2C10;
+  --red: #E5573C;
+  --red-soft: #3A1F17;
+  --info: #5B9BE0;
+  --info-soft: #1B2A3A;
+  --bg: #17160F;
+  --surface: #242320;
+  --text-main: #F3F1EA;
+  --text-sub: #B8B5A9;
+  --text-muted: #85826F;
+  --border: #38362F;
+}
+
+:root[data-theme="dark"] .langganan-page .status-card.urgent { background: rgba(232,169,48,.1); }
