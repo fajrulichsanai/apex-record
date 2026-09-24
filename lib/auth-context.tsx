@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import type { User } from '@/types/user';
 import { API_BASE, setOnUnauthorized } from './api-client';
+import { DEMO_USER, exitDemoMode, isDemoMode } from './demo/demo-mode';
 
 interface AuthState {
   user: User | null;
@@ -50,10 +51,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // an httpOnly cookie (that session simply re-logs in on its next 401).
     localStorage.removeItem('token');
     sessionStorage.removeItem('impersonator_token');
+    if (isDemoMode()) {
+      // Demo tab: fictional owner, never persisted, no real session touched.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setUser(DEMO_USER);
+      setLoading(false);
+      return;
+    }
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUser(parsedUser);
       setRoleCookie(parsedUser.role);
     }
@@ -76,6 +83,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    if (isDemoMode()) {
+      exitDemoMode();
+      setUser(null);
+      window.location.href = '/landingpage';
+      return;
+    }
     // Revokes the token on the backend and clears the session cookies; local
     // state is cleared regardless so the UI never hangs on a network error.
     fetch(`${API_BASE}/auth/logout`, { method: 'POST' }).catch(() => {});

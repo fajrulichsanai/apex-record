@@ -6,6 +6,7 @@ import { SubscriptionGateProvider } from "@/lib/subscription-gate-context";
 import { MfaGateProvider } from "@/lib/mfa-gate-context";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme-context";
 import ImpersonationBanner from "@/components/subscription/ImpersonationBanner";
+import DemoBanner from "@/components/demo/DemoBanner";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -48,6 +49,7 @@ export default function RootLayout({
             <ToastProvider>
               <MfaGateProvider>
                 <SubscriptionGateProvider>
+                  <DemoBanner />
                   <ImpersonationBanner />
                   {children}
                 </SubscriptionGateProvider>

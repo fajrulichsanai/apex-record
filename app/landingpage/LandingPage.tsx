@@ -7,6 +7,8 @@ import ThemeToggle from './ThemeToggle';
 import './landingpage.css';
 
 const APP_URL = 'https://staging.apexrecord.my.id';
+// Opens the real app screens with fictional data — no sign-up needed.
+const DEMO_URL = `${APP_URL}/demo`;
 
 function CheckIcon() {
   return (
@@ -185,6 +187,7 @@ export default function LandingPage() {
           <div className="nav-cta">
             <ThemeToggle />
             <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">Masuk</a>
+            <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">Lihat Demo</a>
             <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-grad btn-sm">Coba Gratis</a>
           </div>
         </div>
@@ -206,7 +209,7 @@ export default function LandingPage() {
                   Mulai Uji Coba 15 Hari
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </a>
-                <a href="#fitur" className="btn btn-ghost">Lihat semua fitur</a>
+                <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">Lihat Demo Aplikasi</a>
               </div>
               <div className="trust-row">
                 <span className="trust-item"><CheckIcon />15 hari gratis, tanpa kartu kredit</span>
@@ -317,7 +320,7 @@ export default function LandingPage() {
                   <li><CheckIcon /><span><b>Peta sebaran asal pasien</b> — bubble map per kecamatan, supaya tahu area mana yang paling potensial digarap.</span></li>
                   <li><CheckIcon /><span><b>Laporan siap kirim</b> — PDF profesional untuk akuntan maupun investor, tinggal unduh.</span></li>
                 </ul>
-                <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-grad btn-sm">Lihat Laporan Keuangan Pro</a>
+                <a href={`${DEMO_URL}?to=/laporan-keuangan-pro`} target="_blank" rel="noopener noreferrer" className="btn btn-grad btn-sm">Lihat Demo Laporan Keuangan Pro</a>
               </div>
 
               <div className="heat-panel">
@@ -397,6 +400,7 @@ export default function LandingPage() {
               <p>Daftar sekarang, aktifkan dalam 10 menit, dan rasakan bedanya di kunjungan pasien pertama.</p>
               <div className="cta-actions">
                 <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-white">Mulai Uji Coba Gratis</a>
+                <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">Coba Demo Dulu</a>
                 <a href="#faq" className="btn btn-ghost">Ada pertanyaan?</a>
               </div>
             </Reveal>
