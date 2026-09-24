@@ -259,7 +259,7 @@ export default function LaporanKunjunganPage() {
         limit: Math.max(report.summary.total, 1),
       });
 
-      exportToExcel(
+      await exportToExcel(
         [
           {
             name: 'Ringkasan',

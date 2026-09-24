@@ -303,11 +303,11 @@ export default function LaporanKeuanganPage() {
   const insights = useMemo(() => buildFinancialInsights(report), [report]);
   const comparisonPercent = report?.comparison.changePercent ?? null;
 
-  function handleExport() {
+  async function handleExport() {
     if (!report) return;
     setExporting(true);
     try {
-      exportToExcel(
+      await exportToExcel(
         [
           {
             name: 'Ringkasan',
