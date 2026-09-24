@@ -49,4 +49,12 @@ jobs:
             pm2 restart apex-record-staging-frontend
             rm -rf .next-old
 
+            echo "🩺 Cek header cache yang dikirim ke browser (lewat nginx)..."
+            sleep 5
+            for P in / /dashboard /landingpage /api/backend/auth/me; do
+              echo "--- $P"
+              curl -sS -o /dev/null -D - "https://staging.apexrecord.my.id$P" \
+                | grep -iE '^(HTTP|cache-control|expires|age|etag|last-modified|x-nextjs|x-cache|x-proxy-cache|cf-cache-status|server|vary):' || true
+            done
+
             echo "✅ Deploy selesai!"
