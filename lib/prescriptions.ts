@@ -1,6 +1,5 @@
-import { apiClient, ApiError } from './api-client';
+import { API_BASE, apiClient, ApiError } from './api-client';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export interface PrescriptionItem {
   id: number;
@@ -33,10 +32,7 @@ export const prescriptionsApi = {
     apiClient.delete<void>(`/encounters/${encounterId}/prescriptions/${itemId}`),
 
   downloadPdf: async (encounterId: number) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const res = await fetch(`${API_URL}/encounters/${encounterId}/prescriptions/pdf`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    });
+    const res = await fetch(`${API_BASE}/encounters/${encounterId}/prescriptions/pdf`);
     if (!res.ok) {
       let message = 'Gagal mengunduh resep PDF';
       try {

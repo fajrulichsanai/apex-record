@@ -1,22 +1,23 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+/**
+ * Every backend call goes through the same-origin proxy in
+ * app/api/backend/[...path]/route.ts. It attaches the access token from an
+ * httpOnly cookie, so the token is never readable by page scripts (XSS).
+ */
+export const API_BASE = '/api/backend';
 
-/** Resolves a backend-relative path (e.g. `/uploads/...`) to a full URL. */
+/** Resolves a backend-relative path (e.g. `/uploads/...`) to a URL the
+ * browser can load; the session cookie rides along automatically. */
 export function apiFileUrl(path: string) {
-  return `${API_URL}${path}`;
+  return `${API_BASE}${path}`;
 }
 
 /**
- * Fetches a backend-hosted file (payment proofs, supporting-exam images) with
- * the caller's JWT and returns an object URL for it. These files are served
- * from authenticated, ownership-checked routes — plain `<img src>`/`<a href>`
- * navigation never carries the Authorization header, so callers must fetch
- * through here and revoke the returned URL (`URL.revokeObjectURL`) once done.
+ * Fetches a backend-hosted file (payment proofs, supporting-exam images) and
+ * returns an object URL for it. Callers revoke the returned URL
+ * (`URL.revokeObjectURL`) once done.
  */
 export async function fetchProtectedFileUrl(path: string): Promise<string> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const res = await fetch(apiFileUrl(path), {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-  });
+  const res = await fetch(apiFileUrl(path));
   if (!res.ok) {
     throw new ApiError('Gagal memuat file', res.status);
   }
@@ -86,17 +87,21 @@ export function setOnUnauthorized(handler: (() => void) | null) {
   onUnauthorized = handler;
 }
 
+/** True once a user has logged in on this browser (the token itself lives in
+ * an httpOnly cookie the page can't see; the cached profile marks a session). */
+function hasSession() {
+  return typeof window !== 'undefined' && !!localStorage.getItem('user');
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   // FormData bodies must NOT get an explicit Content-Type — the browser sets
   // its own multipart boundary. Only set it for JSON bodies.
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
 
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });
@@ -111,7 +116,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     if (code === 'MFA_SETUP_REQUIRED') {
       onMfaSetupRequired?.();
     }
-    if (res.status === 401 && token) {
+    if (res.status === 401 && hasSession()) {
       // Only a *previously logged-in* session going 401 (token now invalid/
       // expired) should force a logout — a request made with no token at all
       // is handled by the page-level auth guard instead, so it doesn't loop

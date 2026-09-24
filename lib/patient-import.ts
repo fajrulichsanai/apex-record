@@ -1,6 +1,5 @@
-import { apiClient, ApiError } from './api-client';
+import { API_BASE, apiClient, ApiError } from './api-client';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export interface PatientImportRowResult {
   row: number;
@@ -19,10 +18,7 @@ export interface PatientImportSummary {
 
 export const patientImportApi = {
   downloadTemplate: async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const res = await fetch(`${API_URL}/super-admin/patients/import-template`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    });
+    const res = await fetch(`${API_BASE}/super-admin/patients/import-template`);
     if (!res.ok) {
       let message = 'Gagal mengunduh template migrasi pasien';
       try {

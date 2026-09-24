@@ -1,6 +1,5 @@
-import { apiClient, ApiError } from './api-client';
+import { API_BASE, apiClient, ApiError } from './api-client';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export type BillingStatus = 'unpaid' | 'partial' | 'paid' | 'cancelled' | 'refunded';
 export type DiscountType = 'nominal' | 'percent';
@@ -142,10 +141,7 @@ export const billingApi = {
     apiClient.post<CreatePaymentResponse>(`/billings/${id}/payments`, payload),
 
   downloadInvoicePdf: async (id: number) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const res = await fetch(`${API_URL}/billings/${id}/invoice`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    });
+    const res = await fetch(`${API_BASE}/billings/${id}/invoice`);
     if (!res.ok) {
       throw new ApiError('Gagal mengunduh invoice PDF', res.status);
     }

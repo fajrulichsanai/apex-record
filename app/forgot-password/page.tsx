@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import '../styles/page.css';
 import '../styles/verify-email.css';
+import { API_BASE } from '@/lib/api-client';
 
-const LOCAL_API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const LOCAL_API = API_BASE;
 
 type RequestState = 'idle' | 'loading' | 'sent' | 'error';
 

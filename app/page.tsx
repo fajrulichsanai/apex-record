@@ -8,8 +8,9 @@ import { defaultRouteForRole } from '@/lib/permissions';
 import type { User } from '@/types/user';
 import AuthThemeToggle from '@/components/auth/AuthThemeToggle';
 import './styles/page.css';
+import { API_BASE } from '@/lib/api-client';
 
-const LOCAL_API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const LOCAL_API = API_BASE;
 
 type Mode = 'login' | 'register';
 
@@ -138,10 +139,12 @@ const LoginPage = () => {
   // Shared by the normal login path and the post-MFA-verify path: stores the
   // session, then routes to the MFA setup screen instead of the dashboard if
   // this role requires MFA and hasn't set it up yet.
-  const completeLogin = (data: { accessToken: string; user: User; mfaSetupRequired?: boolean }) => {
+  // The access token never reaches this page: the /api/backend proxy moves it
+  // into an httpOnly cookie on its way through.
+  const completeLogin = (data: { user: User; mfaSetupRequired?: boolean }) => {
     success('Selamat datang! Anda akan diarahkan...');
     setTimeout(() => {
-      login(data.accessToken, data.user);
+      login(data.user);
       router.push(data.mfaSetupRequired ? '/keamanan' : defaultRouteForRole(data.user?.role));
     }, 1500);
   };

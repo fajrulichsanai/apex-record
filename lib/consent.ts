@@ -1,6 +1,5 @@
-import { apiClient, ApiError } from './api-client';
+import { API_BASE, apiClient, ApiError } from './api-client';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export interface ConsentTemplate {
   id: number;
@@ -108,10 +107,7 @@ export const patientConsentApi = {
   ) => apiClient.patch<PatientConsent>(`/patient-consents/${id}/sign`, payload),
 
   downloadPdf: async (id: number) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const res = await fetch(`${API_URL}/patient-consents/${id}/pdf`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    });
+    const res = await fetch(`${API_BASE}/patient-consents/${id}/pdf`);
     if (!res.ok) {
       let message = 'Gagal mengunduh formulir persetujuan PDF';
       try {

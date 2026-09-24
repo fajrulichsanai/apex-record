@@ -1,6 +1,5 @@
-import { apiClient, ApiError } from './api-client';
+import { API_BASE, apiClient, ApiError } from './api-client';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export type EncounterStatus = 'arrived' | 'in_progress' | 'finished' | 'cancelled';
 export type PaymentMethod = 'cash' | 'transfer' | 'qris' | 'insurance' | 'bpjs';
@@ -213,10 +212,7 @@ export const reportsApi = {
     apiClient.get<PatientOriginKelurahan[]>('/reports/financial-pro/patient-origin-kelurahan'),
 
   downloadFinancialProPdf: async (query: FinancialReportQuery) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const res = await fetch(`${API_URL}/reports/financial-pro/pdf?${toQueryString(query)}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    });
+    const res = await fetch(`${API_BASE}/reports/financial-pro/pdf?${toQueryString(query)}`);
     if (!res.ok) {
       let message = 'Gagal mengunduh laporan keuangan PDF';
       try {
@@ -239,10 +235,7 @@ export const reportsApi = {
   },
 
   downloadInvestorReportPdf: async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const res = await fetch(`${API_URL}/reports/investor/pdf`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    });
+    const res = await fetch(`${API_BASE}/reports/investor/pdf`);
     if (!res.ok) {
       let message = 'Gagal mengunduh laporan investor';
       try {

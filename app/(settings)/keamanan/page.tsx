@@ -14,7 +14,7 @@ type Step = 'idle' | 'setup' | 'backup-codes';
 
 export default function KeamananPage() {
   const { success, error } = useToast();
-  const { user, token, login } = useAuth();
+  const { user, login } = useAuth();
 
   const [loading, setLoading] = useState(true);
   const [mfaEnabled, setMfaEnabled] = useState(false);
@@ -69,7 +69,7 @@ export default function KeamananPage() {
       // Keep the locally-stored user in sync so MfaGateProvider's redirect
       // check (which reads user.mfaEnabled) doesn't keep sending an
       // MFA-enforced-role user back here after they've just finished setup.
-      if (user && token) login(token, { ...user, mfaEnabled: true });
+      if (user) login({ ...user, mfaEnabled: true });
     } catch (err) {
       error(err instanceof ApiError ? err.message : 'Kode tidak valid');
     } finally {
@@ -92,7 +92,7 @@ export default function KeamananPage() {
       setMfaEnabled(false);
       setShowDisableForm(false);
       setDisablePassword('');
-      if (user && token) login(token, { ...user, mfaEnabled: false });
+      if (user) login({ ...user, mfaEnabled: false });
       success('MFA telah dinonaktifkan');
     } catch (err) {
       error(err instanceof ApiError ? err.message : 'Password salah');

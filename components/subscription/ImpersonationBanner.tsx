@@ -10,8 +10,8 @@ export default function ImpersonationBanner() {
 
   if (!impersonating) return null;
 
-  const handleExit = () => {
-    exitImpersonation();
+  const handleExit = async () => {
+    await exitImpersonation();
     router.push('/super-admin/dashboard');
   };
 

@@ -96,8 +96,8 @@ export default function SuperAdminClinicDetailPage() {
   const handleImpersonate = async (target: User) => {
     setImpersonatingId(target.id);
     try {
-      const { accessToken, user } = await authApi.impersonate(target.id);
-      startImpersonation(accessToken, user);
+      const { user } = await authApi.impersonate(target.id);
+      startImpersonation(user);
       success(`Masuk sebagai ${target.name}`);
       router.push(defaultRouteForRole(user.role));
     } catch (err) {

@@ -2,18 +2,24 @@
 
 import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import type { User } from '@/types/user';
-import { setOnUnauthorized } from './api-client';
+import { API_BASE, setOnUnauthorized } from './api-client';
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   loading: boolean;
-  login: (token: string, user: User) => void;
+  /**
+   * Records the signed-in user. The access token itself never reaches page
+   * code: the /api/backend proxy stores it in an httpOnly cookie when the
+   * login/verify response passes through. Also used to refresh the cached
+   * profile (e.g. after enabling MFA).
+   */
+  login: (user: User) => void;
+  /** Ends the session server-side (token revoked) and clears local state. */
   logout: () => void;
   /** True while a Super Admin is viewing the app as another user. */
   impersonating: boolean;
-  startImpersonation: (token: string, user: User) => void;
-  exitImpersonation: () => void;
+  startImpersonation: (user: User) => void;
+  exitImpersonation: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
@@ -34,83 +40,90 @@ function setRoleCookie(role: string | null) {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [impersonating, setImpersonating] = useState(false);
 
   // Hydrate from localStorage after mount only — avoids a server/client markup
   // mismatch, since localStorage doesn't exist during server rendering.
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
+    // Tokens used to be kept here; drop any left over from before the move to
+    // an httpOnly cookie (that session simply re-logs in on its next 401).
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('impersonator_token');
     const storedUser = localStorage.getItem('user');
-    if (storedToken && storedUser) {
+    if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setToken(storedToken);
       setUser(parsedUser);
       setRoleCookie(parsedUser.role);
     }
-    setImpersonating(!!sessionStorage.getItem('impersonator_token'));
+    setImpersonating(!!sessionStorage.getItem('impersonator_user'));
     setLoading(false);
   }, []);
 
-  const login = (newToken: string, newUser: User) => {
-    localStorage.setItem('token', newToken);
+  const login = (newUser: User) => {
     localStorage.setItem('user', JSON.stringify(newUser));
     setRoleCookie(newUser.role);
-    setToken(newToken);
     setUser(newUser);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
+  const clearLocalSession = () => {
     localStorage.removeItem('user');
-    sessionStorage.removeItem('impersonator_token');
     sessionStorage.removeItem('impersonator_user');
     setRoleCookie(null);
-    setToken(null);
     setUser(null);
     setImpersonating(false);
   };
 
+  const logout = () => {
+    // Revokes the token on the backend and clears the session cookies; local
+    // state is cleared regardless so the UI never hangs on a network error.
+    fetch(`${API_BASE}/auth/logout`, { method: 'POST' }).catch(() => {});
+    clearLocalSession();
+  };
+
   // Kept fresh every render so the module-level handler below (registered
-  // once) always calls the current logout, without re-subscribing on every
-  // render the way including `logout` in the effect's deps would.
-  const logoutRef = useRef(logout);
+  // once) always calls the current handler, without re-subscribing on every
+  // render the way including it in the effect's deps would.
+  const onUnauthorizedRef = useRef(clearLocalSession);
   useEffect(() => {
-    logoutRef.current = logout;
+    onUnauthorizedRef.current = clearLocalSession;
   });
 
   useEffect(() => {
-    setOnUnauthorized(() => logoutRef.current());
+    // A 401 means the cookie is already invalid/expired: just drop it.
+    setOnUnauthorized(() => {
+      fetch('/api/session', { method: 'DELETE' }).catch(() => {});
+      onUnauthorizedRef.current();
+    });
     return () => setOnUnauthorized(null);
   }, []);
 
-  const startImpersonation = (newToken: string, newUser: User) => {
-    if (token && user) {
-      sessionStorage.setItem('impersonator_token', token);
+  // The proxy has already parked the Super Admin's own session cookie and
+  // switched to the impersonation token when /auth/impersonate/:id returned.
+  const startImpersonation = (newUser: User) => {
+    if (user) {
       sessionStorage.setItem('impersonator_user', JSON.stringify(user));
     }
-    login(newToken, newUser);
+    login(newUser);
     setImpersonating(true);
   };
 
-  const exitImpersonation = () => {
-    const savedToken = sessionStorage.getItem('impersonator_token');
+  const exitImpersonation = async () => {
     const savedUser = sessionStorage.getItem('impersonator_user');
-    sessionStorage.removeItem('impersonator_token');
     sessionStorage.removeItem('impersonator_user');
     setImpersonating(false);
-    if (savedToken && savedUser) {
-      login(savedToken, JSON.parse(savedUser));
+    const res = await fetch('/api/session/impersonation', { method: 'DELETE' }).catch(() => null);
+    if (res?.ok && savedUser) {
+      login(JSON.parse(savedUser));
     } else {
-      logout();
+      clearLocalSession();
     }
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, login, logout, impersonating, startImpersonation, exitImpersonation }}
+      value={{ user, loading, login, logout, impersonating, startImpersonation, exitImpersonation }}
     >
       {children}
     </AuthContext.Provider>
