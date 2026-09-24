@@ -63,9 +63,9 @@ export const demoClinic = {
 };
 
 export const demoPractitioners = [
-  { id: 1, name: 'drg. Anisa Putri', specialization: 'Dokter Gigi Umum', gender: 'female', sipNumber: 'SIP-DG-001' },
-  { id: 2, name: 'drg. Bima Santoso, Sp.Ort', specialization: 'Ortodonti', gender: 'male', sipNumber: 'SIP-DG-002' },
-  { id: 3, name: 'drg. Citra Lestari', specialization: 'Dokter Gigi Umum', gender: 'female', sipNumber: 'SIP-DG-003' },
+  { id: 1, name: 'Anisa Putri', specialization: 'Dokter Gigi Umum', gender: 'female', sipNumber: 'SIP-DG-001' },
+  { id: 2, name: 'Bima Santoso, Sp.Ort', specialization: 'Ortodonti', gender: 'male', sipNumber: 'SIP-DG-002' },
+  { id: 3, name: 'Citra Lestari', specialization: 'Dokter Gigi Umum', gender: 'female', sipNumber: 'SIP-DG-003' },
 ].map((p) => ({ ...p, clinicId: DEMO_CLINIC_ID, phone: '0812-0000-000' + p.id, email: `dokter${p.id}@senyumsehat.demo`, createdAt: '2026-01-05T08:00:00.000Z' }));
 
 export const demoTarifs = [

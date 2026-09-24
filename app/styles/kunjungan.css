@@ -33,7 +33,7 @@
   gap: 24px;
 }
 
-:root[data-theme="dark"] .kunjungan-page:not(.rekam-medis-page),
+:root[data-theme="dark"] .kunjungan-page,
 :root[data-theme="dark"] .visit-modal-overlay {
   --primary:      #3E8E36;
   --primary-dk:   #4FA345;

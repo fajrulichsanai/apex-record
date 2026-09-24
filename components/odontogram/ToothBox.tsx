@@ -39,7 +39,7 @@ export default function ToothBox({ toothNumber, condition, isSelected, onClick }
       <div className="tooth-rct-slot">
         {condition?.rct && (
           <svg width="16" height="12" viewBox="0 0 16 12" aria-label="RCT">
-            <path d="M8,12 L0,0 L16,0 Z" fill="#FFFFFF" stroke="#1A2340" strokeWidth="1" />
+            <path d="M8,12 L0,0 L16,0 Z" fill="#FFFFFF" stroke="#17160F" strokeWidth="1" />
           </svg>
         )}
       </div>

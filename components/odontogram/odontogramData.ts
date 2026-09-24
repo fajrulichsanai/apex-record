@@ -86,8 +86,8 @@ export const SURFACE_OPTIONS = [
 ];
 
 export const SURFACE_COLORS: Record<string, string> = {
-  karies: '#1A2340',
-  komposit: '#2DCB8A',
+  karies: '#17160F',
+  komposit: '#3E8E36',
   gic: '#EC4899',
 };
 

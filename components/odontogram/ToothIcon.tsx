@@ -28,7 +28,7 @@ export default function ToothIcon({ toothNumber, condition, selected, size = 34 
   const rightCondition = condition?.[SURFACE_FIELD[layout.right]];
   const occlusalCondition = condition?.surfaceOcclusal;
 
-  const stroke = selected ? '#4F7EF8' : '#4A5568';
+  const stroke = selected ? '#3E8E36' : '#55534A';
   const strokeWidth = selected ? 1.6 : 1;
   const baseFill = layout.isDeciduous ? '#FEF3C7' : '#FFFFFF';
   const missing = condition?.teksBawah === 'MISSING';
@@ -57,7 +57,7 @@ export default function ToothIcon({ toothNumber, condition, selected, size = 34 
       <rect x="0.5" y="0.5" width="39" height="39" fill="none" stroke={stroke} strokeWidth={strokeWidth} />
 
       {condition?.teksBawah === 'CFR' && (
-        <text x="20" y="26" textAnchor="middle" fontSize="22" fontWeight="700" fill="#1A2340">
+        <text x="20" y="26" textAnchor="middle" fontSize="22" fontWeight="700" fill="#17160F">
           #
         </text>
       )}
@@ -65,7 +65,7 @@ export default function ToothIcon({ toothNumber, condition, selected, size = 34 
         <path
           d="M8,24 L16,32 L32,12"
           fill="none"
-          stroke="#1A2340"
+          stroke="#17160F"
           strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -73,8 +73,8 @@ export default function ToothIcon({ toothNumber, condition, selected, size = 34 
       )}
       {missing && (
         <>
-          <line x1="2" y1="2" x2="38" y2="38" stroke="#1A2340" strokeWidth="3" />
-          <line x1="38" y1="2" x2="2" y2="38" stroke="#1A2340" strokeWidth="3" />
+          <line x1="2" y1="2" x2="38" y2="38" stroke="#17160F" strokeWidth="3" />
+          <line x1="38" y1="2" x2="2" y2="38" stroke="#17160F" strokeWidth="3" />
         </>
       )}
     </svg>

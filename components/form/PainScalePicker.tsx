@@ -3,11 +3,12 @@
 const SCALE = Array.from({ length: 11 }, (_, i) => i);
 
 function scaleColor(n: number) {
-  if (n === 0) return '#2DCB8A';
-  if (n <= 3) return '#8BC34A';
-  if (n <= 6) return '#F5A623';
-  if (n <= 8) return '#FF7A45';
-  return '#FF4D4F';
+  // Green → red severity scale in the app palette (white text on each).
+  if (n === 0) return '#3E8E36';
+  if (n <= 3) return '#6A8F2A';
+  if (n <= 6) return '#B07A12';
+  if (n <= 8) return '#C8581F';
+  return '#C1381F';
 }
 
 interface PainScalePickerProps {

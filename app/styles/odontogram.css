@@ -30,7 +30,7 @@
   cursor: pointer;
   transition: all var(--transition);
 }
-.odontogram-toolbar .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+.odontogram-toolbar .icon-btn:hover { border-color: var(--text-muted); background: var(--surface-hover); color: var(--text-main); }
 
 /* ----- legend ----- */
 
@@ -146,7 +146,7 @@
   color: var(--text-sub);
   font-weight: 500;
 }
-.tooth-number.selected { color: var(--primary); font-weight: 700; }
+.tooth-number.selected { color: var(--accent); font-weight: 700; }
 
 .tooth-tag {
   font-size: 9px;
@@ -157,7 +157,7 @@
 
 .tooth-icon { display: block; border-radius: 2px; }
 
-.tooth-cell:hover .tooth-icon { filter: drop-shadow(0 0 0 1px rgba(79, 126, 248, .25)); }
+.tooth-cell:hover .tooth-icon { filter: drop-shadow(0 0 3px rgba(62, 142, 54, .45)); }
 
 .tooth-rct-slot { height: 12px; display: flex; align-items: flex-start; justify-content: center; }
 

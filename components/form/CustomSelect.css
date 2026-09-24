@@ -39,12 +39,12 @@
   justify-content: space-between;
   width: 100%;
   padding: 10px 12px;
-  border: 1.5px solid #E8ECF4;
+  border: 1.5px solid var(--cs-border);
   border-radius: 8px;
-  background: #FFFFFF;
+  background: var(--cs-surface);
   font-size: 13.5px;
   font-family: inherit;
-  color: #1A2340;
+  color: var(--cs-text);
   cursor: pointer;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   text-align: left;
@@ -52,12 +52,12 @@
 }
 
 .custom-select-trigger:hover:not(:disabled) {
-  border-color: #4F7EF8;
+  border-color: var(--cs-accent);
 }
 
 .custom-select-trigger:focus-visible {
-  border-color: #4F7EF8;
-  box-shadow: 0 0 0 3px rgba(79, 126, 248, 0.12);
+  border-color: var(--cs-accent);
+  box-shadow: 0 0 0 3px var(--cs-accent-soft);
 }
 
 .custom-select-trigger:disabled {
@@ -66,17 +66,17 @@
 }
 
 .custom-select-trigger.open {
-  border-color: #4F7EF8;
-  box-shadow: 0 0 0 3px rgba(79, 126, 248, 0.12);
+  border-color: var(--cs-accent);
+  box-shadow: 0 0 0 3px var(--cs-accent-soft);
 }
 
 .custom-select-trigger.error {
-  border-color: #FF4D4F;
-  box-shadow: 0 0 0 3px rgba(255, 77, 79, 0.12);
+  border-color: var(--cs-danger);
+  box-shadow: 0 0 0 3px rgba(193, 56, 31, 0.14);
 }
 
 .custom-select-trigger.error:hover:not(:disabled) {
-  border-color: #FF4D4F;
+  border-color: var(--cs-danger);
 }
 
 .custom-select-value {
@@ -88,7 +88,7 @@
 
 .custom-select-arrow {
   font-size: 18px;
-  color: #A0AEC0;
+  color: var(--cs-muted);
   flex-shrink: 0;
   margin-left: 8px;
   transition: transform 0.2s ease;
@@ -103,10 +103,10 @@
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background: #FFFFFF;
-  border: 1px solid #E8ECF4;
+  background: var(--cs-surface);
+  border: 1px solid var(--cs-border);
   border-radius: 8px;
-  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 6px 20px rgba(23, 22, 15, 0.14);
   z-index: 9999;
   overflow: hidden;
   animation: slideDown 0.15s ease;
@@ -133,7 +133,7 @@
   background: none;
   font-size: 13.5px;
   font-family: inherit;
-  color: #1A2340;
+  color: var(--cs-text);
   cursor: pointer;
   transition: background-color 0.15s ease;
   text-align: left;
@@ -141,18 +141,18 @@
 }
 
 .custom-select-option:hover {
-  background-color: #F5F6FA;
+  background-color: var(--cs-hover);
 }
 
 .custom-select-option.selected {
-  background-color: #EBF1FF;
-  color: #4F7EF8;
+  background-color: var(--cs-accent-soft);
+  color: var(--cs-accent-ink);
   font-weight: 600;
 }
 
 .custom-select-option .check-icon {
   font-size: 16px;
-  color: #4F7EF8;
+  color: var(--cs-accent);
   flex-shrink: 0;
   margin-left: 8px;
 }

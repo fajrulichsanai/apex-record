@@ -16,8 +16,8 @@ interface OdontogramChartProps {
 }
 
 const LEGEND_ITEMS: { swatch?: string; symbol?: string; label: string }[] = [
-  { swatch: '#1A2340', label: 'Karies' },
-  { swatch: '#2DCB8A', label: 'Komposit' },
+  { swatch: '#17160F', label: 'Karies' },
+  { swatch: '#3E8E36', label: 'Komposit' },
   { swatch: '#EC4899', label: 'GIC' },
   { symbol: '✕', label: 'Missing' },
   { symbol: '#', label: 'CFR (Fraktur mahkota)' },
@@ -160,7 +160,7 @@ export default function OdontogramChart({ patientId, onToothSaved }: OdontogramC
       <div className="odontogram-chart">{QUADRANT_ROWS.map((row, i) => renderRowGroup(row, i))}</div>
 
       <div className="odontogram-index-grid">
-        <div className="odontogram-index-card" style={{ '--index-color': '#4F7EF8' } as React.CSSProperties}>
+        <div className="odontogram-index-card" style={{ '--index-color': '#1D5FAE' } as React.CSSProperties}>
           <div className="odontogram-index-heading">
             <div>
               <div className="odontogram-index-title">DMFT</div>
@@ -190,7 +190,7 @@ export default function OdontogramChart({ patientId, onToothSaved }: OdontogramC
           </div>
         </div>
 
-        <div className="odontogram-index-card" style={{ '--index-color': '#2DCB8A' } as React.CSSProperties}>
+        <div className="odontogram-index-card" style={{ '--index-color': '#3E8E36' } as React.CSSProperties}>
           <div className="odontogram-index-heading">
             <div>
               <div className="odontogram-index-title">deft</div>
