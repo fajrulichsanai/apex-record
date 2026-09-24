@@ -113,7 +113,7 @@ export default function KeamananPage() {
       <div className="keamanan-panel">
         <h1>Keamanan Akun</h1>
         <p className="keamanan-subtitle">
-          Kelola verifikasi dua langkah (MFA) untuk akun Anda. Sangat disarankan untuk akun dengan akses admin/owner.
+          Kelola verifikasi dua langkah (MFA) untuk akun Anda. Wajib untuk akun Owner dan Super Admin; disarankan untuk akun lainnya.
         </p>
 
         {!loading && !mfaEnabled && user && MFA_ENFORCED_ROLES.includes(user.role) && (

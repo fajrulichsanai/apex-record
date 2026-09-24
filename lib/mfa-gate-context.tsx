@@ -6,7 +6,9 @@ import { useAuth } from './auth-context';
 import { setOnMfaSetupRequired } from './api-client';
 import { useToast } from './toast-context';
 
-export const MFA_ENFORCED_ROLES = ['super_admin', 'multi_clinic_owner', 'owner', 'admin'];
+// Must match MFA_ENFORCED_ROLES in the backend's mfa-enforcement.guard.ts — Admin and
+// Dokter can opt in from /keamanan but are not forced to.
+export const MFA_ENFORCED_ROLES = ['super_admin', 'multi_clinic_owner', 'owner'];
 const EXEMPT_PATHS = ['/', '/keamanan', '/forgot-password', '/reset-password', '/verify-email'];
 
 /**
