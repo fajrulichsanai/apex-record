@@ -11,6 +11,15 @@ export function apiFileUrl(path: string) {
   return `${API_BASE}${path}`;
 }
 
+/** Stored file URLs are either absolute (S3) or backend-relative
+ * (`/files/...` while the server stores uploads on its own disk). */
+export function resolveFileUrl(url: string): string;
+export function resolveFileUrl(url: string | null | undefined): string | null;
+export function resolveFileUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  return url.startsWith('/') ? apiFileUrl(url) : url;
+}
+
 /**
  * Fetches a backend-hosted file (payment proofs, supporting-exam images) and
  * returns an object URL for it. Callers revoke the returned URL

@@ -3,6 +3,7 @@
 import type { ClinicResponse } from '@/lib/clinic';
 import { CONSENT_SIGNER_RELATION_LABEL, type ConsentSignerRelation, type PatientConsent } from '@/lib/consent';
 import SignaturePad from '@/components/form/SignaturePad';
+import { resolveFileUrl } from '@/lib/api-client';
 
 const CONSENT_STATEMENTS = [
   'Dokter telah menjelaskan kepada saya mengenai diagnosis, rencana perawatan, tujuan tindakan, risiko, serta alternatif perawatan yang tersedia.',
@@ -106,7 +107,7 @@ export default function ConsentDocument({
       <div className="consent-doc-header">
         {clinic?.logoUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={clinic.logoUrl} alt="" className="consent-doc-logo" />
+          <img src={resolveFileUrl(clinic.logoUrl)} alt="" className="consent-doc-logo" />
         )}
         <div className="consent-doc-clinic">
           <div className="consent-doc-clinic-name">{clinic?.name || 'Klinik'}</div>
