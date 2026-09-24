@@ -177,7 +177,7 @@ export default function EditVisitModal({ visit, onClose, onUpdated }: EditVisitM
                   />
                 </div>
 
-                {error && <div style={{ color: '#FF4D4F', fontSize: '13px' }}>{error}</div>}
+                {error && <div style={{ color: 'var(--red)', fontSize: '13px' }}>{error}</div>}
               </div>
 
               <div className="visit-form-footer">

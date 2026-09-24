@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 import { defaultRouteForRole } from '@/lib/permissions';
 import type { User } from '@/types/user';
+import AuthThemeToggle from '@/components/auth/AuthThemeToggle';
 import './styles/page.css';
 
 const LOCAL_API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -208,10 +209,7 @@ const LoginPage = () => {
 
       {/* RIGHT PANEL */}
       <div className="right-panel">
-        <button className="dark-toggle">
-          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" stroke="#374151" strokeWidth="2" strokeLinejoin="round"/></svg>
-          Dark
-        </button>
+        <AuthThemeToggle />
 
         <div className="form-wrap">
           {mfaToken ? (

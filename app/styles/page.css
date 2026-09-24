@@ -15,6 +15,13 @@
   --danger-ink: #C1381F;
   --btn-ink: #16150F;
   --btn-ink-hover: #262419;
+  --auth-panel: #16150F;
+  --auth-right: #FFFFFF;
+  --auth-input: #FAF9F6;
+  --auth-input-focus: #FFFFFF;
+  --auth-btn: #16150F;
+  --auth-btn-hover: #262419;
+  --auth-btn-text: #FFFFFF;
   --radius-lg: 22px;
   --radius-md: 14px;
   --display: 'Inter Tight', ui-sans-serif, system-ui, sans-serif;
@@ -28,6 +35,14 @@
 }
 
 :root[data-theme="dark"] {
+  color-scheme: dark;
+  --auth-panel: #0E0D09;
+  --auth-right: #17160F;
+  --auth-input: #221F19;
+  --auth-input-focus: #2A2821;
+  --auth-btn: #7ED957;
+  --auth-btn-hover: #93E26F;
+  --auth-btn-text: #17160F;
   --bg: #17160F;
   --surface: #242320;
   --surface-soft: #2A2924;
@@ -68,11 +83,13 @@ body {
 .left-panel {
   flex: 1 1 55%;
   position: relative;
-  background: var(--btn-ink);
+  background-color: var(--auth-panel);
   background-image:
+    radial-gradient(ellipse 70% 55% at 85% 0%, rgba(126, 217, 87, 0.16), transparent 70%),
     linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
-  background-size: 56px 56px;
+  background-size: 100% 100%, 56px 56px, 56px 56px;
+  border-right: 1px solid var(--line);
   color: #fff;
   padding: 48px 64px;
   display: flex;
@@ -203,7 +220,7 @@ body {
 /* ===== RIGHT PANEL ===== */
 .right-panel {
   flex: 1 1 45%;
-  background: var(--surface);
+  background: var(--auth-right);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -218,7 +235,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--surface-soft);
+  background: transparent;
   border: 1px solid var(--line-strong);
   border-radius: 999px;
   padding: 8px 16px;
@@ -226,6 +243,11 @@ body {
   font-weight: 600;
   color: var(--ink-2);
   cursor: pointer;
+}
+
+.dark-toggle:hover {
+  color: var(--ink);
+  border-color: var(--ink-3);
 }
 
 .dark-toggle svg {
@@ -284,7 +306,7 @@ body {
   width: 100%;
   padding: 14px 16px 14px 46px;
   border: 1px solid var(--line-strong);
-  background: var(--surface-soft);
+  background: var(--auth-input);
   border-radius: 12px;
   font-family: var(--sans);
   font-size: 15px;
@@ -299,7 +321,19 @@ body {
 
 .input-wrap input:focus {
   border-color: var(--accent);
-  background: var(--surface);
+  background: var(--auth-input-focus);
+  box-shadow: 0 0 0 4px rgba(126, 217, 87, 0.18);
+}
+
+/* Browser autofill paints its own light-blue background; repaint it with
+   the theme's input colour so dark mode doesn't get white boxes. */
+.input-wrap input:-webkit-autofill,
+.input-wrap input:-webkit-autofill:hover,
+.input-wrap input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+  -webkit-box-shadow: 0 0 0 1000px var(--auth-input) inset;
+  transition: background-color 9999s ease-out 0s;
 }
 
 .input-wrap .toggle-eye {
@@ -335,8 +369,8 @@ body {
 .btn-primary {
   width: 100%;
   margin-top: 28px;
-  background: var(--btn-ink);
-  color: #fff;
+  background: var(--auth-btn);
+  color: var(--auth-btn-text);
   border: none;
   border-radius: 999px;
   padding: 16px;
@@ -352,7 +386,7 @@ body {
 }
 
 .btn-primary:hover {
-  background: var(--btn-ink-hover);
+  background: var(--auth-btn-hover);
 }
 
 .btn-primary svg {
@@ -382,7 +416,7 @@ body {
 
 .btn-secondary {
   width: 100%;
-  background: var(--surface);
+  background: transparent;
   color: var(--ink);
   border: 1px solid var(--line-strong);
   border-radius: 999px;

@@ -219,7 +219,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
             </div>
           ) : error && !submitting && patients.length === 0 ? (
             <div className="visit-form-error">
-              <span className="material-symbols-rounded" style={{ fontSize: '32px', color: '#FF4D4F' }}>
+              <span className="material-symbols-rounded" style={{ fontSize: '32px', color: 'var(--red)' }}>
                 error
               </span>
               <p>{error}</p>

@@ -17,11 +17,12 @@ import { encounterSoapApi, SoapNote } from '@/lib/encounter-soap';
 import { ApiError } from '@/lib/api-client';
 import '../../styles/kunjungan.css';
 
-type FilterValue = 'semua' | EncounterStatus;
+// 'aktif' = Menunggu + Berlangsung, dipakai kartu statistik "Menunggu / Berlangsung".
+type FilterValue = 'semua' | 'aktif' | EncounterStatus;
 
 function statusTagClass(status: EncounterStatus) {
-  if (status === 'arrived') return 'pending';
-  if (status === 'in_progress') return 'pending';
+  if (status === 'arrived') return 'waiting';
+  if (status === 'in_progress') return 'progress';
   if (status === 'finished') return 'done';
   return 'cancel';
 }
@@ -163,7 +164,9 @@ function ListKunjunganPageInner() {
   }, [selectedVisitId]);
 
   const filteredVisits = visits.filter((v) => {
-    const matchStatus = currentFilter === 'semua' || v.status === currentFilter;
+    const matchStatus =
+      currentFilter === 'semua' ||
+      (currentFilter === 'aktif' ? v.status === 'arrived' || v.status === 'in_progress' : v.status === currentFilter);
     const q = searchQuery.toLowerCase();
     const matchSearch =
       (v.patientName || '').toLowerCase().includes(q) ||
@@ -272,52 +275,32 @@ function ListKunjunganPageInner() {
           </button>
         </div>
 
-        {/* Stats */}
+        {/* Stats — klik untuk memfilter daftar */}
         <div className="stat-grid">
-          <div className="stat-card total" onClick={() => handleSetFilter('semua')}>
-            <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-                event_note
-              </span>
-            </div>
-            <div className="stat-info">
-              <div className="stat-value">{totalCount}</div>
-              <div className="stat-label">Total Kunjungan</div>
-            </div>
-          </div>
-          <div className="stat-card pending" onClick={() => handleSetFilter('arrived')}>
-            <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-                schedule
-              </span>
-            </div>
-            <div className="stat-info">
-              <div className="stat-value">{pendingCount}</div>
-              <div className="stat-label">Menunggu / Berlangsung</div>
-            </div>
-          </div>
-          <div className="stat-card done" onClick={() => handleSetFilter('finished')}>
-            <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-                task_alt
-              </span>
-            </div>
-            <div className="stat-info">
-              <div className="stat-value">{doneCount}</div>
-              <div className="stat-label">Selesai</div>
-            </div>
-          </div>
-          <div className="stat-card cancel" onClick={() => handleSetFilter('cancelled')}>
-            <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-                cancel
-              </span>
-            </div>
-            <div className="stat-info">
-              <div className="stat-value">{cancelCount}</div>
-              <div className="stat-label">Batal</div>
-            </div>
-          </div>
+          {([
+            { key: 'semua', cls: 'total', icon: 'event_note', value: totalCount, label: 'Total Kunjungan' },
+            { key: 'aktif', cls: 'pending', icon: 'schedule', value: pendingCount, label: 'Menunggu / Berlangsung' },
+            { key: 'finished', cls: 'done', icon: 'task_alt', value: doneCount, label: 'Selesai' },
+            { key: 'cancelled', cls: 'cancel', icon: 'cancel', value: cancelCount, label: 'Batal' },
+          ] as const).map((card) => (
+            <button
+              key={card.key}
+              type="button"
+              className={`stat-card ${card.cls} ${currentFilter === card.key ? 'active' : ''}`}
+              aria-pressed={currentFilter === card.key}
+              onClick={() => handleSetFilter(card.key)}
+            >
+              <div className="stat-icon">
+                <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  {card.icon}
+                </span>
+              </div>
+              <div className="stat-info">
+                <div className="stat-value">{card.value}</div>
+                <div className="stat-label">{card.label}</div>
+              </div>
+            </button>
+          ))}
         </div>
 
         {/* Backlog: kunjungan belum selesai dari hari-hari sebelumnya */}
@@ -343,16 +326,24 @@ function ListKunjunganPageInner() {
                   <div
                     key={visit.encounterId}
                     className={`backlog-item ${visit.encounterId === selectedVisitId ? 'selected' : ''}`}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => handleSelectVisit(visit.encounterId)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleSelectVisit(visit.encounterId);
+                      }
+                    }}
                   >
                     <div className="visit-avatar">{initialsFromName(visit.patientName)}</div>
                     <div className="backlog-item-info">
-                      <div className="backlog-item-name">{visit.patientName || `Pasien #${visit.patientId}`}</div>
-                      <div className="backlog-item-meta">
+                      <div className="visit-row-top">
+                        <div className="backlog-item-name">{visit.patientName || `Pasien #${visit.patientId}`}</div>
                         <span className={`tag ${statusTagClass(visit.status)}`}>{statusLabel(visit.status)}</span>
-                        {' · '}
-                        {visit.practitionerName || '—'} ·{' '}
-                        {typeof dt === 'string' ? dt : `${dt.date} ${dt.time}`}
+                      </div>
+                      <div className="backlog-item-meta">
+                        {visit.practitionerName || '—'} · {typeof dt === 'string' ? dt : `${dt.date}, ${dt.time}`}
                       </div>
                     </div>
                     <span className="material-symbols-rounded chevron-icon">chevron_right</span>
@@ -364,7 +355,7 @@ function ListKunjunganPageInner() {
         )}
 
         {/* Content */}
-        <div className="content-area">
+        <div className={`content-area ${showDetailOnMobile ? 'detail-open' : ''}`}>
           {/* List Panel */}
           <div className="panel">
             <div className="panel-toolbar">
@@ -376,6 +367,16 @@ function ListKunjunganPageInner() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="search-clear"
+                    aria-label="Hapus pencarian"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>close</span>
+                  </button>
+                )}
               </div>
               <div className="filter-tabs">
                 <button
@@ -418,16 +419,20 @@ function ListKunjunganPageInner() {
             </div>
 
             {loadError ? (
-              <div style={{ padding: '16px', color: '#FF4D4F' }}>{loadError}</div>
+              <div className="inline-error">{loadError}</div>
             ) : !loading && filteredVisits.length === 0 ? (
               <div className="detail-empty" style={{ padding: '32px 16px' }}>
                 <div className="empty-icon-wrap">
-                  <span className="material-symbols-rounded">search_off</span>
+                  <span className="material-symbols-rounded">{visits.length === 0 ? 'event_available' : 'search_off'}</span>
                 </div>
                 {visits.length === 0 ? (
                   <>
                     <div className="empty-title">Belum ada kunjungan hari ini</div>
                     <div className="empty-sub">Kunjungan baru akan muncul di sini setelah dibuat.</div>
+                    <button type="button" className="btn-primary" style={{ marginTop: 8 }} onClick={handleAddVisit}>
+                      <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>add</span>
+                      Buat Kunjungan
+                    </button>
                   </>
                 ) : (
                   <>
@@ -457,17 +462,24 @@ function ListKunjunganPageInner() {
                     <div
                       key={visit.encounterId}
                       className={`visit-row-item ${visit.encounterId === selectedVisitId ? 'selected' : ''}`}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => handleSelectVisit(visit.encounterId)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSelectVisit(visit.encounterId);
+                        }
+                      }}
                     >
                       <div className="visit-avatar">{initialsFromName(visit.patientName)}</div>
                       <div className="visit-row-info">
-                        <div className="visit-row-name">{visit.patientName || `Pasien #${visit.patientId}`}</div>
-                        <div className="visit-row-meta">
+                        <div className="visit-row-top">
+                          <div className="visit-row-name">{visit.patientName || `Pasien #${visit.patientId}`}</div>
                           <span className={`tag ${statusTagClass(visit.status)}`}>{statusLabel(visit.status)}</span>
-                          <span className="visit-row-sub">
-                            · {visit.practitionerName || '—'} ·{' '}
-                            {typeof dt === 'string' ? dt : `${dt.date} ${dt.time}`}
-                          </span>
+                        </div>
+                        <div className="visit-row-sub">
+                          {visit.practitionerName || '—'} · {typeof dt === 'string' ? dt : dt.time}
                         </div>
                       </div>
                       <span className="material-symbols-rounded chevron-icon">chevron_right</span>
@@ -492,6 +504,10 @@ function ListKunjunganPageInner() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', flex: 1 }}>
+                <button type="button" className="detail-back" onClick={() => setShowDetailOnMobile(false)}>
+                  <span className="material-symbols-rounded">arrow_back</span>
+                  Kembali ke daftar
+                </button>
                 <div className="detail-header">
                   <div className="detail-avatar">{initialsFromName(selectedVisit.patientName)}</div>
                   <div className="detail-name-block">
@@ -506,12 +522,9 @@ function ListKunjunganPageInner() {
                   {(selectedVisit.status === 'arrived' || selectedVisit.status === 'in_progress') && (
                     <button
                       className="btn-outline"
-                      style={{ fontSize: '12.5px' }}
                       onClick={() => setShowEditModal(true)}
                     >
-                      <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                        edit
-                      </span>
+                      <span className="material-symbols-rounded">edit</span>
                       Edit
                     </button>
                   )}
@@ -543,67 +556,64 @@ function ListKunjunganPageInner() {
                 <div className="detail-section">
                   <div className="section-title">
                     <span className="material-symbols-rounded">bolt</span>
-                    Ubah Status
+                    Langkah Berikutnya
                   </div>
                   <div className="quick-actions">
                     {selectedVisit.status === 'arrived' && (
                       <button
-                        className="btn-outline"
-                        style={{ fontSize: '12.5px' }}
+                        className="btn-primary"
                         disabled={actionLoading}
                         onClick={() => handleChangeStatus('in_progress')}
                       >
+                        <span className="material-symbols-rounded">play_arrow</span>
                         Mulai Periksa
                       </button>
                     )}
                     {(selectedVisit.status === 'in_progress' || selectedVisit.status === 'finished') && (
                       <button
-                        className="btn-outline"
-                        style={{ fontSize: '12.5px' }}
+                        className={selectedVisit.status === 'in_progress' && !isSoapFilled ? 'btn-primary' : 'btn-outline'}
                         onClick={() => router.push(`/list-kunjungan/${selectedVisit.encounterId}/rekam-medis`)}
                       >
-                        <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                          menu_book
-                        </span>
+                        <span className="material-symbols-rounded">menu_book</span>
                         {isSoapFilled ? 'Edit SOAP' : 'Isi SOAP'}
                       </button>
                     )}
                     {selectedVisit.status === 'in_progress' && isSoapFilled && (
                       <button
-                        className="btn-outline"
-                        style={{ fontSize: '12.5px' }}
+                        className="btn-primary"
                         disabled={actionLoading}
                         onClick={() => handleChangeStatus('finished')}
                       >
+                        <span className="material-symbols-rounded">task_alt</span>
                         Selesaikan Kunjungan
+                      </button>
+                    )}
+                    {selectedVisit.status === 'finished' && (
+                      <button
+                        className="btn-primary"
+                        onClick={() => router.push(`/transaksi?encounterId=${selectedVisit.encounterId}`)}
+                      >
+                        <span className="material-symbols-rounded">receipt</span>
+                        Buat Tagihan
                       </button>
                     )}
                     {(selectedVisit.status === 'arrived' || selectedVisit.status === 'in_progress') && (
                       <button
                         className="btn-outline danger"
-                        style={{ fontSize: '12.5px', color: '#FF4D4F', borderColor: '#FFCCC7' }}
                         disabled={actionLoading}
                         onClick={() => handleChangeStatus('cancelled')}
                       >
                         Batalkan
                       </button>
                     )}
-                    {selectedVisit.status === 'finished' && (
-                      <button
-                        className="btn-outline"
-                        style={{ fontSize: '12.5px' }}
-                        onClick={() => router.push(`/transaksi?encounterId=${selectedVisit.encounterId}`)}
-                      >
-                        <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                          receipt
-                        </span>
-                        Buat Tagihan
-                      </button>
-                    )}
                   </div>
-                  {actionError && (
-                    <div style={{ color: '#FF4D4F', fontSize: '13px', marginTop: '8px' }}>{actionError}</div>
+                  {selectedVisit.status === 'in_progress' && !isSoapFilled && (
+                    <div className="next-step-hint">
+                      <span className="material-symbols-rounded">info</span>
+                      Isi SOAP terlebih dahulu untuk bisa menyelesaikan kunjungan.
+                    </div>
                   )}
+                  {actionError && <div className="action-error">{actionError}</div>}
                 </div>
               </div>
             )}
@@ -640,5 +650,4 @@ function ListKunjunganPageInner() {
   );
 }
 
-//test
 
