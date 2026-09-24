@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>ApexRecord IG Warm</title>
+
+<link href="fonts/fonts.css" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EEECE6; --bg-deep:#E4E1D8; --surface:#FFFFFF; --surface-soft:#FAF9F6;
+    --ink:#17160F; --ink-2:#55534A; --ink-3:#8D8B7E;
+    --line:rgba(23,22,15,.08); --line-strong:rgba(23,22,15,.14);
+    --accent:#3E8E36; --accent-solid:#7ED957; --accent-soft:#E3F3DA; --accent-ink:#2B6B22;
+    --warn-soft:#FCEACB; --warn-ink:#8A5A00; --danger-soft:#FBE1DE; --danger-ink:#C1381F;
+    --info-soft:#DCEAFB; --info-ink:#1D5FAE;
+    --display:'Inter Tight',sans-serif; --sans:'Inter',sans-serif; --mono:'JetBrains Mono',monospace;
+    --shadow:0 2px 4px rgba(23,22,15,.04),0 24px 56px -28px rgba(23,22,15,.28);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#ccc;font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased;display:flex;flex-direction:column;gap:40px;padding:40px;align-items:center}
+  .post{width:1080px;height:1350px;position:relative;overflow:hidden;background:var(--bg);padding:84px 84px 72px;display:flex;flex-direction:column}
+  .post.dark{background:var(--ink);color:#F3F1EA}
+  .grid{position:absolute;inset:0;pointer-events:none;
+    background-image:linear-gradient(rgba(23,22,15,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(23,22,15,.05) 1px,transparent 1px);
+    background-size:72px 72px;mask-image:radial-gradient(ellipse 80% 55% at 50% 0%,#000 30%,transparent 100%)}
+  .dark .grid{background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px)}
+  .glow{position:absolute;width:900px;height:900px;border-radius:50%;background:radial-gradient(circle,rgba(126,217,87,.28),transparent 62%);pointer-events:none}
+  .top,.bottom{position:relative;display:flex;align-items:center;justify-content:space-between}
+  .bottom{margin-top:auto;padding-top:32px;border-top:1px solid var(--line-strong)}
+  .dark .bottom{border-color:rgba(255,255,255,.12)}
+  .brand{display:flex;align-items:center;gap:14px}
+  .mark{width:52px;height:52px;border-radius:15px;background:var(--ink);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px -10px rgba(23,22,15,.5)}
+  .dark .mark{background:var(--accent)}
+  .mark svg{width:28px;height:28px}
+  .word{font-family:var(--display);font-weight:700;font-size:30px;letter-spacing:-.01em}
+  .word em{font-style:normal;color:var(--accent)}
+  .dark .word em{color:var(--accent-solid)}
+  .kicker{font-family:var(--mono);font-size:20px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+  .url{font-family:var(--mono);font-size:22px;color:var(--ink-2)}
+  .dark .url,.dark .kicker{color:#B8B5A9}
+  .page{font-family:var(--mono);font-size:22px;color:var(--ink-3)}
+  .pill{display:inline-flex;align-items:center;gap:12px;padding:12px 22px;border-radius:999px;background:var(--surface);border:1px solid var(--line-strong);font-weight:600;font-size:22px;color:var(--ink-2)}
+  .dot{width:12px;height:12px;border-radius:50%;background:var(--accent-solid);box-shadow:0 0 0 5px rgba(126,217,87,.25)}
+  h1{font-family:var(--display);font-weight:800;letter-spacing:-.022em;line-height:1}
+  h1 .hl{white-space:nowrap;background:linear-gradient(transparent 62%,var(--accent-solid) 62%,var(--accent-solid) 92%,transparent 92%);padding:0 6px;margin:0 -6px}
+  h1 .g{color:var(--accent)}
+  .dark h1 .g{color:var(--accent-solid)}
+  .lead{font-size:32px;line-height:1.4;color:var(--ink-2);font-weight:450}
+  .dark .lead{color:#B8B5A9}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:28px;box-shadow:var(--shadow)}
+  .btn{display:inline-flex;align-items:center;gap:14px;padding:26px 40px;border-radius:999px;background:var(--ink);color:#fff;font-weight:600;font-size:28px}
+  .btn.green{background:var(--accent-solid);color:var(--ink)}
+  .ico{width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .ico svg{width:30px;height:30px}
+  .z{position:relative}
+</style>
+</head>
+<body>
+
+<!-- reusable logo mark -->
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="a" viewBox="0 0 24 24"><path d="M12 3l7 15.5c.9 2-1 4-3 3.2-1.6-.6-2.3-2-2.7-3.5-.5-1.8-1.2-2.9-1.3-3-.1.1-.8 1.2-1.3 3-.4 1.5-1.1 2.9-2.7 3.5-2 .8-3.9-1.2-3-3.2L12 3z" fill="white"/></symbol>
+</defs></svg>
+
+<!-- ============ 01 · COVER / HERO ============ -->
+<section class="post" id="p1">
+  <div class="grid"></div>
+  <div class="glow" style="right:-360px;top:-300px"></div>
+  <div class="top">
+    <div class="brand"><div class="mark"><svg><use href="#a"/></svg></div><div class="word">Apex<em>Record</em></div></div>
+    <span class="kicker">Clinic Management</span>
+  </div>
+
+  <div class="z" style="margin-top:120px">
+    <span class="pill"><span class="dot"></span>Klinik Pratama · Klinik Utama · TPMD · TPMDG</span>
+    <h1 style="font-size:124px;margin-top:44px">Kelola klinik<br>&amp; praktik Anda<br>tanpa <span class="hl">drama</span><br><span class="g">administrasi.</span></h1>
+    <p class="lead" style="margin-top:40px;max-width:820px">Rekam medis, jadwal, kasir, sampai laporan keuangan — semuanya dalam satu sistem.</p>
+  </div>
+
+  <div class="z" style="display:flex;gap:18px;margin-top:56px">
+    <div class="card" style="padding:24px 30px;flex:1"><div style="font-family:var(--display);font-weight:800;font-size:44px">15 hari</div><div style="font-size:22px;color:var(--ink-2);margin-top:4px">uji coba gratis</div></div>
+    <div class="card" style="padding:24px 30px;flex:1"><div style="font-family:var(--display);font-weight:800;font-size:44px">&lt; 10 menit</div><div style="font-size:22px;color:var(--ink-2);margin-top:4px">setup sampai aktif</div></div>
+    <div class="card" style="padding:24px 30px;flex:1;background:var(--ink);color:#fff"><div style="font-family:var(--display);font-weight:800;font-size:44px;color:var(--accent-solid)">Rp150rb</div><div style="font-size:22px;color:#B8B5A9;margin-top:4px">mulai / bulan</div></div>
+  </div>
+
+  <div class="bottom"><span class="url">apexrecord.my.id</span><span class="page">01 / 06</span></div>
+</section>
+
+<!-- ============ 02 · MASALAH ============ -->
+<section class="post" id="p2">
+  <div class="grid"></div>
+  <div class="top">
+    <div class="brand"><div class="mark"><svg><use href="#a"/></svg></div><div class="word">Apex<em>Record</em></div></div>
+    <span class="kicker">Masalah yang familiar?</span>
+  </div>
+
+  <h1 class="z" style="font-size:88px;margin-top:70px">Masih kelola klinik<br>lewat <span class="hl">Excel</span>, <span class="hl">WA</span>,<br>dan buku catatan?</h1>
+
+  <div class="z" style="display:flex;flex-direction:column;gap:22px;margin-top:64px">
+    <div class="card" style="padding:34px 38px;display:flex;gap:28px;align-items:flex-start">
+      <div class="ico" style="background:var(--danger-soft)"><svg viewBox="0 0 24 24" fill="none" stroke="#C1381F" stroke-width="2" stroke-linecap="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 14l6 4M15 14l-6 4"/></svg></div>
+      <div><div style="font-family:var(--display);font-weight:700;font-size:38px">Rekam medis tercecer</div><div style="font-size:26px;line-height:1.4;color:var(--ink-2);margin-top:8px">Riwayat tindakan, odontogram &amp; resep tersebar di kertas dan chat — susah dicari saat pasien kembali.</div></div>
+    </div>
+    <div class="card" style="padding:34px 38px;display:flex;gap:28px;align-items:flex-start">
+      <div class="ico" style="background:var(--warn-soft)"><svg viewBox="0 0 24 24" fill="none" stroke="#8A5A00" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M10 14l4 4M14 14l-4 4"/></svg></div>
+      <div><div style="font-family:var(--display);font-weight:700;font-size:38px">Jadwal &amp; antrian bentrok</div><div style="font-size:26px;line-height:1.4;color:var(--ink-2);margin-top:8px">Booking lewat telepon atau buku sering tumpang-tindih dan bikin pasien menunggu lama.</div></div>
+    </div>
+    <div class="card" style="padding:34px 38px;display:flex;gap:28px;align-items:flex-start">
+      <div class="ico" style="background:var(--info-soft)"><svg viewBox="0 0 24 24" fill="none" stroke="#1D5FAE" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/><circle cx="19" cy="5" r="0.5"/></svg></div>
+      <div><div style="font-family:var(--display);font-weight:700;font-size:38px">Tidak tahu untung berapa</div><div style="font-size:26px;line-height:1.4;color:var(--ink-2);margin-top:8px">Margin per tindakan, fee dokter &amp; biaya bahan tidak pernah benar-benar dihitung.</div></div>
+    </div>
+  </div>
+
+  <div class="bottom"><span class="url">Geser untuk solusinya →</span><span class="page">02 / 06</span></div>
+</section>
+
+<!-- ============ 03 · ALUR KERJA ============ -->
+<section class="post" id="p3">
+  <div class="grid"></div>
+  <div class="glow" style="left:-420px;bottom:-420px;opacity:.7"></div>
+  <div class="top">
+    <div class="brand"><div class="mark"><svg><use href="#a"/></svg></div><div class="word">Apex<em>Record</em></div></div>
+    <span class="kicker">Satu alur kerja</span>
+  </div>
+
+  <h1 class="z" style="font-size:112px;margin-top:100px">4 langkah.<br><span class="g">Semua tercatat.</span></h1>
+
+  <div class="z" style="margin-top:80px;display:flex;flex-direction:column;gap:0">
+    <!-- step rows -->
+    <div style="display:flex;gap:30px;align-items:stretch">
+      <div style="display:flex;flex-direction:column;align-items:center;width:72px"><div style="width:72px;height:72px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:28px">01</div><div style="flex:1;width:3px;background:var(--line-strong);margin:8px 0"></div></div>
+      <div class="card" style="flex:1;padding:32px 36px;margin-bottom:30px"><div style="font-family:var(--display);font-weight:700;font-size:36px">Pasien datang</div><div style="font-size:24px;color:var(--ink-2);margin-top:4px">Registrasi dalam 30 detik</div></div>
+    </div>
+    <div style="display:flex;gap:30px;align-items:stretch">
+      <div style="display:flex;flex-direction:column;align-items:center;width:72px"><div style="width:72px;height:72px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:28px">02</div><div style="flex:1;width:3px;background:var(--line-strong);margin:8px 0"></div></div>
+      <div class="card" style="flex:1;padding:32px 36px;margin-bottom:30px"><div style="font-family:var(--display);font-weight:700;font-size:36px">Kunjungan dibuat</div><div style="font-size:24px;color:var(--ink-2);margin-top:4px">Dokter &amp; tindakan langsung tercatat</div></div>
+    </div>
+    <div style="display:flex;gap:30px;align-items:stretch">
+      <div style="display:flex;flex-direction:column;align-items:center;width:72px"><div style="width:72px;height:72px;border-radius:50%;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:600;font-size:28px">03</div><div style="flex:1;width:3px;background:var(--line-strong);margin:8px 0"></div></div>
+      <div class="card" style="flex:1;padding:32px 36px;margin-bottom:30px"><div style="font-family:var(--display);font-weight:700;font-size:36px">SOAP + tindakan</div><div style="font-size:24px;color:var(--ink-2);margin-top:4px">Rekam medis terisi otomatis</div></div>
+    </div>
+    <div style="display:flex;gap:30px;align-items:stretch">
+      <div style="display:flex;flex-direction:column;align-items:center;width:72px"><div style="width:72px;height:72px;border-radius:50%;background:var(--accent-solid);color:var(--ink);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="#17160F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg></div></div>
+      <div class="card" style="flex:1;padding:32px 36px;background:var(--ink);color:#fff;border-color:transparent"><div style="font-family:var(--display);font-weight:700;font-size:36px">Bayar — <span style="color:var(--accent-solid)">selesai</span></div><div style="font-size:24px;color:#B8B5A9;margin-top:4px">Invoice terkirim · stok &amp; laporan ter-update</div></div>
+    </div>
+  </div>
+
+  <div class="bottom"><span class="url">apexrecord.my.id</span><span class="page">03 / 06</span></div>
+</section>
+
+<!-- ============ 04 · LAPORAN KEUANGAN PRO ============ -->
+<section class="post" id="p4">
+  <div class="grid"></div>
+  <div class="top">
+    <div class="brand"><div class="mark"><svg><use href="#a"/></svg></div><div class="word">Apex<em>Record</em></div></div>
+    <span class="kicker">Laporan Keuangan Pro</span>
+  </div>
+
+  <div class="z" style="margin-top:72px;font-family:var(--display);font-weight:600;font-size:40px;color:var(--ink-3);letter-spacing:-.01em">Bukan cuma kasir digital.</div>
+  <h1 class="z" style="font-size:92px;margin-top:14px">Ini <span class="hl">intelijen bisnis</span><br>klinik Anda.</h1>
+
+  <div class="z card" style="margin-top:56px;padding:36px 40px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-family:var(--display);font-weight:700;font-size:30px">Heatmap jam kunjungan</div>
+      <span style="font-family:var(--mono);font-size:20px;color:var(--ink-3)">SEN–SAB</span>
+    </div>
+    <div id="heat" style="display:grid;grid-template-columns:repeat(12,1fr);gap:8px;margin-top:26px"></div>
+    <div style="display:flex;gap:16px;margin-top:30px">
+      <div style="flex:1;background:var(--surface-soft);border:1px solid var(--line);border-radius:18px;padding:20px 24px"><div style="font-size:20px;color:var(--ink-3)">LTV : CAC</div><div style="font-family:var(--display);font-weight:800;font-size:46px">4,2×</div></div>
+      <div style="flex:1;background:var(--surface-soft);border:1px solid var(--line);border-radius:18px;padding:20px 24px"><div style="font-size:20px;color:var(--ink-3)">Retensi 90 hari</div><div style="font-family:var(--display);font-weight:800;font-size:46px;color:var(--accent)">62%</div></div>
+      <div style="flex:1;background:var(--surface-soft);border:1px solid var(--line);border-radius:18px;padding:20px 24px"><div style="font-size:20px;color:var(--ink-3)">Jam tersibuk</div><div style="font-family:var(--display);font-weight:800;font-size:46px">17.00</div></div>
+    </div>
+  </div>
+
+  <p class="lead z" style="margin-top:36px;font-size:26px">Heatmap jam ramai · peta sebaran pasien per kecamatan · PDF siap kirim ke akuntan.</p>
+
+  <div class="bottom"><span class="url">*Ilustrasi data contoh</span><span class="page">04 / 06</span></div>
+</section>
+
+<!-- ============ 05 · SETUP 3 LANGKAH ============ -->
+<section class="post" id="p5">
+  <div class="grid"></div>
+  <div class="top">
+    <div class="brand"><div class="mark"><svg><use href="#a"/></svg></div><div class="word">Apex<em>Record</em></div></div>
+    <span class="kicker">Onboarding</span>
+  </div>
+
+  <div class="z" style="margin-top:80px">
+    <span class="pill"><span class="dot"></span>Setup aktif &lt; 10 menit</span>
+    <h1 style="font-size:96px;margin-top:36px">Siap beroperasi<br>dalam <span class="hl">3 langkah</span>.</h1>
+  </div>
+
+  <div class="z" style="display:flex;flex-direction:column;gap:22px;margin-top:64px">
+    <div class="card" style="padding:36px 40px;display:flex;gap:32px;align-items:center">
+      <div style="font-family:var(--display);font-weight:800;font-size:88px;color:var(--accent-solid);-webkit-text-stroke:2px var(--accent);line-height:1;width:90px;text-align:center;flex-shrink:0">1</div>
+      <div><div style="font-family:var(--display);font-weight:700;font-size:38px">Lengkapi info klinik</div><div style="font-size:25px;color:var(--ink-2);margin-top:6px">Nama, alamat, jam buka &amp; logo — tampil di dokumen dan halaman booking.</div></div>
+    </div>
+    <div class="card" style="padding:36px 40px;display:flex;gap:32px;align-items:center">
+      <div style="font-family:var(--display);font-weight:800;font-size:88px;color:var(--accent-solid);-webkit-text-stroke:2px var(--accent);line-height:1;width:90px;text-align:center;flex-shrink:0">2</div>
+      <div><div style="font-family:var(--display);font-weight:700;font-size:38px">Atur tarif layanan</div><div style="font-size:25px;color:var(--ink-2);margin-top:6px">Tambahkan tindakan &amp; harga. Bisa diubah kapan saja.</div></div>
+    </div>
+    <div class="card" style="padding:36px 40px;display:flex;gap:32px;align-items:center">
+      <div style="font-family:var(--display);font-weight:800;font-size:88px;color:var(--accent-solid);-webkit-text-stroke:2px var(--accent);line-height:1;width:90px;text-align:center;flex-shrink:0">3</div>
+      <div><div style="font-family:var(--display);font-weight:700;font-size:38px">Undang dokter</div><div style="font-size:25px;color:var(--ink-2);margin-top:6px">Dokter langsung dapat akun — siap terima pasien pertama.</div></div>
+    </div>
+  </div>
+
+  <div class="bottom"><span class="url">Tanpa training berhari-hari</span><span class="page">05 / 06</span></div>
+</section>
+
+<!-- ============ 06 · CTA (dark) ============ -->
+<section class="post dark" id="p6">
+  <div class="grid"></div>
+  <div class="glow" style="left:50%;top:50%;transform:translate(-50%,-60%);opacity:.9"></div>
+  <div class="top">
+    <div class="brand"><div class="mark"><svg><use href="#a"/></svg></div><div class="word">Apex<em>Record</em></div></div>
+    <span class="kicker">Mulai sekarang</span>
+  </div>
+
+  <div class="z" style="margin:auto 0;text-align:center;display:flex;flex-direction:column;align-items:center">
+    <div style="width:150px;height:150px;border-radius:42px;background:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow:0 30px 60px -20px rgba(126,217,87,.55)"><svg width="84" height="84"><use href="#a"/></svg></div>
+    <h1 style="font-size:104px;margin-top:56px">Klinik Anda layak<br>dikelola <span class="g">lebih rapi.</span></h1>
+    <p class="lead" style="margin-top:32px;white-space:nowrap;font-size:30px">15 hari gratis · tanpa kartu kredit · mulai Rp150rb/bulan</p>
+    <div class="btn green" style="margin-top:52px">Mulai uji coba gratis →</div>
+    <div style="font-family:var(--mono);font-size:26px;color:#F3F1EA;margin-top:30px">apexrecord.my.id</div>
+  </div>
+
+  <div class="bottom"><span class="url">DM "DEMO" untuk jadwal presentasi</span><span class="page">06 / 06</span></div>
+</section>
+
+<script>
+  // deterministic heatmap: 6 rows (Sen–Sab) x 12 hours (08–19)
+  const h=document.getElementById('heat');
+  const base=[.15,.3,.45,.35,.2,.25,.4,.55,.7,.95,.8,.5];
+  const day=[1,.85,.9,.8,1.05,.7];
+  const cols=['#F3F1EA','#E3F3DA','#BFE6A8','#7ED957','#4FA345','#2B6B22'];
+  for(let r=0;r<6;r++)for(let c=0;c<12;c++){
+    const v=Math.min(1,base[c]*day[r]+((r*7+c*3)%5)*.03);
+    const d=document.createElement('div');
+    d.style.cssText=`aspect-ratio:1.9;border-radius:8px;background:${cols[Math.min(5,Math.floor(v*6))]}`;
+    h.appendChild(d);
+  }
+</script>
+</body>
+</html>
