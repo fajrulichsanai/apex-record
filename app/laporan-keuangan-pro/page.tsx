@@ -32,9 +32,10 @@ import CategoryProfitabilityTable from '@/components/laporan/CategoryProfitabili
 import DiscountRankingTable from '@/components/laporan/DiscountRankingTable';
 import StockReportSection from '@/components/laporan/StockReportSection';
 import VisitHeatmap from '@/components/laporan/VisitHeatmap';
-import PatientOriginMap from '@/components/laporan/PatientOriginMap';
+import PatientOriginBreakdown from '@/components/laporan/PatientOriginBreakdown';
 import { reportsApi, FinancialReportProResponse } from '@/lib/reports';
 import { useToast } from '@/lib/toast-context';
+import { useChartTheme } from '@/lib/chart-theme';
 import '../styles/laporan.css';
 
 type RangeOption = '7hari' | '30hari' | 'bulanini' | 'custom';
@@ -91,6 +92,7 @@ export default function LaporanKeuanganProPage() {
   const [downloadingAccountant, setDownloadingAccountant] = useState(false);
   const [downloadingInvestor, setDownloadingInvestor] = useState(false);
   const { error: showError } = useToast();
+  const chart = useChartTheme();
 
   const { dateFrom, dateTo } = getDateRange(range, customFrom, customTo);
 
@@ -232,18 +234,18 @@ export default function LaporanKeuanganProPage() {
               <div className="chart-body">
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={monthlyChartData}>
-                    <CartesianGrid stroke="#E8ECF4" vertical={false} />
-                    <XAxis dataKey="bulan" tick={{ fontSize: 12, fill: '#6B7A99' }} axisLine={false} tickLine={false} />
+                    <CartesianGrid stroke={chart.grid} vertical={false} />
+                    <XAxis dataKey="bulan" tick={chart.axisTick} axisLine={false} tickLine={false} />
                     <YAxis
-                      tick={{ fontSize: 12, fill: '#6B7A99' }}
+                      tick={chart.axisTick}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
                     />
-                    <Tooltip formatter={(value) => formatRupiah(Number(value))} />
-                    <Legend />
-                    <Bar dataKey="Pendapatan" fill="#2DCB8A" radius={[6, 6, 0, 0]} barSize={24} />
-                    <Bar dataKey="Pengeluaran" fill="#FF7A59" radius={[6, 6, 0, 0]} barSize={24} />
+                    <Tooltip formatter={(value) => formatRupiah(Number(value))} {...chart.tooltip} />
+                    <Legend wrapperStyle={chart.legendStyle} formatter={chart.legendFormatter} />
+                    <Bar dataKey="Pendapatan" fill={chart.series.pendapatan} radius={[4, 4, 0, 0]} barSize={22} />
+                    <Bar dataKey="Pengeluaran" fill={chart.series.pengeluaran} radius={[4, 4, 0, 0]} barSize={22} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -256,10 +258,10 @@ export default function LaporanKeuanganProPage() {
               <div className="chart-body">
                 <ResponsiveContainer width="100%" height={Math.max(260, dokterProfitData.length * 60)}>
                   <BarChart data={dokterProfitData} layout="vertical" margin={{ left: 10 }}>
-                    <CartesianGrid stroke="#E8ECF4" horizontal={false} />
+                    <CartesianGrid stroke={chart.grid} horizontal={false} />
                     <XAxis
                       type="number"
-                      tick={{ fontSize: 12, fill: '#6B7A99' }}
+                      tick={chart.axisTick}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
@@ -267,23 +269,23 @@ export default function LaporanKeuanganProPage() {
                     <YAxis
                       type="category"
                       dataKey="dokter"
-                      tick={{ fontSize: 12, fill: '#6B7A99' }}
+                      tick={chart.axisTick}
                       axisLine={false}
                       tickLine={false}
                       width={170}
                     />
-                    <Tooltip formatter={(value) => formatRupiah(Number(value))} />
-                    <Legend />
-                    <Bar dataKey="Pendapatan Kotor" fill="#4F7EF8" radius={[0, 6, 6, 0]} barSize={14} />
-                    <Bar dataKey="Fee Dokter" fill="#F5A623" radius={[0, 6, 6, 0]} barSize={14} />
-                    <Bar dataKey="Laba Bersih" fill="#2DCB8A" radius={[0, 6, 6, 0]} barSize={14} />
+                    <Tooltip formatter={(value) => formatRupiah(Number(value))} {...chart.tooltip} />
+                    <Legend wrapperStyle={chart.legendStyle} formatter={chart.legendFormatter} />
+                    <Bar dataKey="Pendapatan Kotor" fill={chart.series.pendapatan} radius={[0, 4, 4, 0]} barSize={12} />
+                    <Bar dataKey="Fee Dokter" fill={chart.series.feeDokter} radius={[0, 4, 4, 0]} barSize={12} />
+                    <Bar dataKey="Laba Bersih" fill={chart.series.labaBersih} radius={[0, 4, 4, 0]} barSize={12} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
             {report && <VisitHeatmap data={report.visitHeatmap} />}
-            <PatientOriginMap />
+            <PatientOriginBreakdown />
           </div>
 
           {report && <DiscountRankingTable data={report.discountRanking} />}

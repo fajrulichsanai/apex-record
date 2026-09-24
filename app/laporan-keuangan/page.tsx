@@ -42,6 +42,7 @@ import { useAuth } from '@/lib/auth-context';
 import { reportsApi, FinancialReportResponse, PaymentMethod } from '@/lib/reports';
 import { useToast } from '@/lib/toast-context';
 import { exportToExcel } from '@/lib/export-excel';
+import { useChartTheme } from '@/lib/chart-theme';
 import '../styles/laporan.css';
 
 type RangeOption = '7hari' | '30hari' | 'bulanini' | 'custom';
@@ -59,14 +60,6 @@ const METODE_LABELS: Record<PaymentMethod, string> = {
   qris: 'QRIS',
   insurance: 'Asuransi',
   bpjs: 'BPJS',
-};
-
-const METODE_COLORS: Record<PaymentMethod, string> = {
-  cash: '#4F7EF8',
-  transfer: '#2DCB8A',
-  qris: '#9B59F6',
-  insurance: '#F5A623',
-  bpjs: '#38C9C0',
 };
 
 function toIsoDate(date: Date) {
@@ -248,6 +241,7 @@ export default function LaporanKeuanganPage() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const { error: showError } = useToast();
+  const chart = useChartTheme();
 
   const canViewPro = canAccessFeature(user?.role, 'laporan-keuangan-pro');
 
@@ -291,9 +285,9 @@ export default function LaporanKeuanganPage() {
       (report?.byPaymentMethod ?? []).map((m) => ({
         name: METODE_LABELS[m.method] ?? m.method,
         value: m.amount,
-        color: METODE_COLORS[m.method] ?? '#999999',
+        color: chart.paymentMethod[m.method] ?? chart.tick,
       })),
-    [report],
+    [report, chart.paymentMethod, chart.tick],
   );
 
   const pendapatanDokter = useMemo(
@@ -532,26 +526,26 @@ export default function LaporanKeuanganPage() {
                 <AreaChart data={pendapatanHarian}>
                   <defs>
                     <linearGradient id="pendapatanGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#2DCB8A" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="#2DCB8A" stopOpacity={0} />
+                      <stop offset="0%" stopColor={chart.series.pendapatan} stopOpacity={0.3} />
+                      <stop offset="100%" stopColor={chart.series.pendapatan} stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid stroke="#E8ECF4" vertical={false} />
-                  <XAxis dataKey="tanggal" tick={{ fontSize: 12, fill: '#6B7A99' }} axisLine={false} tickLine={false} />
+                  <CartesianGrid stroke={chart.grid} vertical={false} />
+                  <XAxis dataKey="tanggal" tick={chart.axisTick} axisLine={false} tickLine={false} />
                   <YAxis
-                    tick={{ fontSize: 12, fill: '#6B7A99' }}
+                    tick={chart.axisTick}
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
                   />
-                  <Tooltip formatter={(value) => formatRupiah(Number(value))} />
+                  <Tooltip formatter={(value) => formatRupiah(Number(value))} {...chart.tooltip} />
                   <Area
                     type="monotone"
                     dataKey="pendapatan"
                     name="Pendapatan"
-                    stroke="#2DCB8A"
+                    stroke={chart.series.pendapatan}
                     fill="url(#pendapatanGrad)"
-                    strokeWidth={2.5}
+                    strokeWidth={2}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -572,13 +566,15 @@ export default function LaporanKeuanganPage() {
                     innerRadius={55}
                     outerRadius={85}
                     paddingAngle={3}
+                    stroke={chart.surface}
+                    strokeWidth={2}
                   >
                     {metodeBreakdown.map((entry) => (
                       <Cell key={entry.name} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Legend verticalAlign="bottom" iconType="circle" />
-                  <Tooltip formatter={(value) => formatRupiah(Number(value))} />
+                  <Legend verticalAlign="bottom" iconType="circle" wrapperStyle={chart.legendStyle} formatter={chart.legendFormatter} />
+                  <Tooltip formatter={(value) => formatRupiah(Number(value))} {...chart.tooltip} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -591,10 +587,10 @@ export default function LaporanKeuanganPage() {
             <div className="chart-body">
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={pendapatanDokter} layout="vertical" margin={{ left: 10 }}>
-                  <CartesianGrid stroke="#E8ECF4" horizontal={false} />
+                  <CartesianGrid stroke={chart.grid} horizontal={false} />
                   <XAxis
                     type="number"
-                    tick={{ fontSize: 12, fill: '#6B7A99' }}
+                    tick={chart.axisTick}
                     axisLine={false}
                     tickLine={false}
                     tickFormatter={(v) => `${(v / 1000).toFixed(0)}k`}
@@ -602,15 +598,15 @@ export default function LaporanKeuanganPage() {
                   <YAxis
                     type="category"
                     dataKey="dokter"
-                    tick={{ fontSize: 12, fill: '#6B7A99' }}
+                    tick={chart.axisTick}
                     axisLine={false}
                     tickLine={false}
                     width={170}
                   />
-                  <Tooltip formatter={(value) => formatRupiah(Number(value))} />
-                  <Legend />
-                  <Bar dataKey="pendapatanKotor" name="Pendapatan Kotor" fill="#4F7EF8" radius={[0, 6, 6, 0]} barSize={16} />
-                  <Bar dataKey="feeDokter" name="Fee Dokter (Share)" fill="#2DCB8A" radius={[0, 6, 6, 0]} barSize={16} />
+                  <Tooltip formatter={(value) => formatRupiah(Number(value))} {...chart.tooltip} />
+                  <Legend wrapperStyle={chart.legendStyle} formatter={chart.legendFormatter} />
+                  <Bar dataKey="pendapatanKotor" name="Pendapatan Kotor" fill={chart.series.pendapatan} radius={[0, 4, 4, 0]} barSize={14} />
+                  <Bar dataKey="feeDokter" name="Fee Dokter (Share)" fill={chart.series.feeDokter} radius={[0, 4, 4, 0]} barSize={14} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

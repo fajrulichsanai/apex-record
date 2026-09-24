@@ -59,7 +59,7 @@ export default function VisitHeatmap({ data }: VisitHeatmapProps) {
                         key={`${dow}-${h}`}
                         className="heatmap-cell"
                         style={{
-                          background: count === 0 ? undefined : `rgba(79, 126, 248, ${0.12 + intensity * 0.78})`,
+                          background: count === 0 ? undefined : `color-mix(in srgb, var(--accent) ${Math.round(15 + intensity * 85)}%, transparent)`,
                         }}
                         title={`${label} ${String(h).padStart(2, '0')}.00 — ${count} kunjungan`}
                       />
