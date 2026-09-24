@@ -25,7 +25,7 @@ File: `01.png` … `06.png` sudah siap upload (1080×1350). Ubah teks di `posts.
 ## Prompt ChatGPT (kalau ingin versi gambar AI / variasi)
 
 Tempel **Style base** dulu di setiap prompt, lalu tambahkan prompt slide-nya.
-Lampirkan juga `01.png` sebagai referensi gaya agar hasilnya konsisten.
+Lampirkan juga `01.png` sebagai referensi gaya dan `logo.png` sebagai logo, agar hasilnya konsisten.
 
 **Style base**
 
@@ -36,8 +36,8 @@ soft lime-green radial glow (#7ED957, low opacity) in one corner.
 Typography: Inter Tight ExtraBold for headlines, tight letter spacing, near-black #17160F;
 key words in green #3E8E36 or with a lime marker highlight #7ED957 behind them.
 White rounded cards (radius ~28px) with subtle soft shadow. Small monospace uppercase labels
-in gray #8D8B7E. Top-left: black rounded-square logo mark with a white "A" + wordmark
-"ApexRecord" ("Record" in green). Bottom: thin divider line, "apexrecord.my.id" left, page number right.
+in gray #8D8B7E. Top-left: the attached ApexRecord logo (blue "A" with a white tooth) + wordmark
+"ApexRecord" ("Record" in green). Use the attached logo file exactly, do not redraw it. Bottom: thin divider line, "apexrecord.my.id" left, page number right.
 NO blue, NO neon, NO dark sci-fi glow, NO stock photos, NO 3D. All text in Bahasa Indonesia, spelled exactly as given.
 ```
 
@@ -93,7 +93,7 @@ Bottom-left "Tanpa training berhari-hari", page "05 / 06".
 **Slide 6 — CTA (versi gelap)**
 ```
 Dark version: background #17160F with faint white grid and a lime glow in the center.
-Centered: large green rounded-square app icon with white "A". Headline in off-white:
+Centered: the attached ApexRecord logo on a large cream (#F3F1EA) rounded-square tile. Headline in off-white:
 "Klinik Anda layak dikelola lebih rapi." ("lebih rapi." in lime #7ED957).
 Subtext: "15 hari gratis · tanpa kartu kredit · mulai Rp150rb/bulan".
 Lime pill button with black text "Mulai uji coba gratis →", below it "apexrecord.my.id" in monospace.
