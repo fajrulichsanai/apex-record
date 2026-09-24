@@ -257,7 +257,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
         {loading ? (
           <div className="billing-modal-loading">Memuat detail...</div>
         ) : loadError ? (
-          <div className="billing-modal-loading" style={{ color: '#FF4D4F' }}>
+          <div className="billing-modal-loading" style={{ color: 'var(--tag-cancel)' }}>
             {loadError}
           </div>
         ) : detail ? (

@@ -1,15 +1,16 @@
 /* Cloned from reservation modal style (app/styles/reservasi.css) */
 
 .billing-modal-overlay {
-  --primary:      #4F7EF8;
-  --primary-dk:   #3B6CE6;
-  --bg:           #F5F6FA;
+  --primary:      #16150F;
+  --primary-dk:   #262419;
+  --accent:       #3E8E36;
+  --bg:           #FAF9F6;
   --surface:      #FFFFFF;
-  --text-main:    #1A2340;
-  --text-sub:     #6B7A99;
-  --text-muted:   #A0AEC0;
-  --border:       #E8ECF4;
-  --tag-cancel:   #FF4D4F;
+  --text-main:    #17160F;
+  --text-sub:     #55534A;
+  --text-muted:   #8D8B7E;
+  --border:       #E7E4DD;
+  --tag-cancel:   #C1381F;
   --radius-sm:    8px;
   --radius-md:    14px;
   --radius-lg:    20px;
@@ -17,7 +18,7 @@
 
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, .55);
+  background: rgba(23, 22, 15, .55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -25,6 +26,20 @@
   z-index: 500;
   animation: billing-modal-fade .2s ease;
   overflow-y: auto;
+}
+
+:root[data-theme="dark"] .billing-modal-overlay {
+  --primary:      #3E8E36;
+  --primary-dk:   #4FA345;
+  --accent:       #4FA345;
+  --bg:           #1D1C17;
+  --surface:      #242320;
+  --text-main:    #F3F1EA;
+  --text-sub:     #B8B5A9;
+  --text-muted:   #85826F;
+  --border:       #38362F;
+  --tag-cancel:   #E5573C;
+  color-scheme: dark;
 }
 
 @keyframes billing-modal-fade {
@@ -193,7 +208,7 @@
 .billing-form-textarea:focus {
   border-color: var(--primary);
   background: var(--surface);
-  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+  box-shadow: 0 0 0 3px rgba(126,217,87,.22);
 }
 
 .billing-form-textarea {
@@ -266,7 +281,7 @@
 .billing-item-row input:focus {
   border-color: var(--primary);
   background: var(--surface);
-  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+  box-shadow: 0 0 0 3px rgba(126,217,87,.22);
 }
 
 .billing-add-item-btn {

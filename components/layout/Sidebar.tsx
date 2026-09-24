@@ -8,7 +8,6 @@ import { canAccessFeature, type FeatureKey } from '@/lib/permissions';
 import {
   FiGrid,
   FiUsers,
-  FiClock,
   FiCalendar,
   FiClipboard,
   FiEdit3,
@@ -89,7 +88,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: 'Billing & Kasir',
       groupId: 'billing',
       icon: <FiCreditCard />,
-      items: [{ label: 'Riwayat Transaksi', icon: <FiClock />, href: '/transaksi', feature: 'billing' }],
+      items: [{ label: 'Transaksi', icon: <FiCreditCard />, href: '/transaksi', feature: 'billing' }],
     },
     {
       title: 'Operasional',

@@ -1,3 +1,33 @@
+/* Theme tokens for the react-select based CustomSelect. Defined on :root
+   (not the wrapper) because the menu is portalled to document.body. */
+:root {
+  --cs-bg: #FAF9F6;
+  --cs-surface: #FFFFFF;
+  --cs-hover: #F6F4EF;
+  --cs-border: #E7E4DD;
+  --cs-text: #17160F;
+  --cs-muted: #8D8B7E;
+  --cs-accent: #3E8E36;
+  --cs-accent-soft: #E3F3DA;
+  --cs-accent-ink: #2B6B22;
+  --cs-danger: #C1381F;
+  --cs-shadow: 0 16px 36px -12px rgba(23, 22, 15, 0.28);
+}
+
+:root[data-theme="dark"] {
+  --cs-bg: #1D1C17;
+  --cs-surface: #242320;
+  --cs-hover: #2A2924;
+  --cs-border: #38362F;
+  --cs-text: #F3F1EA;
+  --cs-muted: #85826F;
+  --cs-accent: #4FA345;
+  --cs-accent-soft: #23361F;
+  --cs-accent-ink: #6BC85F;
+  --cs-danger: #E5573C;
+  --cs-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.6);
+}
+
 .custom-select-wrapper {
   position: relative;
   width: 100%;

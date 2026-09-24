@@ -355,7 +355,7 @@ function TransaksiPageInner() {
               <h1>Transaksi</h1>
               <span className="badge-count">{totalCount}</span>
             </div>
-            <p className="page-subtitle">Input pembayaran baru dan pantau riwayat transaksi klinik</p>
+            <p className="page-subtitle">Buat tagihan dari kunjungan selesai dan pantau pembayaran klinik</p>
           </div>
         </div>
 
@@ -428,8 +428,15 @@ function TransaksiPageInner() {
                 <div
                   key={enc.encounterId}
                   className={`backlog-item ${selectedEncounterId === enc.encounterId ? 'selected' : ''}`}
-                  style={{ cursor: 'pointer' }}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => setSelectedEncounterId(enc.encounterId)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedEncounterId(enc.encounterId);
+                    }
+                  }}
                 >
                   <div className="backlog-item-info">
                     <div className="backlog-item-name">{enc.patientName || `Pasien #${enc.patientId}`}</div>
@@ -437,7 +444,8 @@ function TransaksiPageInner() {
                       {enc.noRM || '—'} · {enc.practitionerName || '—'} · {formatDate(enc.arrivedTime)}
                     </div>
                   </div>
-                  <button type="button" className="btn-outline" onClick={() => setSelectedEncounterId(enc.encounterId)}>
+                  <button type="button" className="btn-outline pay" onClick={() => setSelectedEncounterId(enc.encounterId)}>
+                    <span className="material-symbols-rounded">receipt_long</span>
                     Buat Tagihan
                   </button>
                 </div>
@@ -452,7 +460,7 @@ function TransaksiPageInner() {
           <div className="panel">
             <div className="panel-header">
               <span className="material-symbols-rounded">add_card</span>
-              <h2>Input Transaksi Baru</h2>
+              <h2>Buat Tagihan Baru</h2>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               <div className="form-body">
@@ -592,6 +600,7 @@ function TransaksiPageInner() {
           {/* Riwayat Transaksi Panel */}
           <div className="riwayat-panel">
             <div className="panel-toolbar">
+              <div className="panel-toolbar-title">Riwayat Transaksi</div>
               <div className="search-box">
                 <span className="material-symbols-rounded">search</span>
                 <input
@@ -600,6 +609,16 @@ function TransaksiPageInner() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="search-clear"
+                    aria-label="Hapus pencarian"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>close</span>
+                  </button>
+                )}
               </div>
               <div className="filter-tabs">
                 <button
@@ -637,7 +656,7 @@ function TransaksiPageInner() {
               <span className="sort-label">
                 {loadingList ? 'Memuat…' : `${filteredBillings.length} transaksi ditemukan`}
               </span>
-              <button type="button" className="btn-outline" onClick={loadBillings}>
+              <button type="button" className="btn-ghost" onClick={loadBillings} disabled={loadingList}>
                 <span className="material-symbols-rounded">refresh</span>
                 Muat Ulang
               </button>
@@ -656,8 +675,27 @@ function TransaksiPageInner() {
                 <div className="empty-icon-wrap">
                   <span className="material-symbols-rounded">receipt_long</span>
                 </div>
-                <div className="empty-title">Belum ada transaksi</div>
-                <div className="empty-sub">Transaksi yang tercatat akan muncul di sini</div>
+                {billings.length === 0 && currentFilter === 'semua' ? (
+                  <>
+                    <div className="empty-title">Belum ada transaksi</div>
+                    <div className="empty-sub">Pilih kunjungan selesai di panel kiri untuk membuat tagihan pertama.</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="empty-title">Tidak ada transaksi yang cocok</div>
+                    <div className="empty-sub">Coba ubah filter atau kata kunci pencarian.</div>
+                    <button
+                      type="button"
+                      className="btn-outline"
+                      onClick={() => {
+                        setCurrentFilter('semua');
+                        setSearchQuery('');
+                      }}
+                    >
+                      Reset Filter
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
               <div className="transaksi-list">
@@ -667,16 +705,26 @@ function TransaksiPageInner() {
                     <div
                       key={b.billingId}
                       className="transaksi-item"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setSelectedBillingId(b.billingId)}
-                      style={{ cursor: 'pointer' }}
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return;
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedBillingId(b.billingId);
+                        }
+                      }}
                     >
-                      <div className="transaksi-icon">
-                        <span className="material-symbols-rounded">receipt</span>
+                      <div className={`transaksi-icon ${tag}`}>
+                        <span className="material-symbols-rounded">
+                          {b.status === 'paid' ? 'task_alt' : b.status === 'partial' ? 'hourglass_top' : 'receipt'}
+                        </span>
                       </div>
                       <div className="transaksi-info">
                         <div className="transaksi-name">{b.patientName || `Pasien #${b.encounterId}`}</div>
                         <div className="transaksi-meta">
-                          {b.invoiceNumber} · {formatDate(b.createdAt)}
+                          <span className="transaksi-invoice">{b.invoiceNumber}</span> · {formatDate(b.createdAt)}
                         </div>
                       </div>
                       <div className="transaksi-right">
@@ -686,14 +734,14 @@ function TransaksiPageInner() {
                       {(b.status === 'unpaid' || b.status === 'partial') && (
                         <button
                           type="button"
-                          className="btn-outline"
+                          className="btn-outline pay"
                           disabled={payingId === b.billingId}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRecordPayment(b);
                           }}
                         >
-                          {payingId === b.billingId ? '…' : 'Bayar'}
+                          {payingId === b.billingId ? 'Menyimpan…' : 'Bayar'}
                         </button>
                       )}
                     </div>
