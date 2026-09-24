@@ -1,6 +1,6 @@
-import { apiClient, toQueryString } from './api-client';
+import { API_BASE, apiClient, toQueryString } from './api-client';
 
-export type AuditActionType = 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'EXPORT' | 'VIEW';
+export type AuditActionType = 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'EXPORT' | 'VIEW' | 'ALERT';
 export type AuditStatus = 'SUCCESS' | 'FAILED';
 
 export interface AuditLogEntry {
@@ -43,7 +43,6 @@ export interface AuditLogQuery {
   limit?: number;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export const auditLogApi = {
   list: (query?: AuditLogQuery) =>
@@ -51,13 +50,10 @@ export const auditLogApi = {
 
   get: (id: number) => apiClient.get<AuditLogEntry>(`/audit-logs/${id}`),
 
-  // Export needs the bearer token, so it can't be a plain <a href> link — fetch
-  // it as an authenticated blob and hand back a download URL for the caller.
+  // Fetched as a blob (session cookie rides along) so the caller controls the
+  // download filename and can surface errors.
   exportCsv: async (query?: AuditLogQuery) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    const res = await fetch(`${API_URL}/audit-logs/export?${toQueryString(query || {})}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    const res = await fetch(`${API_BASE}/audit-logs/export?${toQueryString(query || {})}`);
     if (!res.ok) throw new Error('Gagal mengekspor log');
     const blob = await res.blob();
     return URL.createObjectURL(blob);

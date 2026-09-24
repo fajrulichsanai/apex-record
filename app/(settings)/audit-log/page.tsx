@@ -19,6 +19,8 @@ const ACTION_OPTIONS = [
   { value: 'LOGIN', label: 'Login' },
   { value: 'LOGOUT', label: 'Logout' },
   { value: 'EXPORT', label: 'Ekspor' },
+  { value: 'VIEW', label: 'Lihat' },
+  { value: 'ALERT', label: 'Peringatan Keamanan' },
 ];
 
 const ENTITY_OPTIONS = [
@@ -42,11 +44,13 @@ const ACTION_LABEL: Record<AuditActionType, string> = {
   LOGOUT: 'Logout',
   EXPORT: 'Ekspor',
   VIEW: 'Lihat',
+  ALERT: 'Peringatan Keamanan',
 };
 
 function actionTagClass(action: AuditActionType) {
   switch (action) {
     case 'DELETE':
+    case 'ALERT':
       return 'tag-delete';
     case 'CREATE':
       return 'tag-create';

@@ -122,7 +122,7 @@ export default function SuperAdminPatientMigrationPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept=".xlsx,.xls,.csv"
+              accept=".xlsx,.csv"
               onChange={handleFileChange}
               disabled={importing}
             />
