@@ -66,7 +66,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
       try {
         setLoading(true);
         const [patientList, practitionerList, reservationRes] = await Promise.all([
-          patientsApi.list(),
+          patientsApi.listAll(),
           practitionersApi.list(),
           reservationsApi.list({ status: 'confirmed' }),
         ]);
@@ -142,6 +142,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
         reservationId: reservationId ? Number(reservationId) : undefined,
         chiefComplaint: chiefComplaint.trim() || undefined,
       });
+
       onCreated(created.id);
     } catch (err) {
       if (!isMounted.current) return;
@@ -394,20 +395,21 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
 
               <div className="visit-form-footer">
                 {step > 1 ? (
-                  <button type="button" className="btn-outline" onClick={goBack} disabled={submitting}>
+                  <button key="btn-back" type="button" className="btn-outline" onClick={goBack} disabled={submitting}>
                     <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                       arrow_back
                     </span>
                     Kembali
                   </button>
                 ) : (
-                  <button type="button" className="btn-outline" onClick={onClose} disabled={submitting}>
+                  <button key="btn-cancel" type="button" className="btn-outline" onClick={onClose} disabled={submitting}>
                     Batal
                   </button>
                 )}
 
                 {step < 3 ? (
                   <button
+                    key="btn-next"
                     type="button"
                     className="btn-primary"
                     onClick={goNext}
@@ -419,7 +421,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                     </span>
                   </button>
                 ) : (
-                  <button type="submit" className="btn-primary" disabled={submitting}>
+                  <button key="btn-submit" type="submit" className="btn-primary" disabled={submitting}>
                     <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                       check_circle
                     </span>

@@ -1,14 +1,21 @@
 .tarif-page {
-  --primary:      #4F7EF8;
-  --primary-dk:   #3B6CE6;
-  --green:        #2DCB8A;
-  --orange:       #F5A623;
-  --bg:           #F5F6FA;
+  --primary:      #16150F;
+  --primary-dk:   #262419;
+  --accent:       #3E8E36;
+  --accent-solid: #7ED957;
+  --accent-soft:  #E3F3DA;
+  --green:        #3E8E36;
+  --orange:       #8A5A00;
+  --orange-soft:  #FCEACB;
+  --red:          #C1381F;
+  --info:         #1D5FAE;
+  --info-soft:    #DCEAFB;
+  --bg:           #FAF9F6;
   --surface:      #FFFFFF;
-  --text-main:    #1A2340;
-  --text-sub:     #6B7A99;
-  --text-muted:   #A0AEC0;
-  --border:       #E8ECF4;
+  --text-main:    #17160F;
+  --text-sub:     #55534A;
+  --text-muted:   #8D8B7E;
+  --border:       #E7E4DD;
   --tag-bedah:    #FF6B9D;
   --tag-konservasi: #F5A623;
   --radius-sm:    8px;
@@ -45,8 +52,8 @@
 }
 
 .tarif-page .badge-count {
-  background: var(--primary);
-  color: #fff;
+  background: var(--accent-solid);
+  color: #17160F;
   font-size: 12px;
   font-weight: 700;
   padding: 2px 9px;
@@ -70,13 +77,13 @@
   font-weight: 600;
   cursor: pointer;
   transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
-  box-shadow: 0 4px 14px rgba(79,126,248,.35);
+  box-shadow: 0 4px 14px rgba(23,22,15,.3);
   white-space: nowrap;
 }
 
 .tarif-page .btn-primary:hover {
   background: var(--primary-dk);
-  box-shadow: 0 6px 20px rgba(79,126,248,.45);
+  box-shadow: 0 6px 20px rgba(23,22,15,.4);
   transform: translateY(-1px);
 }
 
@@ -96,7 +103,7 @@
   white-space: nowrap;
 }
 
-.tarif-page .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.tarif-page .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
 .tarif-page .btn-outline .material-symbols-rounded { font-size: 17px; }
 .tarif-page .btn-primary .material-symbols-rounded { font-size: 17px; }
 
@@ -108,56 +115,40 @@
 }
 
 .tarif-page .stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 20px;
   display: flex;
   align-items: center;
   gap: 14px;
-  color: #fff;
+  color: var(--text-main);
   position: relative;
-  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(23,22,15,.04), 0 10px 24px -16px rgba(23,22,15,.12);
   transition: transform var(--transition), box-shadow var(--transition);
 }
 
-.tarif-page .stat-card:hover { transform: translateY(-3px); }
+.tarif-page .stat-card:hover { transform: translateY(-2px); box-shadow: 0 1px 2px rgba(23,22,15,.05), 0 16px 28px -14px rgba(23,22,15,.16); }
 
-.tarif-page .stat-card::before {
-  content: '';
-  position: absolute;
-  top: -20px; right: -20px;
-  width: 90px; height: 90px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.12);
-}
-
-.tarif-page .stat-card::after {
-  content: '';
-  position: absolute;
-  bottom: -30px; right: 20px;
-  width: 60px; height: 60px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.08);
-}
-
-.tarif-page .stat-card.total    { background: linear-gradient(135deg,#4F7EF8,#7B5CFA); box-shadow: 0 6px 20px rgba(79,126,248,.3); }
-.tarif-page .stat-card.margin   { background: linear-gradient(135deg,#2DCB8A,#1BA876); box-shadow: 0 6px 20px rgba(45,203,138,.3); }
-.tarif-page .stat-card.termahal { background: linear-gradient(135deg,#38C9C0,#2BA3CA); box-shadow: 0 6px 20px rgba(56,201,192,.3); }
-.tarif-page .stat-card.durasi   { background: linear-gradient(135deg,#F5A623,#E8831A); box-shadow: 0 6px 20px rgba(245,166,35,.3); }
+.tarif-page .stat-card.total    { --stat-tint-bg: var(--info-soft); --stat-tint-ink: var(--info); }
+.tarif-page .stat-card.margin   { --stat-tint-bg: var(--accent-soft); --stat-tint-ink: var(--accent); }
+.tarif-page .stat-card.termahal { --stat-tint-bg: #EDEBE6; --stat-tint-ink: var(--text-main); }
+.tarif-page .stat-card.durasi   { --stat-tint-bg: var(--orange-soft); --stat-tint-ink: var(--orange); }
 
 .tarif-page .stat-icon {
   width: 46px; height: 46px;
   border-radius: 14px;
-  background: rgba(255,255,255,.22);
+  background: var(--stat-tint-bg);
+  color: var(--stat-tint-ink);
   display: flex; align-items: center; justify-content: center;
   font-size: 22px;
   flex-shrink: 0;
-  position: relative; z-index: 1;
 }
 
-.tarif-page .stat-info { position: relative; z-index: 1; min-width: 0; }
-.tarif-page .stat-value { font-size: 22px; font-weight: 800; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.tarif-page .stat-label { font-size: 12px; font-weight: 500; opacity: .85; margin-top: 3px; }
-.tarif-page .stat-sub { font-size: 11px; font-weight: 500; opacity: .75; margin-top: 2px; }
+.tarif-page .stat-info { min-width: 0; }
+.tarif-page .stat-value { font-size: 22px; font-weight: 800; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-main); }
+.tarif-page .stat-label { font-size: 12px; font-weight: 500; color: var(--text-sub); margin-top: 3px; }
+.tarif-page .stat-sub { font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: 2px; }
 
 /* PANEL */
 .tarif-page .panel {
@@ -194,8 +185,8 @@
 }
 
 .tarif-page .search-box:focus-within {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(62,142,54,.12);
 }
 
 .tarif-page .search-box .material-symbols-rounded { font-size: 18px; color: var(--text-muted); }
@@ -226,13 +217,13 @@
   appearance: none;
   -webkit-appearance: none;
   transition: all var(--transition);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A0AEC0' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238D8B7E' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
 }
 
-.tarif-page .select-pill:hover { border-color: var(--primary); color: var(--primary); }
-.tarif-page .select-pill:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,126,248,.12); }
+.tarif-page .select-pill:hover { border-color: var(--accent); color: var(--accent); }
+.tarif-page .select-pill:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(62,142,54,.12); }
 
 .tarif-page .toolbar-spacer { flex: 1; }
 
@@ -250,8 +241,8 @@
   transition: all var(--transition);
 }
 
-.tarif-page .filter-tab:hover { border-color: var(--primary); color: var(--primary); }
-.tarif-page .filter-tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.tarif-page .filter-tab:hover { border-color: var(--accent); color: var(--accent); }
+.tarif-page .filter-tab.active { background: var(--accent-solid); border-color: var(--accent-solid); color: #17160F; }
 
 .tarif-page .panel-sort {
   padding: 10px 16px;
@@ -275,7 +266,7 @@
   position: relative;
 }
 
-.tarif-page .tarif-item:hover { background: #F8F9FE; }
+.tarif-page .tarif-item:hover { background: #FAF9F6; }
 
 .tarif-page .tarif-icon {
   width: 42px; height: 42px;
@@ -318,9 +309,9 @@
 
 .tarif-page .tag.cat-bedah      { background: rgba(255,107,157,.12); color: var(--tag-bedah); }
 .tarif-page .tag.cat-konservasi { background: rgba(245,166,35,.12); color: var(--tag-konservasi); }
-.tarif-page .tag.tipe-addon  { background: rgba(79,126,248,.12); color: var(--primary); }
-.tarif-page .tag.tipe-paket  { background: rgba(45,203,138,.12); color: var(--green); }
-.tarif-page .tag.tipe-range  { background: rgba(245,166,35,.12); color: #E8831A; }
+.tarif-page .tag.tipe-addon  { background: var(--info-soft); color: var(--info); }
+.tarif-page .tag.tipe-paket  { background: rgba(62,142,54,.12); color: var(--green); }
+.tarif-page .tag.tipe-range  { background: var(--orange-soft); color: var(--orange); }
 .tarif-page .tag.multi       { background: rgba(56,201,192,.12); color: #2BA3CA; }
 
 .tarif-page .tarif-meta {
@@ -344,7 +335,7 @@
   font-size: 11.5px;
   font-weight: 600;
   color: var(--green);
-  background: rgba(45,203,138,.12);
+  background: rgba(62,142,54,.12);
   padding: 3px 9px;
   border-radius: 20px;
 }
@@ -371,8 +362,8 @@
 }
 
 .tarif-page .action-btn:hover { background: var(--bg); color: var(--text-main); }
-.tarif-page .action-btn.edit:hover { color: var(--primary); }
-.tarif-page .action-btn.delete:hover { color: #E74C3C; }
+.tarif-page .action-btn.edit:hover { color: var(--accent); }
+.tarif-page .action-btn.delete:hover { color: var(--red); }
 .tarif-page .action-btn .material-symbols-rounded { font-size: 18px; }
 
 .tarif-page .action-btn::after {
@@ -463,7 +454,7 @@
 }
 
 .tarif-page .breadcrumb a { color: var(--text-sub); text-decoration: none; transition: color var(--transition); }
-.tarif-page .breadcrumb a:hover { color: var(--primary); }
+.tarif-page .breadcrumb a:hover { color: var(--accent); }
 .tarif-page .breadcrumb .material-symbols-rounded { font-size: 15px; color: var(--text-muted); }
 .tarif-page .breadcrumb .breadcrumb-current { color: var(--text-main); font-weight: 600; }
 
@@ -493,7 +484,7 @@
   white-space: nowrap;
 }
 
-.tarif-page .tarif-table tbody tr:hover { background: #F8F9FE; }
+.tarif-page .tarif-table tbody tr:hover { background: #FAF9F6; }
 .tarif-page .tarif-table tbody tr:last-child td { border-bottom: none; }
 
 .tarif-page .tarif-table .tarif-name { font-weight: 600; }
@@ -506,7 +497,7 @@
   border-radius: 20px;
 }
 
-.tarif-page .status-badge.active { background: rgba(45,203,138,.12); color: var(--green); }
+.tarif-page .status-badge.active { background: rgba(62,142,54,.12); color: var(--green); }
 .tarif-page .status-badge.inactive { background: rgba(160,174,192,.15); color: var(--text-muted); }
 
 /* FORM PAGE (Create / Edit) */
@@ -532,12 +523,12 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 2px 8px rgba(15,23,42,.06);
+  box-shadow: 0 2px 8px rgba(23,22,15,.06);
   transition: box-shadow var(--transition);
 }
 
 .tarif-page .form-panel:hover {
-  box-shadow: 0 4px 12px rgba(15,23,42,.1);
+  box-shadow: 0 4px 12px rgba(23,22,15,.1);
 }
 
 .tarif-page .items-section {
@@ -584,12 +575,12 @@
 }
 
 .tarif-page .item-card:hover {
-  border-color: var(--primary);
-  box-shadow: 0 2px 8px rgba(79,126,248,.08);
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(62,142,54,.1);
 }
 
 .tarif-page .item-number {
-  background: linear-gradient(135deg, var(--primary), var(--primary-dk));
+  background: var(--primary);
   color: #fff;
   width: 40px;
   height: 40px;
@@ -641,9 +632,9 @@
 
 .tarif-page .item-field input:focus,
 .tarif-page .item-field textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79,126,248,.1);
-  background: rgba(79,126,248,.02);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(62,142,54,.1);
+  background: rgba(62,142,54,.02);
 }
 
 .tarif-page .item-field textarea {
@@ -666,8 +657,8 @@
 }
 
 .tarif-page .margin-badge {
-  background: linear-gradient(135deg, rgba(45,203,138,.1), rgba(45,203,138,.05));
-  border: 1.5px solid rgba(45,203,138,.25);
+  background: linear-gradient(135deg, rgba(62,142,54,.1), rgba(62,142,54,.05));
+  border: 1.5px solid rgba(62,142,54,.25);
   border-radius: 8px;
   padding: 9px 11px;
   font-size: 13px;
@@ -689,8 +680,8 @@
   height: 32px;
   border-radius: 8px;
   border: none;
-  background: rgba(231,76,60,.08);
-  color: #E74C3C;
+  background: rgba(193,56,31,.08);
+  color: var(--red);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -699,7 +690,7 @@
 }
 
 .tarif-page .btn-remove:hover {
-  background: rgba(231,76,60,.15);
+  background: rgba(193,56,31,.15);
 }
 
 .tarif-page .btn-remove .material-symbols-rounded {
@@ -710,9 +701,9 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: rgba(79,126,248,.08);
-  color: var(--primary);
-  border: 1.5px dashed rgba(79,126,248,.3);
+  background: rgba(62,142,54,.08);
+  color: var(--accent);
+  border: 1.5px dashed rgba(62,142,54,.3);
   border-radius: var(--radius-md);
   padding: 11px 16px;
   font-size: 13.5px;
@@ -723,8 +714,8 @@
 }
 
 .tarif-page .btn-add-item:hover {
-  background: rgba(79,126,248,.12);
-  border-color: var(--primary);
+  background: rgba(62,142,54,.12);
+  border-color: var(--accent);
 }
 
 .tarif-page .btn-add-item .material-symbols-rounded {
@@ -763,7 +754,7 @@
 }
 
 .tarif-page .form-field .required {
-  color: #E74C3C;
+  color: var(--red);
   margin-left: 2px;
 }
 
@@ -789,9 +780,9 @@
 .tarif-page .form-field input:focus,
 .tarif-page .form-field select:focus,
 .tarif-page .form-field textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79,126,248,.1);
-  background: rgba(79,126,248,.02);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(62,142,54,.1);
+  background: rgba(62,142,54,.02);
 }
 
 .tarif-page .form-field textarea {
@@ -810,8 +801,8 @@
 }
 
 .tarif-page .margin-display {
-  background: linear-gradient(135deg, rgba(45,203,138,.08), rgba(45,203,138,.04));
-  border: 1.5px solid rgba(45,203,138,.3);
+  background: linear-gradient(135deg, rgba(62,142,54,.08), rgba(62,142,54,.04));
+  border: 1.5px solid rgba(62,142,54,.3);
   border-radius: 10px;
   padding: 12px 14px;
   display: flex;
@@ -837,21 +828,17 @@
 }
 
 .tarif-page .panel .modal-body {
-  padding: 22px 24px 24px;
+  padding: 24px 28px 28px;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  background: var(--bg);
+  background: var(--surface);
 }
 
 .tarif-page .panel .form-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 18px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px 20px;
 }
 
 .tarif-page .panel .form-field { display: flex; flex-direction: column; gap: 6px; }
@@ -883,19 +870,26 @@
 .tarif-page .panel .form-field input:focus,
 .tarif-page .panel .form-field select:focus,
 .tarif-page .panel .form-field textarea:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(62,142,54,.12);
 }
 
 .tarif-page .panel .form-field input:disabled { background: var(--bg); color: var(--text-sub); }
 
 .tarif-page .panel .modal-footer {
-  padding: 16px 24px;
+  padding: 16px 28px;
   border-top: 1px solid var(--border);
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   background: var(--surface);
+}
+
+.tarif-page .form-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
 }
 
 .tarif-page .panel .satusehat-empty {
@@ -906,6 +900,57 @@
   padding: 30px 20px;
   text-align: center;
   color: var(--text-sub);
+}
+
+/* BOM ADD ROW */
+.tarif-page .bom-add-row {
+  margin: 16px;
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.tarif-page .bom-add-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0 0 12px;
+}
+
+.tarif-page .bom-add-empty { font-size: 13px; color: var(--text-sub); margin: 0; }
+
+.tarif-page .bom-add-fields {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.tarif-page .bom-add-field { display: flex; flex-direction: column; gap: 6px; }
+.tarif-page .bom-add-field label { font-size: 12px; font-weight: 600; color: var(--text-sub); }
+.tarif-page .bom-add-field-bahan { flex: 1 1 240px; min-width: 220px; }
+.tarif-page .bom-add-field-qty { flex: 0 0 120px; }
+.tarif-page .bom-add-field-qty input {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+  width: 100%;
+}
+.tarif-page .bom-add-field-qty input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(62,142,54,.12); }
+.tarif-page .bom-add-checkbox { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-main); cursor: pointer; height: 40px; }
+.tarif-page .bom-add-btn { height: 40px; white-space: nowrap; }
+
+@media (max-width: 640px) {
+  .tarif-page .bom-add-fields { flex-direction: column; align-items: stretch; }
+  .tarif-page .bom-add-field-bahan,
+  .tarif-page .bom-add-field-qty { flex: 1 1 auto; }
+  .tarif-page .bom-add-btn { width: 100%; justify-content: center; }
 }
 
 /* RESPONSIVE */
@@ -948,3 +993,28 @@
     right: 8px;
   }
 }
+
+/* ---------- DARK MODE ---------- */
+:root[data-theme="dark"] .tarif-page {
+  --primary: #3E8E36;
+  --primary-dk: #4FA345;
+  --accent: #4FA345;
+  --accent-solid: #7ED957;
+  --accent-soft: #23361F;
+  --green: #4FA345;
+  --orange: #E8A930;
+  --orange-soft: #3A2C10;
+  --red: #E5573C;
+  --info: #5B9BE0;
+  --info-soft: #1B2A3A;
+  --bg: #17160F;
+  --surface: #242320;
+  --text-main: #F3F1EA;
+  --text-sub: #B8B5A9;
+  --text-muted: #85826F;
+  --border: #38362F;
+}
+
+:root[data-theme="dark"] .tarif-page .stat-card.termahal { --stat-tint-bg: #38362F; }
+:root[data-theme="dark"] .tarif-page .tarif-item:hover,
+:root[data-theme="dark"] .tarif-page .tarif-table tbody tr:hover { background: #2A2924; }

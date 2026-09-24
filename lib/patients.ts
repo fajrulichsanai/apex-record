@@ -52,6 +52,7 @@ export interface Patient {
   riwayatParuParu?: boolean;
   riwayatSyaraf?: boolean;
   riwayatSistemikLainnya?: boolean;
+  catatanSistemikLainnya?: string;
   alergiObat?: boolean;
   alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
@@ -81,7 +82,6 @@ export interface PatientPayload {
   province?: string;
   postalCode?: string;
   maritalStatus?: MaritalStatus;
-  isNewborn?: boolean;
   nikIbu?: string;
   namaWali?: string;
   hubunganWali?: HubunganWali;
@@ -98,6 +98,7 @@ export interface PatientPayload {
   riwayatParuParu?: boolean;
   riwayatSyaraf?: boolean;
   riwayatSistemikLainnya?: boolean;
+  catatanSistemikLainnya?: string;
   alergiObat?: boolean;
   alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
@@ -112,8 +113,77 @@ export interface Encounter {
   id: number;
   status: string;
   serviceType: string;
+  chiefComplaint?: string;
   arrivedTime: string;
   finishedTime?: string;
+  practitionerName?: string;
+}
+
+export type TimelineItemType = 'kunjungan' | 'billing' | 'foto' | 'treatment_plan' | 'recall';
+
+export interface TimelineItem {
+  type: TimelineItemType;
+  date: string;
+  title: string;
+  subtitle?: string;
+  meta?: Record<string, unknown>;
+}
+
+export interface MedicalRecordVitals {
+  bloodPressureSystolic?: number;
+  bloodPressureDiastolic?: number;
+  pulseRate?: number;
+  respiratoryRate?: number;
+  temperature?: number;
+  oxygenSaturation?: number;
+  weight?: number;
+  height?: number;
+}
+
+export interface MedicalRecordSoap {
+  subjective?: string;
+  objective?: string;
+  assessment?: string;
+  treatment?: string;
+  plan?: string;
+  controlPlan?: string;
+  signature?: string;
+}
+
+export interface MedicalRecordDentalExam {
+  ohisDebris?: number;
+  ohisCalculus?: number;
+  gingivalIndex?: number;
+  plaqueSurfacesWithPlaque?: number;
+  plaqueSurfacesExamined?: number;
+}
+
+export interface MedicalRecordPrescription {
+  drugName: string;
+  dosage?: string;
+  frequency?: string;
+  quantity?: string;
+}
+
+export interface MedicalRecordSupportingImage {
+  id: number;
+  fileUrl: string;
+  imageType: 'photo' | 'xray';
+  category: string | null;
+}
+
+export interface MedicalRecordEntry {
+  encounter: Encounter;
+  vitals: MedicalRecordVitals | null;
+  soap: MedicalRecordSoap | null;
+  dentalExam: MedicalRecordDentalExam | null;
+  prescriptions: MedicalRecordPrescription[];
+  supportingExamImages: MedicalRecordSupportingImage[];
+}
+
+export interface ReferralSummaryResponse {
+  bySource: { sumberInformasi: SumberInformasi; count: number }[];
+  byReferrer: { referrerPatientId: number; referrerName: string; referralCount: number }[];
 }
 
 export interface PatientQuery {
@@ -139,6 +209,24 @@ export const patientsApi = {
           : '')
     ),
 
+  // Backend caps `limit` at 100 per page, so a plain list() only returns the
+  // first 10 (default) patients. This paginates through every page to fetch
+  // the full list, for UI pickers (reservasi/kunjungan) that need all patients.
+  listAll: async (query?: Omit<PatientQuery, 'page' | 'limit'>) => {
+    const pageSize = 100;
+    let page = 1;
+    const all: Patient[] = [];
+
+    while (true) {
+      const batch = await patientsApi.list({ ...query, page, limit: pageSize });
+      all.push(...batch);
+      if (batch.length < pageSize) break;
+      page += 1;
+    }
+
+    return all;
+  },
+
   get: (id: number) => apiClient.get<Patient>(`/patients/${id}`),
 
   create: (payload: PatientPayload) => apiClient.post<Patient>('/patients', payload),
@@ -149,4 +237,12 @@ export const patientsApi = {
   remove: (id: number) => apiClient.delete<void>(`/patients/${id}`),
 
   encounters: (id: number) => apiClient.get<Encounter[]>(`/patients/${id}/encounters`),
+
+  getTimeline: (id: number) => apiClient.get<TimelineItem[]>(`/patients/${id}/timeline`),
+
+  getMedicalRecord: (id: number) =>
+    apiClient.get<MedicalRecordEntry[]>(`/patients/${id}/medical-record`),
+
+  getReferralSummary: () =>
+    apiClient.get<ReferralSummaryResponse>('/patients/referral-summary'),
 };

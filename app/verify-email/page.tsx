@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import '../styles/verify-email.css';
 
-const LOCAL_API = 'http://localhost:3001';
+const LOCAL_API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 type VerificationState = 'loading' | 'success' | 'error' | 'expired';
 
@@ -69,15 +69,19 @@ function VerifyEmailContent() {
 
   return (
     <div className="verify-page">
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      {/* eslint-disable-next-line @next/next/no-page-custom-font -- scoped intentionally to the auth pages */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+
       {/* LEFT PANEL */}
       <div className="left-panel">
         <div className="brand">
           <div className="brand-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="7" width="18" height="13" rx="2" stroke="white" strokeWidth="2"/>
-              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="white" strokeWidth="2"/>
-              <path d="M12 11v4M10 13h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+            <img src="/logo-apex-record.png" alt="ApexRecord" />
           </div>
           <div className="brand-text">
             <span className="name">Apex</span>
@@ -86,18 +90,10 @@ function VerifyEmailContent() {
         </div>
 
         <div className="hero">
-          <h1>Kelola klinik<br/>lebih cerdas.</h1>
+          <h1>Kelola klinik<br/>lebih <span className="accent">cerdas.</span></h1>
           <p>Platform manajemen klinik end-to-end — rekam medis, antrian, farmasi, billing, dan analitik bisnis dalam satu ekosistem yang terintegrasi penuh.</p>
 
           <div className="feature-pills">
-            <span className="pill">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="white" strokeWidth="2" strokeLinejoin="round"/><path d="M14 2v6h6" stroke="white" strokeWidth="2" strokeLinejoin="round"/></svg>
-              Rekam Medis FHIR-R4
-            </span>
-            <span className="pill">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="3" stroke="white" strokeWidth="2"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>
-              Integrasi SATUSEHAT
-            </span>
             <span className="pill">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2" stroke="white" strokeWidth="2"/><path d="M3 9h18M8 4v16" stroke="white" strokeWidth="2"/></svg>
               Farmasi &amp; Resep
@@ -115,13 +111,6 @@ function VerifyEmailContent() {
               Manajemen Antrian
             </span>
           </div>
-        </div>
-
-        <div className="footer-row">
-          <span className="badge">
-            <span className="dot-green"></span>
-            Terintegrasi SATUSEHAT &middot; Kemenkes RI
-          </span>
         </div>
       </div>
 
@@ -214,14 +203,17 @@ function VerifyEmailPage() {
 function LoadingFallback() {
   return (
     <div className="verify-page">
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      {/* eslint-disable-next-line @next/next/no-page-custom-font -- scoped intentionally to the auth pages */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
       <div className="left-panel">
         <div className="brand">
           <div className="brand-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="7" width="18" height="13" rx="2" stroke="white" strokeWidth="2"/>
-              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="white" strokeWidth="2"/>
-              <path d="M12 11v4M10 13h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+            <img src="/logo-apex-record.png" alt="ApexRecord" />
           </div>
           <div className="brand-text">
             <span className="name">Apex</span>

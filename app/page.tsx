@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 import { defaultRouteForRole } from '@/lib/permissions';
+import type { User } from '@/types/user';
 import './styles/page.css';
 
 const LOCAL_API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -13,8 +14,14 @@ type Mode = 'login' | 'register';
 
 const LoginPage = () => {
   const router = useRouter();
-  const { login } = useAuth();
+  const { user, loading: authLoading, login } = useAuth();
   const { success, error } = useToast();
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace(defaultRouteForRole(user.role));
+    }
+  }, [authLoading, user, router]);
   const [mode, setMode] = useState<Mode>('login');
   const [showPassword, setShowPassword] = useState(false);
 
@@ -24,6 +31,9 @@ const LoginPage = () => {
   const [ownerCode, setOwnerCode] = useState('');
 
   const [loading, setLoading] = useState(false);
+
+  const [mfaToken, setMfaToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState('');
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -50,6 +60,23 @@ const LoginPage = () => {
 
     if (!res.ok || !body.success) {
       throw new Error(body?.error?.message || 'Login gagal');
+    }
+
+    return body.data;
+  };
+
+  const handleVerifyMfa = async () => {
+    const endpoint = `${LOCAL_API}/auth/mfa/verify-login`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mfaToken, code: mfaCode }),
+    });
+
+    const body = await res.json();
+
+    if (!res.ok || !body.success) {
+      throw new Error(body?.error?.message || 'Kode tidak valid');
     }
 
     return body.data;
@@ -94,11 +121,11 @@ const LoginPage = () => {
         }, 2000);
       } else {
         const data = await handleLogin();
-        success('Selamat datang! Anda akan diarahkan...');
-        setTimeout(() => {
-          login(data.accessToken, data.user);
-          router.push(defaultRouteForRole(data.user?.role));
-        }, 1500);
+        if (data.mfaRequired) {
+          setMfaToken(data.mfaToken);
+          return;
+        }
+        completeLogin(data);
       }
     } catch (err) {
       error(err instanceof Error ? err.message : 'Terjadi kesalahan');
@@ -107,17 +134,46 @@ const LoginPage = () => {
     }
   };
 
+  // Shared by the normal login path and the post-MFA-verify path: stores the
+  // session, then routes to the MFA setup screen instead of the dashboard if
+  // this role requires MFA and hasn't set it up yet.
+  const completeLogin = (data: { accessToken: string; user: User; mfaSetupRequired?: boolean }) => {
+    success('Selamat datang! Anda akan diarahkan...');
+    setTimeout(() => {
+      login(data.accessToken, data.user);
+      router.push(data.mfaSetupRequired ? '/keamanan' : defaultRouteForRole(data.user?.role));
+    }, 1500);
+  };
+
+  const handleMfaSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const data = await handleVerifyMfa();
+      completeLogin(data);
+    } catch (err) {
+      error(err instanceof Error ? err.message : 'Kode tidak valid');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="page">
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      {/* eslint-disable-next-line @next/next/no-page-custom-font -- scoped intentionally to the auth pages */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+
       {/* LEFT PANEL */}
       <div className="left-panel">
         <div className="brand">
           <div className="brand-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="7" width="18" height="13" rx="2" stroke="white" strokeWidth="2"/>
-              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="white" strokeWidth="2"/>
-              <path d="M12 11v4M10 13h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+            <img src="/logo-apex-record.png" alt="ApexRecord" />
           </div>
           <div className="brand-text">
             <span className="name">Apex</span>
@@ -126,18 +182,10 @@ const LoginPage = () => {
         </div>
 
         <div className="hero">
-          <h1>Kelola klinik<br/>lebih cerdas.</h1>
+          <h1>Kelola klinik<br/>lebih <span className="accent">cerdas.</span></h1>
           <p>Platform manajemen klinik end-to-end — rekam medis, antrian, farmasi, billing, dan analitik bisnis dalam satu ekosistem yang terintegrasi penuh.</p>
 
           <div className="feature-pills">
-            <span className="pill">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="white" strokeWidth="2" strokeLinejoin="round"/><path d="M14 2v6h6" stroke="white" strokeWidth="2" strokeLinejoin="round"/></svg>
-              Rekam Medis FHIR-R4
-            </span>
-            <span className="pill">
-              <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="3" stroke="white" strokeWidth="2"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="white" strokeWidth="2" strokeLinecap="round"/></svg>
-              Integrasi SATUSEHAT
-            </span>
             <span className="pill">
               <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="16" rx="2" stroke="white" strokeWidth="2"/><path d="M3 9h18M8 4v16" stroke="white" strokeWidth="2"/></svg>
               Farmasi &amp; Resep
@@ -156,13 +204,6 @@ const LoginPage = () => {
             </span>
           </div>
         </div>
-
-        <div className="footer-row">
-          <span className="badge">
-            <span className="dot-green"></span>
-            Terintegrasi SATUSEHAT &middot; Kemenkes RI
-          </span>
-        </div>
       </div>
 
       {/* RIGHT PANEL */}
@@ -173,6 +214,48 @@ const LoginPage = () => {
         </button>
 
         <div className="form-wrap">
+          {mfaToken ? (
+            <>
+              <h2>Verifikasi Dua Langkah</h2>
+              <p className="subtitle">Masukkan kode dari aplikasi autentikator Anda, atau salah satu kode cadangan</p>
+
+              <form onSubmit={handleMfaSubmit}>
+                <div className="field">
+                  <label htmlFor="mfaCode">Kode Autentikasi</label>
+                  <div className="input-wrap">
+                    <input
+                      type="text"
+                      id="mfaCode"
+                      placeholder="123456"
+                      value={mfaCode}
+                      onChange={(e) => setMfaCode(e.target.value)}
+                      autoFocus
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {loading ? 'Memverifikasi...' : 'Verifikasi'}
+                </button>
+              </form>
+
+              <p className="signup-text">
+                <a
+                  href="#"
+                  className="link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMfaToken(null);
+                    setMfaCode('');
+                  }}
+                >
+                  Kembali ke login
+                </a>
+              </p>
+            </>
+          ) : (
+          <>
           {mode === 'login' ? (
             <>
               <h2>Selamat datang</h2>
@@ -301,8 +384,10 @@ const LoginPage = () => {
               </a>
             </p>
           )}
+          </>
+          )}
 
-          <p className="version-text">ApexRecord STG v1.0.0</p>
+          <p className="version-text">ApexRecord STG v1.0.1</p>
         </div>
       </div>
     </div>

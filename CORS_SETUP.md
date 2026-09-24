@@ -134,3 +134,5 @@ Untuk development, frontend dan API bisa same-origin (`http://localhost:3000`).
 3. Add email verification
 4. Implement login endpoint
 5. Add more API routes dengan CORS configuration sesuai kebutuhan
+
+test

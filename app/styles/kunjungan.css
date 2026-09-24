@@ -448,7 +448,11 @@
   max-height: 90vh;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
+  overflow: hidden;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 40px rgba(15,23,42,.16);
   animation: visit-wizard-pop .22s ease;
 }
 
@@ -505,11 +509,18 @@
 .kunjungan-form-page .page-title h1 { font-size: 22px; }
 
 .visit-form-card {
-  background: var(--surface);
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  box-shadow: 0 4px 18px rgba(15,23,42,.06);
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
+}
+
+.visit-form-card form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 }
 
 /* Stepper */
@@ -594,6 +605,9 @@
   display: flex;
   flex-direction: column;
   gap: 22px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .visit-step-heading { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
@@ -624,6 +638,7 @@
   outline: none;
   resize: vertical;
   min-height: 90px;
+  max-height: 280px;
   transition: border-color var(--transition), box-shadow var(--transition);
 }
 
@@ -633,6 +648,78 @@
   border-color: var(--primary);
   background: var(--surface);
   box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+}
+
+.visit-form-field input[type="text"],
+.visit-form-field input[type="number"],
+.visit-form-field input[type="date"] {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--bg);
+  outline: none;
+  width: 100%;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.visit-form-field input[type="number"] { -moz-appearance: textfield; }
+.visit-form-field input[type="number"]::-webkit-outer-spin-button,
+.visit-form-field input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.visit-form-field input::placeholder { color: var(--text-muted); }
+
+.visit-form-field input[type="text"]:focus,
+.visit-form-field input[type="number"]:focus,
+.visit-form-field input[type="date"]:focus {
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+}
+
+.visit-form-field input:disabled,
+.visit-form-field textarea:disabled { opacity: .65; cursor: not-allowed; }
+
+.visit-readonly-input {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--bg);
+  cursor: not-allowed;
+}
+
+.signature-pad-wrap {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.signature-pad-canvas {
+  display: block;
+  background: #fff;
+}
+
+.signature-pad-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-top: 1.5px solid var(--border);
+  background: var(--surface);
+}
+
+.signature-pad-hint {
+  font-size: 12px;
+  color: var(--text-sub);
 }
 
 /* Preview card for selected patient / practitioner */
@@ -757,14 +844,46 @@
   justify-content: space-between;
   gap: 10px;
   background: var(--surface);
+  flex-shrink: 0;
 }
 
+/* Self-contained button chrome: this modal renders as a sibling of
+   <main class="kunjungan-page">, not inside it, so the page-scoped
+   ".kunjungan-page .btn-primary/.btn-outline" rules never reach these
+   buttons — they need their own full styling, not just overrides. */
 .visit-form-footer .btn-outline,
 .visit-form-footer .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   padding: 11px 22px;
   border-radius: var(--radius-md);
   font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
 }
+
+.visit-form-footer .btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 14px rgba(79,126,248,.35);
+}
+
+.visit-form-footer .btn-primary:hover:not(:disabled) {
+  background: var(--primary-dk);
+  box-shadow: 0 6px 20px rgba(79,126,248,.45);
+}
+
+.visit-form-footer .btn-outline {
+  background: none;
+  border: 1.5px solid var(--border);
+  color: var(--text-sub);
+}
+
+.visit-form-footer .btn-outline:hover:not(:disabled) { border-color: var(--primary); color: var(--primary); }
 
 .visit-form-footer .btn-outline:disabled,
 .visit-form-footer .btn-primary:disabled { opacity: .6; cursor: not-allowed; transform: none; }
@@ -797,4 +916,79 @@
   .visit-step-label { font-size: 10.5px; }
   .visit-form-body { padding: 22px 18px; }
   .visit-form-footer { padding: 16px 18px; }
+}
+
+/* BACKLOG BANNER — kunjungan belum selesai lintas tanggal */
+.kunjungan-page .backlog-banner {
+  background: linear-gradient(135deg, rgba(245,166,35,.10), rgba(232,131,26,.04));
+  border: 1px solid rgba(245,166,35,.35);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+}
+
+.kunjungan-page .backlog-banner-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.kunjungan-page .backlog-banner-header .material-symbols-rounded {
+  color: var(--tag-pending);
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.kunjungan-page .backlog-banner-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.kunjungan-page .backlog-banner-sub {
+  font-size: 12.5px;
+  color: var(--text-sub);
+  margin-top: 2px;
+}
+
+.kunjungan-page .backlog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.kunjungan-page .backlog-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.kunjungan-page .backlog-item:hover {
+  border-color: var(--tag-pending);
+  box-shadow: 0 2px 10px rgba(245,166,35,.15);
+}
+
+.kunjungan-page .backlog-item.selected {
+  border-color: var(--primary);
+  box-shadow: 0 2px 10px rgba(79,126,248,.15);
+}
+
+.kunjungan-page .backlog-item-info { flex: 1; min-width: 0; }
+
+.kunjungan-page .backlog-item-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.kunjungan-page .backlog-item-meta {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
 }

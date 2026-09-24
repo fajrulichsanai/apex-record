@@ -1,4 +1,4 @@
-export type UserRole = 'super_admin' | 'owner' | 'admin' | 'dokter' | 'pending';
+export type UserRole = 'super_admin' | 'multi_clinic_owner' | 'owner' | 'admin' | 'dokter' | 'pending';
 
 export interface User {
   id: number;
@@ -10,6 +10,7 @@ export interface User {
   emailVerifiedAt?: string | null;
   lastLoginAt?: string | null;
   createdAt: string;
+  mfaEnabled?: boolean;
 }
 
 export interface RoleOption {

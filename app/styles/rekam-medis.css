@@ -1,0 +1,734 @@
+/* ===================== REKAM MEDIS PAGE ===================== */
+/* Nested under .kunjungan-page so it inherits that page's CSS variables
+   (--primary, --border, --radius-lg, etc.) and its .btn-primary/.btn-outline
+   chrome — see kunjungan.css for the variable declarations. */
+
+.rekam-medis-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rm-back-btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  color: var(--text-sub);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color var(--transition);
+}
+
+.rm-back-btn:hover { color: var(--primary); }
+.rm-back-btn .material-symbols-rounded { font-size: 18px; }
+
+.rm-loading {
+  padding: 80px 20px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+
+.rm-loading.error { color: #FF4D4F; }
+
+.rm-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rm-patient-name { font-size: 18px; font-weight: 700; color: var(--text-main); }
+.rm-patient-meta { font-size: 13px; color: var(--text-sub); margin-top: 3px; }
+
+.rm-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.rm-sidebar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 20px;
+}
+
+.rm-sidebar-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 6px 10px 10px;
+}
+
+.rm-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  background: none;
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-sub);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition);
+}
+
+.rm-sidebar-item:hover { background: var(--bg); color: var(--text-main); }
+.rm-sidebar-item.active { background: var(--primary); color: #fff; }
+.rm-sidebar-item .material-symbols-rounded { font-size: 18px; }
+
+.rm-content {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 18px rgba(15,23,42,.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.rm-section { display: flex; flex-direction: column; }
+
+.rm-section-heading {
+  padding: 24px 28px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.rm-section-heading h2 { font-size: 17px; font-weight: 700; color: var(--text-main); }
+.rm-section-heading p { font-size: 12.5px; color: var(--text-sub); margin-top: 3px; }
+
+.rm-section-body {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.rm-section-footer {
+  padding: 16px 28px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ----- grouped fieldsets inside a section (Pemeriksaan Fisik) ----- */
+
+.rm-fieldset { display: flex; flex-direction: column; gap: 14px; }
+.rm-fieldset + .rm-fieldset {
+  padding-top: 20px;
+  border-top: 1px dashed var(--border);
+}
+
+.rm-fieldset-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.rm-fieldset-title .material-symbols-rounded { font-size: 16px; }
+
+.rm-field-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px 16px;
+}
+
+.rm-field-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+.rm-field-grid.cols-4 { grid-template-columns: repeat(4, 1fr); }
+
+.rm-input-unit { position: relative; }
+.rm-input-unit input { padding-right: 54px; }
+.rm-input-unit .unit {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.rm-bp-group { display: flex; align-items: center; gap: 8px; }
+/* The generic `.visit-form-field input { width: 100% }` rule computes each
+   input's flex-basis as 100% of this flex row, so with two of them the
+   browser crushes both far below their content width (bug: showed "1/ 8"
+   instead of "120/80"). Give them a real, larger flex-basis instead. */
+.rm-bp-group input {
+  text-align: center;
+  width: auto;
+  flex: 1 1 64px;
+  min-width: 56px;
+  font-size: 15px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.rm-bp-group .rm-bp-sep { color: var(--text-muted); font-weight: 700; font-size: 16px; }
+.rm-bp-group .unit { font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+
+/* "besarkan formnya sedikit" — slightly larger vital-sign inputs overall. */
+.rm-fieldset-vitals .rm-input-unit input {
+  font-size: 15px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.rm-bmi-badge {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  border: 1.5px dashed var(--border);
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.rm-control-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.rm-control-hint.done {
+  color: var(--green);
+  font-weight: 600;
+}
+
+/* Physical exam narrative fields (paru/jantung/abdomen/lainnya) stay
+   compact — there are ~19 of them, a 90px default height would make the
+   form unreasonably long. */
+.rm-field-grid .visit-form-field textarea {
+  min-height: 56px;
+  max-height: 160px;
+}
+
+/* ----- Skala Nyeri: 0-10 tap picker + body map ----- */
+
+.pain-scale-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pain-scale-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-main);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.pain-scale-btn:hover { border-color: var(--primary); }
+.pain-scale-btn.active { color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,.15); }
+
+.pain-map {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.pain-map-svg {
+  width: 160px;
+  height: 336px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: crosshair;
+}
+
+.pain-map-svg.disabled { cursor: default; }
+
+.pain-map-body { fill: #C9D3E8; stroke: #A0AEC0; stroke-width: 1; }
+.pain-map-point { fill: #FF4D4F; stroke: #fff; stroke-width: 2; cursor: pointer; }
+.pain-map-hint { font-size: 11.5px; color: var(--text-muted); max-width: 220px; }
+
+/* ----- SOAP read-only view mode ----- */
+
+.rm-view-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rm-view-field { display: flex; flex-direction: column; gap: 6px; }
+.rm-view-field label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
+
+.rm-view-value {
+  font-size: 13.5px;
+  color: var(--text-main);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.rm-view-empty { font-size: 13px; color: var(--text-muted); font-style: italic; }
+
+.rm-view-signature {
+  max-width: 220px;
+  max-height: 90px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  padding: 6px;
+}
+
+/* ----- Resep Obat (Prescription) panel — distinct from the plain textareas ----- */
+
+.rx-panel { display: flex; flex-direction: column; gap: 14px; }
+
+.rx-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--bg);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.rx-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+
+.rx-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.rx-table th {
+  text-align: left;
+  padding: 10px 12px;
+  background: var(--bg);
+  color: var(--text-sub);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+.rx-table td {
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+  color: var(--text-main);
+}
+.rx-drug-name { font-weight: 600; }
+
+.rx-delete-btn {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition);
+}
+.rx-delete-btn:hover { color: #FF4D4F; background: rgba(255,77,79,.1); }
+.rx-delete-btn .material-symbols-rounded { font-size: 18px; }
+
+.rx-add-row {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border);
+}
+
+.rx-add-fields {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr 1.4fr;
+  gap: 8px;
+}
+
+.rx-add-fields input {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+}
+.rx-add-fields input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,126,248,.12); }
+
+.rx-add-btn { align-self: flex-end; }
+
+/* ----- Pemeriksaan Gigi Lanjutan: OHI-S / GI / PCR badges + probing depth ----- */
+
+.rm-index-badge {
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 700;
+  border: 1.5px solid transparent;
+}
+
+.rm-index-badge.good { background: rgba(45,203,138,.12); color: #1E9C6B; border-color: rgba(45,203,138,.35); }
+.rm-index-badge.fair { background: rgba(245,166,35,.12); color: #B8791A; border-color: rgba(245,166,35,.35); }
+.rm-index-badge.poor { background: rgba(255,77,79,.12); color: #D93B3D; border-color: rgba(255,77,79,.35); }
+
+.rm-probing-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.rm-probing-arch-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-sub);
+  margin-bottom: 8px;
+}
+
+.rm-probing-table th,
+.rm-probing-table td { text-align: center; }
+.rm-probing-table th:first-child,
+.rm-probing-table td:first-child { text-align: left; font-weight: 600; }
+
+.rm-probing-table td input[type="number"] {
+  width: 100%;
+  max-width: 64px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 4px;
+  font-size: 13px;
+  text-align: center;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+}
+.rm-probing-table td input[type="number"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79,126,248,.12);
+}
+
+/* ----- Pemeriksaan Penunjang: upload row + image gallery + lightbox ----- */
+
+.se-upload-fields {
+  display: grid;
+  grid-template-columns: 160px 1fr 1fr;
+  gap: 8px;
+}
+
+.se-upload-fields-with-category {
+  grid-template-columns: 140px 140px 1fr 1fr;
+}
+
+.se-upload-notes input {
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+}
+.se-upload-notes input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,126,248,.12); }
+
+.se-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+.se-gallery-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.se-gallery-thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  padding: 0;
+  cursor: pointer;
+  background: var(--bg);
+}
+
+.se-gallery-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.se-badge {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.se-badge-photo { background: rgba(79,126,248,.9); }
+.se-badge-xray { background: rgba(26,35,64,.9); }
+.se-badge-category { top: 6px; left: 6px; bottom: auto; background: rgba(45,203,138,.92); }
+
+.se-gallery-caption {
+  font-size: 12px;
+  color: var(--text-sub);
+  white-space: pre-wrap;
+}
+
+.se-gallery-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(255,255,255,.9);
+}
+
+.se-lightbox-box { max-width: 800px; }
+.se-lightbox-img { width: 100%; max-height: 70vh; object-fit: contain; border-radius: var(--radius-sm); }
+
+/* ----- Compare mode (before/after) ----- */
+.se-compare-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.se-compare-bar .btn-outline.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.se-compare-hint { font-size: 12.5px; color: var(--text-sub); }
+
+.se-gallery-item.se-selected .se-gallery-thumb { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+.se-compare-check {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.9);
+  border: 1.5px solid var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.se-compare-check.checked { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+.se-compare-box { max-width: 900px; width: 100%; }
+
+.se-compare-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+
+.se-compare-pane { display: flex; flex-direction: column; gap: 8px; }
+
+.se-compare-pane img {
+  width: 100%;
+  max-height: 55vh;
+  object-fit: contain;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.se-compare-pane-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+.se-compare-pane-label span { font-weight: 500; color: var(--text-sub); text-transform: none; letter-spacing: normal; }
+
+@media (max-width: 640px) {
+  .se-compare-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 860px) {
+  .rm-layout { grid-template-columns: 1fr; }
+  .rm-sidebar {
+    position: static;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .rm-field-grid,
+  .rm-field-grid.cols-3,
+  .rm-field-grid.cols-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .rx-add-fields { grid-template-columns: 1fr 1fr; }
+
+  .rm-probing-grid { grid-template-columns: 1fr; }
+  .se-upload-fields { grid-template-columns: 1fr; }
+}
+
+/* ----- Voice to Text (dikte suara) tombol di label field SOAP ----- */
+.voice-dictation-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--bg, #F5F6FA);
+  color: var(--text-sub, #6B7A99);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s ease, color .15s ease;
+}
+
+.voice-dictation-btn .material-symbols-rounded { font-size: 14px; }
+
+.voice-dictation-btn:hover:not(:disabled) { background: rgba(79,126,248,.12); color: var(--primary, #4F7EF8); }
+
+.voice-dictation-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.voice-dictation-btn.unsupported { color: var(--text-muted, #A0AEC0); }
+
+.voice-dictation-btn.recording {
+  background: #FF4D4F;
+  color: #fff;
+}
+
+.voice-dictation-btn.recording:hover { background: #FF4D4F; color: #fff; }
+
+.voice-dictation-pulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid #FF4D4F;
+  animation: voice-dictation-pulse 1.4s ease-out infinite;
+}
+
+@keyframes voice-dictation-pulse {
+  0% { transform: scale(.85); opacity: .8; }
+  100% { transform: scale(1.5); opacity: 0; }
+}
+
+/* ============ PATIENT-LEVEL REKAM MEDIS (aggregate/read-only view) ============ */
+
+.kunjungan-page .btn-sm { padding: 6px 12px; font-size: 12.5px; }
+
+.rm-muted { font-size: 12px; color: var(--text-muted); }
+
+.rm-table-scroll { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+
+.cppt-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.cppt-table th,
+.cppt-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.cppt-table th {
+  background: var(--bg);
+  color: var(--text-sub);
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.cppt-table tbody tr:last-child td { border-bottom: none; }
+.cppt-table td { color: var(--text-main); }
+
+.cppt-date { white-space: nowrap; font-weight: 600; }
+.cppt-status { display: block; font-size: 11px; font-weight: 500; color: var(--text-muted); margin-top: 2px; }
+
+.cppt-cell-row { display: flex; gap: 8px; padding: 3px 0; }
+.cppt-cell-row:not(:last-child) { border-bottom: 1px dashed var(--border); }
+.cppt-cell-row b { flex-shrink: 0; width: 44px; color: var(--primary); font-size: 11.5px; }
+.cppt-cell-row span { white-space: pre-wrap; }
+
+.cppt-dpjp { min-width: 140px; }
+.cppt-signature { display: block; height: 30px; margin-top: 6px; background: #fff; border-radius: 4px; }
+
+.rm-exam-group:not(:last-child) { margin-bottom: 20px; }
+.rm-exam-group-date { font-size: 12.5px; font-weight: 700; color: var(--text-main); margin-bottom: 8px; }
+
+.rm-exam-gallery { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.rm-exam-thumb {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 120px;
+  text-decoration: none;
+}
+
+.rm-exam-thumb img {
+  width: 120px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.rm-exam-thumb span { font-size: 11px; color: var(--text-muted); text-align: center; }

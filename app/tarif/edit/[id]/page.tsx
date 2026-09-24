@@ -10,7 +10,9 @@ import { tarifApi, Tarif } from '@/lib/tarif';
 import { ApiError } from '@/lib/api-client';
 import { formatCurrencyInput, parseCurrency } from '@/lib/format';
 import { useToast } from '@/lib/toast-context';
+import BomPanel from './BomPanel';
 import '../../../styles/tarif.css';
+import '../../../styles/gudang.css';
 
 export default function EditTarifPage() {
   const router = useRouter();
@@ -120,6 +122,7 @@ export default function EditTarifPage() {
           {!loading && !loadError && tarif && (
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
+                <h2 className="form-section-title">Informasi Tarif</h2>
                 <div className="form-row">
                   <div className="form-field full">
                     <label>Title</label>
@@ -193,6 +196,8 @@ export default function EditTarifPage() {
             </form>
           )}
         </div>
+
+        {!loading && !loadError && tarif && <BomPanel tarifId={tarif.id} />}
       </main>
       </FeatureGuard>
     </DashboardLayout>

@@ -1,5 +1,45 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
+/** Resolves a backend-relative path (e.g. `/uploads/...`) to a full URL. */
+export function apiFileUrl(path: string) {
+  return `${API_URL}${path}`;
+}
+
+/**
+ * Fetches a backend-hosted file (payment proofs, supporting-exam images) with
+ * the caller's JWT and returns an object URL for it. These files are served
+ * from authenticated, ownership-checked routes — plain `<img src>`/`<a href>`
+ * navigation never carries the Authorization header, so callers must fetch
+ * through here and revoke the returned URL (`URL.revokeObjectURL`) once done.
+ */
+export async function fetchProtectedFileUrl(path: string): Promise<string> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  const res = await fetch(apiFileUrl(path), {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) {
+    throw new ApiError('Gagal memuat file', res.status);
+  }
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
+/**
+ * Opens a backend-hosted authenticated file in a new tab. Opens the tab
+ * synchronously (before the fetch) so browsers don't treat it as a blocked
+ * popup, then navigates it to the fetched blob once ready.
+ */
+export async function openProtectedFile(path: string): Promise<void> {
+  const win = typeof window !== 'undefined' ? window.open('', '_blank') : null;
+  try {
+    const url = await fetchProtectedFileUrl(path);
+    if (win) win.location.href = url;
+  } catch (err) {
+    win?.close();
+    throw err;
+  }
+}
+
 export class ApiError extends Error {
   code?: string;
   status: number;
@@ -17,13 +57,45 @@ interface ApiEnvelope<T> {
   error?: { message: string; code?: string };
 }
 
+// Set by SubscriptionGateProvider so a SUBSCRIPTION_EXPIRED response from any
+// mutating request — anywhere in the app — can pop the renew modal without
+// every page having to check subscription status itself.
+let onSubscriptionExpired: (() => void) | null = null;
+
+export function setOnSubscriptionExpired(handler: (() => void) | null) {
+  onSubscriptionExpired = handler;
+}
+
+// Set by MfaGateProvider so an MFA_SETUP_REQUIRED response from any request
+// — anywhere in the app — routes the user to the setup screen, covering an
+// already-open session for a role that just became MFA-enforced (a fresh
+// login/verify already gets mfaSetupRequired directly in its response).
+let onMfaSetupRequired: (() => void) | null = null;
+
+export function setOnMfaSetupRequired(handler: (() => void) | null) {
+  onMfaSetupRequired = handler;
+}
+
+// Set by AuthProvider so a 401 from any request — a missing, invalid, or
+// expired token — clears the stale session and bounces to login instead of
+// leaving the user stuck on a protected page where every action now fails
+// with a raw "unauthorized" error.
+let onUnauthorized: (() => void) | null = null;
+
+export function setOnUnauthorized(handler: (() => void) | null) {
+  onUnauthorized = handler;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  // FormData bodies must NOT get an explicit Content-Type — the browser sets
+  // its own multipart boundary. Only set it for JSON bodies.
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
 
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
@@ -32,10 +104,27 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const body: ApiEnvelope<T> = await res.json();
 
   if (!res.ok || (body.success === false)) {
-    throw new ApiError(body?.error?.message || 'Terjadi kesalahan', res.status, body?.error?.code);
+    const code = body?.error?.code;
+    if (code === 'SUBSCRIPTION_EXPIRED') {
+      onSubscriptionExpired?.();
+    }
+    if (code === 'MFA_SETUP_REQUIRED') {
+      onMfaSetupRequired?.();
+    }
+    if (res.status === 401 && token) {
+      // Only a *previously logged-in* session going 401 (token now invalid/
+      // expired) should force a logout — a request made with no token at all
+      // is handled by the page-level auth guard instead, so it doesn't loop
+      // this handler before the user has ever logged in.
+      onUnauthorized?.();
+    }
+    throw new ApiError(body?.error?.message || 'Terjadi kesalahan', res.status, code);
   }
 
-  return (body.data !== undefined ? body.data : body) as T;
+  // Only unwrap `.data` for the explicit { success, data } envelope. Paginated
+  // endpoints return `{ data, meta }` with no `success` field and must pass
+  // through as-is, or callers expecting { data, meta } get a bare array instead.
+  return (body.success === true && body.data !== undefined ? body.data : body) as T;
 }
 
 export function toQueryString(query: object) {
@@ -57,4 +146,5 @@ export const apiClient = {
   put: <T>(path: string, data?: unknown) =>
     request<T>(path, { method: 'PUT', body: data ? JSON.stringify(data) : undefined }),
   delete: <T>(path: string) => request<T>(path, { method: 'DELETE' }),
+  postForm: <T>(path: string, form: FormData) => request<T>(path, { method: 'POST', body: form }),
 };

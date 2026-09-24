@@ -33,7 +33,9 @@ export interface ReservationListResponse {
 export interface CreateReservationPayload {
   patientId?: number;
   patientName: string;
-  patientPhone: string;
+  // Required only for manual entry (no patientId) — the backend resolves
+  // it from the patient record when patientId is given and this is omitted.
+  patientPhone?: string;
   patientNik?: string;
   practitionerId?: number;
   serviceType?: string;
@@ -47,10 +49,17 @@ export interface UpdateReservationStatusPayload {
   cancelledReason?: string;
 }
 
+export interface RescheduleReservationPayload {
+  reservationDate: string;
+  jamSlot?: string;
+}
+
 export interface ReservationQuery {
   page?: number;
   limit?: number;
   date?: string;
+  dateFrom?: string;
+  dateTo?: string;
   status?: ReservationStatus;
   practitionerId?: number;
   locationId?: number;
@@ -67,6 +76,8 @@ export const reservationsApi = {
     apiClient.post<ReservationItem>('/reservations', payload),
   updateStatus: (id: number, payload: UpdateReservationStatusPayload) =>
     apiClient.patch<ReservationItem>(`/reservations/${id}/status`, payload),
+  reschedule: (id: number, payload: RescheduleReservationPayload) =>
+    apiClient.patch<ReservationItem>(`/reservations/${id}/reschedule`, payload),
   linkPatient: (id: number, patientId: number) =>
     apiClient.patch<ReservationItem>(`/reservations/${id}/patient`, { patientId }),
   remove: (id: number) => apiClient.delete<void>(`/reservations/${id}`),

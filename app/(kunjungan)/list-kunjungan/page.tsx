@@ -6,12 +6,14 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import InputModal from '@/components/feedback/InputModal';
 import AddVisitModal from './AddVisitModal';
+import EditVisitModal from './EditVisitModal';
 import {
   encounterApi,
   EncounterListItem,
   EncounterStatus,
   EncounterDetail,
 } from '@/lib/encounter';
+import { encounterSoapApi, SoapNote } from '@/lib/encounter-soap';
 import { ApiError } from '@/lib/api-client';
 import '../../styles/kunjungan.css';
 
@@ -31,12 +33,6 @@ function statusLabel(status: EncounterStatus) {
   return 'Batal';
 }
 
-function syncStatusLabel(status?: string) {
-  if (status === 'synced') return 'Tersinkron ke Satu Sehat';
-  if (status === 'failed') return 'Gagal sinkron Satu Sehat';
-  return 'Belum sinkron Satu Sehat';
-}
-
 function initialsFromName(name?: string) {
   if (!name) return '?';
   return (
@@ -48,6 +44,20 @@ function initialsFromName(name?: string) {
       .join('')
       .toUpperCase() || '?'
   );
+}
+
+/**
+ * Timezone klinik dipatok ke +07:00 (WIB), sama seperti sisi backend
+ * (lihat `todayInClinicTimezone` di encounters.service.ts) — dipakai agar
+ * batas "hari ini" di sini konsisten dengan yang dipakai backend saat
+ * memfilter daftar kunjungan hari ini.
+ */
+function clinicDate(value: string): string {
+  return new Date(new Date(value).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function todayInClinicTimezone(): string {
+  return new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
 function formatDateTime(value?: string) {
@@ -72,6 +82,7 @@ function ListKunjunganPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [visits, setVisits] = useState<EncounterListItem[]>([]);
+  const [backlogVisits, setBacklogVisits] = useState<EncounterListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [currentFilter, setCurrentFilter] = useState<FilterValue>('semua');
@@ -81,11 +92,12 @@ function ListKunjunganPageInner() {
   const [detail, setDetail] = useState<EncounterDetail | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [syncLoading, setSyncLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [preselectReservationId, setPreselectReservationId] = useState<number | null>(null);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState<EncounterStatus | null>(null);
+  const [soapNote, setSoapNote] = useState<SoapNote | null>(null);
 
   useEffect(() => {
     if (searchParams.get('openAddVisit') === '1') {
@@ -99,13 +111,30 @@ function ListKunjunganPageInner() {
     setLoading(true);
     setLoadError(null);
     try {
-      const res = await encounterApi.list();
-      setVisits(res.data);
+      const [todayRes, arrivedRes, inProgressRes] = await Promise.all([
+        encounterApi.list(),
+        encounterApi.list({ status: 'arrived', limit: 100 }),
+        encounterApi.list({ status: 'in_progress', limit: 100 }),
+      ]);
+      setVisits(todayRes.data);
+
+      // Kunjungan yang masih menunggu/berlangsung dari hari-hari sebelumnya —
+      // dulu "hilang" karena daftar utama hanya menampilkan hari ini. Backend
+      // sekarang mengembalikan status arrived/in_progress lintas semua
+      // tanggal, jadi di sini kita saring yang bukan hari ini saja supaya
+      // tidak duplikat dengan daftar utama.
+      const today = todayInClinicTimezone();
+      const backlog = [...arrivedRes.data, ...inProgressRes.data].filter(
+        (v) => clinicDate(v.arrivedTime) !== today,
+      );
+      setBacklogVisits(backlog);
+
+      const combined = [...todayRes.data, ...backlog];
       const queryEncounterId = Number(searchParams.get('encounterId'));
-      const preselected = queryEncounterId && res.data.some((v) => v.encounterId === queryEncounterId)
+      const preselected = queryEncounterId && combined.some((v) => v.encounterId === queryEncounterId)
         ? queryEncounterId
         : null;
-      setSelectedVisitId((prev) => preselected ?? prev ?? res.data[0]?.encounterId ?? null);
+      setSelectedVisitId((prev) => preselected ?? prev ?? combined[0]?.encounterId ?? null);
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : 'Gagal memuat daftar kunjungan');
     } finally {
@@ -120,12 +149,17 @@ function ListKunjunganPageInner() {
   useEffect(() => {
     if (!selectedVisitId) {
       setDetail(null);
+      setSoapNote(null);
       return;
     }
     encounterApi
       .detail(selectedVisitId)
       .then(setDetail)
       .catch(() => setDetail(null));
+    encounterSoapApi
+      .get(selectedVisitId)
+      .then(setSoapNote)
+      .catch(() => setSoapNote(null));
   }, [selectedVisitId]);
 
   const filteredVisits = visits.filter((v) => {
@@ -143,7 +177,10 @@ function ListKunjunganPageInner() {
   const doneCount = visits.filter((v) => v.status === 'finished').length;
   const cancelCount = visits.filter((v) => v.status === 'cancelled').length;
 
-  const selectedVisit = visits.find((v) => v.encounterId === selectedVisitId) ?? null;
+  const selectedVisit =
+    visits.find((v) => v.encounterId === selectedVisitId) ??
+    backlogVisits.find((v) => v.encounterId === selectedVisitId) ??
+    null;
 
   const handleSelectVisit = (id: number) => {
     setSelectedVisitId(id);
@@ -162,6 +199,15 @@ function ListKunjunganPageInner() {
   const handleVisitCreated = (encounterId: number) => {
     setShowAddModal(false);
     setSelectedVisitId(encounterId);
+    loadVisits();
+  };
+
+  const handleVisitUpdated = async () => {
+    setShowEditModal(false);
+    if (selectedVisitId) {
+      const refreshed = await encounterApi.detail(selectedVisitId);
+      setDetail(refreshed);
+    }
     loadVisits();
   };
 
@@ -202,22 +248,8 @@ function ListKunjunganPageInner() {
     }
   };
 
-  const handleSyncSatusehat = async () => {
-    if (!selectedVisitId) return;
-    setActionError(null);
-    setSyncLoading(true);
-    try {
-      await encounterApi.syncToSatusehat(selectedVisitId);
-      const refreshed = await encounterApi.detail(selectedVisitId);
-      setDetail(refreshed);
-    } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Gagal sinkron ke Satu Sehat');
-    } finally {
-      setSyncLoading(false);
-    }
-  };
-
   const arrivedDateTime = formatDateTime(selectedVisit?.arrivedTime);
+  const isSoapFilled = !!soapNote && [soapNote.subjective, soapNote.objective, soapNote.assessment, soapNote.plan].some((v) => v && v.trim());
 
   return (
     <DashboardLayout>
@@ -288,6 +320,49 @@ function ListKunjunganPageInner() {
           </div>
         </div>
 
+        {/* Backlog: kunjungan belum selesai dari hari-hari sebelumnya */}
+        {backlogVisits.length > 0 && (
+          <div className="backlog-banner">
+            <div className="backlog-banner-header">
+              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                warning
+              </span>
+              <div>
+                <div className="backlog-banner-title">
+                  {backlogVisits.length} Kunjungan Belum Selesai dari Hari Sebelumnya
+                </div>
+                <div className="backlog-banner-sub">
+                  Kunjungan ini masih berstatus Menunggu/Berlangsung dan tidak akan hilang dari daftar sampai diselesaikan atau dibatalkan.
+                </div>
+              </div>
+            </div>
+            <div className="backlog-list">
+              {backlogVisits.map((visit) => {
+                const dt = formatDateTime(visit.arrivedTime);
+                return (
+                  <div
+                    key={visit.encounterId}
+                    className={`backlog-item ${visit.encounterId === selectedVisitId ? 'selected' : ''}`}
+                    onClick={() => handleSelectVisit(visit.encounterId)}
+                  >
+                    <div className="visit-avatar">{initialsFromName(visit.patientName)}</div>
+                    <div className="backlog-item-info">
+                      <div className="backlog-item-name">{visit.patientName || `Pasien #${visit.patientId}`}</div>
+                      <div className="backlog-item-meta">
+                        <span className={`tag ${statusTagClass(visit.status)}`}>{statusLabel(visit.status)}</span>
+                        {' · '}
+                        {visit.practitionerName || '—'} ·{' '}
+                        {typeof dt === 'string' ? dt : `${dt.date} ${dt.time}`}
+                      </div>
+                    </div>
+                    <span className="material-symbols-rounded chevron-icon">chevron_right</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Content */}
         <div className="content-area">
           {/* List Panel */}
@@ -344,6 +419,36 @@ function ListKunjunganPageInner() {
 
             {loadError ? (
               <div style={{ padding: '16px', color: '#FF4D4F' }}>{loadError}</div>
+            ) : !loading && filteredVisits.length === 0 ? (
+              <div className="detail-empty" style={{ padding: '32px 16px' }}>
+                <div className="empty-icon-wrap">
+                  <span className="material-symbols-rounded">search_off</span>
+                </div>
+                {visits.length === 0 ? (
+                  <>
+                    <div className="empty-title">Belum ada kunjungan hari ini</div>
+                    <div className="empty-sub">Kunjungan baru akan muncul di sini setelah dibuat.</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="empty-title">Tidak ada kunjungan yang cocok</div>
+                    <div className="empty-sub">
+                      Filter atau kata kunci pencarian saat ini menyembunyikan {visits.length} kunjungan hari ini.
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-outline"
+                      style={{ marginTop: 12 }}
+                      onClick={() => {
+                        setCurrentFilter('semua');
+                        setSearchQuery('');
+                      }}
+                    >
+                      Reset Filter &amp; Pencarian
+                    </button>
+                  </>
+                )}
+              </div>
             ) : (
               <div className="visit-list">
                 {filteredVisits.map((visit) => {
@@ -398,6 +503,18 @@ function ListKunjunganPageInner() {
                       </span>
                     </div>
                   </div>
+                  {(selectedVisit.status === 'arrived' || selectedVisit.status === 'in_progress') && (
+                    <button
+                      className="btn-outline"
+                      style={{ fontSize: '12.5px' }}
+                      onClick={() => setShowEditModal(true)}
+                    >
+                      <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                        edit
+                      </span>
+                      Edit
+                    </button>
+                  )}
                 </div>
 
                 <div className="detail-info-grid">
@@ -421,10 +538,6 @@ function ListKunjunganPageInner() {
                     <div className="info-label">Keluhan Utama</div>
                     <div className="info-value">{selectedVisit.chiefComplaint || '—'}</div>
                   </div>
-                  <div className="info-cell" style={{ gridColumn: '1/-1' }}>
-                    <div className="info-label">Status Satu Sehat</div>
-                    <div className="info-value">{syncStatusLabel(detail?.syncStatus)}</div>
-                  </div>
                 </div>
 
                 <div className="detail-section">
@@ -443,7 +556,19 @@ function ListKunjunganPageInner() {
                         Mulai Periksa
                       </button>
                     )}
-                    {selectedVisit.status === 'in_progress' && (
+                    {(selectedVisit.status === 'in_progress' || selectedVisit.status === 'finished') && (
+                      <button
+                        className="btn-outline"
+                        style={{ fontSize: '12.5px' }}
+                        onClick={() => router.push(`/list-kunjungan/${selectedVisit.encounterId}/rekam-medis`)}
+                      >
+                        <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                          menu_book
+                        </span>
+                        {isSoapFilled ? 'Edit SOAP' : 'Isi SOAP'}
+                      </button>
+                    )}
+                    {selectedVisit.status === 'in_progress' && isSoapFilled && (
                       <button
                         className="btn-outline"
                         style={{ fontSize: '12.5px' }}
@@ -475,19 +600,6 @@ function ListKunjunganPageInner() {
                         Buat Tagihan
                       </button>
                     )}
-                    {selectedVisit.status === 'finished' && detail?.syncStatus !== 'synced' && (
-                      <button
-                        className="btn-outline"
-                        style={{ fontSize: '12.5px' }}
-                        disabled={syncLoading}
-                        onClick={handleSyncSatusehat}
-                      >
-                        <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                          sync
-                        </span>
-                        {syncLoading ? 'Mensinkronkan…' : 'Sync ke Satu Sehat'}
-                      </button>
-                    )}
                   </div>
                   {actionError && (
                     <div style={{ color: '#FF4D4F', fontSize: '13px', marginTop: '8px' }}>{actionError}</div>
@@ -504,6 +616,14 @@ function ListKunjunganPageInner() {
           preselectReservationId={preselectReservationId}
           onClose={() => setShowAddModal(false)}
           onCreated={handleVisitCreated}
+        />
+      )}
+
+      {showEditModal && detail && (
+        <EditVisitModal
+          visit={detail}
+          onClose={() => setShowEditModal(false)}
+          onUpdated={handleVisitUpdated}
         />
       )}
 

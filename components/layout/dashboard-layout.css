@@ -1,22 +1,67 @@
 :root {
-  --primary: #4f5bd5;
-  --primary-light: #6f7bea;
-  --primary-dark: #3f3fb0;
-  --green: #1aa260;
-  --green-light: #2ecc8f;
-  --blue: #0ea5e9;
-  --blue-light: #38bdf8;
-  --orange: #f5a623;
-  --orange-light: #fbbf3f;
-  --bg: #f5f6fb;
+  --primary: #16150F;
+  --primary-light: #262419;
+  --primary-dark: #0E0D09;
+  --primary-dk: #262419;
+  --accent: #3E8E36;
+  --accent-solid: #7ED957;
+  --accent-soft: #E3F3DA;
+  --green: #3E8E36;
+  --green-light: #7ED957;
+  --green-soft: #E3F3DA;
+  --orange: #8A5A00;
+  --orange-soft: #FCEACB;
+  --red: #C1381F;
+  --red-soft: #FBE1DE;
+  --info: #1D5FAE;
+  --info-soft: #DCEAFB;
+  --violet: #6A4FC2;
+  --violet-soft: rgba(106,79,194,.12);
+  --bg: #EEECE6;
+  --surface: #FFFFFF;
   --sidebar-bg: #ffffff;
-  --border: #ececf3;
-  --text-dark: #1f2233;
-  --text-muted: #8b8da3;
-  --text-light: #b3b4c4;
+  --border: #E7E4DD;
+  --text-dark: #17160F;
+  --text-main: #17160F;
+  --text-muted: #8D8B7E;
+  --text-sub: #55534A;
+  --text-light: #B0AEA2;
+  --radius-sm: 8px;
   --radius-lg: 18px;
   --radius-md: 12px;
-  --shadow-soft: 0 4px 18px rgba(31, 34, 51, 0.04);
+  --transition: 0.2s ease;
+  --shadow-soft: 0 4px 18px rgba(23, 22, 15, 0.05);
+}
+
+:root[data-theme="dark"] {
+  --primary: #3E8E36;
+  --primary-light: #2A3B23;
+  --primary-dark: #2E6D28;
+  --primary-dk: #4FA345;
+  --accent: #4FA345;
+  --accent-solid: #7ED957;
+  --accent-soft: #23361F;
+  --green: #4FA345;
+  --green-light: #7ED957;
+  --green-soft: #23361F;
+  --orange: #E8A930;
+  --orange-soft: #3A2C10;
+  --red: #E5573C;
+  --red-soft: #3A1F17;
+  --info: #5B9BE0;
+  --info-soft: #1B2A3A;
+  --violet: #A78EE0;
+  --violet-soft: rgba(106,79,194,.22);
+  --bg: #17160F;
+  --surface: #242320;
+  --sidebar-bg: #1C1B17;
+  --border: #38362F;
+  --text-dark: #F3F1EA;
+  --text-main: #F3F1EA;
+  --text-muted: #85826F;
+  --text-sub: #B8B5A9;
+  --text-light: #6B6858;
+  --shadow-soft: 0 4px 18px rgba(0, 0, 0, 0.35);
 }
 
 * {
@@ -33,11 +78,22 @@
   color: var(--text-dark);
 }
 
+.dashboard-auth-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+}
+
 .sidebar-overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(20, 21, 38, 0.45);
+  background: rgba(23, 22, 15, 0.45);
   z-index: 40;
 }
 

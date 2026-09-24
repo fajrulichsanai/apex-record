@@ -1,0 +1,294 @@
+/* ===================== ODONTOGRAM ===================== */
+/* Nested under .kunjungan-page (rendered as a Rekam Medis tab) so it
+   inherits --primary/--border/--radius-* etc. The tooth-detail modal reuses
+   .visit-modal-overlay, which already carries its own full variable set. */
+
+.odt-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ----- toolbar ----- */
+
+.odontogram-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.odontogram-toolbar .icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface);
+  color: var(--text-sub);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+.odontogram-toolbar .icon-btn:hover { border-color: var(--primary); color: var(--primary); }
+
+/* ----- legend ----- */
+
+.odontogram-legend {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.odontogram-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--text-sub);
+}
+
+.odontogram-legend-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.odontogram-legend-symbol {
+  width: 16px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* ----- chart card ----- */
+
+.odontogram-chart {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  overflow-x: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.odontogram-row-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.odontogram-quadrant-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: max-content;
+}
+
+.odontogram-row {
+  display: grid;
+  grid-template-rows: auto 14px;
+  gap: 4px 3px;
+  min-width: max-content;
+}
+
+.odontogram-row-cell {
+  display: flex;
+  justify-content: center;
+}
+
+.odt-bridge-bar {
+  align-self: start;
+  height: 8px;
+  border-radius: 4px;
+  background: #8E7CC3;
+  margin-top: 2px;
+  font-size: 0;
+  overflow: hidden;
+}
+
+/* ----- single tooth (SVG windowpane) ----- */
+
+.tooth-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  width: 38px;
+  font-family: inherit;
+}
+
+.tooth-slot {
+  height: 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  line-height: 1;
+}
+.tooth-slot-bottom { justify-content: flex-start; }
+
+.tooth-number {
+  font-size: 11px;
+  color: var(--text-sub);
+  font-weight: 500;
+}
+.tooth-number.selected { color: var(--primary); font-weight: 700; }
+
+.tooth-tag {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: 0.2px;
+}
+
+.tooth-icon { display: block; border-radius: 2px; }
+
+.tooth-cell:hover .tooth-icon { filter: drop-shadow(0 0 0 1px rgba(79, 126, 248, .25)); }
+
+.tooth-rct-slot { height: 12px; display: flex; align-items: flex-start; justify-content: center; }
+
+/* ----- DMFT / deft summary ----- */
+
+.odontogram-index-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.odontogram-index-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.odontogram-index-heading { display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+.odontogram-index-title { font-size: 17px; font-weight: 700; color: var(--index-color); }
+.odontogram-index-subtitle { font-size: 11.5px; color: var(--text-muted); }
+
+.odontogram-index-total {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  background: var(--index-color);
+  color: #fff;
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  width: fit-content;
+}
+.odontogram-index-total span { font-size: 10.5px; font-weight: 500; opacity: .8; }
+
+.odontogram-index-divider { width: 1px; align-self: stretch; background: var(--border); }
+
+.odontogram-index-stats { display: flex; gap: 14px; flex: 1; }
+.odontogram-index-stat { flex: 1; text-align: center; }
+.odontogram-index-stat-value { font-size: 20px; font-weight: 800; color: var(--text-main); }
+.odontogram-index-stat-label {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--index-color);
+  background: color-mix(in srgb, var(--index-color) 12%, transparent);
+  border-radius: 20px;
+  padding: 1px 8px;
+}
+.odontogram-index-stat-desc { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+
+@media (max-width: 640px) {
+  .odontogram-index-grid { grid-template-columns: 1fr; }
+}
+
+/* ----- bridge manager ----- */
+
+.odt-bridge-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px dashed var(--border);
+}
+
+.odt-bridge-list { display: flex; flex-direction: column; gap: 6px; }
+
+.odt-bridge-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--bg);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.odt-bridge-range { font-size: 13px; font-weight: 700; color: var(--text-main); min-width: 64px; }
+.odt-bridge-label { font-size: 13px; color: var(--text-sub); flex: 1; }
+
+.odt-bridge-add {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.4fr auto;
+  gap: 10px;
+  align-items: end;
+}
+
+/* ----- tooth detail modal ----- */
+
+.odt-modal-box { max-width: 480px; }
+
+.odt-modal-body {
+  padding: 20px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+}
+
+.odt-fieldset-title {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 4px;
+}
+
+.odt-teks-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+
+.odt-rct-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .odt-bridge-add { grid-template-columns: 1fr 1fr; }
+  .odt-bridge-add button { grid-column: span 2; justify-self: end; }
+}

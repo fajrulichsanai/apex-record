@@ -64,15 +64,19 @@ function ResetPasswordContent() {
 
   return (
     <div className="verify-page">
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      {/* eslint-disable-next-line @next/next/no-page-custom-font -- scoped intentionally to the auth pages */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+
       {/* LEFT PANEL */}
       <div className="left-panel">
         <div className="brand">
           <div className="brand-icon">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="3" y="7" width="18" height="13" rx="2" stroke="white" strokeWidth="2"/>
-              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="white" strokeWidth="2"/>
-              <path d="M12 11v4M10 13h4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+            <img src="/logo-apex-record.png" alt="ApexRecord" />
           </div>
           <div className="brand-text">
             <span className="name">Apex</span>
@@ -81,15 +85,8 @@ function ResetPasswordContent() {
         </div>
 
         <div className="hero">
-          <h1>Kelola klinik<br/>lebih cerdas.</h1>
+          <h1>Kelola klinik<br/>lebih <span className="accent">cerdas.</span></h1>
           <p>Platform manajemen klinik end-to-end — rekam medis, antrian, farmasi, billing, dan analitik bisnis dalam satu ekosistem yang terintegrasi penuh.</p>
-        </div>
-
-        <div className="footer-row">
-          <span className="badge">
-            <span className="dot-green"></span>
-            Terintegrasi SATUSEHAT &middot; Kemenkes RI
-          </span>
         </div>
       </div>
 
