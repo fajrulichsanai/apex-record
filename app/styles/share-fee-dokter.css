@@ -1,16 +1,26 @@
 .share-fee-page {
-  --primary:      #4F7EF8;
-  --primary-dk:   #3B6CE6;
-  --green:        #2DCB8A;
-  --orange:       #F5A623;
-  --red:          #E74C3C;
-  --bg:           #F5F6FA;
+  --primary:      #16150F;
+  --primary-dk:   #262419;
+  --accent:       #3E8E36;
+  --accent-solid: #7ED957;
+  --accent-soft:  #E3F3DA;
+  --accent-ink:   #2B6B22;
+  --green:        #3E8E36;
+  --orange:       #8A5A00;
+  --orange-soft:  #FCEACB;
+  --red:          #C1381F;
+  --red-soft:     #FBE1DE;
+  --info:         #1D5FAE;
+  --info-soft:    #DCEAFB;
+  --bg:           #FAF9F6;
   --surface:      #FFFFFF;
-  --text-main:    #1A2340;
-  --text-sub:     #6B7A99;
-  --text-muted:   #A0AEC0;
-  --border:       #E8ECF4;
-  --radius-sm:    8px;
+  --surface-hover:#F6F4EF;
+  --text-main:    #17160F;
+  --text-sub:     #55534A;
+  --text-muted:   #8D8B7E;
+  --border:       #E7E4DD;
+  --shadow-card:  0 1px 2px rgba(23,22,15,.04), 0 10px 28px -18px rgba(23,22,15,.18);
+  --radius-sm:    10px;
   --radius-md:    14px;
   --radius-lg:    20px;
   --transition:   0.2s ease;
@@ -20,93 +30,134 @@
   gap: 24px;
 }
 
+:root[data-theme="dark"] .share-fee-page {
+  --primary:      #3E8E36;
+  --primary-dk:   #4FA345;
+  --accent:       #4FA345;
+  --accent-solid: #7ED957;
+  --accent-soft:  #23361F;
+  --accent-ink:   #6BC85F;
+  --green:        #4FA345;
+  --orange:       #E8A930;
+  --orange-soft:  #3A2C10;
+  --red:          #E5573C;
+  --red-soft:     #3A1F17;
+  --info:         #5B9BE0;
+  --info-soft:    #1B2A3A;
+  --bg:           #1D1C17;
+  --surface:      #242320;
+  --surface-hover:#2A2924;
+  --text-main:    #F3F1EA;
+  --text-sub:     #B8B5A9;
+  --text-muted:   #85826F;
+  --border:       #38362F;
+  --shadow-card:  0 1px 2px rgba(0,0,0,.3), 0 10px 28px -18px rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+
+/* HEADER + TABS */
 .share-fee-page .page-header { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
-.share-fee-page .page-title-block { flex: 1; }
+.share-fee-page .page-title-block { flex: 1; min-width: 220px; }
 .share-fee-page .page-title h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; color: var(--text-main); }
 .share-fee-page .page-subtitle { font-size: 13.5px; color: var(--text-sub); margin-top: 4px; }
 
-.share-fee-page .tab-bar { display: flex; gap: 8px; }
+/* Segmented control for Laporan / Konfigurasi */
+.share-fee-page .tab-bar {
+  display: inline-flex; align-self: flex-start; gap: 4px; padding: 4px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+}
 .share-fee-page .filter-tab {
-  padding: 9px 18px; border-radius: 20px; font-size: 13px; font-weight: 600;
-  cursor: pointer; border: 1.5px solid var(--border); background: var(--surface);
+  padding: 8px 18px; border-radius: 999px; font-size: 13px; font-weight: 600; font-family: inherit;
+  cursor: pointer; border: none; background: none;
   color: var(--text-sub); transition: all var(--transition);
 }
-.share-fee-page .filter-tab:hover { border-color: var(--primary); color: var(--primary); }
-.share-fee-page .filter-tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.share-fee-page .filter-tab:hover { color: var(--text-main); background: var(--surface-hover); }
+.share-fee-page .filter-tab.active { background: var(--primary); color: #fff; }
+.share-fee-page .filter-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* STAT CARDS */
 .share-fee-page .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
 .share-fee-page .stat-card {
-  border-radius: var(--radius-lg); padding: 20px; display: flex; align-items: center; gap: 14px;
-  color: #fff; position: relative; overflow: hidden;
-  transition: transform var(--transition), box-shadow var(--transition);
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); box-shadow: var(--shadow-card);
+  padding: 18px 20px; display: flex; align-items: center; gap: 14px;
+  color: var(--text-main); min-width: 0;
 }
-.share-fee-page .stat-card:hover { transform: translateY(-3px); }
-.share-fee-page .stat-card::before { content: ''; position: absolute; top: -20px; right: -20px; width: 90px; height: 90px; border-radius: 50%; background: rgba(255,255,255,.12); }
-.share-fee-page .stat-card.total    { background: linear-gradient(135deg,#4F7EF8,#7B5CFA); box-shadow: 0 6px 20px rgba(79,126,248,.3); }
-.share-fee-page .stat-card.rata     { background: linear-gradient(135deg,#2DCB8A,#1BA876); box-shadow: 0 6px 20px rgba(45,203,138,.3); }
-.share-fee-page .stat-card.fixed    { background: linear-gradient(135deg,#F5A623,#E8831A); box-shadow: 0 6px 20px rgba(245,166,35,.3); }
-.share-fee-page .stat-icon { width: 46px; height: 46px; border-radius: 14px; background: rgba(255,255,255,.22); display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; position: relative; z-index: 1; }
-.share-fee-page .stat-info { position: relative; z-index: 1; min-width: 0; }
-.share-fee-page .stat-value { font-size: 22px; font-weight: 800; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.share-fee-page .stat-label { font-size: 12px; font-weight: 500; opacity: .85; margin-top: 3px; }
-.share-fee-page .stat-sub { font-size: 11px; font-weight: 500; opacity: .75; margin-top: 2px; }
+.share-fee-page .stat-icon { width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.share-fee-page .stat-icon .material-symbols-rounded { font-size: 22px; }
+.share-fee-page .stat-card.rata  .stat-icon { background: var(--info-soft); color: var(--info); }
+.share-fee-page .stat-card.fixed .stat-icon { background: var(--orange-soft); color: var(--orange); }
+.share-fee-page .stat-card.total { background: var(--primary); border-color: transparent; color: #fff; }
+.share-fee-page .stat-card.total .stat-icon { background: rgba(126,217,87,.18); color: var(--accent-solid); }
+.share-fee-page .stat-card.total .stat-label,
+.share-fee-page .stat-card.total .stat-sub { color: rgba(255,255,255,.72); }
+.share-fee-page .stat-info { min-width: 0; }
+.share-fee-page .stat-value { font-size: 21px; font-weight: 800; line-height: 1.15; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.share-fee-page .stat-label { font-size: 12px; font-weight: 500; color: var(--text-sub); margin-top: 4px; }
+.share-fee-page .stat-sub { font-size: 11.5px; font-weight: 500; color: var(--text-muted); margin-top: 2px; }
 
-.share-fee-page .panel { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
+/* PANEL */
+.share-fee-page .panel { background: var(--surface); border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-card); display: flex; flex-direction: column; overflow: hidden; }
 .share-fee-page .panel-toolbar { padding: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
 
+/* FEE CONFIG TABLE */
 .share-fee-page .fee-table-wrap { overflow-x: auto; }
 .share-fee-page .fee-table { width: 100%; border-collapse: collapse; }
-.share-fee-page .fee-table th { text-align: left; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--text-muted); padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.share-fee-page .fee-table th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); padding: 12px 16px; border-bottom: 1px solid var(--border); white-space: nowrap; }
 .share-fee-page .fee-table td { padding: 12px 16px; border-bottom: 1px solid var(--border); font-size: 13.5px; color: var(--text-main); vertical-align: middle; }
-.share-fee-page .fee-table tbody tr:hover { background: #F8F9FE; }
+.share-fee-page .fee-table tbody tr { transition: background var(--transition); }
+.share-fee-page .fee-table tbody tr:hover { background: var(--surface-hover); }
 .share-fee-page .fee-table tbody tr:last-child td { border-bottom: none; }
 .share-fee-page .fee-table .tarif-name { font-weight: 600; }
-.share-fee-page .fee-table .tarif-kategori { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.share-fee-page .fee-table .tarif-kategori { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
 
 .share-fee-page .fee-input-row { display: flex; align-items: center; gap: 8px; }
 .share-fee-page .fee-value-input {
-  width: 110px; border: 1.5px solid var(--border); border-radius: 8px; padding: 7px 10px;
-  font-size: 13px; font-family: inherit; color: var(--text-main); background: var(--surface); outline: none;
+  width: 110px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 10px;
+  font-size: 13px; font-family: inherit; color: var(--text-main); background: var(--bg); outline: none;
+  text-align: right; font-variant-numeric: tabular-nums;
   transition: all var(--transition);
 }
-.share-fee-page .fee-value-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,126,248,.1); }
+.share-fee-page .fee-value-input:focus { border-color: var(--accent); background: var(--surface); box-shadow: 0 0 0 3px rgba(126,217,87,.22); }
 .share-fee-page .fee-suffix { font-size: 12px; color: var(--text-muted); }
 
-.share-fee-page .toggle-switch { position: relative; display: inline-block; width: 38px; height: 22px; }
+.share-fee-page .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; }
 .share-fee-page .toggle-switch input { opacity: 0; width: 0; height: 0; }
 .share-fee-page .toggle-slider { position: absolute; cursor: pointer; inset: 0; background-color: var(--border); transition: var(--transition); border-radius: 22px; }
-.share-fee-page .toggle-slider::before { position: absolute; content: ''; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: #fff; transition: var(--transition); border-radius: 50%; }
-.share-fee-page .toggle-switch input:checked + .toggle-slider { background-color: var(--green); }
-.share-fee-page .toggle-switch input:checked + .toggle-slider::before { transform: translateX(16px); }
+.share-fee-page .toggle-slider::before { position: absolute; content: ''; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: #fff; transition: var(--transition); border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.share-fee-page .toggle-switch input:checked + .toggle-slider { background-color: var(--accent); }
+.share-fee-page .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
+.share-fee-page .toggle-switch input:focus-visible + .toggle-slider { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .share-fee-page .btn-row-save {
-  border: none; background: rgba(79,126,248,.1); color: var(--primary);
-  border-radius: 8px; padding: 7px 14px; font-size: 12.5px; font-weight: 600;
+  border: none; background: var(--accent-soft); color: var(--accent-ink);
+  border-radius: var(--radius-sm); padding: 8px 14px; font-size: 12.5px; font-weight: 600; font-family: inherit;
   cursor: pointer; transition: all var(--transition);
 }
-.share-fee-page .btn-row-save:hover { background: rgba(79,126,248,.18); }
+.share-fee-page .btn-row-save:hover:not(:disabled) { background: var(--accent-solid); color: #17160F; }
 .share-fee-page .btn-row-save:disabled { opacity: .5; cursor: not-allowed; }
 
 .share-fee-page .btn-primary {
   display: inline-flex; align-items: center; gap: 7px;
   background: var(--primary); color: #fff; border: none;
   border-radius: var(--radius-md); padding: 11px 20px;
-  font-size: 14px; font-weight: 600; cursor: pointer;
+  font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer;
   transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
-  box-shadow: 0 4px 14px rgba(79,126,248,.35);
+  box-shadow: 0 4px 14px rgba(23,22,15,.25);
 }
-.share-fee-page .btn-primary:hover { background: var(--primary-dk); }
+.share-fee-page .btn-primary:hover:not(:disabled) { background: var(--primary-dk); }
 .share-fee-page .btn-outline {
   display: inline-flex; align-items: center; gap: 7px;
-  border: 1.5px solid var(--border); background: none;
+  border: 1px solid var(--border); background: var(--surface);
   border-radius: var(--radius-md); padding: 10px 16px;
-  font-size: 13.5px; font-weight: 600; color: var(--text-sub);
+  font-size: 13.5px; font-weight: 600; font-family: inherit; color: var(--text-main);
   cursor: pointer; transition: all var(--transition);
 }
-.share-fee-page .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+.share-fee-page .btn-outline:hover:not(:disabled) { border-color: var(--text-muted); background: var(--surface-hover); }
+.share-fee-page .btn-outline .material-symbols-rounded { font-size: 17px; }
 
 /* MONTH/YEAR PICKER */
-.share-fee-page .picker-row { display: flex; align-items: center; gap: 10px; }
+.share-fee-page .picker-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .share-fee-page .picker-row > div { min-width: 160px; }
 
 /* MASTER-DETAIL */
@@ -121,38 +172,55 @@
 .share-fee-page .dokter-row {
   display: flex; align-items: center; gap: 12px; padding: 14px 16px;
   border-bottom: 1px solid var(--border); cursor: pointer; transition: background var(--transition);
+  position: relative;
 }
-.share-fee-page .dokter-row:hover { background: #F8F9FE; }
-.share-fee-page .dokter-row.active { background: rgba(79,126,248,.08); border-left: 3px solid var(--primary); }
+.share-fee-page .dokter-row:hover { background: var(--surface-hover); }
+.share-fee-page .dokter-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.share-fee-page .dokter-row.active { background: var(--accent-soft); }
+.share-fee-page .dokter-row.active::before {
+  content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--accent);
+}
 .share-fee-page .dokter-avatar {
-  width: 38px; height: 38px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary), var(--primary-dk));
-  color: #fff; display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 12px;
+  background: var(--bg); border: 1px solid var(--border);
+  color: var(--text-main); display: flex; align-items: center; justify-content: center;
   font-size: 13px; font-weight: 700; flex-shrink: 0;
 }
+.share-fee-page .dokter-row.active .dokter-avatar { background: var(--primary); border-color: transparent; color: #fff; }
 .share-fee-page .dokter-info { flex: 1; min-width: 0; }
-.share-fee-page .dokter-name { font-size: 13.5px; font-weight: 600; color: var(--text-main); }
-.share-fee-page .dokter-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
-.share-fee-page .dokter-total { font-size: 13px; font-weight: 700; color: var(--green); white-space: nowrap; }
+.share-fee-page .dokter-name { font-size: 13.5px; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.share-fee-page .dokter-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.share-fee-page .dokter-total { font-size: 13px; font-weight: 700; color: var(--accent-ink); white-space: nowrap; font-variant-numeric: tabular-nums; }
 
-.share-fee-page .detail-panel { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
-.share-fee-page .detail-header { display: flex; align-items: center; justify-content: space-between; }
+.share-fee-page .detail-panel { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+.share-fee-page .detail-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .share-fee-page .detail-header h3 { font-size: 16px; font-weight: 700; color: var(--text-main); margin: 0; }
-.share-fee-page .detail-total { font-size: 18px; font-weight: 800; color: var(--green); }
+.share-fee-page .detail-total { font-size: 20px; font-weight: 800; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
 
 .share-fee-page .breakdown-table { width: 100%; border-collapse: collapse; }
-.share-fee-page .breakdown-table th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); padding: 10px 12px; border-bottom: 1px solid var(--border); }
-.share-fee-page .breakdown-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-main); }
-.share-fee-page .breakdown-table tfoot td { font-weight: 700; border-bottom: none; border-top: 2px solid var(--border); }
+.share-fee-page .breakdown-table th { text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); padding: 10px 12px; border-bottom: 1px solid var(--border); }
+.share-fee-page .breakdown-table td { padding: 11px 12px; border-bottom: 1px solid var(--border); font-size: 13px; color: var(--text-main); font-variant-numeric: tabular-nums; }
+.share-fee-page .breakdown-table tbody tr:hover { background: var(--surface-hover); }
+.share-fee-page .breakdown-table tfoot td { font-weight: 700; border-bottom: none; border-top: 2px solid var(--border); background: var(--bg); }
 
-.share-fee-page .empty-list { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 60px 20px; text-align: center; }
-.share-fee-page .empty-icon-wrap { width: 70px; height: 70px; border-radius: 50%; background: var(--bg); border: 2px dashed var(--border); display: flex; align-items: center; justify-content: center; }
-.share-fee-page .empty-icon-wrap .material-symbols-rounded { font-size: 32px; color: var(--text-muted); }
-.share-fee-page .empty-title { font-size: 14px; font-weight: 600; color: var(--text-sub); }
-.share-fee-page .empty-sub { font-size: 12.5px; color: var(--text-muted); max-width: 260px; line-height: 1.5; }
+/* EMPTY */
+.share-fee-page .empty-list { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 56px 20px; text-align: center; }
+.share-fee-page .empty-icon-wrap { width: 68px; height: 68px; border-radius: 20px; background: var(--bg); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; }
+.share-fee-page .empty-icon-wrap .material-symbols-rounded { font-size: 30px; color: var(--text-muted); }
+.share-fee-page .empty-title { font-size: 14.5px; font-weight: 600; color: var(--text-main); }
+.share-fee-page .empty-sub { font-size: 12.5px; color: var(--text-muted); max-width: 280px; line-height: 1.5; }
 
 @media (max-width: 1100px) {
   .share-fee-page .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .share-fee-page .stat-card.total { grid-column: 1 / -1; }
   .share-fee-page .report-layout { grid-template-columns: 1fr; }
   .share-fee-page .dokter-list { max-height: 280px; border-right: none; border-bottom: 1px solid var(--border); }
+}
+@media (max-width: 600px) {
+  .share-fee-page .page-title h1 { font-size: 20px; }
+  .share-fee-page .tab-bar { align-self: stretch; }
+  .share-fee-page .filter-tab { flex: 1; }
+  .share-fee-page .stat-value { font-size: 18px; }
+  .share-fee-page .picker-row > div { flex: 1; min-width: 0; }
 }

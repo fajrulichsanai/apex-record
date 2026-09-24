@@ -116,7 +116,7 @@ export default function GudangDashboardPage() {
                           <td className="gudang-name">{item.name}</td>
                           <td>{item.sku}</td>
                           <td>
-                            <span className="gudang-margin">
+                            <span className="stock-low">
                               <span className="material-symbols-rounded" style={{ fontSize: 14 }}>warning</span>
                               {item.stokSaatIni}
                             </span>

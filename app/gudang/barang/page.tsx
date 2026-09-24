@@ -207,9 +207,9 @@ export default function BarangPage() {
                         </td>
                         <td>{item.kategori ? <span className="tag">{item.kategori}</span> : '-'}</td>
                         <td>
-                          <span className={isLow ? 'gudang-margin' : undefined}>
+                          <span className={isLow ? 'stock-low' : undefined}>
                             {isLow && <span className="material-symbols-rounded" style={{ fontSize: 14 }}>warning</span>}
-                            {item.stokSaatIni} {item.satuanPakai} <span style={{ color: 'var(--text-sub)', fontSize: 11 }}>(min {item.stokMinimum})</span>
+                            {item.stokSaatIni} {item.satuanPakai} <span className="stock-min">(min {item.stokMinimum})</span>
                           </span>
                         </td>
                         <td>Rp {(item.hargaBeli || 0).toLocaleString('id-ID')}</td>

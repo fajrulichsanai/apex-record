@@ -171,7 +171,16 @@ export default function MonthlyReportPanel({ selfView = false }: MonthlyReportPa
               <div
                 key={r.practitionerId}
                 className={`dokter-row ${selectedId === r.practitionerId ? 'active' : ''}`}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedId === r.practitionerId}
                 onClick={() => setSelectedId(r.practitionerId)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedId(r.practitionerId);
+                  }
+                }}
               >
                 <div className="dokter-avatar">{initialsFromName(r.practitionerName)}</div>
                 <div className="dokter-info">

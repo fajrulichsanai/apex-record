@@ -263,12 +263,15 @@ export default function CatatOperasionalPage() {
               <input
                 type="date"
                 className="date-input"
+                aria-label="Dari tanggal"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
+              <span className="sort-label" aria-hidden="true">–</span>
               <input
                 type="date"
                 className="date-input"
+                aria-label="Sampai tanggal"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
@@ -277,10 +280,15 @@ export default function CatatOperasionalPage() {
 
           <div className="panel-sort">
             <span className="sort-label">{filteredRecords.length} catatan ditemukan</span>
-            <span className="sort-label" onClick={() => setSortAsc((v) => !v)}>
+            <button
+              type="button"
+              className="sort-toggle"
+              onClick={() => setSortAsc((v) => !v)}
+              aria-label={sortAsc ? 'Urutkan tanggal terbaru dulu' : 'Urutkan tanggal terlama dulu'}
+            >
               <span className="material-symbols-rounded">{sortAsc ? 'arrow_upward' : 'arrow_downward'}</span>
-              Tanggal
-            </span>
+              Tanggal {sortAsc ? 'terlama' : 'terbaru'}
+            </button>
           </div>
 
           {loading ? (
@@ -293,10 +301,23 @@ export default function CatatOperasionalPage() {
           ) : filteredRecords.length === 0 ? (
             <div className="empty-list">
               <div className="empty-icon-wrap">
-                <span className="material-symbols-rounded">search_off</span>
+                <span className="material-symbols-rounded">{records.length === 0 ? 'receipt_long' : 'search_off'}</span>
               </div>
-              <div className="empty-title">Tidak ada catatan operasional ditemukan</div>
-              <div className="empty-sub">Coba ubah kata kunci pencarian atau filter yang digunakan</div>
+              {records.length === 0 ? (
+                <>
+                  <div className="empty-title">Belum ada catatan operasional</div>
+                  <div className="empty-sub">Catat gaji, sewa, listrik, atau bahan habis pakai supaya laba bersih di laporan akurat.</div>
+                  <button type="button" className="btn-primary" onClick={() => setFormModal({ mode: 'create' })}>
+                    <span className="material-symbols-rounded">add</span>
+                    Catat Pengeluaran
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="empty-title">Tidak ada catatan yang cocok</div>
+                  <div className="empty-sub">Coba ubah kata kunci pencarian, kategori, atau rentang tanggal.</div>
+                </>
+              )}
             </div>
           ) : (
             <div className="op-table-wrap">
@@ -306,14 +327,14 @@ export default function CatatOperasionalPage() {
                     <th>Tanggal</th>
                     <th>Kategori</th>
                     <th>Deskripsi</th>
-                    <th>Nominal</th>
-                    <th></th>
+                    <th className="num">Nominal</th>
+                    <th aria-label="Aksi"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRecords.map((item) => (
                     <tr key={item.id}>
-                      <td>{new Date(item.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                      <td className="op-date">{new Date(item.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                       <td><span className="tag">{kategoriLabel(item.kategori)}</span></td>
                       <td className="op-deskripsi" title={item.deskripsi}>{item.deskripsi}</td>
                       <td className="op-nominal">Rp {item.nominal.toLocaleString('id-ID')}</td>

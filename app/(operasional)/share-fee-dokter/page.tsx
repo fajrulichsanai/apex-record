@@ -43,6 +43,7 @@ export default function ShareFeeDokterPage() {
           <button
             type="button"
             className={`filter-tab ${tab === 'config' ? 'active' : ''}`}
+            aria-pressed={tab === 'config'}
             onClick={() => setTab('config')}
           >
             Konfigurasi Fee
@@ -50,6 +51,7 @@ export default function ShareFeeDokterPage() {
           <button
             type="button"
             className={`filter-tab ${tab === 'report' ? 'active' : ''}`}
+            aria-pressed={tab === 'report'}
             onClick={() => setTab('report')}
           >
             Laporan Bulanan
