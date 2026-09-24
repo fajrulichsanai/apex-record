@@ -84,8 +84,15 @@ export default function ReservationCalendar({ onSelectReservation, onSelectDate 
     setLoading(true);
     setLoadError(null);
     try {
-      const res = await reservationsApi.list({ dateFrom: rangeStart, dateTo: rangeEnd, limit: 200 });
-      setReservations(res.data);
+      // Backend caps `limit` at 100, so a busy month is fetched page by page.
+      const PAGE_SIZE = 100;
+      const first = await reservationsApi.list({ dateFrom: rangeStart, dateTo: rangeEnd, limit: PAGE_SIZE, page: 1 });
+      const rest = await Promise.all(
+        Array.from({ length: Math.max(0, (first.meta?.totalPages ?? 1) - 1) }, (_, i) =>
+          reservationsApi.list({ dateFrom: rangeStart, dateTo: rangeEnd, limit: PAGE_SIZE, page: i + 2 }),
+        ),
+      );
+      setReservations([first, ...rest].flatMap((r) => r.data));
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : 'Gagal memuat reservasi');
     } finally {
