@@ -1,3 +1,5 @@
+import { isDemoMode } from './demo/demo-mode';
+
 /**
  * Every backend call goes through the same-origin proxy in
  * app/api/backend/[...path]/route.ts. It attaches the access token from an
@@ -103,11 +105,18 @@ function hasSession() {
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  if (isDemoMode()) {
+    // Demo tab: answered in the browser with fictional data (lazy-loaded so
+    // normal sessions never download it). Nothing is sent to the backend.
+    const { demoRequest } = await import('./demo/mock-api');
+    return demoRequest<T>(path, options);
+  }
   // FormData bodies must NOT get an explicit Content-Type — the browser sets
   // its own multipart boundary. Only set it for JSON bodies.
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
 
   const res = await fetch(`${API_BASE}${path}`, {
+    cache: 'no-store',
     ...options,
     headers: {
       ...(isFormData ? {} : { 'Content-Type': 'application/json' }),

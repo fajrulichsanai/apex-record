@@ -1,6 +1,29 @@
 import type { NextConfig } from "next";
+import { execSync } from "child_process";
+
+// Identifies this build. When it changes, Next.js (version-skew protection)
+// turns navigations from tabs opened before the deploy into full page loads,
+// so nobody keeps running the previous release until they hard-refresh.
+function buildId(): string {
+  if (process.env.DEPLOYMENT_ID) return process.env.DEPLOYMENT_ID;
+  try {
+    return execSync("git rev-parse --short HEAD", { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+  } catch {
+    return `build-${Date.now()}`;
+  }
+}
 
 const nextConfig: NextConfig = {
+  // The deploy builds into a separate directory and swaps it in just before
+  // the restart (see .github/workflows/deploy-vps.yml), so the running server
+  // never serves a half-overwritten .next during `npm run build`.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
+  deploymentId: buildId(),
+  experimental: {
+    // Pages here render per-user data fetched on mount; don't let the client
+    // router reuse a previously visited page for minutes (default: 5 min).
+    staleTimes: { dynamic: 0, static: 30 },
+  },
   async headers() {
     return [
       {

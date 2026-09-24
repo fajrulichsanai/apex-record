@@ -87,6 +87,11 @@ async function proxy(req: NextRequest, ctx: RouteContext) {
     const value = upstream.headers.get(name);
     if (value) responseHeaders.set(name, value);
   }
+  // API data is per-user and changes constantly: never let the browser (or
+  // a proxy) reuse it. Public uploaded files are the one immutable exception.
+  if (!path.startsWith('files/')) {
+    responseHeaders.set('cache-control', 'no-store');
+  }
 
   const isTokenIssuing =
     method === 'POST' && (TOKEN_ISSUING.has(path) || path.startsWith('auth/impersonate/'));

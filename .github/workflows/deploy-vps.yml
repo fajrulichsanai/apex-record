@@ -38,10 +38,15 @@ jobs:
               echo "📦 Tidak ada perubahan dependency, skip install ✅"
             fi
 
-            echo "🔨 Build project..."
-            npm run build
+            echo "🔨 Build project (ke folder terpisah, server lama tetap jalan)..."
+            rm -rf .next-build
+            NEXT_DIST_DIR=.next-build npm run build
 
-            echo "♻️  Restart PM2..."
+            echo "🔁 Tukar hasil build lalu restart PM2..."
+            rm -rf .next-old
+            if [ -d .next ]; then mv .next .next-old; fi
+            mv .next-build .next
             pm2 restart apex-record-staging-frontend
+            rm -rf .next-old
 
             echo "✅ Deploy selesai!"

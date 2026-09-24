@@ -16,6 +16,9 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // Deploy builds into .next-build then swaps it in (see deploy-vps.yml).
+    ".next-build/**",
+    ".next-old/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
