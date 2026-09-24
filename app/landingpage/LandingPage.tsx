@@ -3,6 +3,7 @@
 import HeroPreview from './HeroPreview';
 import PricingSection from './PricingSection';
 import Reveal from './Reveal';
+import ThemeToggle from './ThemeToggle';
 import './landingpage.css';
 
 const APP_URL = 'https://staging.apexrecord.my.id';
@@ -170,9 +171,8 @@ export default function LandingPage() {
         <div className="wrap nav-row">
           <a href="#top" className="brand">
             <span className="brand-mark">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M12 3l7 15.5c.9 2-1 4-3 3.2-1.6-.6-2.3-2-2.7-3.5-.5-1.8-1.2-2.9-1.3-3-.1.1-.8 1.2-1.3 3-.4 1.5-1.1 2.9-2.7 3.5-2 .8-3.9-1.2-3-3.2L12 3z" fill="white" />
-              </svg>
+              {/* eslint-disable-next-line @next/next/no-img-element -- small static logo */}
+              <img src="/logo-apex-record.png" alt="" />
             </span>
             <span className="brand-word">Apex<em>Record</em></span>
           </a>
@@ -183,6 +183,7 @@ export default function LandingPage() {
             <a href="#faq">FAQ</a>
           </nav>
           <div className="nav-cta">
+            <ThemeToggle />
             <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">Masuk</a>
             <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-grad btn-sm">Coba Gratis</a>
           </div>
@@ -409,10 +410,9 @@ export default function LandingPage() {
             <div className="foot-brand">
               <a href="#top" className="brand">
                 <span className="brand-mark">
-                  <svg viewBox="0 0 24 24" fill="none">
-                    <path d="M12 3l7 15.5c.9 2-1 4-3 3.2-1.6-.6-2.3-2-2.7-3.5-.5-1.8-1.2-2.9-1.3-3-.1.1-.8 1.2-1.3 3-.4 1.5-1.1 2.9-2.7 3.5-2 .8-3.9-1.2-3-3.2L12 3z" fill="white" />
-                  </svg>
-                </span>
+              {/* eslint-disable-next-line @next/next/no-img-element -- small static logo */}
+              <img src="/logo-apex-record.png" alt="" />
+            </span>
                 <span className="brand-word">Apex<em>Record</em></span>
               </a>
               <p>Platform manajemen klinik Indonesia — rekam medis, operasional, dan laporan bisnis dalam satu sistem untuk klinik dan praktik mandiri.</p>

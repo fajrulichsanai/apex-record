@@ -14,6 +14,9 @@ interface ThemeState {
 const ThemeContext = createContext<ThemeState | undefined>(undefined);
 
 const STORAGE_KEY = 'theme-preference';
+// First-time visitors get the light theme; 'Otomatis' (system) stays available
+// as an explicit choice in Pengaturan → Tampilan.
+const DEFAULT_PREFERENCE: ThemePreference = 'light';
 
 function resolveTheme(pref: ThemePreference): ResolvedTheme {
   if (pref === 'system') {
@@ -32,9 +35,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // no SSR mismatch risk) so the toggle UI reflects the real preference on
   // first render instead of flashing 'system' momentarily.
   const [preference, setPreferenceState] = useState<ThemePreference>(() => {
-    if (typeof window === 'undefined') return 'system';
+    if (typeof window === 'undefined') return DEFAULT_PREFERENCE;
     const stored = window.localStorage.getItem(STORAGE_KEY);
-    return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : 'system';
+    return stored === 'light' || stored === 'dark' || stored === 'system' ? stored : DEFAULT_PREFERENCE;
   });
   const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(() => resolveTheme(preference));
 
@@ -79,7 +82,7 @@ export const THEME_INIT_SCRIPT = `
 (function() {
   try {
     var stored = localStorage.getItem('${STORAGE_KEY}');
-    var pref = (stored === 'light' || stored === 'dark' || stored === 'system') ? stored : 'system';
+    var pref = (stored === 'light' || stored === 'dark' || stored === 'system') ? stored : '${DEFAULT_PREFERENCE}';
     var resolved = pref === 'system'
       ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
       : pref;
