@@ -797,6 +797,28 @@ const routes: [RegExp, Handler][] = [
   [/^\/settings\/tarifs\/(\d+)$/, (m) => demoTarifs.find((t) => t.id === Number(m[1]))],
   [/^\/settings\/tarifs$/, (_m, q) => list(demoTarifs, q, 50)],
   [/^\/settings\/practitioners$/, () => demoPractitioners],
+  [/^\/settings\/api\/keys$/, () => [
+    { id: 1, name: 'Website klinik', type: 'publishable', keyPrefix: 'apx_pk_Q3vN', allowedOrigins: ['https://senyumsehat.demo'], createdAt: '2026-06-02T08:00:00.000Z', lastUsedAt: now(), revokedAt: null },
+    { id: 2, name: 'Server tim IT', type: 'secret', keyPrefix: 'apx_sk_8fLc', allowedOrigins: [], createdAt: '2026-07-14T08:00:00.000Z', lastUsedAt: now(), revokedAt: null },
+  ]],
+  [/^\/settings\/api\/usage$/, () => {
+    const daily = Array.from({ length: 30 }, (_, i) => {
+      const d = new Date(demoToday.getTime() - (29 - i) * 86400000);
+      const weekend = d.getDay() === 0;
+      return { date: toDateStr(d), count: weekend ? 120 + ((i * 37) % 60) : 900 + ((i * 523) % 1400) };
+    });
+    const usedToday = daily[daily.length - 1].count;
+    return {
+      plan: 'Pro', subscriptionActive: true, limitPerDay: 10000, limitPerMinute: 300,
+      usedToday, remainingToday: 10000 - usedToday, daily,
+      byKey: [{ apiKeyId: 1, count: daily.reduce((s, d) => s + d.count, 0) - 2400 }, { apiKeyId: 2, count: 2400 }],
+    };
+  }],
+  [/^\/settings\/api\/practitioners$/, () =>
+    demoPractitioners.map((p, i) => ({
+      id: p.id, name: p.name, specialization: p.specialization ?? null, photoUrl: null, isActive: true,
+      jadwalPraktik: i === 1 ? { senin: '09:00-15:00', selasa: 'Tutup', rabu: '09:00-15:00', kamis: 'Tutup', jumat: '13:00-20:00', sabtu: '09:00-13:00', minggu: 'Tutup' } : null,
+    }))],
   [/^\/settings\/locations$/, () => [
     { id: 1, name: 'Ruang Periksa 1', isActive: true, clinicId: DEMO_CLINIC_ID, createdAt: now() },
     { id: 2, name: 'Ruang Periksa 2', isActive: true, clinicId: DEMO_CLINIC_ID, createdAt: now() },

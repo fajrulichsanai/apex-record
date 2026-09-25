@@ -23,7 +23,8 @@ export type FeatureKey =
   | 'langganan'
   | 'onboarding'
   | 'keamanan'
-  | 'tampilan';
+  | 'tampilan'
+  | 'api';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',
@@ -47,6 +48,7 @@ const FULL_ACCESS: FeatureKey[] = [
   'langganan',
   'keamanan',
   'tampilan',
+  'api',
 ];
 
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {

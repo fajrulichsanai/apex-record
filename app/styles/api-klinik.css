@@ -1,0 +1,416 @@
+.api-klinik-page {
+  --primary:      #16150F;
+  --primary-dk:   #262419;
+  --accent:       #3E8E36;
+  --accent-solid: #7ED957;
+  --accent-soft:  #E3F3DA;
+  --orange:       #8A5A00;
+  --orange-soft:  #FCEACB;
+  --red:          #C1381F;
+  --red-soft:     #FBE1DE;
+  --info:         #1D5FAE;
+  --info-soft:    #DCEAFB;
+  --bg:           #FAF9F6;
+  --surface:      #FFFFFF;
+  --code-bg:      #F3F1EA;
+  --text-main:    #17160F;
+  --text-sub:     #55534A;
+  --text-muted:   #8D8B7E;
+  --border:       #E7E4DD;
+  --overlay:      rgba(23, 22, 15, 0.45);
+  --radius-sm:    8px;
+  --radius-md:    14px;
+  --radius-lg:    20px;
+  --transition:   0.2s ease;
+
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+:root[data-theme="dark"] .api-klinik-page {
+  --primary:      #3E8E36;
+  --primary-dk:   #4FA345;
+  --accent:       #4FA345;
+  --accent-solid: #7ED957;
+  --accent-soft:  #23361F;
+  --orange:       #E8A930;
+  --orange-soft:  #3A2C10;
+  --red:          #E5573C;
+  --red-soft:     #3A1F17;
+  --info:         #5B9BE0;
+  --info-soft:    #1B2A3A;
+  --bg:           #17160F;
+  --surface:      #242320;
+  --code-bg:      #1C1B17;
+  --text-main:    #F3F1EA;
+  --text-sub:     #B8B5A9;
+  --text-muted:   #85826F;
+  --border:       #38362F;
+  --overlay:      rgba(0, 0, 0, 0.6);
+}
+
+/* ---------- header ---------- */
+.api-klinik-page .page-header { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.api-klinik-page .page-title-block { flex: 1; min-width: 240px; }
+.api-klinik-page .page-title h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; color: var(--text-main); }
+.api-klinik-page .page-subtitle { font-size: 13.5px; color: var(--text-sub); margin-top: 4px; }
+.api-klinik-page .api-clinic-picker { width: 280px; max-width: 100%; }
+
+/* ---------- panels ---------- */
+.api-klinik-page .panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.api-klinik-page .panel-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.api-klinik-page .panel-header h2 { font-size: 15px; font-weight: 700; color: var(--text-main); }
+.api-klinik-page .panel-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; }
+.api-klinik-page .muted { color: var(--text-muted); }
+.api-klinik-page code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  background: var(--code-bg);
+  color: var(--text-main);
+  padding: 1px 6px;
+  border-radius: 6px;
+}
+
+/* ---------- buttons ---------- */
+.api-klinik-page .btn-primary,
+.api-klinik-page .btn-outline,
+.api-klinik-page .btn-ghost {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+  white-space: nowrap;
+}
+.api-klinik-page .btn-primary { padding: 9px 16px; background: var(--primary); color: #fff; border: none; }
+.api-klinik-page .btn-primary:hover:not(:disabled) { background: var(--primary-dk); }
+.api-klinik-page .btn-outline { padding: 9px 16px; background: var(--surface); color: var(--text-main); border: 1.5px solid var(--border); }
+.api-klinik-page .btn-outline:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.api-klinik-page .btn-ghost { padding: 6px 10px; background: transparent; color: var(--text-sub); border: 1px solid var(--border); }
+.api-klinik-page .btn-ghost:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.api-klinik-page .btn-ghost.danger:hover:not(:disabled) { border-color: var(--red); color: var(--red); }
+.api-klinik-page button:disabled { opacity: 0.6; cursor: not-allowed; }
+.api-klinik-page .api-link {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: var(--accent);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+/* ---------- badges ---------- */
+.api-klinik-page .api-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.api-klinik-page .panel-header .api-badge,
+.api-klinik-page td > .api-badge { margin-left: 0; }
+.api-klinik-page .api-badge.ok { background: var(--accent-soft); color: var(--accent); }
+.api-klinik-page .api-badge.info { background: var(--info-soft); color: var(--info); }
+.api-klinik-page .api-badge.warn { background: var(--orange-soft); color: var(--orange); }
+.api-klinik-page .api-badge.danger { background: var(--red-soft); color: var(--red); }
+.api-klinik-page .api-badge.muted { background: var(--code-bg); color: var(--text-muted); }
+
+/* ---------- usage ---------- */
+.api-klinik-page .api-stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.api-klinik-page .api-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+.api-klinik-page .api-stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+.api-klinik-page .api-stat-value { font-size: 22px; font-weight: 700; color: var(--text-main); letter-spacing: -0.4px; font-variant-numeric: tabular-nums; }
+.api-klinik-page .api-stat-sub { font-size: 12px; color: var(--text-sub); }
+.api-klinik-page .api-meter { height: 6px; background: var(--border); border-radius: 999px; overflow: hidden; margin-top: 8px; }
+.api-klinik-page .api-meter-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.4s ease; }
+.api-klinik-page .api-meter-fill.warn { background: var(--orange); }
+.api-klinik-page .api-meter-fill.danger { background: var(--red); }
+.api-klinik-page .api-chart { width: 100%; min-width: 0; }
+
+/* ---------- tables ---------- */
+.api-klinik-page .api-table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md); }
+.api-klinik-page .api-table { width: 100%; border-collapse: collapse; font-size: 13px; color: var(--text-main); }
+.api-klinik-page .api-table th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  background: var(--bg);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.api-klinik-page .api-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.api-klinik-page .api-table tr:last-child td { border-bottom: none; }
+.api-klinik-page .api-table.compact td { padding: 9px 14px; }
+.api-klinik-page .api-table tr.revoked td { opacity: 0.55; }
+.api-klinik-page .api-table tr.current td { background: var(--accent-soft); }
+.api-klinik-page .api-key-name { font-weight: 600; margin-bottom: 4px; }
+.api-klinik-page .api-prefix { white-space: nowrap; }
+.api-klinik-page .api-origins { font-size: 12.5px; color: var(--text-sub); word-break: break-all; }
+.api-klinik-page .api-row-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+.api-klinik-page .api-empty { text-align: center; padding: 24px 12px; color: var(--text-sub); font-size: 13.5px; }
+
+/* ---------- doctors ---------- */
+.api-klinik-page .api-doctor-list { display: flex; flex-direction: column; gap: 10px; }
+.api-klinik-page .api-doctor {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  flex-wrap: wrap;
+}
+.api-klinik-page .api-doctor.inactive { opacity: 0.65; }
+.api-klinik-page .api-doctor-photo {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 20px;
+}
+.api-klinik-page .api-doctor-photo img { width: 100%; height: 100%; object-fit: cover; }
+.api-klinik-page .api-doctor-info { flex: 1; min-width: 200px; }
+.api-klinik-page .api-doctor-name { font-weight: 700; font-size: 14px; color: var(--text-main); }
+.api-klinik-page .api-doctor-spec { font-size: 12.5px; color: var(--text-sub); margin-top: 2px; }
+.api-klinik-page .api-doctor-schedule { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+/* ---------- modals ---------- */
+.api-klinik-page .api-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.api-klinik-page .api-modal {
+  background: var(--surface);
+  color: var(--text-main);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 520px;
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+}
+.api-klinik-page .api-modal h2 { font-size: 17px; font-weight: 700; }
+.api-klinik-page .api-modal-text { font-size: 13.5px; color: var(--text-sub); line-height: 1.55; }
+.api-klinik-page .api-modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.api-klinik-page .api-field { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-main); }
+.api-klinik-page .api-field small { font-weight: 400; color: var(--text-muted); font-size: 12px; }
+.api-klinik-page .api-field input,
+.api-klinik-page .api-field textarea,
+.api-klinik-page .api-time-range input {
+  font-family: inherit;
+  font-size: 13.5px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--text-main);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  color-scheme: light;
+}
+:root[data-theme="dark"] .api-klinik-page .api-field input,
+:root[data-theme="dark"] .api-klinik-page .api-field textarea,
+:root[data-theme="dark"] .api-klinik-page .api-time-range input { color-scheme: dark; }
+.api-klinik-page .api-field textarea { resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+.api-klinik-page .api-field input:focus,
+.api-klinik-page .api-field textarea:focus,
+.api-klinik-page .api-time-range input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(126, 217, 87, 0.22); }
+
+.api-klinik-page .api-type-picker { border: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.api-klinik-page .api-type-picker legend { font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-main); }
+.api-klinik-page .api-type-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--text-sub);
+  transition: border-color var(--transition);
+}
+.api-klinik-page .api-type-option strong { color: var(--text-main); font-size: 13.5px; }
+.api-klinik-page .api-type-option input { position: absolute; opacity: 0; pointer-events: none; }
+.api-klinik-page .api-type-option.selected { border-color: var(--accent); background: var(--surface); box-shadow: 0 4px 16px rgba(62, 142, 54, 0.15); }
+.api-klinik-page .api-type-option:focus-within { border-color: var(--accent); }
+
+.api-klinik-page .api-secret-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border: 1.5px dashed var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+}
+.api-klinik-page .api-secret-box code { flex: 1; background: none; font-size: 13px; word-break: break-all; padding: 0; }
+.api-klinik-page .api-note { font-size: 12.5px; color: var(--text-sub); line-height: 1.5; }
+.api-klinik-page .api-note.warn { background: var(--orange-soft); color: var(--orange); padding: 10px 12px; border-radius: 10px; }
+.api-klinik-page .api-form-error { font-size: 12.5px; color: var(--red); background: var(--red-soft); padding: 8px 12px; border-radius: 10px; }
+
+.api-klinik-page .api-toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--text-main); cursor: pointer; }
+.api-klinik-page .api-toggle input { width: 16px; height: 16px; accent-color: var(--accent); }
+.api-klinik-page .api-schedule-grid { display: flex; flex-direction: column; gap: 8px; }
+.api-klinik-page .api-schedule-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  min-height: 48px;
+}
+.api-klinik-page .api-schedule-row .api-toggle { min-width: 96px; }
+.api-klinik-page .api-schedule-row.closed { background: var(--bg); }
+.api-klinik-page .api-time-range { display: flex; align-items: center; gap: 6px; color: var(--text-muted); }
+.api-klinik-page .api-time-range input { padding: 6px 8px; font-size: 13px; }
+
+/* ---------- docs ---------- */
+.api-klinik-page .api-docs section { display: flex; flex-direction: column; gap: 10px; }
+.api-klinik-page .api-docs section + section { border-top: 1px solid var(--border); padding-top: 18px; }
+.api-klinik-page .api-docs h3 { font-size: 14px; font-weight: 700; color: var(--text-main); }
+.api-klinik-page .api-docs h4 { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+.api-klinik-page .api-docs p,
+.api-klinik-page .api-docs li { font-size: 13px; color: var(--text-sub); line-height: 1.6; }
+.api-klinik-page .api-list { padding-left: 18px; display: flex; flex-direction: column; gap: 6px; list-style: disc; }
+.api-klinik-page .api-params { padding-left: 18px; list-style: disc; }
+
+.api-klinik-page .api-code { position: relative; }
+.api-klinik-page .api-code pre {
+  margin: 0;
+  padding: 14px 16px;
+  padding-right: 72px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  max-width: 100%;
+}
+.api-klinik-page .api-code pre code { background: none; padding: 0; font-size: 12.5px; line-height: 1.6; white-space: pre; }
+.api-klinik-page .api-code-copy {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-sub);
+  cursor: pointer;
+}
+.api-klinik-page .api-code-copy:hover { border-color: var(--accent); color: var(--accent); }
+
+.api-klinik-page .api-endpoints { display: flex; flex-direction: column; gap: 8px; }
+.api-klinik-page .api-endpoint { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--bg); }
+.api-klinik-page .api-endpoint summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 11px 14px;
+  cursor: pointer;
+  list-style: none;
+  flex-wrap: wrap;
+}
+.api-klinik-page .api-endpoint summary::-webkit-details-marker { display: none; }
+.api-klinik-page .api-endpoint summary code { background: none; padding: 0; font-weight: 600; font-size: 13px; }
+.api-klinik-page .api-endpoint-desc { font-size: 12.5px; color: var(--text-sub); flex: 1 1 240px; }
+.api-klinik-page .api-endpoint[open] summary { border-bottom: 1px solid var(--border); }
+.api-klinik-page .api-endpoint-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 8px; background: var(--surface); border-radius: 0 0 var(--radius-md) var(--radius-md); }
+.api-klinik-page .api-method {
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  min-width: 44px;
+  text-align: center;
+}
+.api-klinik-page .api-method.get { background: var(--info-soft); color: var(--info); }
+.api-klinik-page .api-method.post { background: var(--accent-soft); color: var(--accent); }
+
+.api-klinik-page .api-lang-tabs { display: flex; gap: 6px; }
+.api-klinik-page .api-lang-tabs button {
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-sub);
+  cursor: pointer;
+}
+.api-klinik-page .api-lang-tabs button.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+/* ---------- loading ---------- */
+.api-klinik-page .api-skeleton {
+  min-height: 220px;
+  background: linear-gradient(90deg, var(--bg) 25%, var(--border) 50%, var(--bg) 75%);
+  background-size: 200% 100%;
+  animation: api-shimmer 1.4s ease infinite;
+}
+.api-klinik-page .api-skeleton-table { min-height: 120px; border-radius: var(--radius-md); }
+@keyframes api-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+@media (max-width: 600px) {
+  .api-klinik-page .page-title h1 { font-size: 20px; }
+  .api-klinik-page .api-clinic-picker { width: 100%; }
+  .api-klinik-page .api-type-picker { grid-template-columns: 1fr; }
+  .api-klinik-page .api-row-actions { justify-content: flex-start; }
+  .api-klinik-page .api-schedule-row { flex-wrap: wrap; }
+}

@@ -13,6 +13,7 @@ const TABS: { label: string; href: string; feature: FeatureKey; requireManageUse
   { label: 'Log Aktivitas', href: '/audit-log', feature: 'audit-log' },
   { label: 'Langganan', href: '/langganan', feature: 'langganan' },
   { label: 'Tampilan', href: '/tampilan', feature: 'tampilan' },
+  { label: 'API', href: '/api-klinik', feature: 'api' },
   { label: 'Keamanan Akun', href: '/keamanan', feature: 'keamanan' },
 ];
 
