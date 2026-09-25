@@ -1,10 +1,14 @@
 'use client';
 
+import { DiagnosisListView } from './DiagnosisPicker';
+import type { SoapDiagnosis } from '@/lib/terminology';
+
 interface SoapNoteViewProps {
   practitionerName?: string;
   subjective?: string;
   objective?: string;
   assessment?: string;
+  diagnoses?: SoapDiagnosis[] | null;
   treatment?: string;
   plan?: string;
   controlPlan?: string;
@@ -34,6 +38,7 @@ export default function SoapNoteView({
   subjective,
   objective,
   assessment,
+  diagnoses,
   treatment,
   plan,
   controlPlan,
@@ -61,6 +66,10 @@ export default function SoapNoteView({
         <ViewField label="Subjective" value={subjective} />
         <ViewField label="Objective" value={objective} />
         <ViewField label="Assessment" value={assessment} />
+        <div className="rm-view-field">
+          <label>Diagnosis (ICD-10 / SNOMED CT)</label>
+          <DiagnosisListView diagnoses={diagnoses} />
+        </div>
         <ViewField label="Treatment — tindakan pada kunjungan ini" value={treatment} />
         <ViewField label="Plan (kunjungan berikutnya)" value={plan} />
         <ViewField label="Kontrol berikutnya" value={controlPlan} />

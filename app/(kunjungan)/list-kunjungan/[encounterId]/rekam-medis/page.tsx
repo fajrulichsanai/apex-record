@@ -12,6 +12,8 @@ import PrescriptionPanel from '@/components/form/PrescriptionPanel';
 import CustomSelect from '@/components/form/CustomSelect';
 import VoiceDictationButton from '@/components/form/VoiceDictationButton';
 import SoapNoteView from '@/components/rekam-medis/SoapNoteView';
+import DiagnosisPicker from '@/components/rekam-medis/DiagnosisPicker';
+import type { SoapDiagnosis } from '@/lib/terminology';
 import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
 import InformedConsentPanel from '@/components/rekam-medis/InformedConsentPanel';
 import OdontogramChart from '@/components/odontogram/OdontogramChart';
@@ -549,6 +551,7 @@ export default function RekamMedisPage() {
   const [subjective, setSubjective] = useState('');
   const [objective, setObjective] = useState('');
   const [assessment, setAssessment] = useState('');
+  const [diagnoses, setDiagnoses] = useState<SoapDiagnosis[]>([]);
   const [treatment, setTreatment] = useState('');
   const [plan, setPlan] = useState('');
   const [savedControlPlan, setSavedControlPlan] = useState('');
@@ -601,6 +604,7 @@ export default function RekamMedisPage() {
           setSubjective(note.subjective || '');
           setObjective(note.objective || '');
           setAssessment(note.assessment || '');
+          setDiagnoses(note.diagnoses ?? []);
           setTreatment(note.treatment || '');
           setPlan(note.plan || '');
           setSavedControlPlan(note.controlPlan || '');
@@ -800,12 +804,19 @@ export default function RekamMedisPage() {
         subjective: subjective.trim() || undefined,
         objective: objective.trim() || undefined,
         assessment: assessment.trim() || undefined,
+        diagnoses: diagnoses.map((d) => ({
+          system: d.system,
+          code: d.code,
+          primary: d.primary,
+          note: d.note?.trim() || undefined,
+        })),
         treatment: treatment.trim() || undefined,
         plan: plan.trim() || undefined,
         controlPlan: controlPlanText,
         signature,
       });
       setSoapUpdatedAt(saved?.updatedAt || new Date().toISOString());
+      if (saved?.diagnoses) setDiagnoses(saved.diagnoses);
       setSavedControlPlan(saved?.controlPlan || controlPlanText || '');
       setHasSavedNote(true);
       success('Catatan SOAP berhasil disimpan');
@@ -1650,6 +1661,7 @@ export default function RekamMedisPage() {
                       subjective={subjective}
                       objective={objective}
                       assessment={assessment}
+                      diagnoses={diagnoses}
                       treatment={treatment}
                       plan={plan}
                       controlPlan={savedControlPlan}
@@ -1721,6 +1733,8 @@ export default function RekamMedisPage() {
                             disabled={submitting}
                           />
                         </div>
+
+                        <DiagnosisPicker value={diagnoses} onChange={setDiagnoses} disabled={submitting} />
 
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">

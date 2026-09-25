@@ -516,6 +516,22 @@ function patientOrigin(level: 'kecamatan' | 'kelurahan') {
 const now = () => new Date().toISOString();
 const list = <T,>(rows: T[], query: Query, limit = 10) => paginate(rows, query, limit);
 
+/** A handful of real ICD-10 / SNOMED CT codes for the demo's diagnosis search. */
+const DEMO_TERMS = [
+  { system: 'icd10', code: 'K02.1', display: 'Caries of dentine', nameId: 'Karies dentin', category: 'Dental caries', aliases: ['gigi berlubang', 'karies media', 'karies profunda'], explanation: 'Lubang gigi yang sudah mencapai dentin. Sering terasa ngilu saat makan manis atau dingin; ditangani dengan penambalan.' },
+  { system: 'icd10', code: 'K02.0', display: 'Caries limited to enamel', nameId: 'Karies email', category: 'Dental caries', aliases: ['karies superfisial', 'gigi berlubang kecil'], explanation: 'Lubang atau demineralisasi yang masih terbatas pada lapisan email.' },
+  { system: 'icd10', code: 'K04.0', display: 'Pulpitis', nameId: 'Pulpitis', category: 'Diseases of pulp and periapical tissues', aliases: ['radang saraf gigi', 'sakit gigi berdenyut'], explanation: 'Peradangan pulpa (saraf gigi), biasanya karena karies dalam.' },
+  { system: 'icd10', code: 'K04.7', display: 'Periapical abscess without sinus', nameId: 'Abses periapikal tanpa fistula', category: 'Diseases of pulp and periapical tissues', aliases: ['abses gigi', 'gigi bengkak'], explanation: 'Kumpulan nanah di ujung akar gigi tanpa saluran keluar; biasanya nyeri hebat dan bengkak.' },
+  { system: 'icd10', code: 'K05.1', display: 'Chronic gingivitis', nameId: 'Gingivitis kronis', category: 'Gingivitis and periodontal diseases', aliases: ['radang gusi', 'gusi berdarah'], explanation: 'Peradangan gusi menahun akibat plak dan karang gigi.' },
+  { system: 'icd10', code: 'K05.3', display: 'Chronic periodontitis', nameId: 'Periodontitis kronis', category: 'Gingivitis and periodontal diseases', aliases: ['gigi goyang', 'penyakit gusi'], explanation: 'Kerusakan jaringan penyangga gigi secara bertahap; gigi bisa goyang.' },
+  { system: 'icd10', code: 'K01.1', display: 'Impacted teeth', nameId: 'Gigi impaksi', category: 'Embedded and impacted teeth', aliases: ['gigi bungsu', 'impaksi'], explanation: 'Gigi gagal tumbuh sempurna karena terhalang — paling sering gigi geraham bungsu.' },
+  { system: 'icd10', code: 'K03.6', display: 'Deposits [accretions] on teeth', nameId: 'Deposit pada gigi (karang gigi)', category: 'Other diseases of hard tissues of teeth', aliases: ['karang gigi', 'kalkulus', 'plak'], explanation: 'Endapan pada permukaan gigi: plak, karang gigi, atau noda. Ditangani dengan scaling.' },
+  { system: 'snomed', code: '44828002', display: 'Dentin caries', nameId: 'Karies dentin', category: '', aliases: ['gigi berlubang'], explanation: 'Lubang gigi yang sudah mencapai dentin.' },
+  { system: 'snomed', code: '80967001', display: 'Dental caries', nameId: 'Karies gigi (tidak spesifik)', category: '', aliases: ['gigi berlubang', 'karies'], explanation: 'Kerusakan jaringan keras gigi akibat asam dari bakteri plak.' },
+  { system: 'snomed', code: '32620007', display: 'Pulpitis', nameId: 'Pulpitis', category: '', aliases: ['radang saraf gigi'], explanation: 'Peradangan pulpa (saraf gigi).' },
+  { system: 'snomed', code: '72621003', display: 'Chronic gingivitis', nameId: 'Gingivitis kronis', category: '', aliases: ['radang gusi'], explanation: 'Peradangan gusi menahun.' },
+];
+
 const routes: [RegExp, Handler][] = [
   // dashboard
   [/^\/dashboard\/summary$/, () => {
@@ -645,6 +661,25 @@ const routes: [RegExp, Handler][] = [
 
   // encounters
   [/^\/encounters\/(\d+)\/(soap-note|dental-examination|physical-examination)$/, () => null],
+  [/^\/terminology\/search$/, (_m, q) => {
+    const words = (q.get('q') || '').toLowerCase().split(/\s+/).filter(Boolean);
+    return DEMO_TERMS.filter((t) => t.system === q.get('system'))
+      .filter((t) => words.every((w) => [t.code, t.display, t.nameId, ...t.aliases].join(' ').toLowerCase().includes(w)))
+      .slice(0, 12)
+      .map(({ system, code, display, nameId }) => ({ system, code, display, nameId }));
+  }],
+  [/^\/terminology\/(icd10|snomed)\/(.+)$/, (m) => {
+    const t = DEMO_TERMS.find((x) => x.system === m[1] && x.code === decodeURIComponent(m[2]));
+    if (!t) return null;
+    const eq = DEMO_TERMS.find((x) => x.system !== t.system && x.nameId === t.nameId);
+    return {
+      ...t,
+      classification: t.system === 'icd10'
+        ? { chapter: { roman: 'XI', range: 'K00–K93', name: 'Penyakit sistem pencernaan' }, block: { range: 'K00–K14', name: 'Penyakit rongga mulut, kelenjar ludah, dan rahang' }, category: { code: t.code.slice(0, 3), display: t.category } }
+        : null,
+      equivalent: eq ? { system: eq.system, code: eq.code, display: eq.display } : null,
+    };
+  }],
   [/^\/encounters\/(\d+)\/(prescriptions|supporting-exam-images)$/, () => []],
   [/^\/encounters\/(\d+)$/, (m) => {
     const e = demoEncounters[Number(m[1]) - 1];
