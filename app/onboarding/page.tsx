@@ -57,8 +57,12 @@ interface TarifRow {
   hargaJual: string;
 }
 
+// Only a React key for the row — crypto.randomUUID() needs iOS 15.4+, so
+// older iPhones get a counter-based id instead.
+let tarifRowSeq = 0;
 function newTarifRow(): TarifRow {
-  return { id: crypto.randomUUID(), name: '', kategori: '', hargaJual: '' };
+  const id = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `row-${Date.now()}-${++tarifRowSeq}`;
+  return { id, name: '', kategori: '', hargaJual: '' };
 }
 
 interface InvitedDoctor {
