@@ -78,10 +78,10 @@ const ENDPOINTS: Endpoint[] = [
   {
     method: 'POST',
     path: '/reservations/lookup',
-    desc: 'Cari reservasi aktif pasien tanpa token: nomor HP dan nama harus cocok dengan saat reservasi. Maks. 5 percobaan gagal per nomor per 15 menit.',
+    desc: 'Cari reservasi aktif pasien tanpa token: nomor HP harus sama, nama cukup nama depan/belakang. Maks. 5 percobaan gagal per nomor per 15 menit.',
     params: [
       { name: 'patientPhone', desc: 'wajib; format 08…, 62…, atau +62… sama saja' },
-      { name: 'patientName', desc: 'wajib; huruf besar/kecil dan tanda baca diabaikan' },
+      { name: 'patientName', desc: 'wajib; nama depan saja cukup (min. 3 huruf); huruf besar/kecil dan sapaan Ibu/Pak diabaikan' },
     ],
     response: `[
   { "token": "8f2c…", "status": "pending", "reservationDate": "2026-10-01",
