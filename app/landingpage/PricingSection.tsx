@@ -106,6 +106,8 @@ export default function PricingSection() {
               <li><CheckIcon />Transaksi &amp; tarif layanan</li>
               <li><CheckIcon />Rekam medis digital lengkap</li>
               <li><CheckIcon />Laporan keuangan &amp; kunjungan</li>
+              <li><CheckIcon />Diagnosis ICD-10 &amp; SNOMED CT</li>
+              <li><CheckIcon />API website: 1.000 request/hari</li>
               <li><CheckIcon />1 klinik</li>
             </ul>
             <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-block">Pilih Paket</a>
@@ -129,6 +131,7 @@ export default function PricingSection() {
               <li><CheckIcon />User management multi-role</li>
               <li><CheckIcon />Dukungan prioritas</li>
               <li><CheckIcon />Backup data berkala</li>
+              <li><CheckIcon />API website: 10.000 request/hari</li>
               <li><CheckIcon />1 klinik</li>
             </ul>
             <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-grad btn-block">Pilih Paket</a>
@@ -154,6 +157,7 @@ export default function PricingSection() {
               <li><CheckIcon />Semua fitur Pro di tiap klinik</li>
               <li><CheckIcon />Harga per klinik tambahan</li>
               <li><CheckIcon />1x biaya admin owner</li>
+              <li><CheckIcon />API: 1.000.000 request/hari</li>
               <li><CheckIcon />Aktivasi dibantu tim ApexRecord</li>
             </ul>
             <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-block">Pilih Paket</a>

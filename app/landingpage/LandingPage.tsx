@@ -27,7 +27,7 @@ const FEATURES = [
       </svg>
     ),
     title: 'Rekam Medis Digital & Odontogram',
-    desc: 'Riwayat pemeriksaan, catatan SOAP, rencana perawatan, dan odontogram interaktif untuk praktik dokter gigi — semua rapi dan mudah dicari kembali.',
+    desc: 'Catatan SOAP dengan diagnosis ICD-10 & SNOMED CT, rencana perawatan, dan odontogram interaktif untuk praktik dokter gigi — rapi dan mudah dicari kembali.',
   },
   {
     icon: (
@@ -57,7 +57,7 @@ const FEATURES = [
       </svg>
     ),
     title: 'Reservasi & Antrian Online',
-    desc: 'Halaman booking publik per klinik, slot jadwal dokter otomatis, dan pengingat kunjungan ulang (recall) ke pasien.',
+    desc: 'Booking online dari website klinik sendiri, slot mengikuti jadwal tiap dokter, pasien cek status cukup dengan nomor WhatsApp, plus pengingat kunjungan ulang (recall).',
   },
   {
     icon: (
@@ -103,7 +103,55 @@ const FEATURES = [
       </svg>
     ),
     title: 'Audit Log Menyeluruh',
-    desc: 'Setiap perubahan data tercatat siapa, kapan, dan apa yang diubah — jejak yang jelas untuk keamanan & akuntabilitas tim.',
+    desc: 'Setiap akses dan perubahan data tercatat siapa, kapan, dan apa — aktivitas tak wajar ditandai otomatis sebagai peringatan.',
+  },
+];
+
+const DX_DEMO = [
+  { code: 'K02.1', id: 'Karies dentin', en: 'Caries of dentine' },
+  { code: 'K02.0', id: 'Karies email', en: 'Caries limited to enamel' },
+  { code: 'K02.9', id: 'Karies gigi (tidak spesifik)', en: 'Dental caries, unspecified' },
+];
+
+const SECURITY = [
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none">
+        <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth={2} />
+        <path d="M8 11V8a4 4 0 118 0v3M12 15v2" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+      </svg>
+    ),
+    title: 'Verifikasi Dua Langkah',
+    desc: 'Akun owner dan super admin wajib MFA dengan aplikasi authenticator — password bocor saja tidak cukup untuk masuk.',
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M12 8v4l2.5 2.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
+        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth={2} />
+      </svg>
+    ),
+    title: 'Sesi & Login Terkendali',
+    desc: 'Logout atau ganti password langsung mencabut sesi lama, dan login yang berulang kali gagal dikunci sementara.',
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M12 9v4M12 17h.01M10.3 3.9L2.4 18a2 2 0 001.7 3h15.8a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+    title: 'Audit & Peringatan',
+    desc: 'Siapa membuka dan mengubah rekam medis tercatat; akses dalam jumlah tak wajar ditandai sebagai peringatan.',
+  },
+  {
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M12 3l8 4v5c0 5-3.4 8.4-8 9-4.6-.6-8-4-8-9V7l8-4z" stroke="currentColor" strokeWidth={2} strokeLinejoin="round" />
+        <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+    title: 'Akses Sesuai Peran',
+    desc: 'Dokter, admin, dan owner hanya melihat yang perlu. API website tidak pernah membuka data rekam medis pasien.',
   },
 ];
 
@@ -133,7 +181,7 @@ const AUDIENCE = [
 const FAQS = [
   {
     q: 'Data pasien saya aman?',
-    a: 'Ya. Data rekam medis tersimpan terenkripsi, akses diatur berdasarkan peran (dokter, admin, owner), dan setiap perubahan data tercatat di audit log — jadi selalu jelas siapa mengubah apa dan kapan.',
+    a: 'Ya. Data rekam medis tersimpan terenkripsi, akses diatur berdasarkan peran (dokter, admin, owner), akun owner dilindungi verifikasi dua langkah (MFA), login yang berulang kali gagal dikunci sementara, dan setiap akses maupun perubahan data tercatat di audit log.',
     open: true,
   },
   {
@@ -147,6 +195,14 @@ const FAQS = [
   {
     q: 'Apakah bisa dipakai untuk lebih dari satu cabang klinik?',
     a: 'Bisa. Role Multi-Klinik Owner memberi Anda satu dashboard untuk memantau performa seluruh cabang sekaligus, tanpa perlu login bergantian.',
+  },
+  {
+    q: 'Apakah diagnosis sudah memakai standar ICD-10 dan SNOMED CT?',
+    a: 'Sudah. Saat mengisi Assessment di catatan SOAP, dokter bisa mencari diagnosis ICD-10 (18.500+ kode) atau SNOMED CT (499.000+ konsep) lewat kode, nama resmi, maupun nama sehari-hari dalam bahasa Indonesia — misalnya “gigi berlubang” atau “radang gusi” — lengkap dengan penjelasannya.',
+  },
+  {
+    q: 'Bisakah jadwal dokter dan reservasi tampil di website klinik saya?',
+    a: 'Bisa. Buat API key di Pengaturan → API, lalu tim IT atau pembuat website Anda tinggal menampilkan jam buka, profil & jadwal dokter, layanan, slot kosong, dan formulir reservasi. Dokumentasinya tersedia langsung di halaman tersebut. Kuota request mengikuti paket langganan.',
   },
   {
     q: 'Apa yang terjadi setelah masa uji coba 15 hari berakhir?',
@@ -180,6 +236,8 @@ export default function LandingPage() {
           </a>
           <nav className="links">
             <a href="#fitur">Fitur</a>
+            <a href="#diagnosis">Diagnosis</a>
+            <a href="#api">API Website</a>
             <a href="#laporan-pro">Laporan Pro</a>
             <a href="#harga">Harga</a>
             <a href="#faq">FAQ</a>
@@ -216,6 +274,11 @@ export default function LandingPage() {
                 <span className="trust-item"><CheckIcon />Setup aktif &lt; 10 menit</span>
                 <span className="trust-item"><CheckIcon />Mulai dari Rp150rb/bulan</span>
               </div>
+              <a href="#diagnosis" className="new-strip">
+                <span className="new-tag">Baru</span>
+                Diagnosis ICD-10 &amp; SNOMED CT · API untuk website klinik
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </a>
             </div>
 
             <div className="hero-visual">
@@ -297,6 +360,109 @@ export default function LandingPage() {
             <div className="feat-grid">
               {FEATURES.map((f, i) => (
                 <Reveal key={f.title} delay={(i % 3) * 60} className="feat-card">
+                  <div className="feat-icon">{f.icon}</div>
+                  <h3>{f.title}</h3>
+                  <p>{f.desc}</p>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* SPOTLIGHT: DIAGNOSIS ICD-10 & SNOMED CT */}
+        <section id="diagnosis">
+          <div className="wrap">
+            <Reveal className="spotlight">
+              <div>
+                <span className="eyebrow">Baru · Diagnosis Terstandar</span>
+                <h2 className="spot-title">Diagnosis <em>ICD-10 &amp; SNOMED CT</em> — cukup ketik seperti bicara.</h2>
+                <p className="spot-lead">Di bagian Assessment catatan SOAP, cari diagnosis lewat kode, nama resmi, atau istilah sehari-hari. Tidak perlu hafal kode, tidak perlu buka buku ICD.</p>
+                <ul className="spot-list">
+                  <li><CheckIcon /><span><b>18.500+ kode ICD-10 &amp; 499.000+ konsep SNOMED CT</b> — standar yang dipakai SATUSEHAT dan klaim.</span></li>
+                  <li><CheckIcon /><span><b>Cari dengan bahasa Indonesia</b> — “gigi berlubang”, “radang gusi”, “gigi bungsu”, “darah tinggi” langsung ketemu kodenya.</span></li>
+                  <li><CheckIcon /><span><b>Ada penjelasannya</b> — arti diagnosis, nama lain, bab &amp; kategori ICD-10, serta padanan kodenya di SNOMED CT.</span></li>
+                  <li><CheckIcon /><span><b>Diagnosis utama &amp; catatan per gigi</b> — misalnya “K02.1 · gigi 36”, tersimpan rapi di rekam medis.</span></li>
+                </ul>
+              </div>
+
+              <div className="dx-demo" aria-hidden="true">
+                <div className="dx-demo-tabs"><span className="on">ICD-10</span><span>SNOMED CT</span></div>
+                <div className="dx-demo-search">
+                  <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth={2} /><path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" /></svg>
+                  gigi berlubang<span className="caret" />
+                </div>
+                <div className="dx-demo-list">
+                  {DX_DEMO.map((d, i) => (
+                    <div key={d.code} className={`dx-demo-row${i === 0 ? ' on' : ''}`}>
+                      <span className="dx-demo-code">{d.code}</span>
+                      <span><b>{d.id}</b><small>{d.en}</small></span>
+                    </div>
+                  ))}
+                </div>
+                <div className="dx-demo-explain">
+                  <div className="t">Karies dentin</div>
+                  <p>Lubang gigi yang sudah mencapai dentin. Sering terasa ngilu saat makan manis atau dingin; ditangani dengan penambalan.</p>
+                  <dl>
+                    <dt>Bab ICD-10</dt><dd>XI · Penyakit sistem pencernaan (K00–K93)</dd>
+                    <dt>Padanan SNOMED CT</dt><dd><code>44828002</code> Dentin caries</dd>
+                  </dl>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* SPOTLIGHT: API WEBSITE KLINIK */}
+        <section id="api">
+          <div className="wrap">
+            <Reveal className="spotlight spotlight-flip">
+              <div className="api-demo" aria-hidden="true">
+                <div className="api-demo-head">
+                  <span className="dots"><i /><i /><i /></span>
+                  <span className="t">website-klinik-anda.id</span>
+                </div>
+                <pre>
+                  <code>
+                    <span className="c">{'// jadwal dokter & slot kosong, langsung dari ApexRecord'}</span>{'\n'}
+                    <span className="k">const</span> dokter = <span className="k">await</span> api(<span className="s">&apos;/practitioners&apos;</span>);{'\n'}
+                    <span className="k">const</span> {'{ slots }'} = <span className="k">await</span> api(<span className="s">&apos;/slots?date=2026-10-01&apos;</span>);{'\n'}
+                    {'\n'}
+                    <span className="c">{'// pasien booking dari website Anda'}</span>{'\n'}
+                    <span className="k">await</span> api(<span className="s">&apos;/reservations&apos;</span>, {'{ method: '}<span className="s">&apos;POST&apos;</span>{', ... })'}
+                  </code>
+                </pre>
+                <div className="api-demo-usage">
+                  <div className="row"><span>Pemakaian hari ini</span><b>2.067 / 10.000</b></div>
+                  <div className="bar"><i style={{ width: '21%' }} /></div>
+                </div>
+              </div>
+
+              <div>
+                <span className="eyebrow">Baru · API Website Klinik</span>
+                <h2 className="spot-title">Website klinik Anda, <em>selalu sinkron</em> dengan jadwal di ApexRecord.</h2>
+                <p className="spot-lead">Ubah jam buka atau jadwal dokter sekali di ApexRecord — website klinik ikut berubah. Pasien bisa booking dan cek reservasinya sendiri.</p>
+                <ul className="spot-list">
+                  <li><CheckIcon /><span><b>Data siap tampil</b> — profil klinik, jam buka, dokter (foto &amp; jadwal praktik), layanan &amp; tarif, slot kosong.</span></li>
+                  <li><CheckIcon /><span><b>Reservasi online</b> — buat, cek, dan batalkan reservasi; pasien cek status cukup dengan nomor WhatsApp &amp; nama.</span></li>
+                  <li><CheckIcon /><span><b>Aman sejak awal</b> — API key terkunci ke domain website Anda, tanpa akses ke data rekam medis pasien.</span></li>
+                  <li><CheckIcon /><span><b>Kuota sesuai paket</b> — Starter 1.000, Pro 10.000, Multi Klinik 1.000.000 request/hari, dengan grafik pemakaian.</span></li>
+                </ul>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* SECURITY */}
+        <section id="keamanan">
+          <div className="wrap">
+            <Reveal className="section-head center">
+              <span className="eyebrow">Keamanan data pasien</span>
+              <h2>Rekam medis butuh pengamanan, bukan sekadar password.</h2>
+              <p>Lapisan perlindungan yang aktif otomatis — tanpa perlu diatur tim IT.</p>
+            </Reveal>
+            <div className="sec-grid">
+              {SECURITY.map((f, i) => (
+                <Reveal key={f.title} delay={i * 60} className="feat-card">
                   <div className="feat-icon">{f.icon}</div>
                   <h3>{f.title}</h3>
                   <p>{f.desc}</p>
@@ -425,6 +591,9 @@ export default function LandingPage() {
               <div className="foot-col">
                 <h4>Produk</h4>
                 <a href="#fitur">Fitur</a>
+                <a href="#diagnosis">Diagnosis ICD-10 &amp; SNOMED CT</a>
+                <a href="#api">API Website Klinik</a>
+                <a href="#keamanan">Keamanan Data</a>
                 <a href="#laporan-pro">Laporan Keuangan Pro</a>
                 <a href="#harga">Harga</a>
               </div>
