@@ -1,5 +1,6 @@
 'use client';
 
+import DiagnosisDemo from './DiagnosisDemo';
 import HeroPreview from './HeroPreview';
 import PricingSection from './PricingSection';
 import Reveal from './Reveal';
@@ -105,12 +106,6 @@ const FEATURES = [
     title: 'Audit Log Menyeluruh',
     desc: 'Setiap akses dan perubahan data tercatat siapa, kapan, dan apa — aktivitas tak wajar ditandai otomatis sebagai peringatan.',
   },
-];
-
-const DX_DEMO = [
-  { code: 'K02.1', id: 'Karies dentin', en: 'Caries of dentine' },
-  { code: 'K02.0', id: 'Karies email', en: 'Caries limited to enamel' },
-  { code: 'K02.9', id: 'Karies gigi (tidak spesifik)', en: 'Dental caries, unspecified' },
 ];
 
 const SECURITY = [
@@ -376,7 +371,7 @@ export default function LandingPage() {
               <div>
                 <span className="eyebrow">Baru · Diagnosis Terstandar</span>
                 <h2 className="spot-title">Diagnosis <em>ICD-10 &amp; SNOMED CT</em> — cukup ketik seperti bicara.</h2>
-                <p className="spot-lead">Di bagian Assessment catatan SOAP, cari diagnosis lewat kode, nama resmi, atau istilah sehari-hari. Tidak perlu hafal kode, tidak perlu buka buku ICD.</p>
+                <p className="spot-lead">Di bagian Assessment catatan SOAP, cari diagnosis lewat kode, nama resmi, atau istilah sehari-hari. Tidak perlu hafal kode, tidak perlu buka buku ICD. <b>Coba langsung di samping</b> — ini pencarian yang sama dengan di aplikasi.</p>
                 <ul className="spot-list">
                   <li><CheckIcon /><span><b>18.500+ kode ICD-10 &amp; 499.000+ konsep SNOMED CT</b> — standar yang dipakai SATUSEHAT dan klaim.</span></li>
                   <li><CheckIcon /><span><b>Cari dengan bahasa Indonesia</b> — “gigi berlubang”, “radang gusi”, “gigi bungsu”, “darah tinggi” langsung ketemu kodenya.</span></li>
@@ -385,29 +380,7 @@ export default function LandingPage() {
                 </ul>
               </div>
 
-              <div className="dx-demo" aria-hidden="true">
-                <div className="dx-demo-tabs"><span className="on">ICD-10</span><span>SNOMED CT</span></div>
-                <div className="dx-demo-search">
-                  <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth={2} /><path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth={2} strokeLinecap="round" /></svg>
-                  gigi berlubang<span className="caret" />
-                </div>
-                <div className="dx-demo-list">
-                  {DX_DEMO.map((d, i) => (
-                    <div key={d.code} className={`dx-demo-row${i === 0 ? ' on' : ''}`}>
-                      <span className="dx-demo-code">{d.code}</span>
-                      <span><b>{d.id}</b><small>{d.en}</small></span>
-                    </div>
-                  ))}
-                </div>
-                <div className="dx-demo-explain">
-                  <div className="t">Karies dentin</div>
-                  <p>Lubang gigi yang sudah mencapai dentin. Sering terasa ngilu saat makan manis atau dingin; ditangani dengan penambalan.</p>
-                  <dl>
-                    <dt>Bab ICD-10</dt><dd>XI · Penyakit sistem pencernaan (K00–K93)</dd>
-                    <dt>Padanan SNOMED CT</dt><dd><code>44828002</code> Dentin caries</dd>
-                  </dl>
-                </div>
-              </div>
+              <DiagnosisDemo />
             </Reveal>
           </div>
         </section>
