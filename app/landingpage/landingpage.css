@@ -425,7 +425,12 @@
   content: ''; position: absolute; inset: 0;
   background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 40px 40px;
+  /* Decorative only: sits behind the content and never swallows clicks
+     (it used to cover the CTA buttons, making them unclickable). */
+  pointer-events: none;
+  z-index: 0;
 }
+.lp .cta-band > *{ position: relative; z-index: 1; }
 .lp .cta-band h2{ font-family: var(--display); font-weight: 700; font-size: clamp(26px, 3.4vw, 38px); color: #fff; margin: 0 0 14px; position: relative; text-wrap: balance; }
 .lp .cta-band p{ color: rgba(255, 255, 255, 0.72); font-size: 15.5px; margin: 0 0 30px; position: relative; }
 .lp .cta-band .btn-ghost{ background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.28); color: #fff; }
