@@ -48,6 +48,9 @@ async function proxy(req: NextRequest, ctx: RouteContext) {
   if (authorization?.startsWith('Bearer apx_')) headers.set('authorization', authorization);
   const forwardedFor = req.headers.get('x-forwarded-for');
   if (forwardedFor) headers.set('x-forwarded-for', forwardedFor);
+  // So the backend builds file URLs (doctor photos) on this public host.
+  headers.set('x-forwarded-host', req.headers.get('x-forwarded-host') ?? req.headers.get('host') ?? req.nextUrl.host);
+  headers.set('x-forwarded-proto', req.headers.get('x-forwarded-proto') ?? req.nextUrl.protocol.replace(':', ''));
 
   let upstream: Response;
   try {

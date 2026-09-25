@@ -76,6 +76,19 @@ const ENDPOINTS: Endpoint[] = [
   "jamSlot": "10:00", "practitionerId": 3, "patientName": "Budi Santoso" }`,
   },
   {
+    method: 'POST',
+    path: '/reservations/lookup',
+    desc: 'Cari reservasi aktif pasien tanpa token: nomor HP dan nama harus cocok dengan saat reservasi. Maks. 5 percobaan gagal per nomor per 15 menit.',
+    params: [
+      { name: 'patientPhone', desc: 'wajib; format 08…, 62…, atau +62… sama saja' },
+      { name: 'patientName', desc: 'wajib; huruf besar/kecil dan tanda baca diabaikan' },
+    ],
+    response: `[
+  { "token": "8f2c…", "status": "pending", "reservationDate": "2026-10-01",
+    "jamSlot": "10:00", "patientName": "Budi Santoso", "practitionerName": "drg. Anisa Putri" }
+]`,
+  },
+  {
     method: 'GET',
     path: '/reservations/{token}',
     desc: 'Cek status reservasi: pending, confirmed, cancelled, atau completed.',
@@ -98,6 +111,8 @@ const ERRORS = [
   { status: 403, code: 'SUBSCRIPTION_INACTIVE', desc: 'Langganan klinik habis; API berhenti sementara.' },
   { status: 429, code: 'RATE_LIMITED', desc: 'Melebihi batas per menit. Tunggu lalu ulangi.' },
   { status: 429, code: 'QUOTA_EXCEEDED', desc: 'Kuota harian habis. Direset 00:00 WIB.' },
+  { status: 429, code: 'LOOKUP_LIMITED', desc: 'Terlalu banyak pencarian reservasi yang gagal. Coba lagi 15 menit.' },
+  { status: 404, code: 'RESERVATION_NOT_FOUND', desc: 'Tidak ada reservasi aktif dengan nomor HP + nama itu.' },
   { status: 400, code: '—', desc: 'Data tidak valid (mis. tanggal/jam salah format). Lihat error.message.' },
   { status: 404, code: '—', desc: 'Dokter/reservasi tidak ditemukan di klinik ini.' },
 ];
