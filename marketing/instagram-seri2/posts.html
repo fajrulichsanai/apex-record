@@ -114,23 +114,19 @@
   <div class="body">
 
   <div class="z" style="margin-top:80px">
-    <h1 style="font-size:104px">Catatan per gigi,<br><span class="hl">bukan per kertas.</span></h1>
-    <p class="lead" style="margin-top:28px;max-width:860px">Odontogram interaktif yang menyatu dengan SOAP dan riwayat pasien. Kunjungan berikutnya, kondisi tiap gigi langsung terlihat.</p>
+    <h1 style="font-size:90px">Catatan per gigi,<br><span class="hl">bukan per kertas.</span></h1>
+    <p class="lead" style="margin-top:22px;max-width:880px;font-size:27px">Odontogram menyatu dengan SOAP dan riwayat pasien. Kunjungan berikutnya, kondisi tiap gigi langsung terlihat.</p>
   </div>
 
-  <div class="z card" style="margin-top:50px;padding:34px 30px 30px">
+  <div class="z" style="margin-top:34px;background:#FAF9F6;border-radius:26px;padding:22px 22px 18px;box-shadow:0 30px 60px -30px rgba(0,0,0,.7)">
+    <div class="row" style="padding:0 6px 14px;color:#17160F"><b style="font-size:22px">Odontogram</b><span class="sp"></span><span class="mono" style="font-size:16px;color:#8D8B7E">FDI · Permenkes 269/2008</span></div>
     <div id="odo"></div>
-    <div class="row" style="gap:12px;margin-top:26px;flex-wrap:wrap">
-      <span class="chip" style="background:rgba(229,87,60,.18);color:#F08A72">● Karies</span>
-      <span class="chip" style="background:rgba(91,155,224,.18);color:#8FBCEB">● Tambalan</span>
-      <span class="chip" style="background:rgba(232,169,48,.18);color:#EDC06A">● Mahkota</span>
-      <span class="chip" style="background:rgba(255,255,255,.08);color:#B8B5A9">✕ Hilang</span>
-    </div>
+    <div class="row" style="gap:18px;margin-top:18px;padding:14px 8px 0;border-top:1px solid rgba(23,22,15,.1);flex-wrap:wrap;color:#55534A;font-size:17px" id="odo-legend"></div>
   </div>
 
-  <div class="z card" style="margin-top:20px;padding:10px 28px">
-    <div class="row" style="padding:16px 0;border-bottom:1px solid rgba(255,255,255,.08);gap:20px"><span class="mono" style="font-size:20px;color:#85826F;width:120px">3 Sep</span><span class="mono" style="color:#6BC85F;font-size:22px;font-weight:600">K02.1 · gigi 36</span><span style="font-size:21px;color:#B8B5A9">Karies dentin</span></div>
-    <div class="row" style="padding:16px 0;gap:20px"><span class="mono" style="font-size:20px;color:#85826F;width:120px">12 Mar</span><span class="mono" style="color:#8FBCEB;font-size:22px;font-weight:600">Tambalan · gigi 26</span><span style="font-size:21px;color:#B8B5A9">Komposit</span></div>
+  <div class="z card" style="margin-top:16px;padding:4px 28px">
+    <div class="row" style="padding:13px 0;border-bottom:1px solid rgba(255,255,255,.08);gap:20px"><span class="mono" style="font-size:20px;color:#85826F;width:120px">3 Sep</span><span class="mono" style="color:#F3F1EA;font-size:22px;font-weight:600">K02.1 · gigi 36</span><span style="font-size:21px;color:#B8B5A9">Karies dentin</span></div>
+    <div class="row" style="padding:13px 0;gap:20px"><span class="mono" style="font-size:20px;color:#85826F;width:120px">12 Mar</span><span class="mono" style="color:#7ED957;font-size:22px;font-weight:600">Tambalan · gigi 26</span><span style="font-size:21px;color:#B8B5A9">Komposit, oklusal–mesial</span></div>
   </div>
 
   </div>
@@ -370,25 +366,59 @@
 </section>
 
 <script>
-  // Odontogram (FDI): upper 18..11 | 21..28, lower 48..41 | 31..38
-  const odo=document.getElementById('odo');
-  const state={16:'k',26:'t',36:'k',37:'t',46:'m',18:'x',38:'x',11:'t',24:'k'};
-  const col={k:['rgba(229,87,60,.25)','#F08A72'],t:['rgba(91,155,224,.25)','#8FBCEB'],m:['rgba(232,169,48,.25)','#EDC06A'],x:['rgba(255,255,255,.04)','#6b685d']};
-  function row(nums){
-    const r=document.createElement('div');r.style.cssText='display:grid;grid-template-columns:repeat(16,1fr);gap:6px';
-    nums.forEach((n,i)=>{
-      const s=state[n];const c=s?col[s]:['rgba(255,255,255,.06)','#B8B5A9'];
-      const d=document.createElement('div');
-      d.style.cssText=`height:74px;border-radius:12px;background:${c[0]};border:1.5px solid ${s?c[1]:'rgba(255,255,255,.12)'};display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:600;color:${c[1]};${i===8?'margin-left:10px':''}`;
-      d.textContent=s==='x'?'✕':n; r.appendChild(d);
-    });
-    return r;
+  // Odontogram — same drawing rules as the app (components/odontogram/ToothIcon.tsx):
+  // anterior teeth = 4 triangles, posterior = 4 trapezoids + occlusal square.
+  const ODO_FILL={k:'#17160F',c:'#3E8E36',g:'#EC4899'};
+  // per tooth: surfaces by on-screen position (t,b,l,r,c) + marks
+  const TEETH={
+    18:{x:1}, 16:{c:'k'}, 11:{r:'c'}, 24:{r:'k'}, 26:{c:'c',l:'c'},
+    46:{c:'c',rct:1}, 36:{c:'k',t:'k'}, 38:{rrx:1}, 48:{x:1}, 75:{c:'g'}, 84:{c:'k'}
+  };
+  function toothSvg(n,size,deciduous){
+    const d=TEETH[n]||{}; const pos=n%10; const ant=deciduous?pos<=3:pos<=3;
+    const f=k=>d[k]?ODO_FILL[d[k]]:(deciduous?'#FEF3C7':'#FFFFFF');
+    const st='stroke="#55534A" stroke-width="1"';
+    let body = ant
+      ? `<path d="M0,0 L40,0 L20,20 Z" fill="${f('t')}" ${st}/><path d="M0,40 L40,40 L20,20 Z" fill="${f('b')}" ${st}/><path d="M0,0 L0,40 L20,20 Z" fill="${f('l')}" ${st}/><path d="M40,0 L40,40 L20,20 Z" fill="${f('r')}" ${st}/>`
+      : `<path d="M0,0 L40,0 L28,12 L12,12 Z" fill="${f('t')}" ${st}/><path d="M0,40 L40,40 L28,28 L12,28 Z" fill="${f('b')}" ${st}/><path d="M0,0 L12,12 L12,28 L0,40 Z" fill="${f('l')}" ${st}/><path d="M40,0 L28,12 L28,28 L40,40 Z" fill="${f('r')}" ${st}/><rect x="12" y="12" width="16" height="16" fill="${f('c')}" ${st}/>`;
+    if(d.x) body+='<line x1="3" y1="3" x2="37" y2="37" stroke="#17160F" stroke-width="3"/><line x1="37" y1="3" x2="3" y2="37" stroke="#17160F" stroke-width="3"/>';
+    if(d.rrx) body+='<path d="M8,24 L16,32 L32,12" fill="none" stroke="#17160F" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>';
+    return `<svg width="${size}" height="${size}" viewBox="0 0 40 40"><rect x="0.5" y="0.5" width="39" height="39" fill="${deciduous?'#FEF3C7':'#fff'}"/>${body}<rect x="0.5" y="0.5" width="39" height="39" fill="none" stroke="#55534A" stroke-width="1"/></svg>`;
   }
-  const up=[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
-  const lo=[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
-  odo.appendChild(row(up));
-  const sep=document.createElement('div');sep.style.cssText='height:2px;background:rgba(255,255,255,.1);margin:14px 0;border-radius:2px';odo.appendChild(sep);
-  odo.appendChild(row(lo));
+  function odoRow(left,right,{upper,size,deciduous}){
+    const wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;justify-content:center;gap:18px';
+    [left,right].forEach(half=>{
+      const h=document.createElement('div');h.style.cssText='display:flex;gap:5px';
+      half.forEach(n=>{
+        const d=TEETH[n]||{};
+        const cell=document.createElement('div');
+        cell.style.cssText=`display:flex;flex-direction:${upper?'column':'column-reverse'};align-items:center;gap:4px`;
+        const num=`<div style="font-family:'JetBrains Mono',monospace;font-size:${deciduous?13:15}px;font-weight:600;color:${d.x||d.rrx||Object.keys(d).length?'#17160F':'#8D8B7E'}">${n}</div>`;
+        const rct=`<div style="height:12px">${d.rct?'<svg width="16" height="12" viewBox="0 0 16 12"><path d="M8,12 L0,0 L16,0 Z" fill="#fff" stroke="#17160F" stroke-width="1.2"/></svg>':''}</div>`;
+        cell.innerHTML = upper ? num+toothSvg(n,size,deciduous)+rct : num+toothSvg(n,size,deciduous)+rct;
+        h.appendChild(cell);
+      });
+      wrap.appendChild(h);
+    });
+    return wrap;
+  }
+  const odo=document.getElementById('odo');
+  odo.style.cssText='display:flex;flex-direction:column;gap:4px;align-items:center';
+  odo.appendChild(odoRow([18,17,16,15,14,13,12,11],[21,22,23,24,25,26,27,28],{upper:true,size:46}));
+  odo.appendChild(odoRow([55,54,53,52,51],[61,62,63,64,65],{upper:true,size:36,deciduous:true}));
+  odo.appendChild(odoRow([85,84,83,82,81],[71,72,73,74,75],{upper:false,size:36,deciduous:true}));
+  odo.appendChild(odoRow([48,47,46,45,44,43,42,41],[31,32,33,34,35,36,37,38],{upper:false,size:46}));
+  const lg=document.getElementById('odo-legend');
+  const sw=(inner)=>`<svg width="22" height="22" viewBox="0 0 40 40"><rect x="1" y="1" width="38" height="38" fill="#fff" stroke="#55534A" stroke-width="2"/>${inner}</svg>`;
+  lg.innerHTML=[
+    [sw('<rect x="12" y="12" width="16" height="16" fill="#17160F"/>'),'Karies'],
+    [sw('<rect x="12" y="12" width="16" height="16" fill="#3E8E36"/>'),'Tambalan komposit'],
+    [sw('<rect x="12" y="12" width="16" height="16" fill="#EC4899"/>'),'GIC'],
+    [sw('<line x1="6" y1="6" x2="34" y2="34" stroke="#17160F" stroke-width="4"/><line x1="34" y1="6" x2="6" y2="34" stroke="#17160F" stroke-width="4"/>'),'Hilang'],
+    [sw('<path d="M8,24 L16,32 L32,12" fill="none" stroke="#17160F" stroke-width="4"/>'),'Sisa akar'],
+    ['<svg width="18" height="14" viewBox="0 0 16 12"><path d="M8,12 L0,0 L16,0 Z" fill="#fff" stroke="#17160F" stroke-width="1.4"/></svg>','Perawatan saluran akar'],
+  ].map(([i,t])=>`<span style="display:inline-flex;align-items:center;gap:7px">${i}${t}</span>`).join('');
 
   // Heatmap
   const heat=document.getElementById('heat');
