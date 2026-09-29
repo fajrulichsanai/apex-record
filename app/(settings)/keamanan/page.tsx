@@ -6,7 +6,6 @@ import { ApiError } from '@/lib/api-client';
 import { mfaApi, type MfaSetupResult } from '@/lib/mfa';
 import { useToast } from '@/lib/toast-context';
 import { useAuth } from '@/lib/auth-context';
-import { MFA_ENFORCED_ROLES } from '@/lib/mfa-gate-context';
 import SettingsTabs from '@/components/settings/SettingsTabs';
 import '../../styles/keamanan.css';
 
@@ -18,6 +17,7 @@ export default function KeamananPage() {
 
   const [loading, setLoading] = useState(true);
   const [mfaEnabled, setMfaEnabled] = useState(false);
+  const [mfaAvailable, setMfaAvailable] = useState(true);
   const [step, setStep] = useState<Step>('idle');
   const [submitting, setSubmitting] = useState(false);
 
@@ -33,6 +33,7 @@ export default function KeamananPage() {
       setLoading(true);
       const status = await mfaApi.getStatus();
       setMfaEnabled(status.enabled);
+      setMfaAvailable(status.available !== false);
     } catch (err) {
       error(err instanceof ApiError ? err.message : 'Gagal memuat status MFA');
     } finally {
@@ -116,14 +117,25 @@ export default function KeamananPage() {
           Kelola verifikasi dua langkah (MFA) untuk akun Anda. Wajib untuk akun Owner dan Super Admin; disarankan untuk akun lainnya.
         </p>
 
-        {!loading && !mfaEnabled && user && MFA_ENFORCED_ROLES.includes(user.role) && (
+        {!loading && !mfaAvailable && (
+          <div className="keamanan-card">
+            <h2>Verifikasi Dua Langkah (MFA)</h2>
+            <p className="keamanan-status-off">Sedang dinonaktifkan</p>
+            <p>
+              MFA sedang dinonaktifkan untuk semua akun. Login cukup memakai email dan password. Fitur ini akan
+              diaktifkan kembali nanti.
+            </p>
+          </div>
+        )}
+
+        {!loading && mfaAvailable && !mfaEnabled && user?.mfaRequired && (
           <div className="keamanan-mandatory-notice">
             Peran Anda ({user.role}) wajib mengaktifkan MFA. Halaman lain tidak bisa diakses sampai Anda menyelesaikan
             setup di bawah ini.
           </div>
         )}
 
-        {loading ? (
+        {!mfaAvailable ? null : loading ? (
           <div className="keamanan-card">Memuat...</div>
         ) : step === 'setup' && setupData ? (
           <div className="keamanan-card">

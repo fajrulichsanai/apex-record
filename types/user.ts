@@ -11,6 +11,8 @@ export interface User {
   lastLoginAt?: string | null;
   createdAt: string;
   mfaEnabled?: boolean;
+  /** Set by the backend: this account must turn MFA on first. False while MFA is switched off. */
+  mfaRequired?: boolean;
 }
 
 export interface RoleOption {

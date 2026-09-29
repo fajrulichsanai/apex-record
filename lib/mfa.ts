@@ -2,6 +2,8 @@ import { apiClient } from './api-client';
 
 export interface MfaStatus {
   enabled: boolean;
+  /** False while MFA is switched off on the server (MFA_ENABLED unset). */
+  available?: boolean;
 }
 
 export interface MfaSetupResult {

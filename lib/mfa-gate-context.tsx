@@ -6,9 +6,6 @@ import { useAuth } from './auth-context';
 import { setOnMfaSetupRequired } from './api-client';
 import { useToast } from './toast-context';
 
-// Must match MFA_ENFORCED_ROLES in the backend's mfa-enforcement.guard.ts — Admin and
-// Dokter can opt in from /keamanan but are not forced to.
-export const MFA_ENFORCED_ROLES = ['super_admin', 'multi_clinic_owner', 'owner'];
 const EXEMPT_PATHS = [
   '/',
   '/keamanan',
@@ -51,7 +48,9 @@ export function MfaGateProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (loading || !user) return;
     if (EXEMPT_PATHS.includes(pathname)) return;
-    if (MFA_ENFORCED_ROLES.includes(user.role) && !user.mfaEnabled) {
+    // The backend decides (user.mfaRequired): it is false for every role while
+    // MFA is switched off on the server.
+    if (user.mfaRequired && !user.mfaEnabled) {
       redirectToSetup();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
