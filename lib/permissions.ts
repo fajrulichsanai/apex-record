@@ -53,7 +53,10 @@ const FULL_ACCESS: FeatureKey[] = [
 ];
 
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
-  super_admin: FULL_ACCESS,
+  // A super admin belongs to no clinic, so clinic pages have nothing to show
+  // (the backend refuses them with NO_CLINIC_ASSIGNED); clinic data is reached
+  // by impersonating the owner. The API and user pages have their own clinic picker.
+  super_admin: ['api', 'user-management', 'keamanan', 'tampilan'],
   multi_clinic_owner: ['keamanan', 'tampilan'],
   // Data requests (UU PDP) are the clinic owner's to make.
   owner: [...FULL_ACCESS, 'onboarding', 'data-privasi'],

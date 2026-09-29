@@ -89,10 +89,11 @@ export default function MonthlyReportPanel({ selfView = false }: MonthlyReportPa
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
+  const currentYear = now.getFullYear();
   const yearOptions = useMemo(() => {
-    const years = [now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2];
+    const years = [currentYear, currentYear - 1, currentYear - 2];
     return years.map((y) => ({ value: String(y), label: String(y) }));
-  }, [now]);
+  }, [currentYear]);
 
   useEffect(() => {
     let active = true;

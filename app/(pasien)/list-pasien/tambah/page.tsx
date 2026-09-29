@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 import PatientWizard from '@/components/pasien/PatientWizard';
 import { patientsApi, PatientPayload } from '@/lib/patients';
 import { reservationsApi } from '@/lib/reservations';
@@ -66,6 +67,7 @@ function TambahPasienPageInner() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="pasien">
       <main className="content patient-form-page">
         <PatientWizard
           mode="create"
@@ -75,6 +77,7 @@ function TambahPasienPageInner() {
           onCancel={handleCancel}
         />
       </main>
+      </FeatureGuard>
     </DashboardLayout>
   );
 }
