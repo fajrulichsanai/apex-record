@@ -8,6 +8,7 @@ import { billingApi, BillingDetail, DiscountType } from '@/lib/billing';
 import { Tarif } from '@/lib/tarif';
 import { useToast } from '@/lib/toast-context';
 import { waLink } from '@/lib/utils/whatsapp';
+import PaymentModal, { PAYMENT_METHOD_LABEL } from './PaymentModal';
 import './BillingDetailModal.css';
 
 interface BillingDetailModalProps {
@@ -74,6 +75,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
   const [sendingWa, setSendingWa] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     isMounted.current = true;
@@ -223,6 +225,8 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
 
   const canEdit = detail && detail.status !== 'cancelled' && detail.status !== 'refunded';
   const canCancel = detail && detail.status === 'unpaid' && detail.paidAmount === 0;
+  const canPay =
+    !!detail && (detail.status === 'unpaid' || detail.status === 'partial') && Number(detail.outstandingAmount) > 0;
 
   const handleCancelBilling = async () => {
     if (!detail) return;
@@ -446,7 +450,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                           {detail.payments.map((p) => (
                             <tr key={p.id}>
                               <td>{p.receiptNumber}</td>
-                              <td>{p.method}</td>
+                              <td>{PAYMENT_METHOD_LABEL[p.method] ?? p.method}</td>
                               <td>{formatRupiah(p.amount)}</td>
                               <td>{formatDateTime(p.paidAt)}</td>
                             </tr>
@@ -474,7 +478,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                   <button type="button" className="btn-outline" onClick={onClose}>
                     Tutup
                   </button>
-                  {detail.status === 'paid' && (
+                  {(detail.status === 'paid' || detail.status === 'partial') && (
                     <button type="button" className="btn-outline" onClick={handleSendInvoiceWa} disabled={sendingWa}>
                       <span className="material-symbols-rounded">chat</span>
                       {sendingWa ? 'Menyiapkan…' : 'Kirim Invoice ke WA'}
@@ -487,8 +491,14 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                     </button>
                   )}
                   {canEdit && (
-                    <button type="button" className="btn-primary" onClick={startEdit}>
+                    <button type="button" className={canPay ? 'btn-outline' : 'btn-primary'} onClick={startEdit}>
                       Edit Invoice
+                    </button>
+                  )}
+                  {canPay && (
+                    <button type="button" className="btn-primary" onClick={() => setPaying(true)}>
+                      <span className="material-symbols-rounded">payments</span>
+                      {Number(detail.paidAmount) > 0 ? 'Pelunasan' : 'Bayar'}
                     </button>
                   )}
                 </>
@@ -497,6 +507,30 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
           </>
         ) : null}
       </div>
+
+      {paying && detail && (
+        <PaymentModal
+          billing={{
+            id: detail.id,
+            invoiceNumber: detail.invoiceNumber,
+            patientName: detail.patient?.name,
+            grandTotal: detail.grandTotal,
+            paidAmount: detail.paidAmount,
+            outstandingAmount: detail.outstandingAmount,
+          }}
+          onClose={() => setPaying(false)}
+          onPaid={async (result) => {
+            setPaying(false);
+            success(
+              result.billingStatus === 'paid'
+                ? 'Pembayaran dicatat — tagihan LUNAS'
+                : `Pembayaran dicatat — sisa Rp ${Math.round(result.outstandingAmount).toLocaleString('id-ID')}`,
+            );
+            await loadDetail();
+            onUpdated();
+          }}
+        />
+      )}
 
       <ConfirmationModal
         isOpen={confirmCancel}

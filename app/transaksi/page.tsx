@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
-import InputModal from '@/components/feedback/InputModal';
+import PaymentModal, { PAYMENT_METHOD_OPTIONS } from './PaymentModal';
 import CustomSelect from '@/components/form/CustomSelect';
 import BillingDetailModal from './BillingDetailModal';
 import '../styles/transaksi.css';
@@ -79,11 +79,8 @@ function emptyRow(): ItemRow {
   return { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal' };
 }
 
-const PAYMENT_METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
-  { value: 'cash', label: 'Tunai' },
-  { value: 'qris', label: 'QRIS' },
-  { value: 'transfer', label: 'Transfer Bank' },
-];
+/** How the patient pays when the transaction is saved. */
+type PayOption = 'full' | 'dp' | 'later';
 
 export default function TransaksiPage() {
   return (
@@ -110,12 +107,12 @@ function TransaksiPageInner() {
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [additionalFee, setAdditionalFee] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [payOption, setPayOption] = useState<PayOption>('full');
+  const [dpAmount, setDpAmount] = useState(0);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const [payingId, setPayingId] = useState<number | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [pendingPaymentBilling, setPendingPaymentBilling] = useState<BillingListItem | null>(null);
   const [selectedBillingId, setSelectedBillingId] = useState<number | null>(null);
 
@@ -275,6 +272,15 @@ function TransaksiPageInner() {
       discountType: r.discountType,
     }));
 
+    if (payOption === 'dp' && grandTotal > 0 && (dpAmount <= 0 || dpAmount >= grandTotal)) {
+      setSubmitError(
+        dpAmount >= grandTotal
+          ? 'DP harus lebih kecil dari total. Pilih "Lunas" bila dibayar penuh.'
+          : 'Isi jumlah DP yang dibayar sekarang.',
+      );
+      return;
+    }
+
     setSubmitting(true);
     try {
       const created = await billingApi.create({
@@ -286,11 +292,16 @@ function TransaksiPageInner() {
         notes: notes || undefined,
       });
 
-      if (created.grandTotal > 0) {
+      // Lunas: pay the whole bill now. DP: pay part now, the rest later via
+      // "Pelunasan". Bayar nanti: record no payment yet.
+      const payNow =
+        payOption === 'full' ? created.grandTotal : payOption === 'dp' ? Math.min(dpAmount, created.grandTotal) : 0;
+      if (payNow > 0) {
         try {
           await billingApi.createPayment(created.id, {
             method: paymentMethod,
-            amount: created.grandTotal,
+            amount: payNow,
+            note: payOption === 'dp' ? 'DP' : undefined,
           });
         } catch (paymentErr) {
           showError(
@@ -306,9 +317,17 @@ function TransaksiPageInner() {
       setTotalDiscount(0);
       setAdditionalFee(0);
       setPaymentMethod('cash');
+      setPayOption('full');
+      setDpAmount(0);
       setNotes('');
       await Promise.all([loadBillings(), loadUnbilledEncounters()]);
-      success('Transaksi berhasil disimpan');
+      success(
+        payNow > 0 && payNow < created.grandTotal
+          ? `Transaksi disimpan — DP ${formatRupiah(payNow)}, sisa ${formatRupiah(created.grandTotal - payNow)} bisa dilunasi nanti`
+          : payNow === 0 && created.grandTotal > 0
+            ? 'Transaksi disimpan — belum dibayar'
+            : 'Transaksi berhasil disimpan',
+      );
     } catch (err) {
       setSubmitError(err instanceof ApiError ? err.message : 'Gagal membuat transaksi');
     } finally {
@@ -318,30 +337,6 @@ function TransaksiPageInner() {
 
   function handleRecordPayment(billing: BillingListItem) {
     setPendingPaymentBilling(billing);
-    setShowPaymentModal(true);
-  }
-
-  async function performRecordPayment(amountStr: string) {
-    if (!pendingPaymentBilling) return;
-
-    const amount = Number(amountStr);
-    if (amountStr.trim() === '' || Number.isNaN(amount) || amount < 0) {
-      showError('Jumlah pembayaran tidak valid');
-      return;
-    }
-
-    setPayingId(pendingPaymentBilling.billingId);
-    try {
-      await billingApi.createPayment(pendingPaymentBilling.billingId, { method: 'cash', amount });
-      await loadBillings();
-      success('Pembayaran berhasil dicatat');
-      setShowPaymentModal(false);
-      setPendingPaymentBilling(null);
-    } catch (err) {
-      showError(err instanceof ApiError ? err.message : 'Gagal mencatat pembayaran');
-    } finally {
-      setPayingId(null);
-    }
   }
 
   return (
@@ -547,13 +542,62 @@ function TransaksiPageInner() {
                 </div>
 
                 <div className="form-field">
-                  <label>Metode Pembayaran</label>
-                  <CustomSelect
-                    value={paymentMethod}
-                    onChange={(value) => setPaymentMethod(value as PaymentMethod)}
-                    options={PAYMENT_METHOD_OPTIONS}
-                  />
+                  <label>Pembayaran</label>
+                  <div className="pay-option-group" role="radiogroup" aria-label="Cara pembayaran">
+                    {(
+                      [
+                        ['full', 'Lunas', 'Dibayar penuh sekarang'],
+                        ['dp', 'DP / Sebagian', 'Bayar sebagian, sisanya nanti'],
+                        ['later', 'Bayar Nanti', 'Belum ada pembayaran'],
+                      ] as [PayOption, string, string][]
+                    ).map(([value, title, desc]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        role="radio"
+                        aria-checked={payOption === value}
+                        className={`pay-option${payOption === value ? ' active' : ''}`}
+                        onClick={() => setPayOption(value)}
+                      >
+                        <strong>{title}</strong>
+                        <span>{desc}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {payOption === 'dp' && (
+                  <div className="form-field">
+                    <label>Jumlah DP dibayar sekarang</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={dpAmount || ''}
+                      onChange={(e) => setDpAmount(Math.max(0, Number(e.target.value) || 0))}
+                      placeholder="mis. 500000"
+                    />
+                    {grandTotal > 0 && (
+                      <div className="dp-quick">
+                        {[25, 50].map((pct) => (
+                          <button key={pct} type="button" onClick={() => setDpAmount(Math.round((grandTotal * pct) / 100))}>
+                            {pct}% ({formatRupiah(Math.round((grandTotal * pct) / 100))})
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {payOption !== 'later' && (
+                  <div className="form-field">
+                    <label>Metode Pembayaran</label>
+                    <CustomSelect
+                      value={paymentMethod}
+                      onChange={(value) => setPaymentMethod(value as PaymentMethod)}
+                      options={PAYMENT_METHOD_OPTIONS}
+                    />
+                  </div>
+                )}
 
                 <div className="form-field">
                   <label>Catatan (opsional)</label>
@@ -581,6 +625,18 @@ function TransaksiPageInner() {
                     <span>Total Bayar</span>
                     <span>{formatRupiah(grandTotal)}</span>
                   </div>
+                  {payOption !== 'full' && grandTotal > 0 && (
+                    <>
+                      <div className="summary-row">
+                        <span>Dibayar sekarang</span>
+                        <span>{formatRupiah(payOption === 'dp' ? Math.min(dpAmount, grandTotal) : 0)}</span>
+                      </div>
+                      <div className="summary-row due">
+                        <span>Sisa (dilunasi nanti)</span>
+                        <span>{formatRupiah(grandTotal - (payOption === 'dp' ? Math.min(dpAmount, grandTotal) : 0))}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {submitError && <div className="form-error">{submitError}</div>}
@@ -729,19 +785,21 @@ function TransaksiPageInner() {
                       </div>
                       <div className="transaksi-right">
                         <div className="transaksi-amount">{formatRupiah(b.grandTotal)}</div>
+                        {b.status === 'partial' && (
+                          <div className="transaksi-due">Sisa {formatRupiah(b.outstandingAmount)}</div>
+                        )}
                         <span className={`tag ${tag}`}>{label}</span>
                       </div>
                       {(b.status === 'unpaid' || b.status === 'partial') && (
                         <button
                           type="button"
                           className="btn-outline pay"
-                          disabled={payingId === b.billingId}
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRecordPayment(b);
                           }}
                         >
-                          {payingId === b.billingId ? 'Menyimpan…' : 'Bayar'}
+                          {b.status === 'partial' ? 'Pelunasan' : 'Bayar'}
                         </button>
                       )}
                     </div>
@@ -754,18 +812,24 @@ function TransaksiPageInner() {
       </main>
 
       {pendingPaymentBilling && (
-        <InputModal
-          isOpen={showPaymentModal}
-          title="Catat Pembayaran"
-          message={`Jumlah pembayaran untuk ${pendingPaymentBilling.invoiceNumber} (sisa ${formatRupiah(pendingPaymentBilling.outstandingAmount)})`}
-          placeholder="Jumlah pembayaran..."
-          defaultValue={String(Math.round(Number(pendingPaymentBilling.outstandingAmount)))}
-          numeric
-          confirmLabel="Catat Pembayaran"
-          onConfirm={performRecordPayment}
-          onCancel={() => {
-            setShowPaymentModal(false);
+        <PaymentModal
+          billing={{
+            id: pendingPaymentBilling.billingId,
+            invoiceNumber: pendingPaymentBilling.invoiceNumber,
+            patientName: pendingPaymentBilling.patientName,
+            grandTotal: pendingPaymentBilling.grandTotal,
+            paidAmount: pendingPaymentBilling.paidAmount,
+            outstandingAmount: pendingPaymentBilling.outstandingAmount,
+          }}
+          onClose={() => setPendingPaymentBilling(null)}
+          onPaid={async (result) => {
             setPendingPaymentBilling(null);
+            success(
+              result.billingStatus === 'paid'
+                ? 'Pembayaran dicatat — tagihan LUNAS'
+                : `Pembayaran dicatat — sisa ${formatRupiah(result.outstandingAmount)}`,
+            );
+            await loadBillings();
           }}
         />
       )}
