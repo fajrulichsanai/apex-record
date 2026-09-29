@@ -56,6 +56,25 @@ export interface FinancialReportQuery {
   type?: 'summary' | 'detailed';
 }
 
+export interface FinancialPaymentStats {
+  lunas: { count: number; amount: number };
+  /** Bills whose first payment was a DP; open* are the ones still partial. */
+  dp: { count: number; dpTotal: number; settledCount: number; openCount: number; openPaid: number; openOutstanding: number };
+  unpaid: { count: number; amount: number };
+  /** Rp 0 bills: follow-up already paid for, free consultation. */
+  free: { count: number };
+}
+
+export interface FinancialDiscountStats {
+  totalDiscount: number;
+  itemDiscount: number;
+  billDiscount: number;
+  billingsWithDiscount: number;
+  billCount: number;
+  grossBeforeDiscount: number;
+  discountRate: number;
+}
+
 export interface FinancialReportResponse {
   summary: {
     totalBilling: number;
@@ -87,6 +106,10 @@ export interface FinancialReportResponse {
     totalDiskon: number;
     labaBersih: number;
   }[];
+  /** Bills in the period by how they were paid. Missing on older backends. */
+  paymentStats?: FinancialPaymentStats;
+  /** Discounts given in the period. Missing on older backends. */
+  discountStats?: FinancialDiscountStats;
   businessMetrics: {
     ltv: { averageLtv: number; averageVisitsPerPatient: number; patientCount: number };
     arpv: number;

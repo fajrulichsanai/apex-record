@@ -36,6 +36,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import StatCard from '@/components/laporan/StatCard';
 import TindakanTerlarisTable from '@/components/laporan/TindakanTerlarisTable';
+import PaymentDiscountStats from '@/components/laporan/PaymentDiscountStats';
 import VisitDetailTable from '@/components/laporan/VisitDetailTable';
 import { canAccessFeature } from '@/lib/permissions';
 import { useAuth } from '@/lib/auth-context';
@@ -325,6 +326,29 @@ export default function LaporanKeuanganPage() {
               { Metrik: 'Perubahan vs Periode Sebelumnya (%)', Nilai: report.comparison.changePercent ?? '-' },
             ],
           },
+          ...(report.paymentStats
+            ? [
+                {
+                  name: 'Pembayaran & Diskon',
+                  rows: [
+                    { Metrik: 'Tagihan Lunas', Jumlah: report.paymentStats.lunas.count, Nominal: report.paymentStats.lunas.amount },
+                    { Metrik: 'Tagihan dengan DP', Jumlah: report.paymentStats.dp.count, Nominal: report.paymentStats.dp.dpTotal },
+                    { Metrik: 'DP sudah dilunasi', Jumlah: report.paymentStats.dp.settledCount, Nominal: '' },
+                    { Metrik: 'DP belum dilunasi (sisa)', Jumlah: report.paymentStats.dp.openCount, Nominal: report.paymentStats.dp.openOutstanding },
+                    { Metrik: 'Belum bayar', Jumlah: report.paymentStats.unpaid.count, Nominal: report.paymentStats.unpaid.amount },
+                    { Metrik: 'Gratis (Rp 0)', Jumlah: report.paymentStats.free.count, Nominal: 0 },
+                    ...(report.discountStats
+                      ? [
+                          { Metrik: 'Total diskon', Jumlah: report.discountStats.billingsWithDiscount, Nominal: report.discountStats.totalDiscount },
+                          { Metrik: 'Diskon per tindakan', Jumlah: '', Nominal: report.discountStats.itemDiscount },
+                          { Metrik: 'Diskon per tagihan', Jumlah: '', Nominal: report.discountStats.billDiscount },
+                          { Metrik: 'Diskon (% dari harga normal)', Jumlah: '', Nominal: report.discountStats.discountRate },
+                        ]
+                      : []),
+                  ],
+                },
+              ]
+            : []),
           {
             name: 'Pendapatan Harian',
             rows: report.byDay.map((d) => ({ Tanggal: d.date, Pendapatan: d.revenue, Terkumpul: d.collected })),
@@ -612,6 +636,10 @@ export default function LaporanKeuanganPage() {
             </div>
           </div>
         </div>
+
+        {!loading && report?.paymentStats && (
+          <PaymentDiscountStats payment={report.paymentStats} discount={report.discountStats} />
+        )}
 
         {report && (
           <div className="laporan-section">

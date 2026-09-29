@@ -55,7 +55,13 @@ export default function PaymentModal({
 
   const amount = Math.round(Number(amountText.replace(/\D/g, '')) || 0);
   const remainingAfter = Math.max(0, outstanding - amount);
-  const invalid = amount <= 0 ? 'Masukkan jumlah yang dibayar.' : amount > outstanding ? `Maksimal ${rupiah(outstanding)} (sisa tagihan).` : '';
+  // Nothing left to pay (a Rp 0 bill): Rp 0 simply marks it settled.
+  const invalid =
+    amount <= 0 && outstanding > 0
+      ? 'Masukkan jumlah yang dibayar.'
+      : amount > outstanding
+        ? `Maksimal ${rupiah(outstanding)} (sisa tagihan).`
+        : '';
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,7 +148,9 @@ export default function PaymentModal({
 
           {!invalid && (
             <div className={`pay-after ${remainingAfter === 0 ? 'done' : 'partial'}`}>
-              {remainingAfter === 0
+              {outstanding === 0
+                ? 'Tagihan ini Rp 0 (mis. kontrol yang sudah dibayar di awal, konsultasi gratis) — simpan untuk menandai lunas.'
+                : remainingAfter === 0
                 ? 'Setelah pembayaran ini, tagihan LUNAS.'
                 : `Setelah pembayaran ini masih ada sisa ${rupiah(remainingAfter)} — bisa dilunasi nanti lewat tombol Pelunasan.`}
             </div>
@@ -155,7 +163,7 @@ export default function PaymentModal({
             Batal
           </button>
           <button type="submit" className="btn-primary" disabled={saving || !!invalid}>
-            {saving ? 'Menyimpan…' : remainingAfter === 0 && !invalid ? 'Simpan & Lunas' : 'Simpan Pembayaran'}
+            {saving ? 'Menyimpan…' : outstanding === 0 ? 'Tandai Lunas (Rp 0)' : remainingAfter === 0 && !invalid ? 'Simpan & Lunas' : 'Simpan Pembayaran'}
           </button>
         </div>
       </form>

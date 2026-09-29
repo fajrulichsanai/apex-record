@@ -489,7 +489,9 @@
 }
 
 @media (max-width: 600px) {
-  .laporan-page .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .laporan-page .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .laporan-page .stat-info { min-width: 0; }
+  .laporan-page .stat-value { overflow-wrap: anywhere; }
   .laporan-page .page-title h1 { font-size: 20px; }
 }
 
@@ -519,3 +521,33 @@
 :root[data-theme="dark"] .laporan-page .stat-card.lunas   { --stat-tint-bg: rgba(31,138,138,.22); --stat-tint-ink: #4FC7C7; }
 :root[data-theme="dark"] .laporan-page .stat-card.margin  { --stat-tint-bg: rgba(106,79,194,.22); --stat-tint-ink: #A78EE0; }
 :root[data-theme="dark"] .laporan-page input[type="date"] { color-scheme: dark; }
+
+/* STATISTIK PEMBAYARAN & DISKON */
+.laporan-page .pay-stats-panel .panel-header { justify-content: space-between; flex-wrap: wrap; }
+.laporan-page .pay-stats-body { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 16px; }
+.laporan-page .pay-stats-bar { display: flex; height: 10px; border-radius: 999px; overflow: hidden; background: var(--bg); }
+.laporan-page .pay-stats-bar span { min-width: 4px; }
+.laporan-page .pay-stats-bar .lunas { background: var(--green); }
+.laporan-page .pay-stats-bar .dp { background: var(--orange); }
+.laporan-page .pay-stats-bar .unpaid { background: var(--red); }
+.laporan-page .pay-stats-bar .free { background: var(--info); }
+.laporan-page .pay-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+.laporan-page .pay-stat {
+  --tone: var(--text-sub);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--tone);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+.laporan-page .pay-stat.lunas { --tone: var(--green); }
+.laporan-page .pay-stat.dp, .laporan-page .pay-stat.open { --tone: var(--orange); }
+.laporan-page .pay-stat.unpaid { --tone: var(--red); }
+.laporan-page .pay-stat.free { --tone: var(--info); }
+.laporan-page .pay-stat.discount { --tone: var(--primary); }
+.laporan-page .pay-stat-label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.laporan-page .pay-stat b { font-size: 17px; color: var(--text-main); font-variant-numeric: tabular-nums; }
+.laporan-page .pay-stat-sub { font-size: 12px; color: var(--text-sub); line-height: 1.45; }

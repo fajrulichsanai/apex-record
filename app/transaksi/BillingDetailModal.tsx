@@ -225,8 +225,8 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
 
   const canEdit = detail && detail.status !== 'cancelled' && detail.status !== 'refunded';
   const canCancel = detail && detail.status === 'unpaid' && detail.paidAmount === 0;
-  const canPay =
-    !!detail && (detail.status === 'unpaid' || detail.status === 'partial') && Number(detail.outstandingAmount) > 0;
+  // An unpaid Rp 0 bill can still be marked settled with a Rp 0 payment.
+  const canPay = !!detail && (detail.status === 'unpaid' || detail.status === 'partial');
 
   const handleCancelBilling = async () => {
     if (!detail) return;

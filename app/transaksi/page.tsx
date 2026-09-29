@@ -240,6 +240,8 @@ function TransaksiPageInner() {
     return Math.max(0, itemsSubtotal - totalDiscount + additionalFee);
   }, [itemsSubtotal, totalDiscount, additionalFee]);
 
+  const validItemCount = items.filter((r) => r.name).length;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitError(null);
@@ -322,7 +324,9 @@ function TransaksiPageInner() {
       setNotes('');
       await Promise.all([loadBillings(), loadUnbilledEncounters()]);
       success(
-        payNow > 0 && payNow < created.grandTotal
+        created.grandTotal <= 0
+          ? 'Transaksi Rp 0 disimpan — langsung tercatat lunas (gratis)'
+          : payNow > 0 && payNow < created.grandTotal
           ? `Transaksi disimpan — DP ${formatRupiah(payNow)}, sisa ${formatRupiah(created.grandTotal - payNow)} bisa dilunasi nanti`
           : payNow === 0 && created.grandTotal > 0
             ? 'Transaksi disimpan — belum dibayar'
@@ -541,6 +545,16 @@ function TransaksiPageInner() {
                   />
                 </div>
 
+                {grandTotal <= 0 && validItemCount > 0 ? (
+                  <div className="free-bill-note">
+                    <strong>Tagihan Rp 0 — langsung tercatat lunas</strong>
+                    <span>
+                      Untuk kunjungan yang tidak ditagih lagi, mis. kontrol PSA lanjutan yang sudah dibayar di awal atau
+                      konsultasi gratis. Kunjungan tetap tercatat.
+                    </span>
+                  </div>
+                ) : (
+                <>
                 <div className="form-field">
                   <label>Pembayaran</label>
                   <div className="pay-option-group" role="radiogroup" aria-label="Cara pembayaran">
@@ -597,6 +611,8 @@ function TransaksiPageInner() {
                       options={PAYMENT_METHOD_OPTIONS}
                     />
                   </div>
+                )}
+                </>
                 )}
 
                 <div className="form-field">
@@ -756,7 +772,8 @@ function TransaksiPageInner() {
             ) : (
               <div className="transaksi-list">
                 {filteredBillings.map((b) => {
-                  const { tag, label } = statusTag(b.status);
+                  const { tag, label } =
+                    b.status === 'paid' && Number(b.grandTotal) <= 0 ? { tag: 'lunas', label: 'Gratis' } : statusTag(b.status);
                   return (
                     <div
                       key={b.billingId}

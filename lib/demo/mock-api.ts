@@ -409,6 +409,38 @@ function financialReport(query: Query): FinancialReportResponse {
         totalDiskon: t.totalDiskon,
         labaBersih: t.pendapatan - t.modal,
       })),
+    paymentStats: (() => {
+      const paid = bills.filter((b) => b.status === 'paid' && b.grandTotal > 0);
+      const open = bills.filter((b) => b.status === 'partial');
+      const dpBills = bills.filter((b) => b.payments.length && b.payments[0].amount < b.grandTotal);
+      const unpaid = bills.filter((b) => b.status === 'unpaid' && b.grandTotal > 0);
+      return {
+        lunas: { count: paid.length, amount: paid.reduce((s, b) => s + b.grandTotal, 0) },
+        dp: {
+          count: dpBills.length,
+          dpTotal: dpBills.reduce((s, b) => s + b.payments[0].amount, 0),
+          settledCount: dpBills.filter((b) => b.status === 'paid').length,
+          openCount: open.length,
+          openPaid: open.reduce((s, b) => s + b.paidAmount, 0),
+          openOutstanding: open.reduce((s, b) => s + b.grandTotal - b.paidAmount, 0),
+        },
+        unpaid: { count: unpaid.length, amount: unpaid.reduce((s, b) => s + b.grandTotal, 0) },
+        free: { count: bills.filter((b) => b.grandTotal <= 0).length },
+      };
+    })(),
+    discountStats: (() => {
+      const itemDiscount = bills.reduce((s, b) => s + b.items.reduce((d, it) => d + it.discount, 0), 0);
+      const gross = bills.reduce((s, b) => s + b.items.reduce((g, it) => g + it.unitPrice, 0), 0);
+      return {
+        totalDiscount: itemDiscount,
+        itemDiscount,
+        billDiscount: 0,
+        billingsWithDiscount: bills.filter((b) => b.items.some((it) => it.discount > 0)).length,
+        billCount: bills.length,
+        grossBeforeDiscount: gross,
+        discountRate: gross ? Math.round((itemDiscount / gross) * 1000) / 10 : 0,
+      };
+    })(),
     businessMetrics: {
       ltv: { averageLtv: Math.round(avgLtv), averageVisitsPerPatient: Math.round(visitsPerPatient * 10) / 10, patientCount: patientSpend.size },
       arpv: Math.round(totalPaid / Math.max(1, bills.length)),
