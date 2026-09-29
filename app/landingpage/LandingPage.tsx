@@ -5,6 +5,7 @@ import HeroPreview from './HeroPreview';
 import PricingSection from './PricingSection';
 import Reveal from './Reveal';
 import ThemeToggle from './ThemeToggle';
+import { COMPANY, LEGAL_LINKS } from '@/lib/company';
 import './landingpage.css';
 
 const APP_URL = 'https://staging.apexrecord.my.id';
@@ -576,10 +577,23 @@ export default function LandingPage() {
                 <a href={APP_URL} target="_blank" rel="noopener noreferrer">Daftar Klinik</a>
                 <a href="#faq">FAQ</a>
               </div>
+              <div className="foot-col">
+                <h4>Legal</h4>
+                {LEGAL_LINKS.map((l) => (
+                  <a key={l.href} href={l.href}>{l.label}</a>
+                ))}
+              </div>
+              <div className="foot-col foot-company">
+                <h4>Kontak</h4>
+                <p>{COMPANY.legalName}</p>
+                <p>{COMPANY.address}</p>
+                <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>
+                <a href={COMPANY.whatsappUrl} target="_blank" rel="noopener noreferrer">WhatsApp {COMPANY.phone}</a>
+              </div>
             </div>
           </div>
           <div className="foot-bottom">
-            <span>&copy; 2026 ApexRecord. Dibangun untuk klinik &amp; praktik mandiri Indonesia.</span>
+            <span>&copy; 2026 ApexRecord · {COMPANY.legalName}. Dibangun untuk klinik &amp; praktik mandiri Indonesia.</span>
             <span>Klinik Pratama &middot; Klinik Utama &middot; TPMD &middot; TPMDG</span>
           </div>
         </div>

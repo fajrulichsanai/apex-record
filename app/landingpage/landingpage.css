@@ -509,6 +509,10 @@
 .lp .foot-col h4{ font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); margin: 0 0 14px; }
 .lp .foot-col a{ display: block; font-size: 13.5px; color: var(--ink-2); text-decoration: none; margin-bottom: 10px; }
 .lp .foot-col a:hover{ color: var(--ink); }
+.lp .foot-company{ max-width: 240px; }
+.lp .foot-company p{ font-size: 13.5px; color: var(--ink-2); margin: 0 0 6px; line-height: 1.5; }
+.lp .foot-company p:first-of-type{ color: var(--ink); font-weight: 600; }
+.lp .foot-company a{ overflow-wrap: anywhere; }
 .lp .foot-bottom{ display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; font-size: 12.5px; color: var(--ink-3); }
 
 @media (max-width: 980px){

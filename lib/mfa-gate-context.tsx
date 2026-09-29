@@ -9,7 +9,16 @@ import { useToast } from './toast-context';
 // Must match MFA_ENFORCED_ROLES in the backend's mfa-enforcement.guard.ts — Admin and
 // Dokter can opt in from /keamanan but are not forced to.
 export const MFA_ENFORCED_ROLES = ['super_admin', 'multi_clinic_owner', 'owner'];
-const EXEMPT_PATHS = ['/', '/keamanan', '/forgot-password', '/reset-password', '/verify-email'];
+const EXEMPT_PATHS = [
+  '/',
+  '/keamanan',
+  '/forgot-password',
+  '/reset-password',
+  '/verify-email',
+  '/kebijakan-privasi',
+  '/syarat-ketentuan',
+  '/kebijakan-refund',
+];
 
 /**
  * Routes an MFA-enforced-role user (SUPER_ADMIN/OWNER/ADMIN/MULTI_CLINIC_OWNER)
