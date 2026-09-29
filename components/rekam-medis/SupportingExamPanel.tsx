@@ -11,6 +11,7 @@ import {
   type SupportingExamImageType,
 } from '@/lib/supporting-exam';
 import { useToast } from '@/lib/toast-context';
+import { useEscapeKey } from '@/lib/a11y';
 
 interface SupportingExamPanelProps {
   encounterId: number;
@@ -64,6 +65,8 @@ export default function SupportingExamPanel({ encounterId }: SupportingExamPanel
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [compareSelection, setCompareSelection] = useState<SupportingExamImage[]>([]);
+  useEscapeKey(() => setViewImage(null), viewImage !== null);
+  useEscapeKey(() => setCompareSelection([]), compareMode && compareSelection.length === 2);
 
   const load = useCallback(async () => {
     try {
@@ -207,7 +210,7 @@ export default function SupportingExamPanel({ encounterId }: SupportingExamPanel
           </div>
         </div>
         <button type="button" className="btn-outline rx-add-btn" onClick={handleUpload} disabled={uploading || !selectedFile}>
-          <span className="material-symbols-rounded">upload</span>
+          <span aria-hidden="true" className="material-symbols-rounded">upload</span>
           {uploading ? 'Mengunggah…' : 'Unggah Gambar'}
         </button>
       </div>
@@ -215,7 +218,7 @@ export default function SupportingExamPanel({ encounterId }: SupportingExamPanel
       {images.length > 0 && (
         <div className="se-compare-bar">
           <button type="button" className={`btn-outline${compareMode ? ' active' : ''}`} onClick={toggleCompareMode}>
-            <span className="material-symbols-rounded">compare</span>
+            <span aria-hidden="true" className="material-symbols-rounded">compare</span>
             {compareMode ? 'Batal Bandingkan' : 'Bandingkan Foto'}
           </button>
           {compareMode && (
@@ -234,7 +237,7 @@ export default function SupportingExamPanel({ encounterId }: SupportingExamPanel
         <div className="rx-empty">Memuat gambar…</div>
       ) : images.length === 0 ? (
         <div className="rx-empty">
-          <span className="material-symbols-rounded">image</span>
+          <span aria-hidden="true" className="material-symbols-rounded">image</span>
           Belum ada gambar pemeriksaan penunjang
         </div>
       ) : (
@@ -268,7 +271,7 @@ export default function SupportingExamPanel({ encounterId }: SupportingExamPanel
                     aria-label="Hapus"
                     onClick={() => setConfirmDelete({ id: img.id, name: img.originalName || typeLabel(img.imageType) })}
                   >
-                    <span className="material-symbols-rounded">delete</span>
+                    <span aria-hidden="true" className="material-symbols-rounded">delete</span>
                   </button>
                 )}
               </div>
@@ -282,8 +285,8 @@ export default function SupportingExamPanel({ encounterId }: SupportingExamPanel
           <div className="visit-modal-box se-compare-box" onClick={(e) => e.stopPropagation()}>
             <div className="visit-modal-header">
               <h2>Bandingkan Foto</h2>
-              <button type="button" className="visit-modal-close" onClick={() => setCompareSelection([])}>
-                <span className="material-symbols-rounded">close</span>
+              <button aria-label="Tutup" type="button" className="visit-modal-close" onClick={() => setCompareSelection([])}>
+                <span aria-hidden="true" className="material-symbols-rounded">close</span>
               </button>
             </div>
             <div className="se-compare-grid">
@@ -311,8 +314,8 @@ export default function SupportingExamPanel({ encounterId }: SupportingExamPanel
                 <h2>{typeLabel(viewImage.imageType)}</h2>
                 {viewImage.notes && <p>{viewImage.notes}</p>}
               </div>
-              <button type="button" className="visit-modal-close" onClick={() => setViewImage(null)}>
-                <span className="material-symbols-rounded">close</span>
+              <button aria-label="Tutup" type="button" className="visit-modal-close" onClick={() => setViewImage(null)}>
+                <span aria-hidden="true" className="material-symbols-rounded">close</span>
               </button>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element -- backend-hosted upload, not a Next-optimizable static asset */}

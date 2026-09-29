@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { notificationApi, type AppNotification, type NotificationType } from '@/lib/notifications';
 import { formatCurrency } from '@/lib/format';
+import { pressable } from '@/lib/a11y';
 import './navbar.css';
 
 interface NavbarProps {
@@ -223,7 +224,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           )}
         </div>
 
-        <div className="user-chip" onClick={() => setMenuOpen((v) => !v)} style={{ position: 'relative', cursor: 'pointer' }}>
+        <div className="user-chip" {...pressable(() => setMenuOpen((v) => !v))} style={{ position: 'relative', cursor: 'pointer' }}>
           <div className="avatar">{initials}</div>
           <span className="user-name">
             {user?.name || 'User'}
@@ -255,7 +256,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
               }}
             >
               <div
-                onClick={handleLogout}
+                {...pressable(handleLogout)}
                 style={{ padding: '10px 14px', cursor: 'pointer', color: 'var(--red, #dc2626)' }}
               >
                 Logout

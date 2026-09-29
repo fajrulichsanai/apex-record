@@ -8,6 +8,7 @@ import type { SubscriptionBillingCycle, SubscriptionPlan, SubscriptionPlanTier }
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency, parseCurrency } from '@/lib/format';
+import { useEscapeKey } from '@/lib/a11y';
 import '../../styles/super-admin.css';
 
 interface PlanForm {
@@ -55,6 +56,7 @@ export default function SuperAdminPlansPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
+  useEscapeKey(() => setModalOpen(false), modalOpen);
   const [form, setForm] = useState<PlanForm>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const { success, error: showError } = useToast();

@@ -85,14 +85,14 @@ export default function BomPanel({ tarifId }: BomPanelProps) {
 
       {loading ? (
         <div className="empty-list">
-          <div className="empty-icon-wrap"><span className="material-symbols-rounded">hourglass_empty</span></div>
+          <div className="empty-icon-wrap"><span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span></div>
           <div className="empty-title">Memuat resep bahan...</div>
         </div>
       ) : (
         <>
           {bomList.length === 0 ? (
             <div className="empty-list">
-              <div className="empty-icon-wrap"><span className="material-symbols-rounded">science</span></div>
+              <div className="empty-icon-wrap"><span aria-hidden="true" className="material-symbols-rounded">science</span></div>
               <div className="empty-title">Belum ada bahan terdaftar</div>
               <div className="empty-sub">Stok tidak akan otomatis berkurang tanpa resep bahan</div>
             </div>
@@ -124,7 +124,7 @@ export default function BomPanel({ tarifId }: BomPanelProps) {
                           aria-label="Hapus"
                           onClick={() => setConfirmDelete({ id: bom.id, name: bom.barang?.name || '' })}
                         >
-                          <span className="material-symbols-rounded">delete</span>
+                          <span aria-hidden="true" className="material-symbols-rounded">delete</span>
                         </button>
                       </td>
                     </tr>
@@ -160,7 +160,7 @@ export default function BomPanel({ tarifId }: BomPanelProps) {
                   </label>
                 </div>
                 <button type="button" className="btn-primary bom-add-btn" onClick={handleAdd} disabled={submitting || !barangId || !qtyPakai}>
-                  <span className="material-symbols-rounded">add</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">add</span>
                   Tambah
                 </button>
               </div>

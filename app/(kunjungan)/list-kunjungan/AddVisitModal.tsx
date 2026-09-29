@@ -191,7 +191,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
             <p>Daftarkan kunjungan pasien ke klinik Anda</p>
           </div>
           <button className="visit-modal-close" type="button" onClick={onClose} disabled={submitting} aria-label="Tutup">
-            <span className="material-symbols-rounded">close</span>
+            <span aria-hidden="true" className="material-symbols-rounded">close</span>
           </button>
         </div>
 
@@ -204,7 +204,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                     <div className={`visit-step-line ${step > s.id ? 'filled' : ''}`} style={{ left: '50%' }} />
                   )}
                   <div className="visit-step-dot">
-                    {step > s.id ? <span className="material-symbols-rounded">check</span> : s.id}
+                    {step > s.id ? <span aria-hidden="true" className="material-symbols-rounded">check</span> : s.id}
                   </div>
                   <span className="visit-step-label">{s.label}</span>
                 </div>
@@ -219,7 +219,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
             </div>
           ) : error && !submitting && patients.length === 0 ? (
             <div className="visit-form-error">
-              <span className="material-symbols-rounded" style={{ fontSize: '32px', color: 'var(--red)' }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '32px', color: 'var(--red)' }}>
                 error
               </span>
               <p>{error}</p>
@@ -237,7 +237,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                     {reservationOptions.length > 0 && (
                       <div className="visit-form-field">
                         <label>
-                          <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                          <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '15px' }}>
                             event_available
                           </span>
                           Dari Reservasi (opsional)
@@ -250,7 +250,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                         />
                         {selectedReservation && (
                           <div className="visit-queue-banner">
-                            <span className="material-symbols-rounded">confirmation_number</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">confirmation_number</span>
                             <div>
                               <div className="visit-queue-banner-text">Reservasi {selectedReservation.patientName}</div>
                               <div className="visit-queue-banner-sub">
@@ -264,7 +264,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
 
                     <div className="visit-form-field">
                       <label>
-                        <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                        <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '15px' }}>
                           person
                         </span>
                         Pasien <span className="req">*</span>
@@ -284,7 +284,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                             <div className="visit-preview-sub">{selectedPatient.noRm || 'No. RM belum tersedia'}</div>
                           </div>
                           <div className="visit-preview-check">
-                            <span className="material-symbols-rounded">check</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">check</span>
                           </div>
                         </div>
                       )}
@@ -301,7 +301,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
 
                     <div className="visit-form-field">
                       <label>
-                        <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                        <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '15px' }}>
                           medical_services
                         </span>
                         Dokter <span className="req">*</span>
@@ -321,7 +321,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                             <div className="visit-preview-sub">Dokter Pemeriksa</div>
                           </div>
                           <div className="visit-preview-check">
-                            <span className="material-symbols-rounded">check</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">check</span>
                           </div>
                         </div>
                       )}
@@ -329,7 +329,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
 
                     <div className="visit-form-field">
                       <label>
-                        <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                        <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '15px' }}>
                           edit_note
                         </span>
                         Keluhan Utama
@@ -354,7 +354,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                     <div className="visit-summary-list">
                       <div className="visit-summary-row">
                         <div className="visit-summary-icon">
-                          <span className="material-symbols-rounded">person</span>
+                          <span aria-hidden="true" className="material-symbols-rounded">person</span>
                         </div>
                         <div className="visit-summary-body">
                           <div className="visit-summary-label">Pasien</div>
@@ -363,7 +363,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                       </div>
                       <div className="visit-summary-row">
                         <div className="visit-summary-icon">
-                          <span className="material-symbols-rounded">medical_services</span>
+                          <span aria-hidden="true" className="material-symbols-rounded">medical_services</span>
                         </div>
                         <div className="visit-summary-body">
                           <div className="visit-summary-label">Dokter</div>
@@ -372,7 +372,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                       </div>
                       <div className="visit-summary-row">
                         <div className="visit-summary-icon">
-                          <span className="material-symbols-rounded">edit_note</span>
+                          <span aria-hidden="true" className="material-symbols-rounded">edit_note</span>
                         </div>
                         <div className="visit-summary-body">
                           <div className="visit-summary-label">Keluhan Utama</div>
@@ -384,7 +384,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                     </div>
 
                     <div className="visit-confirm-banner">
-                      <span className="material-symbols-rounded">verified</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">verified</span>
                       <span className="visit-confirm-banner-text">
                         Kunjungan akan tercatat dengan status &ldquo;Menunggu&rdquo;
                       </span>
@@ -396,7 +396,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
               <div className="visit-form-footer">
                 {step > 1 ? (
                   <button key="btn-back" type="button" className="btn-outline" onClick={goBack} disabled={submitting}>
-                    <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                    <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                       arrow_back
                     </span>
                     Kembali
@@ -416,13 +416,13 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
                     disabled={(step === 1 && !canGoStep2) || (step === 2 && !canGoStep3)}
                   >
                     Lanjut
-                    <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                    <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                       arrow_forward
                     </span>
                   </button>
                 ) : (
                   <button key="btn-submit" type="submit" className="btn-primary" disabled={submitting}>
-                    <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                    <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                       check_circle
                     </span>
                     {submitting ? 'Menyimpan…' : 'Simpan Kunjungan'}

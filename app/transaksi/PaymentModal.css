@@ -1,7 +1,7 @@
 .pay-modal-overlay {
   --primary: #16150F;
   --primary-dk: #262419;
-  --accent: #3E8E36;
+  --accent: #367D2F;
   --accent-soft: #E3F3DA;
   --accent-ink: #2B6B22;
   --warn: #8A5A00;
@@ -12,7 +12,7 @@
   --surface: #FFFFFF;
   --text-main: #17160F;
   --text-sub: #55534A;
-  --text-muted: #8D8B7E;
+  --text-muted: #6B695D;
   --border: #E7E4DD;
 
   position: fixed;
@@ -27,7 +27,7 @@
 }
 
 :root[data-theme="dark"] .pay-modal-overlay {
-  --primary: #3E8E36;
+  --primary: #367D2F;
   --primary-dk: #4FA345;
   --accent: #4FA345;
   --accent-soft: #23361F;
@@ -40,7 +40,7 @@
   --surface: #242320;
   --text-main: #F3F1EA;
   --text-sub: #B8B5A9;
-  --text-muted: #85826F;
+  --text-muted: #A09D8B;
   --border: #38362F;
   color-scheme: dark;
 }

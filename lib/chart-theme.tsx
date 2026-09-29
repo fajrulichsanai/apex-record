@@ -15,10 +15,10 @@ import { useTheme } from '@/lib/theme-context';
  */
 const PALETTE = {
   light: {
-    categorical: ['#3E8E36', '#1D5FAE', '#B7791F', '#6A4FC2', '#C2417A'],
+    categorical: ['#367D2F', '#1D5FAE', '#B7791F', '#6A4FC2', '#C2417A'],
     expense: '#C1381F',
     grid: '#E7E4DD',
-    tick: '#8D8B7E',
+    tick: '#6B695D',
     surface: '#FFFFFF',
     border: '#E7E4DD',
     text: '#17160F',
@@ -29,7 +29,7 @@ const PALETTE = {
     categorical: ['#4FA345', '#3D7FCC', '#B98009', '#8A6FD0', '#D0538A'],
     expense: '#E5573C',
     grid: '#38362F',
-    tick: '#85826F',
+    tick: '#A09D8B',
     surface: '#2A2924',
     border: '#38362F',
     text: '#F3F1EA',

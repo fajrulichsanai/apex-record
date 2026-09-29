@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Navbar from './Navbar';
 import MultiClinicSidebar from './MultiClinicSidebar';
 import MultiClinicGuard from '@/components/auth/MultiClinicGuard';
+import { useEscapeKey } from '@/lib/a11y';
 import './dashboard-layout.css';
 
 interface MultiClinicLayoutProps {
@@ -15,6 +16,7 @@ export default function MultiClinicLayout({ children }: MultiClinicLayoutProps) 
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
+  useEscapeKey(closeSidebar, sidebarOpen);
 
   return (
     <MultiClinicGuard>

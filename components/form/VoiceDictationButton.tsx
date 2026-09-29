@@ -129,7 +129,7 @@ export default function VoiceDictationButton({ value, onChange, disabled }: Voic
           : 'Voice to text tidak didukung di browser ini — gunakan Chrome'
       }
     >
-      <span className="material-symbols-rounded">{recording ? 'stop_circle' : 'mic'}</span>
+      <span aria-hidden="true" className="material-symbols-rounded">{recording ? 'stop_circle' : 'mic'}</span>
       {recording && <span className="voice-dictation-pulse" />}
     </button>
   );

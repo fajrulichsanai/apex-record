@@ -334,7 +334,7 @@ export default function OnboardingPage() {
                           value={row.hargaJual}
                           onChange={(e) => updateTarifRow(row.id, { hargaJual: e.target.value })}
                         />
-                        <button
+                        <button aria-label="Hapus baris tarif"
                           type="button"
                           className="onboarding-row-remove"
                           onClick={() => removeTarifRow(row.id)}
@@ -389,7 +389,7 @@ export default function OnboardingPage() {
                           </div>
                           <div className="onboarding-invited-password">
                             <span>Password sementara: <code>{d.temporaryPassword}</code></span>
-                            <button type="button" onClick={() => handleCopyPassword(d.temporaryPassword)} title="Salin password">
+                            <button aria-label="Salin password" type="button" onClick={() => handleCopyPassword(d.temporaryPassword)} title="Salin password">
                               <FiCopy />
                             </button>
                           </div>

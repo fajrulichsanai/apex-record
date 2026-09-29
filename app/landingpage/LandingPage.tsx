@@ -177,7 +177,7 @@ const AUDIENCE = [
 const FAQS = [
   {
     q: 'Data pasien saya aman?',
-    a: 'Ya. Data rekam medis tersimpan terenkripsi, akses diatur berdasarkan peran (dokter, admin, owner), akun owner dilindungi verifikasi dua langkah (MFA), login yang berulang kali gagal dikunci sementara, dan setiap akses maupun perubahan data tercatat di audit log.',
+    a: 'Ya. Semua koneksi memakai HTTPS, NIK pasien dienkripsi sebelum disimpan, password tidak pernah disimpan dalam bentuk aslinya, akses diatur berdasarkan peran (dokter, admin, owner), akun owner dilindungi verifikasi dua langkah (MFA), login yang berulang kali gagal dikunci sementara, serta akses dan perubahan rekam medis tercatat di audit log.',
     open: true,
   },
   {

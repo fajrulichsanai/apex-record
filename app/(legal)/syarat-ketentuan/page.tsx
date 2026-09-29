@@ -180,8 +180,8 @@ const sections: LegalSection[] = [
           Klinik dapat berhenti berlangganan kapan saja dengan tidak memperpanjang langganan. Tidak ada biaya pembatalan.
         </li>
         <li>
-          Klinik dapat meminta ekspor seluruh data atau penutupan akun melalui email ke{' '}
-          <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.
+          Pemilik klinik dapat meminta ekspor seluruh data atau penutupan akun melalui menu Pengaturan → Data &amp;
+          Privasi, atau email ke <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>.
         </li>
         <li>
           Kami dapat menangguhkan atau menghentikan akun yang melanggar Syarat &amp; Ketentuan ini setelah memberi

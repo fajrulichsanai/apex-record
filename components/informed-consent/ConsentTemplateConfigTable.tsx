@@ -5,6 +5,7 @@ import { ApiError } from '@/lib/api-client';
 import { tarifApi, type Tarif } from '@/lib/tarif';
 import { consentTemplateApi, type ConsentTemplate } from '@/lib/consent';
 import { useToast } from '@/lib/toast-context';
+import { useEscapeKey } from '@/lib/a11y';
 
 interface RowState {
   tarif: Tarif;
@@ -23,6 +24,7 @@ export default function ConsentTemplateConfigTable({ canEdit }: ConsentTemplateC
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [saving, setSaving] = useState(false);
+  useEscapeKey(() => !saving && setEditing(null), editing !== null);
 
   const load = async () => {
     try {
@@ -87,7 +89,7 @@ export default function ConsentTemplateConfigTable({ canEdit }: ConsentTemplateC
     return (
       <div className="empty-list">
         <div className="empty-icon-wrap">
-          <span className="material-symbols-rounded">hourglass_empty</span>
+          <span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span>
         </div>
         <div className="empty-title">Memuat template consent...</div>
       </div>
@@ -98,7 +100,7 @@ export default function ConsentTemplateConfigTable({ canEdit }: ConsentTemplateC
     return (
       <div className="empty-list">
         <div className="empty-icon-wrap">
-          <span className="material-symbols-rounded">search_off</span>
+          <span aria-hidden="true" className="material-symbols-rounded">search_off</span>
         </div>
         <div className="empty-title">Belum ada tindakan/tarif terdaftar</div>
         <div className="empty-sub">Tambahkan tarif terlebih dahulu di halaman Tarif &amp; Tindakan</div>
@@ -157,7 +159,7 @@ export default function ConsentTemplateConfigTable({ canEdit }: ConsentTemplateC
             <div className="modal-header">
               <div className="modal-header-title">
                 <div className="modal-header-icon">
-                  <span className="material-symbols-rounded">description</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">description</span>
                 </div>
                 <div>
                   <h2>Template Persetujuan</h2>
@@ -165,7 +167,7 @@ export default function ConsentTemplateConfigTable({ canEdit }: ConsentTemplateC
                 </div>
               </div>
               <button className="modal-close" onClick={() => setEditing(null)} aria-label="Tutup">
-                <span className="material-symbols-rounded">close</span>
+                <span aria-hidden="true" className="material-symbols-rounded">close</span>
               </button>
             </div>
             <div className="modal-body">

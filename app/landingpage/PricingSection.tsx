@@ -66,7 +66,7 @@ export default function PricingSection() {
         <div className="section-head center">
           <span className="eyebrow">Investasi, bukan biaya</span>
           <h2>Pilih Paket</h2>
-          <p>Mulai dari praktik solo sampai jaringan klinik — semua paket termasuk update fitur dan enkripsi data.</p>
+          <p>Mulai dari praktik solo sampai jaringan klinik — semua paket termasuk update fitur dan perlindungan keamanan yang sama.</p>
         </div>
 
         <div className="pricing-toggle-row">

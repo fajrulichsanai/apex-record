@@ -140,7 +140,7 @@ export default function MonthlyReportPanel({ selfView = false }: MonthlyReportPa
             success('Laporan share fee telah diekspor ke Excel');
           }}
         >
-          <span className="material-symbols-rounded">download</span>
+          <span aria-hidden="true" className="material-symbols-rounded">download</span>
           Ekspor
         </button>
       </div>
@@ -148,14 +148,14 @@ export default function MonthlyReportPanel({ selfView = false }: MonthlyReportPa
       {loading ? (
         <div className="empty-list">
           <div className="empty-icon-wrap">
-            <span className="material-symbols-rounded">hourglass_empty</span>
+            <span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span>
           </div>
           <div className="empty-title">Memuat laporan...</div>
         </div>
       ) : reports.length === 0 ? (
         <div className="empty-list">
           <div className="empty-icon-wrap">
-            <span className="material-symbols-rounded">search_off</span>
+            <span aria-hidden="true" className="material-symbols-rounded">search_off</span>
           </div>
           <div className="empty-title">Tidak ada tindakan pada periode ini</div>
           <div className="empty-sub">
@@ -231,7 +231,7 @@ export default function MonthlyReportPanel({ selfView = false }: MonthlyReportPa
             ) : (
               <div className="empty-list">
                 <div className="empty-icon-wrap">
-                  <span className="material-symbols-rounded">person</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">person</span>
                 </div>
                 <div className="empty-title">Pilih dokter untuk melihat rincian</div>
               </div>

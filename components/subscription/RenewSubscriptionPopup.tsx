@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEscapeKey } from '@/lib/a11y';
 import './renew-subscription-popup.css';
 
 interface RenewSubscriptionPopupProps {
@@ -12,6 +13,8 @@ interface RenewSubscriptionPopupProps {
 
 export default function RenewSubscriptionPopup({ isOpen, reason, daysUntilExpiry, onClose }: RenewSubscriptionPopupProps) {
   const router = useRouter();
+
+  useEscapeKey(onClose, isOpen);
 
   if (!isOpen) return null;
 

@@ -185,7 +185,7 @@ const sections: LegalSection[] = [
         <li>
           <strong>Setelah langganan berakhir</strong>, data klinik tetap tersimpan dan dapat dilihat (mode hanya-baca)
           agar klinik tetap dapat memenuhi kewajiban penyimpanan rekam medis. Klinik dapat meminta ekspor seluruh data
-          atau penghapusan akun seperti dijelaskan di bagian Hak Anda.
+          atau penutupan akun seperti dijelaskan di bagian Hak Anda.
         </li>
         <li>
           <strong>Data akun pengguna</strong> disimpan selama akun aktif. Audit log keamanan disimpan selama diperlukan
@@ -214,8 +214,14 @@ const sections: LegalSection[] = [
             aplikasi atau meneruskan permintaan ke kami.
           </li>
           <li>
-            <strong>Pengguna atau pemilik klinik</strong>: kirim email ke <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a>{' '}
-            dengan subjek &quot;Permintaan Data Pribadi&quot;, sebutkan nama klinik, email akun, dan permintaan Anda.
+            <strong>Pemilik klinik</strong>: buka menu <strong>Pengaturan → Data &amp; Privasi</strong> di aplikasi untuk
+            meminta salinan seluruh data klinik atau menutup akun. Saat akun ditutup, kami mengirim salinan seluruh data
+            terlebih dahulu agar klinik tetap dapat memenuhi kewajiban penyimpanan rekam medis, lalu menghapus data dari
+            server ApexRecord.
+          </li>
+          <li>
+            <strong>Pengguna lain</strong>: kirim email ke <a href={`mailto:${COMPANY.email}`}>{COMPANY.email}</a> dengan
+            subjek &quot;Permintaan Data Pribadi&quot;, sebutkan nama klinik, email akun, dan permintaan Anda.
           </li>
         </ol>
         <p>

@@ -166,7 +166,7 @@ export default function LaporanKeuanganProPage() {
           <div className="page-header">
             <div className="page-title-block">
               <div className="page-title">
-                <button type="button" className="btn-outline" onClick={() => router.push('/laporan-keuangan')} style={{ marginRight: 10 }}>
+                <button aria-label="Kembali ke Laporan Keuangan" type="button" className="btn-outline" onClick={() => router.push('/laporan-keuangan')} style={{ marginRight: 10 }}>
                   <FiArrowLeft />
                 </button>
                 <h1>Laporan Keuangan Pro</h1>

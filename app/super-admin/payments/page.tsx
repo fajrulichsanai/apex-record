@@ -8,6 +8,7 @@ import type { Payment } from '@/types/subscription';
 import { ApiError, openProtectedFile } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency } from '@/lib/format';
+import { useEscapeKey } from '@/lib/a11y';
 import '../../styles/super-admin.css';
 
 const STATUS_OPTIONS = [
@@ -27,6 +28,7 @@ export default function SuperAdminPaymentsPage() {
   const [status, setStatus] = useState('pending');
   const [page, setPage] = useState(1);
   const [reviewing, setReviewing] = useState<{ payment: Payment; action: 'confirm' | 'reject' } | null>(null);
+  useEscapeKey(() => setReviewing(null), reviewing !== null);
   const [reviewNotes, setReviewNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { success, error: showError } = useToast();

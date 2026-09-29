@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import { useEscapeKey } from '@/lib/a11y';
 import './dashboard-layout.css';
 
 interface DashboardLayoutProps {
@@ -15,6 +16,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEscapeKey(() => setSidebarOpen(false), sidebarOpen);
 
   // Every page that renders this layout is auth-gated. Without this, opening
   // a protected URL directly (no token) rendered the page and its children

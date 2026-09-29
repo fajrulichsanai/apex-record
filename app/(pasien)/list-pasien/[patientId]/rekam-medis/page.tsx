@@ -142,7 +142,7 @@ export default function PatientRekamMedisPage() {
       <FeatureGuard feature="pasien">
         <main className="content kunjungan-page rekam-medis-page">
           <button type="button" className="rm-back-btn" onClick={goBack}>
-            <span className="material-symbols-rounded">arrow_back</span>
+            <span aria-hidden="true" className="material-symbols-rounded">arrow_back</span>
             Kembali ke Daftar Pasien
           </button>
 
@@ -170,7 +170,7 @@ export default function PatientRekamMedisPage() {
                       className={`rm-sidebar-item ${activeSection === s.id ? 'active' : ''}`}
                       onClick={() => setActiveSection(s.id)}
                     >
-                      <span className="material-symbols-rounded">{s.icon}</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">{s.icon}</span>
                       {s.label}
                     </button>
                   ))}

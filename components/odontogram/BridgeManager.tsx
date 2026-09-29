@@ -63,7 +63,7 @@ export default function BridgeManager({ patientId, bridges, onChange }: BridgeMa
   return (
     <div className="odt-bridge-panel">
       <div className="rm-fieldset-title">
-        <span className="material-symbols-rounded">link</span>
+        <span aria-hidden="true" className="material-symbols-rounded">link</span>
         Gigi Tiruan Cekat (Bridge)
       </div>
 
@@ -76,7 +76,7 @@ export default function BridgeManager({ patientId, bridges, onChange }: BridgeMa
               </span>
               <span className="odt-bridge-label">{b.label}</span>
               <button type="button" className="rx-delete-btn" aria-label="Hapus" onClick={() => setConfirmDelete({ id: b.id, label: b.label })}>
-                <span className="material-symbols-rounded">delete</span>
+                <span aria-hidden="true" className="material-symbols-rounded">delete</span>
               </button>
             </div>
           ))}
@@ -99,7 +99,7 @@ export default function BridgeManager({ patientId, bridges, onChange }: BridgeMa
           <input type="text" value={label} onChange={(e) => setLabel(e.target.value)} disabled={submitting} />
         </div>
         <button type="button" className="btn-outline" onClick={handleAdd} disabled={submitting || !fromTooth || !toTooth}>
-          <span className="material-symbols-rounded">add</span>
+          <span aria-hidden="true" className="material-symbols-rounded">add</span>
           Tambah
         </button>
       </div>

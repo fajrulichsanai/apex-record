@@ -578,7 +578,7 @@ export default function PatientWizard({
                   setStepIndex(idx);
                 }}
               >
-                {isDone ? <span className="material-symbols-rounded">check</span> : idx + 1}
+                {isDone ? <span aria-hidden="true" className="material-symbols-rounded">check</span> : idx + 1}
               </button>
               <span className="wizard-step-label">{step.label}</span>
             </div>
@@ -596,7 +596,7 @@ export default function PatientWizard({
       <div className="patient-form-card">
         <div className="modal-body">
           <div className="form-section-title">
-            <span className="material-symbols-rounded" style={{ fontSize: 16 }}>
+            <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: 16 }}>
               {currentStep.icon}
             </span>
             {currentStep.label}
@@ -901,7 +901,7 @@ export default function PatientWizard({
                 </div>
                 {form.referrerPatientId && (
                   <div className="wizard-autocomplete-selected">
-                    <span className="material-symbols-rounded">check_circle</span>
+                    <span aria-hidden="true" className="material-symbols-rounded">check_circle</span>
                     Pasien terpilih (ID #{form.referrerPatientId})
                   </div>
                 )}
@@ -1071,7 +1071,7 @@ export default function PatientWizard({
           <div className="wizard-footer-right">
             {stepIndex > 0 && (
               <button type="button" className="btn-outline" onClick={goPrev}>
-                <span className="material-symbols-rounded" style={{ fontSize: 18 }}>
+                <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: 18 }}>
                   arrow_back
                 </span>
                 Sebelumnya
@@ -1080,7 +1080,7 @@ export default function PatientWizard({
             {stepIndex < steps.length - 1 ? (
               <button type="button" className="btn-primary" onClick={goNext}>
                 Selanjutnya
-                <span className="material-symbols-rounded" style={{ fontSize: 18 }}>
+                <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: 18 }}>
                   arrow_forward
                 </span>
               </button>
@@ -1091,7 +1091,7 @@ export default function PatientWizard({
                 disabled={submitting}
                 onClick={handleSubmit}
               >
-                <span className="material-symbols-rounded" style={{ fontSize: 18 }}>
+                <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: 18 }}>
                   save
                 </span>
                 {submitting ? 'Menyimpan…' : 'Submit Pasien'}

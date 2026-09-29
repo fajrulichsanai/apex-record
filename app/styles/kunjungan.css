@@ -1,11 +1,11 @@
 .kunjungan-page {
   --primary:      #16150F;
   --primary-dk:   #262419;
-  --accent:       #3E8E36;
+  --accent:       #367D2F;
   --accent-solid: #7ED957;
   --accent-soft:  #E3F3DA;
   --accent-ink:   #2B6B22;
-  --green:        #3E8E36;
+  --green:        #367D2F;
   --orange:       #8A5A00;
   --orange-soft:  #FCEACB;
   --red:          #C1381F;
@@ -17,10 +17,10 @@
   --surface-hover:#F6F4EF;
   --text-main:    #17160F;
   --text-sub:     #55534A;
-  --text-muted:   #8D8B7E;
+  --text-muted:   #6B695D;
   --border:       #E7E4DD;
   --tag-pending:  #8A5A00;
-  --tag-done:     #3E8E36;
+  --tag-done:     #367D2F;
   --tag-cancel:   #C1381F;
   --shadow-card:  0 1px 2px rgba(23,22,15,.04), 0 10px 28px -18px rgba(23,22,15,.18);
   --radius-sm:    10px;
@@ -35,7 +35,7 @@
 
 :root[data-theme="dark"] .kunjungan-page,
 :root[data-theme="dark"] .visit-modal-overlay {
-  --primary:      #3E8E36;
+  --primary:      #367D2F;
   --primary-dk:   #4FA345;
   --accent:       #4FA345;
   --accent-solid: #7ED957;
@@ -53,7 +53,7 @@
   --surface-hover:#2A2924;
   --text-main:    #F3F1EA;
   --text-sub:     #B8B5A9;
-  --text-muted:   #85826F;
+  --text-muted:   #A09D8B;
   --border:       #38362F;
   --tag-pending:  #E8A930;
   --tag-done:     #4FA345;
@@ -594,18 +594,18 @@
 .visit-modal-overlay {
   --primary:      #16150F;
   --primary-dk:   #262419;
-  --accent:       #3E8E36;
+  --accent:       #367D2F;
   --accent-solid: #7ED957;
   --accent-soft:  #E3F3DA;
   --accent-ink:   #2B6B22;
-  --green:        #3E8E36;
+  --green:        #367D2F;
   --red:          #C1381F;
   --red-soft:     #FBE1DE;
   --bg:           #FAF9F6;
   --surface:      #FFFFFF;
   --text-main:    #17160F;
   --text-sub:     #55534A;
-  --text-muted:   #8D8B7E;
+  --text-muted:   #6B695D;
   --border:       #E7E4DD;
   --radius-sm:    10px;
   --radius-md:    14px;

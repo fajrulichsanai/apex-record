@@ -2,7 +2,7 @@
   --primary:       #16150F;
   --primary-dark:  #262419;
   --primary-light: #E3F3DA;
-  --accent:        #3E8E36;
+  --accent:        #367D2F;
   --accent-dark:   #2F7328;
   --card-bg:       #FFFFFF;
   --border:        #E7E4DD;
@@ -10,11 +10,11 @@
   --input-dis:     #F1EFE9;
   --text-dark:     #17160F;
   --text-mid:      #55534A;
-  --text-light:    #8D8B7E;
+  --text-light:    #6B695D;
   --toggle-off:    #D8D5CB;
   --info-bg:       #DCEAFB;
   --info-text:     #1D5FAE;
-  --save-bg:       #3E8E36;
+  --save-bg:       #367D2F;
   --save-dark:     #2F7328;
 }
 
@@ -342,7 +342,7 @@
 
 /* ---------- DARK MODE ---------- */
 :root[data-theme="dark"] .info-klinik-page {
-  --primary:       #3E8E36;
+  --primary:       #367D2F;
   --primary-dark:  #4FA345;
   --primary-light: #23361F;
   --accent:        #4FA345;
@@ -353,11 +353,11 @@
   --input-dis:     #2A2924;
   --text-dark:     #F3F1EA;
   --text-mid:      #B8B5A9;
-  --text-light:    #85826F;
+  --text-light:    #A09D8B;
   --toggle-off:    #4A4739;
   --info-bg:       #1B2A3A;
   --info-text:     #5B9BE0;
-  --save-bg:       #3E8E36;
+  --save-bg:       #367D2F;
   --save-dark:     #4FA345;
 }
 

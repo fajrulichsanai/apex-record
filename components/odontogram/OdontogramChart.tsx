@@ -17,7 +17,7 @@ interface OdontogramChartProps {
 
 const LEGEND_ITEMS: { swatch?: string; symbol?: string; label: string }[] = [
   { swatch: '#17160F', label: 'Karies' },
-  { swatch: '#3E8E36', label: 'Komposit' },
+  { swatch: '#367D2F', label: 'Komposit' },
   { swatch: '#EC4899', label: 'GIC' },
   { symbol: '✕', label: 'Missing' },
   { symbol: '#', label: 'CFR (Fraktur mahkota)' },
@@ -134,11 +134,11 @@ export default function OdontogramChart({ patientId, onToothSaved }: OdontogramC
   return (
     <div className="odt-chart">
       <div className="odontogram-toolbar">
-        <button type="button" className="icon-btn" title="Legenda" onClick={() => setShowLegend((v) => !v)}>
-          <span className="material-symbols-rounded">help_outline</span>
+        <button aria-label="Legenda" type="button" className="icon-btn" title="Legenda" onClick={() => setShowLegend((v) => !v)}>
+          <span aria-hidden="true" className="material-symbols-rounded">help_outline</span>
         </button>
-        <button type="button" className="icon-btn" title="Muat ulang" onClick={load}>
-          <span className="material-symbols-rounded">refresh</span>
+        <button aria-label="Muat ulang" type="button" className="icon-btn" title="Muat ulang" onClick={load}>
+          <span aria-hidden="true" className="material-symbols-rounded">refresh</span>
         </button>
       </div>
 
@@ -190,7 +190,7 @@ export default function OdontogramChart({ patientId, onToothSaved }: OdontogramC
           </div>
         </div>
 
-        <div className="odontogram-index-card" style={{ '--index-color': '#3E8E36' } as React.CSSProperties}>
+        <div className="odontogram-index-card" style={{ '--index-color': '#367D2F' } as React.CSSProperties}>
           <div className="odontogram-index-heading">
             <div>
               <div className="odontogram-index-title">deft</div>

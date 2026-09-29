@@ -14,6 +14,7 @@ import { reservationsApi, ReservationItem, ReservationQuery, ReservationStatus }
 import { encounterApi } from '@/lib/encounter';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
+import { pressable } from '@/lib/a11y';
 import '../../styles/reservasi.css';
 
 type FilterValue = 'semua' | ReservationStatus;
@@ -297,7 +298,7 @@ function ReservasiPageInner() {
               </button>
             </div>
             <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-              <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>
                 add
               </span>
               Tambah Reservasi
@@ -306,9 +307,9 @@ function ReservasiPageInner() {
         </div>
 
         <div className="stat-grid">
-          <div className="stat-card total" onClick={() => setCurrentFilter('semua')}>
+          <div className="stat-card total" {...pressable(() => setCurrentFilter('semua'))}>
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 event
               </span>
             </div>
@@ -317,9 +318,9 @@ function ReservasiPageInner() {
               <div className="stat-label">Total Reservasi</div>
             </div>
           </div>
-          <div className="stat-card pending" onClick={() => setCurrentFilter('pending')}>
+          <div className="stat-card pending" {...pressable(() => setCurrentFilter('pending'))}>
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 schedule
               </span>
             </div>
@@ -328,9 +329,9 @@ function ReservasiPageInner() {
               <div className="stat-label">Menunggu Konfirmasi</div>
             </div>
           </div>
-          <div className="stat-card confirmed" onClick={() => setCurrentFilter('confirmed')}>
+          <div className="stat-card confirmed" {...pressable(() => setCurrentFilter('confirmed'))}>
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 check_circle
               </span>
             </div>
@@ -339,9 +340,9 @@ function ReservasiPageInner() {
               <div className="stat-label">Terkonfirmasi</div>
             </div>
           </div>
-          <div className="stat-card done" onClick={() => setCurrentFilter('completed')}>
+          <div className="stat-card done" {...pressable(() => setCurrentFilter('completed'))}>
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 task_alt
               </span>
             </div>
@@ -372,7 +373,7 @@ function ReservasiPageInner() {
           <div className="panel-toolbar">
             <div className="toolbar-row">
               <div className="search-box">
-                <span className="material-symbols-rounded">search</span>
+                <span aria-hidden="true" className="material-symbols-rounded">search</span>
                 <input
                   type="text"
                   placeholder="Cari nama atau nomor telepon pasien…"
@@ -404,7 +405,7 @@ function ReservasiPageInner() {
                   Kedepannya
                 </button>
                 <label className={`date-pick ${dateScope === 'custom' ? 'active' : ''}`}>
-                  <span className="material-symbols-rounded">calendar_month</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">calendar_month</span>
                   <input
                     type="date"
                     value={customDate}

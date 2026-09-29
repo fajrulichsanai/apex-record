@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
+import { useEscapeKey } from '@/lib/a11y';
 import { ApiError } from '@/lib/api-client';
 import { billingApi, type CreatePaymentResponse, type PaymentMethod } from '@/lib/billing';
 import './PaymentModal.css';
@@ -52,6 +53,9 @@ export default function PaymentModal({
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  useEscapeKey(() => {
+    if (!saving) onClose();
+  });
 
   const amount = Math.round(Number(amountText.replace(/\D/g, '')) || 0);
   const remainingAfter = Math.max(0, outstanding - amount);

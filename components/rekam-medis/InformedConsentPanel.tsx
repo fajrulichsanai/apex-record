@@ -16,6 +16,7 @@ import { useAuth } from '@/lib/auth-context';
 import CustomSelect from '@/components/form/CustomSelect';
 import ConsentDocument from '@/components/informed-consent/ConsentDocument';
 import ConsentTemplateConfigTable from '@/components/informed-consent/ConsentTemplateConfigTable';
+import { useEscapeKey } from '@/lib/a11y';
 import '../../app/styles/informed-consent.css';
 
 const STATUS_LABEL: Record<PatientConsent['status'], string> = {
@@ -79,6 +80,8 @@ export default function InformedConsentPanel({ patientId, encounterId }: Informe
   const [signerAddress, setSignerAddress] = useState('');
   const [signerPhone, setSignerPhone] = useState('');
   const [signing, setSigning] = useState(false);
+  useEscapeKey(() => !creating && setShowCreate(false), showCreate);
+  useEscapeKey(() => !signing && setSignTarget(null), signTarget !== null);
 
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
@@ -219,19 +222,19 @@ export default function InformedConsentPanel({ patientId, encounterId }: Informe
               Formulir persetujuan tindakan untuk kunjungan ini. Tidak dikirim otomatis — unduh PDF secara manual saat dibutuhkan.
             </span>
             <button type="button" className="btn-primary" onClick={() => setShowCreate(true)}>
-              <span className="material-symbols-rounded" style={{ fontSize: 18 }}>add</span>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: 18 }}>add</span>
               Buat Formulir Baru
             </button>
           </div>
 
           {loading ? (
             <div className="empty-list">
-              <div className="empty-icon-wrap"><span className="material-symbols-rounded">hourglass_empty</span></div>
+              <div className="empty-icon-wrap"><span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span></div>
               <div className="empty-title">Memuat formulir...</div>
             </div>
           ) : consents.length === 0 ? (
             <div className="empty-list">
-              <div className="empty-icon-wrap"><span className="material-symbols-rounded">description</span></div>
+              <div className="empty-icon-wrap"><span aria-hidden="true" className="material-symbols-rounded">description</span></div>
               <div className="empty-title">Belum ada formulir persetujuan untuk kunjungan ini</div>
               <div className="empty-sub">Buat formulir baru jika kunjungan ini memerlukan tindakan yang butuh persetujuan.</div>
             </div>
@@ -288,14 +291,14 @@ export default function InformedConsentPanel({ patientId, encounterId }: Informe
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div className="modal-header-title">
-                <div className="modal-header-icon"><span className="material-symbols-rounded">add</span></div>
+                <div className="modal-header-icon"><span aria-hidden="true" className="material-symbols-rounded">add</span></div>
                 <div>
                   <h2>Buat Formulir Persetujuan</h2>
                   <p>Pilih tindakan pada kunjungan ini yang memerlukan persetujuan</p>
                 </div>
               </div>
               <button className="modal-close" onClick={() => setShowCreate(false)} aria-label="Tutup">
-                <span className="material-symbols-rounded">close</span>
+                <span aria-hidden="true" className="material-symbols-rounded">close</span>
               </button>
             </div>
             <div className="modal-body">
@@ -325,14 +328,14 @@ export default function InformedConsentPanel({ patientId, encounterId }: Informe
           <div className="modal-box doc-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <div className="modal-header-title">
-                <div className="modal-header-icon"><span className="material-symbols-rounded">draw</span></div>
+                <div className="modal-header-icon"><span aria-hidden="true" className="material-symbols-rounded">draw</span></div>
                 <div>
                   <h2>{signTarget.role === 'patient' ? 'Tanda Tangan Pasien' : 'Tanda Tangan Dokter'}</h2>
                   <p>Tanda tangani langsung pada kolom yang tersedia di bawah, seperti menandatangani kertas.</p>
                 </div>
               </div>
               <button className="modal-close" onClick={() => setSignTarget(null)} aria-label="Tutup">
-                <span className="material-symbols-rounded">close</span>
+                <span aria-hidden="true" className="material-symbols-rounded">close</span>
               </button>
             </div>
             <div className="modal-body doc-modal-body">

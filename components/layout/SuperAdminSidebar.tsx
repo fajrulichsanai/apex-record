@@ -15,6 +15,7 @@ import {
   FiUploadCloud,
   FiChevronLeft,
   FiChevronRight,
+  FiDatabase,
 } from 'react-icons/fi';
 import './sidebar.css';
 
@@ -33,6 +34,7 @@ const NAV_ITEMS = [
   { label: 'Konfirmasi Pembayaran', icon: <FiCreditCard />, href: '/super-admin/payments' },
   { label: 'Laporan', icon: <FiBarChart2 />, href: '/super-admin/reports' },
   { label: 'Log Aktivitas', icon: <FiShield />, href: '/super-admin/audit-log' },
+  { label: 'Permintaan Data', icon: <FiDatabase />, href: '/super-admin/data-requests' },
 ];
 
 export default function SuperAdminSidebar({ isOpen, onClose }: SuperAdminSidebarProps) {

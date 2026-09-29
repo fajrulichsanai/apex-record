@@ -268,7 +268,7 @@ function ListKunjunganPageInner() {
             <p className="page-subtitle">Kelola seluruh kunjungan pasien klinik Anda</p>
           </div>
           <button className="btn-primary" onClick={handleAddVisit}>
-            <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+            <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>
               add
             </span>
             Buat Kunjungan
@@ -291,7 +291,7 @@ function ListKunjunganPageInner() {
               onClick={() => handleSetFilter(card.key)}
             >
               <div className="stat-icon">
-                <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                   {card.icon}
                 </span>
               </div>
@@ -307,7 +307,7 @@ function ListKunjunganPageInner() {
         {backlogVisits.length > 0 && (
           <div className="backlog-banner">
             <div className="backlog-banner-header">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 warning
               </span>
               <div>
@@ -346,7 +346,7 @@ function ListKunjunganPageInner() {
                         {visit.practitionerName || '—'} · {typeof dt === 'string' ? dt : `${dt.date}, ${dt.time}`}
                       </div>
                     </div>
-                    <span className="material-symbols-rounded chevron-icon">chevron_right</span>
+                    <span aria-hidden="true" className="material-symbols-rounded chevron-icon">chevron_right</span>
                   </div>
                 );
               })}
@@ -360,7 +360,7 @@ function ListKunjunganPageInner() {
           <div className="panel">
             <div className="panel-toolbar">
               <div className="search-box">
-                <span className="material-symbols-rounded">search</span>
+                <span aria-hidden="true" className="material-symbols-rounded">search</span>
                 <input
                   type="text"
                   placeholder="Cari pasien, dokter, keluhan…"
@@ -374,7 +374,7 @@ function ListKunjunganPageInner() {
                     aria-label="Hapus pencarian"
                     onClick={() => setSearchQuery('')}
                   >
-                    <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>close</span>
+                    <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>close</span>
                   </button>
                 )}
               </div>
@@ -423,14 +423,14 @@ function ListKunjunganPageInner() {
             ) : !loading && filteredVisits.length === 0 ? (
               <div className="detail-empty" style={{ padding: '32px 16px' }}>
                 <div className="empty-icon-wrap">
-                  <span className="material-symbols-rounded">{visits.length === 0 ? 'event_available' : 'search_off'}</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">{visits.length === 0 ? 'event_available' : 'search_off'}</span>
                 </div>
                 {visits.length === 0 ? (
                   <>
                     <div className="empty-title">Belum ada kunjungan hari ini</div>
                     <div className="empty-sub">Kunjungan baru akan muncul di sini setelah dibuat.</div>
                     <button type="button" className="btn-primary" style={{ marginTop: 8 }} onClick={handleAddVisit}>
-                      <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>add</span>
+                      <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>add</span>
                       Buat Kunjungan
                     </button>
                   </>
@@ -482,7 +482,7 @@ function ListKunjunganPageInner() {
                           {visit.practitionerName || '—'} · {typeof dt === 'string' ? dt : dt.time}
                         </div>
                       </div>
-                      <span className="material-symbols-rounded chevron-icon">chevron_right</span>
+                      <span aria-hidden="true" className="material-symbols-rounded chevron-icon">chevron_right</span>
                     </div>
                   );
                 })}
@@ -495,7 +495,7 @@ function ListKunjunganPageInner() {
             {!selectedVisit ? (
               <div className="detail-empty">
                 <div className="empty-icon-wrap">
-                  <span className="material-symbols-rounded">event_busy</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">event_busy</span>
                 </div>
                 <div className="empty-title">Belum ada kunjungan dipilih</div>
                 <div className="empty-sub">
@@ -505,7 +505,7 @@ function ListKunjunganPageInner() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', flex: 1 }}>
                 <button type="button" className="detail-back" onClick={() => setShowDetailOnMobile(false)}>
-                  <span className="material-symbols-rounded">arrow_back</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">arrow_back</span>
                   Kembali ke daftar
                 </button>
                 <div className="detail-header">
@@ -524,7 +524,7 @@ function ListKunjunganPageInner() {
                       className="btn-outline"
                       onClick={() => setShowEditModal(true)}
                     >
-                      <span className="material-symbols-rounded">edit</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">edit</span>
                       Edit
                     </button>
                   )}
@@ -555,7 +555,7 @@ function ListKunjunganPageInner() {
 
                 <div className="detail-section">
                   <div className="section-title">
-                    <span className="material-symbols-rounded">bolt</span>
+                    <span aria-hidden="true" className="material-symbols-rounded">bolt</span>
                     Langkah Berikutnya
                   </div>
                   <div className="quick-actions">
@@ -565,7 +565,7 @@ function ListKunjunganPageInner() {
                         disabled={actionLoading}
                         onClick={() => handleChangeStatus('in_progress')}
                       >
-                        <span className="material-symbols-rounded">play_arrow</span>
+                        <span aria-hidden="true" className="material-symbols-rounded">play_arrow</span>
                         Mulai Periksa
                       </button>
                     )}
@@ -574,7 +574,7 @@ function ListKunjunganPageInner() {
                         className={selectedVisit.status === 'in_progress' && !isSoapFilled ? 'btn-primary' : 'btn-outline'}
                         onClick={() => router.push(`/list-kunjungan/${selectedVisit.encounterId}/rekam-medis`)}
                       >
-                        <span className="material-symbols-rounded">menu_book</span>
+                        <span aria-hidden="true" className="material-symbols-rounded">menu_book</span>
                         {isSoapFilled ? 'Edit SOAP' : 'Isi SOAP'}
                       </button>
                     )}
@@ -584,7 +584,7 @@ function ListKunjunganPageInner() {
                         disabled={actionLoading}
                         onClick={() => handleChangeStatus('finished')}
                       >
-                        <span className="material-symbols-rounded">task_alt</span>
+                        <span aria-hidden="true" className="material-symbols-rounded">task_alt</span>
                         Selesaikan Kunjungan
                       </button>
                     )}
@@ -593,7 +593,7 @@ function ListKunjunganPageInner() {
                         className="btn-primary"
                         onClick={() => router.push(`/transaksi?encounterId=${selectedVisit.encounterId}`)}
                       >
-                        <span className="material-symbols-rounded">receipt</span>
+                        <span aria-hidden="true" className="material-symbols-rounded">receipt</span>
                         Buat Tagihan
                       </button>
                     )}
@@ -609,7 +609,7 @@ function ListKunjunganPageInner() {
                   </div>
                   {selectedVisit.status === 'in_progress' && !isSoapFilled && (
                     <div className="next-step-hint">
-                      <span className="material-symbols-rounded">info</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">info</span>
                       Isi SOAP terlebih dahulu untuk bisa menyelesaikan kunjungan.
                     </div>
                   )}

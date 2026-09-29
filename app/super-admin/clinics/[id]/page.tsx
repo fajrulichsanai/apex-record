@@ -13,6 +13,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 import { defaultRouteForRole } from '@/lib/permissions';
 import { formatCurrency } from '@/lib/format';
+import { useEscapeKey } from '@/lib/a11y';
 import '../../../styles/super-admin.css';
 
 const ROLE_LABEL: Record<string, string> = {
@@ -39,6 +40,7 @@ export default function SuperAdminClinicDetailPage() {
   const [loading, setLoading] = useState(true);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  useEscapeKey(() => setModalOpen(false), modalOpen);
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);

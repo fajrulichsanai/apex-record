@@ -117,7 +117,7 @@ export default function PrescriptionPanel({ encounterId }: PrescriptionPanelProp
                           aria-label="Hapus"
                           onClick={() => setConfirmDelete({ id: item.id, name: item.drugName })}
                         >
-                          <span className="material-symbols-rounded">delete</span>
+                          <span aria-hidden="true" className="material-symbols-rounded">delete</span>
                         </button>
                       </td>
                     </tr>
@@ -129,7 +129,7 @@ export default function PrescriptionPanel({ encounterId }: PrescriptionPanelProp
 
           {items.length === 0 && (
             <div className="rx-empty">
-              <span className="material-symbols-rounded">medication</span>
+              <span aria-hidden="true" className="material-symbols-rounded">medication</span>
               Belum ada obat yang diresepkan
             </div>
           )}
@@ -176,7 +176,7 @@ export default function PrescriptionPanel({ encounterId }: PrescriptionPanelProp
                 />
               </div>
               <button type="button" className="btn-outline rx-add-btn" onClick={handleAdd} disabled={submitting || !draft.drugName.trim()}>
-                <span className="material-symbols-rounded">add</span>
+                <span aria-hidden="true" className="material-symbols-rounded">add</span>
                 Tambah Obat
               </button>
             </div>

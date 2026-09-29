@@ -78,7 +78,7 @@ export default function EditReservationModal({ reservation, onClose, onUpdated }
             disabled={submitting}
             aria-label="Close modal"
           >
-            <span className="material-symbols-rounded">close</span>
+            <span aria-hidden="true" className="material-symbols-rounded">close</span>
           </button>
         </div>
 

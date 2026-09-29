@@ -5,14 +5,14 @@
   --primary:   #16150F;
   --primary-light: #E3F3DA;
   --primary-hover: #262419;
-  --accent:    #3E8E36;
+  --accent:    #367D2F;
   --info:      #1D5FAE;
-  --success:   #3E8E36;
+  --success:   #367D2F;
   --warning:   #8A5A00;
   --danger:    #C1381F;
   --text-1:    #17160F;
   --text-2:    #55534A;
-  --text-3:    #8D8B7E;
+  --text-3:    #6B695D;
   --badge-admin:  #DCEAFB;
   --badge-admin-text: #1D5FAE;
   --badge-doc:    #E3F3DA;
@@ -600,7 +600,7 @@
   --bg:        #17160F;
   --surface:   #242320;
   --border:    #38362F;
-  --primary:   #3E8E36;
+  --primary:   #367D2F;
   --primary-light: #23361F;
   --primary-hover: #4FA345;
   --accent:    #4FA345;
@@ -610,7 +610,7 @@
   --danger:    #E5573C;
   --text-1:    #F3F1EA;
   --text-2:    #B8B5A9;
-  --text-3:    #85826F;
+  --text-3:    #A09D8B;
   --badge-admin:  #1B2A3A;
   --badge-admin-text: #5B9BE0;
   --badge-doc:    #23361F;

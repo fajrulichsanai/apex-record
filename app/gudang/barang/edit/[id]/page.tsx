@@ -34,7 +34,7 @@ export default function EditBarangPage() {
       <DashboardLayout>
         <main className="content gudang-page">
           <div className="empty-list">
-            <div className="empty-icon-wrap"><span className="material-symbols-rounded">hourglass_empty</span></div>
+            <div className="empty-icon-wrap"><span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span></div>
             <div className="empty-title">Memuat data barang...</div>
           </div>
         </main>

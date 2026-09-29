@@ -9,6 +9,7 @@ import { Tarif } from '@/lib/tarif';
 import { useToast } from '@/lib/toast-context';
 import { waLink } from '@/lib/utils/whatsapp';
 import PaymentModal, { PAYMENT_METHOD_LABEL } from './PaymentModal';
+import { useEscapeKey } from '@/lib/a11y';
 import './BillingDetailModal.css';
 
 interface BillingDetailModalProps {
@@ -104,13 +105,9 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [billingId]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !saving) onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [saving, onClose]);
+  useEscapeKey(() => {
+    if (!saving) onClose();
+  });
 
   function startEdit() {
     if (!detail) return;
@@ -254,7 +251,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
             {detail && <div className="billing-modal-subtitle">{detail.invoiceNumber}</div>}
           </div>
           <button type="button" className="billing-modal-close" onClick={onClose} disabled={saving} aria-label="Tutup">
-            <span className="material-symbols-rounded">close</span>
+            <span aria-hidden="true" className="material-symbols-rounded">close</span>
           </button>
         </div>
 
@@ -304,14 +301,14 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                           onChange={(e) => updateRow(row.key, { quantity: Math.max(1, Number(e.target.value) || 1) })}
                           title="Jumlah"
                         />
-                        <button
+                        <button aria-label="Hapus tindakan"
                           type="button"
                           className="billing-modal-close"
                           onClick={() => setItems((prev) => prev.filter((r) => r.key !== row.key))}
                           disabled={items.length === 1}
                           title="Hapus tindakan"
                         >
-                          <span className="material-symbols-rounded">close</span>
+                          <span aria-hidden="true" className="material-symbols-rounded">close</span>
                         </button>
                       </div>
                     ))}
@@ -321,7 +318,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                     className="btn-outline billing-add-item-btn"
                     onClick={() => setItems((prev) => [...prev, { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal' }])}
                   >
-                    <span className="material-symbols-rounded">add</span>
+                    <span aria-hidden="true" className="material-symbols-rounded">add</span>
                     Tambah Tindakan
                   </button>
 
@@ -480,13 +477,13 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                   </button>
                   {(detail.status === 'paid' || detail.status === 'partial') && (
                     <button type="button" className="btn-outline" onClick={handleSendInvoiceWa} disabled={sendingWa}>
-                      <span className="material-symbols-rounded">chat</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">chat</span>
                       {sendingWa ? 'Menyiapkan…' : 'Kirim Invoice ke WA'}
                     </button>
                   )}
                   {canCancel && (
                     <button type="button" className="btn-outline" onClick={() => setConfirmCancel(true)}>
-                      <span className="material-symbols-rounded">cancel</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">cancel</span>
                       Batalkan Transaksi
                     </button>
                   )}
@@ -497,7 +494,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                   )}
                   {canPay && (
                     <button type="button" className="btn-primary" onClick={() => setPaying(true)}>
-                      <span className="material-symbols-rounded">payments</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">payments</span>
                       {Number(detail.paidAmount) > 0 ? 'Pelunasan' : 'Bayar'}
                     </button>
                   )}

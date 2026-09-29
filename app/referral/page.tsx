@@ -65,7 +65,7 @@ export default function ReferralPage() {
           {loading ? (
             <div className="empty-list">
               <div className="empty-icon-wrap">
-                <span className="material-symbols-rounded">hourglass_empty</span>
+                <span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span>
               </div>
               <div className="empty-title">Memuat data referral...</div>
             </div>

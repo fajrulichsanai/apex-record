@@ -1,10 +1,10 @@
 .list-pasien-page {
   --primary:      #16150F;
   --primary-dk:   #262419;
-  --accent:       #3E8E36;
+  --accent:       #367D2F;
   --accent-solid: #7ED957;
   --accent-soft:  #E3F3DA;
-  --green:        #3E8E36;
+  --green:        #367D2F;
   --orange:       #8A5A00;
   --orange-soft:  #FCEACB;
   --red:          #C1381F;
@@ -16,7 +16,7 @@
   --surface:      #FFFFFF;
   --text-main:    #17160F;
   --text-sub:     #55534A;
-  --text-muted:   #8D8B7E;
+  --text-muted:   #6B695D;
   --border:       #E7E4DD;
   --tag-female:   #FF6B9D;
   --tag-male:     #1D5FAE;
@@ -472,13 +472,13 @@
 .list-pasien-modal-overlay {
   --primary:      #16150F;
   --primary-dk:   #262419;
-  --accent:       #3E8E36;
-  --green:        #3E8E36;
+  --accent:       #367D2F;
+  --green:        #367D2F;
   --red:          #C1381F;
   --surface:      #FFFFFF;
   --text-main:    #17160F;
   --text-sub:     #55534A;
-  --text-muted:   #8D8B7E;
+  --text-muted:   #6B695D;
   --border:       #E7E4DD;
   --bg:           #FAF9F6;
   --radius-sm:    8px;
@@ -702,13 +702,13 @@
 .patient-form-page {
   --primary:      #16150F;
   --primary-dk:   #262419;
-  --accent:       #3E8E36;
-  --green:        #3E8E36;
+  --accent:       #367D2F;
+  --green:        #367D2F;
   --red:          #C1381F;
   --surface:      #FFFFFF;
   --text-main:    #17160F;
   --text-sub:     #55534A;
-  --text-muted:   #8D8B7E;
+  --text-muted:   #6B695D;
   --border:       #E7E4DD;
   --bg:           #FAF9F6;
   --radius-sm:    8px;
@@ -925,7 +925,7 @@
 }
 
 .wizard-step-line.filled {
-  background: var(--accent, #3E8E36);
+  background: var(--accent, #367D2F);
 }
 
 .wizard-step-btn {
@@ -951,8 +951,8 @@
 .wizard-step-btn .material-symbols-rounded { font-size: 16px; }
 
 .wizard-step.active .wizard-step-btn {
-  border-color: var(--accent, #3E8E36);
-  background: var(--accent, #3E8E36);
+  border-color: var(--accent, #367D2F);
+  background: var(--accent, #367D2F);
   color: #fff;
   box-shadow: 0 0 0 5px rgba(62,142,54,.14);
   transform: scale(1.08);
@@ -982,7 +982,7 @@
 
 .wizard-progress-bar {
   height: 100%;
-  background: var(--accent, #3E8E36);
+  background: var(--accent, #367D2F);
   border-radius: 999px;
   transition: width 0.3s ease;
 }
@@ -1053,7 +1053,7 @@
   transition: transform var(--transition);
 }
 
-.wizard-switch.on { background: var(--accent, #3E8E36); }
+.wizard-switch.on { background: var(--accent, #367D2F); }
 .wizard-switch.on .wizard-switch-track { transform: translateX(20px); }
 
 .wizard-checkbox {
@@ -1065,7 +1065,7 @@
   cursor: pointer;
 }
 
-.wizard-checkbox input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent, #3E8E36); }
+.wizard-checkbox input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent, #367D2F); }
 
 .wizard-autocomplete { position: relative; }
 
@@ -1110,7 +1110,7 @@
 
 /* ---------- DARK MODE ---------- */
 :root[data-theme="dark"] .list-pasien-page {
-  --primary: #3E8E36;
+  --primary: #367D2F;
   --primary-dk: #4FA345;
   --accent: #4FA345;
   --accent-solid: #7ED957;
@@ -1127,7 +1127,7 @@
   --surface: #242320;
   --text-main: #F3F1EA;
   --text-sub: #B8B5A9;
-  --text-muted: #85826F;
+  --text-muted: #A09D8B;
   --border: #38362F;
   --tag-female: #E884AC;
   --tag-male: #5B9BE0;
@@ -1140,7 +1140,7 @@
 :root[data-theme="dark"] .list-pasien-page .tag.female { background: rgba(232,132,172,.18); }
 
 :root[data-theme="dark"] .list-pasien-modal-overlay {
-  --primary: #3E8E36;
+  --primary: #367D2F;
   --primary-dk: #4FA345;
   --accent: #4FA345;
   --green: #4FA345;
@@ -1148,13 +1148,13 @@
   --surface: #242320;
   --text-main: #F3F1EA;
   --text-sub: #B8B5A9;
-  --text-muted: #85826F;
+  --text-muted: #A09D8B;
   --border: #38362F;
   --bg: #17160F;
 }
 
 :root[data-theme="dark"] .patient-form-page {
-  --primary: #3E8E36;
+  --primary: #367D2F;
   --primary-dk: #4FA345;
   --accent: #4FA345;
   --green: #4FA345;
@@ -1162,7 +1162,7 @@
   --surface: #242320;
   --text-main: #F3F1EA;
   --text-sub: #B8B5A9;
-  --text-muted: #85826F;
+  --text-muted: #A09D8B;
   --border: #38362F;
   --bg: #17160F;
 }

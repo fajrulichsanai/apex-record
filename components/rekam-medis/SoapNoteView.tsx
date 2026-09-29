@@ -57,7 +57,7 @@ export default function SoapNoteView({
           </p>
         </div>
         <button type="button" className="btn-outline" onClick={onEdit}>
-          <span className="material-symbols-rounded">edit</span>
+          <span aria-hidden="true" className="material-symbols-rounded">edit</span>
           Edit
         </button>
       </div>

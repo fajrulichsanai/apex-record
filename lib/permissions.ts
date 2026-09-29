@@ -24,7 +24,8 @@ export type FeatureKey =
   | 'onboarding'
   | 'keamanan'
   | 'tampilan'
-  | 'api';
+  | 'api'
+  | 'data-privasi';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',
@@ -54,7 +55,8 @@ const FULL_ACCESS: FeatureKey[] = [
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
   super_admin: FULL_ACCESS,
   multi_clinic_owner: ['keamanan', 'tampilan'],
-  owner: [...FULL_ACCESS, 'onboarding'],
+  // Data requests (UU PDP) are the clinic owner's to make.
+  owner: [...FULL_ACCESS, 'onboarding', 'data-privasi'],
   admin: [
     'pasien',
     'reservasi',

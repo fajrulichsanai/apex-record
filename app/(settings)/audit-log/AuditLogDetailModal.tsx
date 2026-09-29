@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ApiError } from '@/lib/api-client';
 import { auditLogApi, AuditLogEntry } from '@/lib/audit-log';
+import { useEscapeKey } from '@/lib/a11y';
 
 interface Props {
   id: number;
@@ -36,6 +37,7 @@ function diffRows(before: Record<string, unknown> | null, after: Record<string, 
 }
 
 export default function AuditLogDetailModal({ id, onClose }: Props) {
+  useEscapeKey(onClose);
   const [entry, setEntry] = useState<AuditLogEntry | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

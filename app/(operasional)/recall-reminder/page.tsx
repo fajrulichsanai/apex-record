@@ -65,7 +65,7 @@ export default function RecallReminderPage() {
               <div className="stat-grid">
                 <div className="stat-card total">
                   <div className="stat-icon">
-                    <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>event_repeat</span>
+                    <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>event_repeat</span>
                   </div>
                   <div className="stat-info">
                     <div className="stat-value">{belumDihubungi.length}</div>
@@ -74,7 +74,7 @@ export default function RecallReminderPage() {
                 </div>
                 <div className="stat-card warn">
                   <div className="stat-icon">
-                    <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
+                    <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
                   </div>
                   <div className="stat-info">
                     <div className="stat-value">{overdueCount}</div>
@@ -83,7 +83,7 @@ export default function RecallReminderPage() {
                 </div>
                 <div className="stat-card done">
                   <div className="stat-icon">
-                    <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>event_available</span>
+                    <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>event_available</span>
                   </div>
                   <div className="stat-info">
                     <div className="stat-value">{bookingUlangCount}</div>

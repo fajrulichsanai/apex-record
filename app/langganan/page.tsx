@@ -396,7 +396,7 @@ function LanggananPageInner() {
                         {p.proofUrl ? (
                           <button
                             type="button"
-                            style={{ background: 'none', border: 'none', padding: 0, color: 'var(--accent, #3E8E36)', textDecoration: 'underline', cursor: 'pointer' }}
+                            style={{ background: 'none', border: 'none', padding: 0, color: 'var(--accent, #367D2F)', textDecoration: 'underline', cursor: 'pointer' }}
                             onClick={() => openProtectedFile(p.proofUrl!).catch(() => showError('Gagal memuat bukti pembayaran'))}
                           >
                             Lihat

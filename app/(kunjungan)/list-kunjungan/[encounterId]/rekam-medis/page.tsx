@@ -851,7 +851,7 @@ export default function RekamMedisPage() {
       <FeatureGuard feature="kunjungan">
         <main className="content kunjungan-page rekam-medis-page">
           <button type="button" className="rm-back-btn" onClick={goBackToVisit}>
-            <span className="material-symbols-rounded">arrow_back</span>
+            <span aria-hidden="true" className="material-symbols-rounded">arrow_back</span>
             Kembali ke Kunjungan
           </button>
 
@@ -883,7 +883,7 @@ export default function RekamMedisPage() {
                       className={`rm-sidebar-item ${activeSection === s.id ? 'active' : ''}`}
                       onClick={() => setActiveSection(s.id)}
                     >
-                      <span className="material-symbols-rounded">{s.icon}</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">{s.icon}</span>
                       {s.label}
                     </button>
                   ))}
@@ -919,7 +919,7 @@ export default function RekamMedisPage() {
                       <div className="rm-section-body">
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">visibility</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">visibility</span>
                             Keadaan Umum &amp; Kesadaran
                           </div>
                           <div className="rm-field-grid cols-3">
@@ -989,7 +989,7 @@ export default function RekamMedisPage() {
 
                         <div className="rm-fieldset rm-fieldset-vitals">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">monitor_heart</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">monitor_heart</span>
                             Tanda Vital
                           </div>
                           <div className="rm-field-grid cols-4">
@@ -1072,7 +1072,7 @@ export default function RekamMedisPage() {
 
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">sentiment_dissatisfied</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">sentiment_dissatisfied</span>
                             Skala Nyeri
                           </div>
                           <div className="visit-form-field">
@@ -1087,7 +1087,7 @@ export default function RekamMedisPage() {
 
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">health_and_safety</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">health_and_safety</span>
                             Pemeriksaan Umum
                           </div>
                           <div className="rm-field-grid cols-4">
@@ -1132,7 +1132,7 @@ export default function RekamMedisPage() {
 
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">accessibility_new</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">accessibility_new</span>
                             Status Generalisata
                           </div>
                           <div className="rm-field-grid cols-3">
@@ -1182,7 +1182,7 @@ export default function RekamMedisPage() {
 
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">lungs</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">lungs</span>
                             Thorax — Paru
                           </div>
                           <div className="rm-field-grid">
@@ -1227,7 +1227,7 @@ export default function RekamMedisPage() {
 
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">favorite</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">favorite</span>
                             Thorax — Jantung
                           </div>
                           <div className="rm-field-grid">
@@ -1272,7 +1272,7 @@ export default function RekamMedisPage() {
 
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">digestion</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">digestion</span>
                             Abdomen
                           </div>
                           <div className="rm-field-grid">
@@ -1317,7 +1317,7 @@ export default function RekamMedisPage() {
 
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">more_horiz</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">more_horiz</span>
                             Pemeriksaan Lainnya
                           </div>
                           <div className="rm-field-grid cols-3">
@@ -1357,7 +1357,7 @@ export default function RekamMedisPage() {
                           Batal
                         </button>
                         <button type="submit" className="btn-primary" disabled={submittingExam}>
-                          <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                          <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                             arrow_forward
                           </span>
                           {submittingExam ? 'Menyimpan…' : 'Simpan & Lanjut ke SOAP'}
@@ -1395,7 +1395,7 @@ export default function RekamMedisPage() {
                       <div className="rm-section-body">
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">cleaning_services</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">cleaning_services</span>
                             Oral Hygiene Index — Simplified (OHI-S)
                           </div>
                           <div className="rm-field-grid cols-3">
@@ -1438,7 +1438,7 @@ export default function RekamMedisPage() {
 
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">emergency</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">emergency</span>
                             Gingival Index (Löe &amp; Silness)
                           </div>
                           <div className="rm-field-grid cols-3">
@@ -1468,7 +1468,7 @@ export default function RekamMedisPage() {
 
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">grid_on</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">grid_on</span>
                             Plaque Control Record (O&apos;Leary)
                           </div>
                           <div className="rm-field-grid cols-3">
@@ -1505,7 +1505,7 @@ export default function RekamMedisPage() {
 
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">straighten</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">straighten</span>
                             Probing Depth (mm)
                           </div>
                           <div className="rm-probing-grid">
@@ -1614,7 +1614,7 @@ export default function RekamMedisPage() {
                           Batal
                         </button>
                         <button type="submit" className="btn-primary" disabled={submittingDentalExam}>
-                          <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                          <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                             arrow_forward
                           </span>
                           {submittingDentalExam ? 'Menyimpan…' : 'Simpan & Lanjut ke SOAP'}
@@ -1643,7 +1643,7 @@ export default function RekamMedisPage() {
                           <p>Kelola obat yang diresepkan untuk kunjungan ini, lalu cetak sebagai lembar resep</p>
                         </div>
                         <button type="button" className="btn-primary" onClick={handlePrintPrescription} disabled={printingRx}>
-                          <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                          <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                             print
                           </span>
                           {printingRx ? 'Menyiapkan…' : 'Cetak Resep'}
@@ -1681,7 +1681,7 @@ export default function RekamMedisPage() {
                       <div className="rm-section-body">
                         <div className="visit-form-field">
                           <label>
-                            <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                            <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '15px' }}>
                               medical_services
                             </span>
                             Dokter Pemeriksa
@@ -1738,7 +1738,7 @@ export default function RekamMedisPage() {
 
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">clinical_notes</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">clinical_notes</span>
                             Treatment — tindakan pada kunjungan ini
                           </div>
                           <div className="visit-form-field">
@@ -1770,7 +1770,7 @@ export default function RekamMedisPage() {
 
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
-                            <span className="material-symbols-rounded">event_repeat</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">event_repeat</span>
                             Jadwal Kontrol
                           </div>
                           <div className="rm-field-grid cols-3">
@@ -1829,7 +1829,7 @@ export default function RekamMedisPage() {
                           Batal
                         </button>
                         <button type="submit" className="btn-primary" disabled={submitting}>
-                          <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                          <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                             check_circle
                           </span>
                           {submitting ? 'Menyimpan…' : 'Simpan SOAP'}

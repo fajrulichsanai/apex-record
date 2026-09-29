@@ -28,7 +28,7 @@ export default function ToothIcon({ toothNumber, condition, selected, size = 34 
   const rightCondition = condition?.[SURFACE_FIELD[layout.right]];
   const occlusalCondition = condition?.surfaceOcclusal;
 
-  const stroke = selected ? '#3E8E36' : '#55534A';
+  const stroke = selected ? '#367D2F' : '#55534A';
   const strokeWidth = selected ? 1.6 : 1;
   const baseFill = layout.isDeciduous ? '#FEF3C7' : '#FFFFFF';
   const missing = condition?.teksBawah === 'MISSING';

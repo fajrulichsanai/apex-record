@@ -14,6 +14,7 @@ const SETTINGS_ORDER: { href: string; feature: FeatureKey; requireManageUsers?: 
   { href: '/langganan', feature: 'langganan' },
   { href: '/tampilan', feature: 'tampilan' },
   { href: '/keamanan', feature: 'keamanan' },
+  { href: '/data-privasi', feature: 'data-privasi' },
 ];
 
 export default function PengaturanPage() {

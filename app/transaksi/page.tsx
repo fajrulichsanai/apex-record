@@ -362,7 +362,7 @@ function TransaksiPageInner() {
         <div className="stat-grid">
           <div className="stat-card total">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 receipt_long
               </span>
             </div>
@@ -373,7 +373,7 @@ function TransaksiPageInner() {
           </div>
           <div className="stat-card income">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 payments
               </span>
             </div>
@@ -384,7 +384,7 @@ function TransaksiPageInner() {
           </div>
           <div className="stat-card pending">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 hourglass_empty
               </span>
             </div>
@@ -395,7 +395,7 @@ function TransaksiPageInner() {
           </div>
           <div className="stat-card lunas">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 check_circle
               </span>
             </div>
@@ -410,7 +410,7 @@ function TransaksiPageInner() {
         {backlogEncounters.length > 0 && (
           <div className="backlog-banner">
             <div className="backlog-banner-header">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 warning
               </span>
               <div>
@@ -444,7 +444,7 @@ function TransaksiPageInner() {
                     </div>
                   </div>
                   <button type="button" className="btn-outline pay" onClick={() => setSelectedEncounterId(enc.encounterId)}>
-                    <span className="material-symbols-rounded">receipt_long</span>
+                    <span aria-hidden="true" className="material-symbols-rounded">receipt_long</span>
                     Buat Tagihan
                   </button>
                 </div>
@@ -458,7 +458,7 @@ function TransaksiPageInner() {
           {/* Input Transaksi Panel */}
           <div className="panel">
             <div className="panel-header">
-              <span className="material-symbols-rounded">add_card</span>
+              <span aria-hidden="true" className="material-symbols-rounded">add_card</span>
               <h2>Buat Tagihan Baru</h2>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
@@ -500,14 +500,14 @@ function TransaksiPageInner() {
                           onChange={(e) => updateRow(row.key, { quantity: Math.max(1, Number(e.target.value) || 1) })}
                           title="Jumlah"
                         />
-                        <button
+                        <button aria-label="Hapus tindakan"
                           type="button"
                           className="btn-icon-sm"
                           onClick={() => setItems((prev) => prev.filter((r) => r.key !== row.key))}
                           disabled={items.length === 1}
                           title="Hapus tindakan"
                         >
-                          <span className="material-symbols-rounded">close</span>
+                          <span aria-hidden="true" className="material-symbols-rounded">close</span>
                         </button>
                       </div>
                     ))}
@@ -518,7 +518,7 @@ function TransaksiPageInner() {
                     style={{ alignSelf: 'flex-start', marginTop: 8 }}
                     onClick={() => setItems((prev) => [...prev, emptyRow()])}
                   >
-                    <span className="material-symbols-rounded">add</span>
+                    <span aria-hidden="true" className="material-symbols-rounded">add</span>
                     Tambah Tindakan
                   </button>
                 </div>
@@ -660,7 +660,7 @@ function TransaksiPageInner() {
 
               <div className="form-footer">
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+                  <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>
                     add
                   </span>
                   {submitting ? 'Menyimpan…' : 'Simpan Transaksi'}
@@ -674,7 +674,7 @@ function TransaksiPageInner() {
             <div className="panel-toolbar">
               <div className="panel-toolbar-title">Riwayat Transaksi</div>
               <div className="search-box">
-                <span className="material-symbols-rounded">search</span>
+                <span aria-hidden="true" className="material-symbols-rounded">search</span>
                 <input
                   type="text"
                   placeholder="Cari pasien atau No. invoice…"
@@ -688,7 +688,7 @@ function TransaksiPageInner() {
                     aria-label="Hapus pencarian"
                     onClick={() => setSearchQuery('')}
                   >
-                    <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>close</span>
+                    <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>close</span>
                   </button>
                 )}
               </div>
@@ -729,7 +729,7 @@ function TransaksiPageInner() {
                 {loadingList ? 'Memuat…' : `${filteredBillings.length} transaksi ditemukan`}
               </span>
               <button type="button" className="btn-ghost" onClick={loadBillings} disabled={loadingList}>
-                <span className="material-symbols-rounded">refresh</span>
+                <span aria-hidden="true" className="material-symbols-rounded">refresh</span>
                 Muat Ulang
               </button>
             </div>
@@ -737,7 +737,7 @@ function TransaksiPageInner() {
             {listError ? (
               <div className="riwayat-empty">
                 <div className="empty-icon-wrap">
-                  <span className="material-symbols-rounded">error</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">error</span>
                 </div>
                 <div className="empty-title">Gagal memuat riwayat</div>
                 <div className="empty-sub">{listError}</div>
@@ -745,7 +745,7 @@ function TransaksiPageInner() {
             ) : !loadingList && filteredBillings.length === 0 ? (
               <div className="riwayat-empty">
                 <div className="empty-icon-wrap">
-                  <span className="material-symbols-rounded">receipt_long</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">receipt_long</span>
                 </div>
                 {billings.length === 0 && currentFilter === 'semua' ? (
                   <>
@@ -790,7 +790,7 @@ function TransaksiPageInner() {
                       }}
                     >
                       <div className={`transaksi-icon ${tag}`}>
-                        <span className="material-symbols-rounded">
+                        <span aria-hidden="true" className="material-symbols-rounded">
                           {b.status === 'paid' ? 'task_alt' : b.status === 'partial' ? 'hourglass_top' : 'receipt'}
                         </span>
                       </div>

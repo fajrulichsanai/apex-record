@@ -89,14 +89,14 @@ export default function RecallDueList({ clinicName }: RecallDueListProps) {
         {loading ? (
           <div className="empty-list">
             <div className="empty-icon-wrap">
-              <span className="material-symbols-rounded">hourglass_empty</span>
+              <span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span>
             </div>
             <div className="empty-title">Memuat daftar recall...</div>
           </div>
         ) : recalls.length === 0 ? (
           <div className="empty-list">
             <div className="empty-icon-wrap">
-              <span className="material-symbols-rounded">event_available</span>
+              <span aria-hidden="true" className="material-symbols-rounded">event_available</span>
             </div>
             <div className="empty-title">Tidak ada pasien yang perlu dihubungi</div>
             <div className="empty-sub">Jadwal recall muncul otomatis saat tindakan dengan interval recall dibuatkan tagihan.</div>
@@ -140,7 +140,7 @@ export default function RecallDueList({ clinicName }: RecallDueListProps) {
                                 if (recall.status === 'belum_dihubungi') handleUpdateStatus(recall, 'sudah_dihubungi');
                               }}
                             >
-                              <span className="material-symbols-rounded" style={{ fontSize: 16 }}>chat</span>
+                              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: 16 }}>chat</span>
                               Hubungi via WA
                             </a>
                           )}
@@ -149,7 +149,7 @@ export default function RecallDueList({ clinicName }: RecallDueListProps) {
                               className="btn-row-save"
                               href={`/reservasi?search=${encodeURIComponent(recall.patient?.phone || '')}`}
                             >
-                              <span className="material-symbols-rounded" style={{ fontSize: 16 }}>event_available</span>
+                              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: 16 }}>event_available</span>
                               Lihat Reservasi
                             </Link>
                           ) : (

@@ -28,7 +28,7 @@ export default function BodyPainMap({ points, onChange, disabled }: BodyPainMapP
     onChange([...points, { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 }]);
   };
 
-  const removePoint = (idx: number, e: React.MouseEvent) => {
+  const removePoint = (idx: number, e: React.SyntheticEvent) => {
     e.stopPropagation();
     if (disabled) return;
     onChange(points.filter((_, i) => i !== idx));
@@ -41,6 +41,8 @@ export default function BodyPainMap({ points, onChange, disabled }: BodyPainMapP
         viewBox={`0 0 ${VIEW_W} ${VIEW_H}`}
         className={`pain-map-svg${disabled ? ' disabled' : ''}`}
         onClick={handleClick}
+        role="group"
+        aria-label={`Peta lokasi nyeri, ${points.length} titik ditandai`}
       >
         <circle className="pain-map-body" cx="100" cy="35" r="28" />
         <rect className="pain-map-body" x="90" y="60" width="20" height="14" />
@@ -52,7 +54,24 @@ export default function BodyPainMap({ points, onChange, disabled }: BodyPainMapP
         <path className="pain-map-body" d="M 108 228 L 138 228 L 130 400 L 112 400 Z" />
 
         {points.map((p, i) => (
-          <circle key={i} cx={p.x} cy={p.y} r="7" className="pain-map-point" onClick={(e) => removePoint(i, e)} />
+          <circle
+            key={i}
+            cx={p.x}
+            cy={p.y}
+            r="7"
+            className="pain-map-point"
+            onClick={(e) => removePoint(i, e)}
+            // Marking a spot needs a pointer, but existing marks can be removed from the keyboard.
+            tabIndex={disabled ? undefined : 0}
+            role={disabled ? undefined : 'button'}
+            aria-label={`Hapus titik nyeri ${i + 1}`}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ' || e.key === 'Delete' || e.key === 'Backspace') {
+                e.preventDefault();
+                removePoint(i, e);
+              }
+            }}
+          />
         ))}
       </svg>
       {!disabled && (

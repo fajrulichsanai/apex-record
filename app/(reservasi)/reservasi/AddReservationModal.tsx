@@ -166,7 +166,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
             disabled={submitting}
             aria-label="Close modal"
           >
-            <span className="material-symbols-rounded">close</span>
+            <span aria-hidden="true" className="material-symbols-rounded">close</span>
           </button>
         </div>
 

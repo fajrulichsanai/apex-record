@@ -70,7 +70,7 @@ export default function ReservationCard({
             aria-label="Hubungi via WhatsApp"
             title="Hubungi via WhatsApp"
           >
-            <span className="material-symbols-rounded">chat</span>
+            <span aria-hidden="true" className="material-symbols-rounded">chat</span>
             WA
           </button>
         )}
@@ -82,18 +82,18 @@ export default function ReservationCard({
             aria-label="Ubah jadwal"
             title="Ubah jadwal"
           >
-            <span className="material-symbols-rounded">event_repeat</span>
+            <span aria-hidden="true" className="material-symbols-rounded">event_repeat</span>
             Ubah Jadwal
           </button>
         )}
         {r.status === 'pending' && (
           <>
             <button className="btn-row-action confirm" disabled={busy} onClick={() => onConfirm(r.id)}>
-              <span className="material-symbols-rounded">check</span>
+              <span aria-hidden="true" className="material-symbols-rounded">check</span>
               Konfirmasi
             </button>
             <button className="btn-row-action cancel" disabled={busy} onClick={() => onCancel(r.id)}>
-              <span className="material-symbols-rounded">close</span>
+              <span aria-hidden="true" className="material-symbols-rounded">close</span>
               Tolak
             </button>
           </>
@@ -106,11 +106,11 @@ export default function ReservationCard({
               onClick={() => onCheckIn(r)}
               title="Check-in pasien dan buat kunjungan"
             >
-              <span className="material-symbols-rounded">task_alt</span>
+              <span aria-hidden="true" className="material-symbols-rounded">task_alt</span>
               Check-in
             </button>
             <button className="btn-row-action cancel" disabled={busy} onClick={() => onCancel(r.id)}>
-              <span className="material-symbols-rounded">close</span>
+              <span aria-hidden="true" className="material-symbols-rounded">close</span>
               Batalkan
             </button>
           </>
@@ -122,7 +122,7 @@ export default function ReservationCard({
           aria-label="Hapus reservasi"
           title="Hapus reservasi"
         >
-          <span className="material-symbols-rounded">delete</span>
+          <span aria-hidden="true" className="material-symbols-rounded">delete</span>
         </button>
       </div>
     </div>

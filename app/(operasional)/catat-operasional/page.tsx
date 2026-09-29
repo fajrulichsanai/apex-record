@@ -172,7 +172,7 @@ export default function CatatOperasionalPage() {
                 success(`${filteredRecords.length} catatan telah diekspor ke Excel`);
               }}
             >
-              <span className="material-symbols-rounded">download</span>
+              <span aria-hidden="true" className="material-symbols-rounded">download</span>
               Ekspor
             </button>
             <button
@@ -181,7 +181,7 @@ export default function CatatOperasionalPage() {
               onClick={() => setFormModal({ mode: 'create' })}
               disabled={loading}
             >
-              <span className="material-symbols-rounded">add</span>
+              <span aria-hidden="true" className="material-symbols-rounded">add</span>
               Tambah Operasional
             </button>
           </div>
@@ -190,7 +190,7 @@ export default function CatatOperasionalPage() {
         <div className="stat-grid">
           <div className="stat-card total">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 payments
               </span>
             </div>
@@ -202,7 +202,7 @@ export default function CatatOperasionalPage() {
           </div>
           <div className="stat-card allperiod">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 account_balance_wallet
               </span>
             </div>
@@ -214,7 +214,7 @@ export default function CatatOperasionalPage() {
           </div>
           <div className="stat-card kategori">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 category
               </span>
             </div>
@@ -226,7 +226,7 @@ export default function CatatOperasionalPage() {
           </div>
           <div className="stat-card jumlah">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 receipt_long
               </span>
             </div>
@@ -242,7 +242,7 @@ export default function CatatOperasionalPage() {
           <div className="panel-toolbar">
             <div className="toolbar-row">
               <div className="search-box">
-                <span className="material-symbols-rounded">search</span>
+                <span aria-hidden="true" className="material-symbols-rounded">search</span>
                 <input
                   type="text"
                   placeholder="Cari berdasarkan deskripsi…"
@@ -286,7 +286,7 @@ export default function CatatOperasionalPage() {
               onClick={() => setSortAsc((v) => !v)}
               aria-label={sortAsc ? 'Urutkan tanggal terbaru dulu' : 'Urutkan tanggal terlama dulu'}
             >
-              <span className="material-symbols-rounded">{sortAsc ? 'arrow_upward' : 'arrow_downward'}</span>
+              <span aria-hidden="true" className="material-symbols-rounded">{sortAsc ? 'arrow_upward' : 'arrow_downward'}</span>
               Tanggal {sortAsc ? 'terlama' : 'terbaru'}
             </button>
           </div>
@@ -294,21 +294,21 @@ export default function CatatOperasionalPage() {
           {loading ? (
             <div className="empty-list">
               <div className="empty-icon-wrap">
-                <span className="material-symbols-rounded">hourglass_empty</span>
+                <span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span>
               </div>
               <div className="empty-title">Memuat data operasional...</div>
             </div>
           ) : filteredRecords.length === 0 ? (
             <div className="empty-list">
               <div className="empty-icon-wrap">
-                <span className="material-symbols-rounded">{records.length === 0 ? 'receipt_long' : 'search_off'}</span>
+                <span aria-hidden="true" className="material-symbols-rounded">{records.length === 0 ? 'receipt_long' : 'search_off'}</span>
               </div>
               {records.length === 0 ? (
                 <>
                   <div className="empty-title">Belum ada catatan operasional</div>
                   <div className="empty-sub">Catat gaji, sewa, listrik, atau bahan habis pakai supaya laba bersih di laporan akurat.</div>
                   <button type="button" className="btn-primary" onClick={() => setFormModal({ mode: 'create' })}>
-                    <span className="material-symbols-rounded">add</span>
+                    <span aria-hidden="true" className="material-symbols-rounded">add</span>
                     Catat Pengeluaran
                   </button>
                 </>
@@ -346,7 +346,7 @@ export default function CatatOperasionalPage() {
                             aria-label="Edit"
                             onClick={() => setFormModal({ mode: 'edit', record: item })}
                           >
-                            <span className="material-symbols-rounded">edit</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">edit</span>
                           </button>
                           <button
                             type="button"
@@ -354,7 +354,7 @@ export default function CatatOperasionalPage() {
                             aria-label="Hapus"
                             onClick={() => handleDelete(item.id, item.deskripsi)}
                           >
-                            <span className="material-symbols-rounded">delete</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">delete</span>
                           </button>
                         </div>
                       </td>

@@ -31,6 +31,8 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [ownerCode, setOwnerCode] = useState('');
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [termsError, setTermsError] = useState(false);
 
   const [loading, setLoading] = useState(false);
 
@@ -93,6 +95,7 @@ const LoginPage = () => {
         email,
         password,
         name,
+        acceptTerms,
         ...(ownerCode ? { ownerCode } : {}),
       }),
     });
@@ -108,6 +111,10 @@ const LoginPage = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (mode === 'register' && !acceptTerms) {
+      setTermsError(true);
+      return;
+    }
     setLoading(true);
 
     try {
@@ -120,6 +127,7 @@ const LoginPage = () => {
           setEmail('');
           setName('');
           setOwnerCode('');
+          setAcceptTerms(false);
         }, 2000);
       } else {
         const data = await handleLogin();
@@ -350,6 +358,40 @@ const LoginPage = () => {
                     onChange={(e) => setOwnerCode(e.target.value)}
                   />
                 </div>
+              </div>
+            )}
+
+            {mode === 'register' && (
+              <div className={`field terms-field${termsError ? ' has-error' : ''}`}>
+                <label className="terms-check" htmlFor="acceptTerms">
+                  <input
+                    type="checkbox"
+                    id="acceptTerms"
+                    checked={acceptTerms}
+                    onChange={(e) => {
+                      setAcceptTerms(e.target.checked);
+                      setTermsError(false);
+                    }}
+                    aria-invalid={termsError}
+                    aria-describedby={termsError ? 'acceptTermsError' : undefined}
+                  />
+                  <span>
+                    Saya telah membaca dan menyetujui{' '}
+                    <a href="/syarat-ketentuan" target="_blank" rel="noopener noreferrer" className="link">
+                      Syarat &amp; Ketentuan
+                    </a>{' '}
+                    dan{' '}
+                    <a href="/kebijakan-privasi" target="_blank" rel="noopener noreferrer" className="link">
+                      Kebijakan Privasi
+                    </a>
+                    .
+                  </span>
+                </label>
+                {termsError && (
+                  <p className="terms-error" id="acceptTermsError" role="alert">
+                    Centang persetujuan ini untuk mendaftar.
+                  </p>
+                )}
               </div>
             )}
 

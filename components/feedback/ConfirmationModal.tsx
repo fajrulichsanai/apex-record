@@ -1,5 +1,6 @@
 'use client';
 
+import { useEscapeKey } from '@/lib/a11y';
 import './ConfirmationModal.css';
 
 interface ConfirmationModalProps {
@@ -23,6 +24,7 @@ export default function ConfirmationModal({
   onConfirm,
   onCancel,
 }: ConfirmationModalProps) {
+  useEscapeKey(onCancel, isOpen);
   if (!isOpen) return null;
 
   return (

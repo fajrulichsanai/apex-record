@@ -81,9 +81,9 @@ export default function BarangForm({ mode, initial }: BarangFormProps) {
       <main className="content gudang-page">
         <div className="breadcrumb">
           <Link href="/gudang">Gudang & Stok</Link>
-          <span className="material-symbols-rounded">chevron_right</span>
+          <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
           <Link href="/gudang/barang">Master Barang</Link>
-          <span className="material-symbols-rounded">chevron_right</span>
+          <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
           <span className="breadcrumb-current">{mode === 'create' ? 'Tambah Baru' : 'Edit'}</span>
         </div>
 

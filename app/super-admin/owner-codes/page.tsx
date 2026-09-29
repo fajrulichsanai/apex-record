@@ -8,6 +8,7 @@ import type { OwnerCode } from '@/types/subscription';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { FiCopy } from 'react-icons/fi';
+import { useEscapeKey } from '@/lib/a11y';
 import '../../styles/super-admin.css';
 
 const STATUS_OPTIONS = [
@@ -43,6 +44,7 @@ export default function SuperAdminOwnerCodesPage() {
   const [genPrefix, setGenPrefix] = useState('APEX');
   const [genCount, setGenCount] = useState('1');
   const [generating, setGenerating] = useState(false);
+  useEscapeKey(() => !generating && setGenModalOpen(false), genModalOpen);
   const [generatedBatch, setGeneratedBatch] = useState<OwnerCode[] | null>(null);
 
   const load = useCallback(async () => {

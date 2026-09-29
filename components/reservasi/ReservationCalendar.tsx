@@ -152,13 +152,13 @@ export default function ReservationCalendar({ onSelectReservation, onSelectDate 
       <div className="reservation-calendar-toolbar">
         <div className="reservation-calendar-nav">
           <button className="btn-row-action" onClick={() => navigate(-1)} aria-label="Sebelumnya">
-            <span className="material-symbols-rounded">chevron_left</span>
+            <span aria-hidden="true" className="material-symbols-rounded">chevron_left</span>
           </button>
           <button className="btn-row-action" onClick={() => setCurrentDate(toISO(new Date()))}>
             Hari Ini
           </button>
           <button className="btn-row-action" onClick={() => navigate(1)} aria-label="Berikutnya">
-            <span className="material-symbols-rounded">chevron_right</span>
+            <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
           </button>
           <span className="reservation-calendar-label">{rangeLabel}</span>
         </div>

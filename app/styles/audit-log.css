@@ -1,10 +1,10 @@
 .audit-log-page {
   --primary:      #16150F;
   --primary-dk:   #262419;
-  --accent:       #3E8E36;
+  --accent:       #367D2F;
   --accent-solid: #7ED957;
   --accent-soft:  #E3F3DA;
-  --green:        #3E8E36;
+  --green:        #367D2F;
   --green-soft:   #E3F3DA;
   --orange:       #8A5A00;
   --orange-soft:  #FCEACB;
@@ -16,7 +16,7 @@
   --surface:      #FFFFFF;
   --text-main:    #17160F;
   --text-sub:     #55534A;
-  --text-muted:   #8D8B7E;
+  --text-muted:   #6B695D;
   --border:       #E7E4DD;
   --radius-sm:    8px;
   --radius-md:    14px;
@@ -217,7 +217,7 @@
   gap: 16px 24px;
   margin-bottom: 20px;
 }
-.detail-label { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted, #8D8B7E); margin-bottom: 4px; }
+.detail-label { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-muted, #6B695D); margin-bottom: 4px; }
 .detail-value { font-size: 13.5px; color: var(--text-main, #17160F); }
 .detail-sub { color: var(--text-sub, #55534A); font-size: 12px; }
 
@@ -227,7 +227,7 @@
 .diff-table td { padding: 8px 10px; border-bottom: 1px solid var(--border, #E7E4DD); vertical-align: top; word-break: break-word; }
 .diff-field { font-weight: 600; color: var(--text-main, #17160F); white-space: nowrap; }
 .diff-before { color: var(--red, #C1381F); background: rgba(193,56,31,.05); }
-.diff-after { color: var(--accent, #3E8E36); background: rgba(62,142,54,.06); }
+.diff-after { color: var(--accent, #367D2F); background: rgba(62,142,54,.06); }
 
 @media (max-width: 640px) {
   .audit-detail-grid { grid-template-columns: 1fr; }
@@ -235,7 +235,7 @@
 
 /* ---------- DARK MODE ---------- */
 :root[data-theme="dark"] .audit-log-page {
-  --primary: #3E8E36;
+  --primary: #367D2F;
   --primary-dk: #4FA345;
   --accent: #4FA345;
   --accent-solid: #7ED957;
@@ -252,7 +252,7 @@
   --surface: #242320;
   --text-main: #F3F1EA;
   --text-sub: #B8B5A9;
-  --text-muted: #85826F;
+  --text-muted: #A09D8B;
   --border: #38362F;
 }
 

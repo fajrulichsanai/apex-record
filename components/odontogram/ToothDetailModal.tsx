@@ -4,6 +4,7 @@ import { useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import { ToothCondition, UpsertToothConditionPayload } from '@/lib/odontogram';
 import { getToothLayout, SURFACE_OPTIONS, TEKS_ATAS_OPTIONS, TEKS_BAWAH_OPTIONS, teksDescription } from './odontogramData';
+import { useEscapeKey } from '@/lib/a11y';
 
 interface ToothDetailModalProps {
   toothNumber: number;
@@ -14,6 +15,7 @@ interface ToothDetailModalProps {
 }
 
 export default function ToothDetailModal({ toothNumber, condition, submitting, onSave, onClose }: ToothDetailModalProps) {
+  useEscapeKey(() => !submitting && onClose());
   const layout = getToothLayout(toothNumber);
 
   const [teksAtas, setTeksAtas] = useState(condition?.teksAtas || '');
@@ -54,8 +56,8 @@ export default function ToothDetailModal({ toothNumber, condition, submitting, o
               {layout.isDeciduous ? ' · Gigi susu' : ''}
             </p>
           </div>
-          <button type="button" className="visit-modal-close" onClick={onClose} disabled={submitting}>
-            <span className="material-symbols-rounded">close</span>
+          <button aria-label="Tutup" type="button" className="visit-modal-close" onClick={onClose} disabled={submitting}>
+            <span aria-hidden="true" className="material-symbols-rounded">close</span>
           </button>
         </div>
 
@@ -118,7 +120,7 @@ export default function ToothDetailModal({ toothNumber, condition, submitting, o
               Batal
             </button>
             <button type="submit" className="btn-primary" disabled={submitting}>
-              <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                 check_circle
               </span>
               {submitting ? 'Menyimpan…' : 'Simpan'}

@@ -235,7 +235,7 @@ export default function DiagnosisPicker({ value, onChange, disabled }: Diagnosis
     <div className="dx-picker">
       <div className="dx-head">
         <label htmlFor={`${listId}-input`}>
-          <span className="material-symbols-rounded">diagnosis</span>
+          <span aria-hidden="true" className="material-symbols-rounded">diagnosis</span>
           Diagnosis (kode)
         </label>
         <div className="dx-systems" role="tablist" aria-label="Sistem kode">
@@ -264,7 +264,7 @@ export default function DiagnosisPicker({ value, onChange, disabled }: Diagnosis
       </p>
 
       <div className="dx-search" ref={boxRef}>
-        <span className="material-symbols-rounded dx-search-icon">search</span>
+        <span aria-hidden="true" className="material-symbols-rounded dx-search-icon">search</span>
         <input
           id={`${listId}-input`}
           type="text"
@@ -319,7 +319,7 @@ export default function DiagnosisPicker({ value, onChange, disabled }: Diagnosis
                       aria-label={`Penjelasan ${h.code}`}
                       title="Penjelasan"
                     >
-                      <span className="material-symbols-rounded">info</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">info</span>
                     </button>
                     {peek === key && (
                       <div className="dx-result-explain">
@@ -364,7 +364,7 @@ export default function DiagnosisPicker({ value, onChange, disabled }: Diagnosis
                       aria-label={`Penjelasan ${d.code}`}
                       title="Penjelasan"
                     >
-                      <span className="material-symbols-rounded">info</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">info</span>
                     </button>
                     <button
                       type="button"
@@ -374,7 +374,7 @@ export default function DiagnosisPicker({ value, onChange, disabled }: Diagnosis
                       aria-label={`Hapus ${d.code}`}
                       title="Hapus"
                     >
-                      <span className="material-symbols-rounded">close</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">close</span>
                     </button>
                   </div>
                 </div>
@@ -428,7 +428,7 @@ export function DiagnosisListView({ diagnoses }: { diagnoses?: SoapDiagnosis[] |
                   aria-label={`Penjelasan ${d.code}`}
                   title="Penjelasan"
                 >
-                  <span className="material-symbols-rounded">info</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">info</span>
                 </button>
               </div>
             </div>
