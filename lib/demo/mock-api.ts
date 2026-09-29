@@ -967,6 +967,8 @@ const routes: [RegExp, Handler][] = [
     unreadCount: 2,
   })],
   [/^\/api\/master-data\//, () => []],
+  // Data & Privasi: no requests yet (submitting is blocked in the demo).
+  [/^\/data-requests$/, () => []],
 ];
 
 export async function demoRequest<T>(path: string, options: RequestInit = {}): Promise<T> {

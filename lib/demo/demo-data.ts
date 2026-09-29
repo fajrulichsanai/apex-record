@@ -250,26 +250,44 @@ export const demoBillings: DemoBilling[] = [];
       demoEncounters.push(enc);
 
       if (status !== 'finished') continue;
+      // Derived from the visit id rather than rand(), so adding these cases
+      // doesn't reshuffle the rest of the generated data.
+      const pickDp = ((enc.id * 2654435761) % 1000) / 1000;
+      const pickFree = ((enc.id * 40503) % 997) / 997;
+      // A braces follow-up already paid for with the package is billed Rp 0.
+      const free = procedures.length === 1 && procedures[0].tarifId === 9 && pickFree < 0.35;
       const items = procedures.map(({ tarifId, discount }) => {
         const t = demoTarifs.find((x) => x.id === tarifId)!;
+        if (free) return { tarifId, name: `${t.name} (sudah termasuk paket)`, unitPrice: 0, discount: 0, subtotal: 0, modal: 0 };
         const cut = Math.round((t.hargaJual * discount) / 100);
         return { tarifId, name: t.name, unitPrice: t.hargaJual, discount: cut, subtotal: t.hargaJual - cut, modal: t.hargaPokok };
       });
       const grandTotal = items.reduce((s, it) => s + it.subtotal, 0);
       const unpaid = back < 20 && rand() < 0.08;
       const method = pick(['cash', 'cash', 'qris', 'qris', 'transfer', 'insurance'] as const);
-      demoBillings.push({
-        id: enc.id,
-        encounterId: enc.id,
-        patientId: patient.id,
-        invoiceNumber: `INV/${toDateStr(day).replace(/-/g, '')}/${String(enc.id).padStart(5, '0')}`,
-        createdAt: finished,
-        items,
-        grandTotal,
-        paidAmount: unpaid ? 0 : grandTotal,
-        status: unpaid ? 'unpaid' : 'paid',
-        payments: unpaid ? [] : [{ id: payId++, method, amount: grandTotal, paidAt: finished }],
-      });
+      const invoiceNumber = `INV/${toDateStr(day).replace(/-/g, '')}/${String(enc.id).padStart(5, '0')}`;
+      const base = { id: enc.id, encounterId: enc.id, patientId: patient.id, invoiceNumber, createdAt: finished, items, grandTotal };
+
+      if (grandTotal === 0) {
+        demoBillings.push({ ...base, paidAmount: 0, status: 'paid', payments: [] });
+      } else if (!unpaid && grandTotal >= 1000000 && pickDp < 0.5) {
+        // Big-ticket treatment paid with a DP; older ones have since been settled.
+        const dp = Math.round((grandTotal * 0.5) / 50000) * 50000;
+        const settled = back >= 10;
+        const payments = [{ id: payId++, method, amount: dp, paidAt: finished }];
+        if (settled) {
+          const settledAt = new Date(finished.getTime() + (3 + Math.floor(pickDp * 10)) * 86400000);
+          payments.push({ id: payId++, method: pickDp < 0.25 ? 'transfer' : 'qris', amount: grandTotal - dp, paidAt: settledAt });
+        }
+        demoBillings.push({ ...base, paidAmount: settled ? grandTotal : dp, status: settled ? 'paid' : 'partial', payments });
+      } else {
+        demoBillings.push({
+          ...base,
+          paidAmount: unpaid ? 0 : grandTotal,
+          status: unpaid ? 'unpaid' : 'paid',
+          payments: unpaid ? [] : [{ id: payId++, method, amount: grandTotal, paidAt: finished }],
+        });
+      }
     }
   }
 }
