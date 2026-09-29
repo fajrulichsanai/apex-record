@@ -969,6 +969,14 @@ const routes: [RegExp, Handler][] = [
   [/^\/api\/master-data\//, () => []],
   // Data & Privasi: no requests yet (submitting is blocked in the demo).
   [/^\/data-requests$/, () => []],
+  // Konten: the demo clinic has none yet (creating one is a write).
+  [/^\/contents$/, () => []],
+  [
+    /^\/contents\/\d+$/,
+    () => {
+      throw new ApiError('Konten tidak ditemukan', 404);
+    },
+  ],
 ];
 
 export async function demoRequest<T>(path: string, options: RequestInit = {}): Promise<T> {

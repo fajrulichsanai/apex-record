@@ -22,6 +22,7 @@ import {
   FiChevronRight,
   FiBox,
   FiBell,
+  FiImage,
 } from 'react-icons/fi';
 import './sidebar.css';
 
@@ -111,6 +112,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { label: 'Referral', icon: <FiUsers />, href: '/referral', feature: 'referral' },
       ],
     },
+    {
+      title: 'Konten',
+      groupId: 'konten',
+      icon: <FiImage />,
+      items: [{ label: 'Konten', icon: <FiImage />, href: '/konten', feature: 'konten' }],
+    },
   ];
 
   const SETTINGS_ROUTES = ['/pengaturan', '/info-klinik', '/user-management', '/tarif', '/audit-log', '/langganan', '/tampilan', '/keamanan', '/api-klinik', '/data-privasi'];
@@ -171,7 +178,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               <Link
                 key={group.groupId}
                 href={group.items[0].href!}
-                className={`nav-item ${pathname === group.items[0].href ? 'active' : ''}`}
+                className={`nav-item ${pathname === group.items[0].href || pathname.startsWith(`${group.items[0].href}/`) ? 'active' : ''}`}
                 onClick={handleNavItemClick}
                 title={group.items[0].label}
               >

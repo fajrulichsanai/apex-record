@@ -25,7 +25,8 @@ export type FeatureKey =
   | 'keamanan'
   | 'tampilan'
   | 'api'
-  | 'data-privasi';
+  | 'data-privasi'
+  | 'konten';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',
@@ -50,6 +51,7 @@ const FULL_ACCESS: FeatureKey[] = [
   'keamanan',
   'tampilan',
   'api',
+  'konten',
 ];
 
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
@@ -74,6 +76,7 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'tarif',
     'referral',
     'langganan',
+    'konten',
     'keamanan',
     'tampilan',
   ],
