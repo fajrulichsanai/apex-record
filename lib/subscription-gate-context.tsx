@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState, ReactNode } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from './auth-context';
 import { setOnSubscriptionExpired } from './api-client';
 import { clinicSubscriptionApi } from './subscription';
@@ -34,8 +35,14 @@ function computeExpired(sub: ClinicSubscription | null): boolean {
 
 export function SubscriptionGateProvider({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
+  const router = useRouter();
+  const pathname = usePathname();
   const [subscription, setSubscription] = useState<ClinicSubscription | null>(null);
   const [checked, setChecked] = useState(false);
+  // Tracks whether the last subscription fetch actually succeeded — a failed
+  // fetch must NOT be treated as "expired" (that previously showed a false
+  // "Langganan Telah Berakhir" popup on a transient network/API error).
+  const [fetchOk, setFetchOk] = useState(false);
   const [popupOpen, setPopupOpen] = useState(false);
   const [popupReason, setPopupReason] = useState<'initial' | 'mutation' | 'warning'>('initial');
 
@@ -46,9 +53,12 @@ export function SubscriptionGateProvider({ children }: { children: ReactNode }) 
     try {
       const current = await clinicSubscriptionApi.getCurrent();
       setSubscription(current);
+      setFetchOk(true);
     } catch {
-      // Network/API errors here shouldn't block the app from rendering;
-      // the mutation-side guard (SUBSCRIPTION_EXPIRED interception) still applies.
+      // Network/API errors here shouldn't block the app from rendering, and
+      // must not be mistaken for "subscription expired" either — leave
+      // fetchOk false so the gate below stays silent until a fetch succeeds.
+      setFetchOk(false);
     } finally {
       setChecked(true);
     }
@@ -58,14 +68,16 @@ export function SubscriptionGateProvider({ children }: { children: ReactNode }) 
     refresh();
   }, [refresh]);
 
-  // Once per mount: show the already-expired popup, or — if the subscription
-  // is still active but within WARNING_WINDOW_DAYS of endDate — a lighter
-  // heads-up popup ("langganan akan habis dalam N hari").
+  // Once per mount: if the subscription has genuinely already lapsed, go
+  // straight to the Langganan page instead of a dismissible popup — a lighter
+  // heads-up popup still applies if it's active but within WARNING_WINDOW_DAYS
+  // of endDate ("langganan akan habis dalam N hari").
   useEffect(() => {
-    if (!gated || !checked) return;
+    if (!gated || !checked || !fetchOk) return;
     if (computeExpired(subscription)) {
-      setPopupReason('initial');
-      setPopupOpen(true);
+      if (pathname !== '/langganan') {
+        router.push('/langganan');
+      }
       return;
     }
     const daysLeft = computeDaysLeft(subscription);
@@ -74,7 +86,7 @@ export function SubscriptionGateProvider({ children }: { children: ReactNode }) 
       setPopupOpen(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gated, checked]);
+  }, [gated, checked, fetchOk]);
 
   useEffect(() => {
     setOnSubscriptionExpired(() => {
@@ -85,8 +97,8 @@ export function SubscriptionGateProvider({ children }: { children: ReactNode }) 
     return () => setOnSubscriptionExpired(null);
   }, [refresh]);
 
-  const isExpired = gated && checked && computeExpired(subscription);
-  const daysUntilExpiry = checked ? computeDaysLeft(subscription) : null;
+  const isExpired = gated && checked && fetchOk && computeExpired(subscription);
+  const daysUntilExpiry = checked && fetchOk ? computeDaysLeft(subscription) : null;
 
   return (
     <SubscriptionGateContext.Provider value={{ subscription, isExpired, daysUntilExpiry, refresh }}>

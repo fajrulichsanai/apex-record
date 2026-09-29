@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
-import InputModal from '@/components/feedback/InputModal';
+import PaymentModal, { PAYMENT_METHOD_OPTIONS } from './PaymentModal';
 import CustomSelect from '@/components/form/CustomSelect';
 import BillingDetailModal from './BillingDetailModal';
 import '../styles/transaksi.css';
@@ -15,6 +15,7 @@ import {
   BillingStatus,
   CreateBillingItemPayload,
   DiscountType,
+  PaymentMethod,
 } from '@/lib/billing';
 import { encounterApi, EncounterListItem } from '@/lib/encounter';
 import { tarifApi, Tarif } from '@/lib/tarif';
@@ -59,10 +60,27 @@ function formatDate(value: string) {
   });
 }
 
+/**
+ * Timezone klinik dipatok ke +07:00 (WIB), sama seperti sisi backend
+ * (lihat `todayInClinicTimezone` di encounters.service.ts) — dipakai untuk
+ * memisahkan kunjungan selesai yang belum ditagih hari ini vs. backlog dari
+ * hari-hari sebelumnya.
+ */
+function clinicDate(value: string): string {
+  return new Date(new Date(value).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function todayInClinicTimezone(): string {
+  return new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
 let rowKeySeq = 0;
 function emptyRow(): ItemRow {
   return { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal' };
 }
+
+/** How the patient pays when the transaction is saved. */
+type PayOption = 'full' | 'dp' | 'later';
 
 export default function TransaksiPage() {
   return (
@@ -88,12 +106,13 @@ function TransaksiPageInner() {
   const [items, setItems] = useState<ItemRow[]>([emptyRow()]);
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [additionalFee, setAdditionalFee] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
+  const [payOption, setPayOption] = useState<PayOption>('full');
+  const [dpAmount, setDpAmount] = useState(0);
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const [payingId, setPayingId] = useState<number | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [pendingPaymentBilling, setPendingPaymentBilling] = useState<BillingListItem | null>(null);
   const [selectedBillingId, setSelectedBillingId] = useState<number | null>(null);
 
@@ -121,22 +140,35 @@ function TransaksiPageInner() {
     loadBillings();
   }, [loadBillings]);
 
+  // unbilled: true supaya kunjungan selesai yang belum ditagih tetap muncul
+  // lintas semua tanggal, bukan cuma hari ini — sebelumnya kunjungan selesai
+  // kemarin yang belum dibuatkan tagihan jadi "hilang" dari dropdown ini
+  // begitu tengah malam lewat.
+  const loadUnbilledEncounters = useCallback(async () => {
+    try {
+      const res = await encounterApi.list({ status: 'finished', unbilled: true, limit: 100 });
+      setEncounters(res.data);
+      const fromQuery = searchParams.get('encounterId');
+      if (fromQuery && res.data.some((e) => e.encounterId === Number(fromQuery))) {
+        setSelectedEncounterId(Number(fromQuery));
+      }
+    } catch {
+      setEncounters([]);
+    }
+  }, [searchParams]);
+
   useEffect(() => {
-    encounterApi
-      .list({ status: 'finished', limit: 100 })
-      .then((res) => {
-        setEncounters(res.data);
-        const fromQuery = searchParams.get('encounterId');
-        if (fromQuery && res.data.some((e) => e.encounterId === Number(fromQuery))) {
-          setSelectedEncounterId(Number(fromQuery));
-        }
-      })
-      .catch(() => setEncounters([]));
+    loadUnbilledEncounters();
     tarifApi
       .list({ limit: 200 })
       .then((res) => setTarifs(res.data.filter((t) => t.isActive)))
       .catch(() => setTarifs([]));
-  }, [searchParams]);
+  }, [loadUnbilledEncounters]);
+
+  const backlogEncounters = useMemo(() => {
+    const today = todayInClinicTimezone();
+    return encounters.filter((e) => clinicDate(e.arrivedTime) !== today);
+  }, [encounters]);
 
   const filteredBillings = useMemo(() => {
     const q = searchQuery.toLowerCase();
@@ -208,6 +240,8 @@ function TransaksiPageInner() {
     return Math.max(0, itemsSubtotal - totalDiscount + additionalFee);
   }, [itemsSubtotal, totalDiscount, additionalFee]);
 
+  const validItemCount = items.filter((r) => r.name).length;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitError(null);
@@ -240,9 +274,18 @@ function TransaksiPageInner() {
       discountType: r.discountType,
     }));
 
+    if (payOption === 'dp' && grandTotal > 0 && (dpAmount <= 0 || dpAmount >= grandTotal)) {
+      setSubmitError(
+        dpAmount >= grandTotal
+          ? 'DP harus lebih kecil dari total. Pilih "Lunas" bila dibayar penuh.'
+          : 'Isi jumlah DP yang dibayar sekarang.',
+      );
+      return;
+    }
+
     setSubmitting(true);
     try {
-      await billingApi.create({
+      const created = await billingApi.create({
         encounterId: Number(selectedEncounterId),
         items: payloadItems,
         totalDiscount: totalDiscount > 0 ? totalDiscount : undefined,
@@ -250,13 +293,45 @@ function TransaksiPageInner() {
         additionalFee: additionalFee > 0 ? additionalFee : undefined,
         notes: notes || undefined,
       });
+
+      // Lunas: pay the whole bill now. DP: pay part now, the rest later via
+      // "Pelunasan". Bayar nanti: record no payment yet.
+      const payNow =
+        payOption === 'full' ? created.grandTotal : payOption === 'dp' ? Math.min(dpAmount, created.grandTotal) : 0;
+      if (payNow > 0) {
+        try {
+          await billingApi.createPayment(created.id, {
+            method: paymentMethod,
+            amount: payNow,
+            note: payOption === 'dp' ? 'DP' : undefined,
+          });
+        } catch (paymentErr) {
+          showError(
+            paymentErr instanceof ApiError
+              ? paymentErr.message
+              : 'Transaksi tersimpan, tapi gagal mencatat pembayaran. Catat manual lewat tombol Bayar.',
+          );
+        }
+      }
+
       setSelectedEncounterId('');
       setItems([emptyRow()]);
       setTotalDiscount(0);
       setAdditionalFee(0);
+      setPaymentMethod('cash');
+      setPayOption('full');
+      setDpAmount(0);
       setNotes('');
-      await loadBillings();
-      success('Transaksi berhasil disimpan');
+      await Promise.all([loadBillings(), loadUnbilledEncounters()]);
+      success(
+        created.grandTotal <= 0
+          ? 'Transaksi Rp 0 disimpan — langsung tercatat lunas (gratis)'
+          : payNow > 0 && payNow < created.grandTotal
+          ? `Transaksi disimpan — DP ${formatRupiah(payNow)}, sisa ${formatRupiah(created.grandTotal - payNow)} bisa dilunasi nanti`
+          : payNow === 0 && created.grandTotal > 0
+            ? 'Transaksi disimpan — belum dibayar'
+            : 'Transaksi berhasil disimpan',
+      );
     } catch (err) {
       setSubmitError(err instanceof ApiError ? err.message : 'Gagal membuat transaksi');
     } finally {
@@ -266,30 +341,6 @@ function TransaksiPageInner() {
 
   function handleRecordPayment(billing: BillingListItem) {
     setPendingPaymentBilling(billing);
-    setShowPaymentModal(true);
-  }
-
-  async function performRecordPayment(amountStr: string) {
-    if (!pendingPaymentBilling) return;
-
-    const amount = Number(amountStr);
-    if (amountStr.trim() === '' || Number.isNaN(amount) || amount < 0) {
-      showError('Jumlah pembayaran tidak valid');
-      return;
-    }
-
-    setPayingId(pendingPaymentBilling.billingId);
-    try {
-      await billingApi.createPayment(pendingPaymentBilling.billingId, { method: 'cash', amount });
-      await loadBillings();
-      success('Pembayaran berhasil dicatat');
-      setShowPaymentModal(false);
-      setPendingPaymentBilling(null);
-    } catch (err) {
-      showError(err instanceof ApiError ? err.message : 'Gagal mencatat pembayaran');
-    } finally {
-      setPayingId(null);
-    }
   }
 
   return (
@@ -303,7 +354,7 @@ function TransaksiPageInner() {
               <h1>Transaksi</h1>
               <span className="badge-count">{totalCount}</span>
             </div>
-            <p className="page-subtitle">Input pembayaran baru dan pantau riwayat transaksi klinik</p>
+            <p className="page-subtitle">Buat tagihan dari kunjungan selesai dan pantau pembayaran klinik</p>
           </div>
         </div>
 
@@ -311,7 +362,7 @@ function TransaksiPageInner() {
         <div className="stat-grid">
           <div className="stat-card total">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 receipt_long
               </span>
             </div>
@@ -322,7 +373,7 @@ function TransaksiPageInner() {
           </div>
           <div className="stat-card income">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 payments
               </span>
             </div>
@@ -333,7 +384,7 @@ function TransaksiPageInner() {
           </div>
           <div className="stat-card pending">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 hourglass_empty
               </span>
             </div>
@@ -344,7 +395,7 @@ function TransaksiPageInner() {
           </div>
           <div className="stat-card lunas">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 check_circle
               </span>
             </div>
@@ -355,13 +406,60 @@ function TransaksiPageInner() {
           </div>
         </div>
 
+        {/* Backlog: kunjungan selesai belum ditagih dari hari-hari sebelumnya */}
+        {backlogEncounters.length > 0 && (
+          <div className="backlog-banner">
+            <div className="backlog-banner-header">
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                warning
+              </span>
+              <div>
+                <div className="backlog-banner-title">
+                  {backlogEncounters.length} Kunjungan Selesai Belum Ditagih dari Hari Sebelumnya
+                </div>
+                <div className="backlog-banner-sub">
+                  Kunjungan ini sudah selesai tapi belum dibuatkan tagihan. Pilih salah satu untuk langsung membuat tagihannya.
+                </div>
+              </div>
+            </div>
+            <div className="backlog-list">
+              {backlogEncounters.map((enc) => (
+                <div
+                  key={enc.encounterId}
+                  className={`backlog-item ${selectedEncounterId === enc.encounterId ? 'selected' : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setSelectedEncounterId(enc.encounterId)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setSelectedEncounterId(enc.encounterId);
+                    }
+                  }}
+                >
+                  <div className="backlog-item-info">
+                    <div className="backlog-item-name">{enc.patientName || `Pasien #${enc.patientId}`}</div>
+                    <div className="backlog-item-meta">
+                      {enc.noRM || '—'} · {enc.practitionerName || '—'} · {formatDate(enc.arrivedTime)}
+                    </div>
+                  </div>
+                  <button type="button" className="btn-outline pay" onClick={() => setSelectedEncounterId(enc.encounterId)}>
+                    <span aria-hidden="true" className="material-symbols-rounded">receipt_long</span>
+                    Buat Tagihan
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Content */}
         <div className="content-area">
           {/* Input Transaksi Panel */}
           <div className="panel">
             <div className="panel-header">
-              <span className="material-symbols-rounded">add_card</span>
-              <h2>Input Transaksi Baru</h2>
+              <span aria-hidden="true" className="material-symbols-rounded">add_card</span>
+              <h2>Buat Tagihan Baru</h2>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
               <div className="form-body">
@@ -377,7 +475,7 @@ function TransaksiPageInner() {
                     placeholder="Pilih kunjungan selesai…"
                   />
                   {encounters.length === 0 && (
-                    <span className="form-hint">Tidak ada kunjungan selesai hari ini</span>
+                    <span className="form-hint">Tidak ada kunjungan selesai yang belum ditagih</span>
                   )}
                 </div>
 
@@ -402,14 +500,14 @@ function TransaksiPageInner() {
                           onChange={(e) => updateRow(row.key, { quantity: Math.max(1, Number(e.target.value) || 1) })}
                           title="Jumlah"
                         />
-                        <button
+                        <button aria-label="Hapus tindakan"
                           type="button"
                           className="btn-icon-sm"
                           onClick={() => setItems((prev) => prev.filter((r) => r.key !== row.key))}
                           disabled={items.length === 1}
                           title="Hapus tindakan"
                         >
-                          <span className="material-symbols-rounded">close</span>
+                          <span aria-hidden="true" className="material-symbols-rounded">close</span>
                         </button>
                       </div>
                     ))}
@@ -420,7 +518,7 @@ function TransaksiPageInner() {
                     style={{ alignSelf: 'flex-start', marginTop: 8 }}
                     onClick={() => setItems((prev) => [...prev, emptyRow()])}
                   >
-                    <span className="material-symbols-rounded">add</span>
+                    <span aria-hidden="true" className="material-symbols-rounded">add</span>
                     Tambah Tindakan
                   </button>
                 </div>
@@ -446,6 +544,76 @@ function TransaksiPageInner() {
                     placeholder="0"
                   />
                 </div>
+
+                {grandTotal <= 0 && validItemCount > 0 ? (
+                  <div className="free-bill-note">
+                    <strong>Tagihan Rp 0 — langsung tercatat lunas</strong>
+                    <span>
+                      Untuk kunjungan yang tidak ditagih lagi, mis. kontrol PSA lanjutan yang sudah dibayar di awal atau
+                      konsultasi gratis. Kunjungan tetap tercatat.
+                    </span>
+                  </div>
+                ) : (
+                <>
+                <div className="form-field">
+                  <label>Pembayaran</label>
+                  <div className="pay-option-group" role="radiogroup" aria-label="Cara pembayaran">
+                    {(
+                      [
+                        ['full', 'Lunas', 'Dibayar penuh sekarang'],
+                        ['dp', 'DP / Sebagian', 'Bayar sebagian, sisanya nanti'],
+                        ['later', 'Bayar Nanti', 'Belum ada pembayaran'],
+                      ] as [PayOption, string, string][]
+                    ).map(([value, title, desc]) => (
+                      <button
+                        key={value}
+                        type="button"
+                        role="radio"
+                        aria-checked={payOption === value}
+                        className={`pay-option${payOption === value ? ' active' : ''}`}
+                        onClick={() => setPayOption(value)}
+                      >
+                        <strong>{title}</strong>
+                        <span>{desc}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {payOption === 'dp' && (
+                  <div className="form-field">
+                    <label>Jumlah DP dibayar sekarang</label>
+                    <input
+                      type="number"
+                      min={0}
+                      value={dpAmount || ''}
+                      onChange={(e) => setDpAmount(Math.max(0, Number(e.target.value) || 0))}
+                      placeholder="mis. 500000"
+                    />
+                    {grandTotal > 0 && (
+                      <div className="dp-quick">
+                        {[25, 50].map((pct) => (
+                          <button key={pct} type="button" onClick={() => setDpAmount(Math.round((grandTotal * pct) / 100))}>
+                            {pct}% ({formatRupiah(Math.round((grandTotal * pct) / 100))})
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {payOption !== 'later' && (
+                  <div className="form-field">
+                    <label>Metode Pembayaran</label>
+                    <CustomSelect
+                      value={paymentMethod}
+                      onChange={(value) => setPaymentMethod(value as PaymentMethod)}
+                      options={PAYMENT_METHOD_OPTIONS}
+                    />
+                  </div>
+                )}
+                </>
+                )}
 
                 <div className="form-field">
                   <label>Catatan (opsional)</label>
@@ -473,6 +641,18 @@ function TransaksiPageInner() {
                     <span>Total Bayar</span>
                     <span>{formatRupiah(grandTotal)}</span>
                   </div>
+                  {payOption !== 'full' && grandTotal > 0 && (
+                    <>
+                      <div className="summary-row">
+                        <span>Dibayar sekarang</span>
+                        <span>{formatRupiah(payOption === 'dp' ? Math.min(dpAmount, grandTotal) : 0)}</span>
+                      </div>
+                      <div className="summary-row due">
+                        <span>Sisa (dilunasi nanti)</span>
+                        <span>{formatRupiah(grandTotal - (payOption === 'dp' ? Math.min(dpAmount, grandTotal) : 0))}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {submitError && <div className="form-error">{submitError}</div>}
@@ -480,7 +660,7 @@ function TransaksiPageInner() {
 
               <div className="form-footer">
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+                  <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>
                     add
                   </span>
                   {submitting ? 'Menyimpan…' : 'Simpan Transaksi'}
@@ -492,14 +672,25 @@ function TransaksiPageInner() {
           {/* Riwayat Transaksi Panel */}
           <div className="riwayat-panel">
             <div className="panel-toolbar">
+              <div className="panel-toolbar-title">Riwayat Transaksi</div>
               <div className="search-box">
-                <span className="material-symbols-rounded">search</span>
+                <span aria-hidden="true" className="material-symbols-rounded">search</span>
                 <input
                   type="text"
                   placeholder="Cari pasien atau No. invoice…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="search-clear"
+                    aria-label="Hapus pencarian"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>close</span>
+                  </button>
+                )}
               </div>
               <div className="filter-tabs">
                 <button
@@ -537,8 +728,8 @@ function TransaksiPageInner() {
               <span className="sort-label">
                 {loadingList ? 'Memuat…' : `${filteredBillings.length} transaksi ditemukan`}
               </span>
-              <button type="button" className="btn-outline" onClick={loadBillings}>
-                <span className="material-symbols-rounded">refresh</span>
+              <button type="button" className="btn-ghost" onClick={loadBillings} disabled={loadingList}>
+                <span aria-hidden="true" className="material-symbols-rounded">refresh</span>
                 Muat Ulang
               </button>
             </div>
@@ -546,7 +737,7 @@ function TransaksiPageInner() {
             {listError ? (
               <div className="riwayat-empty">
                 <div className="empty-icon-wrap">
-                  <span className="material-symbols-rounded">error</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">error</span>
                 </div>
                 <div className="empty-title">Gagal memuat riwayat</div>
                 <div className="empty-sub">{listError}</div>
@@ -554,46 +745,78 @@ function TransaksiPageInner() {
             ) : !loadingList && filteredBillings.length === 0 ? (
               <div className="riwayat-empty">
                 <div className="empty-icon-wrap">
-                  <span className="material-symbols-rounded">receipt_long</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">receipt_long</span>
                 </div>
-                <div className="empty-title">Belum ada transaksi</div>
-                <div className="empty-sub">Transaksi yang tercatat akan muncul di sini</div>
+                {billings.length === 0 && currentFilter === 'semua' ? (
+                  <>
+                    <div className="empty-title">Belum ada transaksi</div>
+                    <div className="empty-sub">Pilih kunjungan selesai di panel kiri untuk membuat tagihan pertama.</div>
+                  </>
+                ) : (
+                  <>
+                    <div className="empty-title">Tidak ada transaksi yang cocok</div>
+                    <div className="empty-sub">Coba ubah filter atau kata kunci pencarian.</div>
+                    <button
+                      type="button"
+                      className="btn-outline"
+                      onClick={() => {
+                        setCurrentFilter('semua');
+                        setSearchQuery('');
+                      }}
+                    >
+                      Reset Filter
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
               <div className="transaksi-list">
                 {filteredBillings.map((b) => {
-                  const { tag, label } = statusTag(b.status);
+                  const { tag, label } =
+                    b.status === 'paid' && Number(b.grandTotal) <= 0 ? { tag: 'lunas', label: 'Gratis' } : statusTag(b.status);
                   return (
                     <div
                       key={b.billingId}
                       className="transaksi-item"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setSelectedBillingId(b.billingId)}
-                      style={{ cursor: 'pointer' }}
+                      onKeyDown={(e) => {
+                        if (e.target !== e.currentTarget) return;
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setSelectedBillingId(b.billingId);
+                        }
+                      }}
                     >
-                      <div className="transaksi-icon">
-                        <span className="material-symbols-rounded">receipt</span>
+                      <div className={`transaksi-icon ${tag}`}>
+                        <span aria-hidden="true" className="material-symbols-rounded">
+                          {b.status === 'paid' ? 'task_alt' : b.status === 'partial' ? 'hourglass_top' : 'receipt'}
+                        </span>
                       </div>
                       <div className="transaksi-info">
                         <div className="transaksi-name">{b.patientName || `Pasien #${b.encounterId}`}</div>
                         <div className="transaksi-meta">
-                          {b.invoiceNumber} · {formatDate(b.createdAt)}
+                          <span className="transaksi-invoice">{b.invoiceNumber}</span> · {formatDate(b.createdAt)}
                         </div>
                       </div>
                       <div className="transaksi-right">
                         <div className="transaksi-amount">{formatRupiah(b.grandTotal)}</div>
+                        {b.status === 'partial' && (
+                          <div className="transaksi-due">Sisa {formatRupiah(b.outstandingAmount)}</div>
+                        )}
                         <span className={`tag ${tag}`}>{label}</span>
                       </div>
                       {(b.status === 'unpaid' || b.status === 'partial') && (
                         <button
                           type="button"
-                          className="btn-outline"
-                          disabled={payingId === b.billingId}
+                          className="btn-outline pay"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRecordPayment(b);
                           }}
                         >
-                          {payingId === b.billingId ? '…' : 'Bayar'}
+                          {b.status === 'partial' ? 'Pelunasan' : 'Bayar'}
                         </button>
                       )}
                     </div>
@@ -606,18 +829,24 @@ function TransaksiPageInner() {
       </main>
 
       {pendingPaymentBilling && (
-        <InputModal
-          isOpen={showPaymentModal}
-          title="Catat Pembayaran"
-          message={`Jumlah pembayaran untuk ${pendingPaymentBilling.invoiceNumber} (sisa ${formatRupiah(pendingPaymentBilling.outstandingAmount)})`}
-          placeholder="Jumlah pembayaran..."
-          defaultValue={String(Math.round(Number(pendingPaymentBilling.outstandingAmount)))}
-          numeric
-          confirmLabel="Catat Pembayaran"
-          onConfirm={performRecordPayment}
-          onCancel={() => {
-            setShowPaymentModal(false);
+        <PaymentModal
+          billing={{
+            id: pendingPaymentBilling.billingId,
+            invoiceNumber: pendingPaymentBilling.invoiceNumber,
+            patientName: pendingPaymentBilling.patientName,
+            grandTotal: pendingPaymentBilling.grandTotal,
+            paidAmount: pendingPaymentBilling.paidAmount,
+            outstandingAmount: pendingPaymentBilling.outstandingAmount,
+          }}
+          onClose={() => setPendingPaymentBilling(null)}
+          onPaid={async (result) => {
             setPendingPaymentBilling(null);
+            success(
+              result.billingStatus === 'paid'
+                ? 'Pembayaran dicatat — tagihan LUNAS'
+                : `Pembayaran dicatat — sisa ${formatRupiah(result.outstandingAmount)}`,
+            );
+            await loadBillings();
           }}
         />
       )}
@@ -627,7 +856,10 @@ function TransaksiPageInner() {
           billingId={selectedBillingId}
           tarifs={tarifs}
           onClose={() => setSelectedBillingId(null)}
-          onUpdated={loadBillings}
+          onUpdated={() => {
+            loadBillings();
+            loadUnbilledEncounters();
+          }}
         />
       )}
       </FeatureGuard>

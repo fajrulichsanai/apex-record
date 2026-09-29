@@ -8,15 +8,24 @@ export type FeatureKey =
   | 'billing'
   | 'operasional'
   | 'share-fee-dokter'
+  | 'share-fee-saya'
+  | 'recall-reminder'
+  | 'informed-consent'
   | 'gudang'
   | 'laporan-kunjungan'
   | 'laporan-keuangan'
+  | 'laporan-keuangan-pro'
   | 'info-klinik'
   | 'tarif'
   | 'user-management'
   | 'referral'
   | 'audit-log'
-  | 'langganan';
+  | 'langganan'
+  | 'onboarding'
+  | 'keamanan'
+  | 'tampilan'
+  | 'api'
+  | 'data-privasi';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',
@@ -26,36 +35,47 @@ const FULL_ACCESS: FeatureKey[] = [
   'billing',
   'operasional',
   'share-fee-dokter',
+  'recall-reminder',
+  'informed-consent',
   'gudang',
   'laporan-kunjungan',
   'laporan-keuangan',
+  'laporan-keuangan-pro',
   'info-klinik',
   'tarif',
   'user-management',
   'referral',
   'audit-log',
   'langganan',
+  'keamanan',
+  'tampilan',
+  'api',
 ];
 
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
   super_admin: FULL_ACCESS,
-  owner: FULL_ACCESS,
+  multi_clinic_owner: ['keamanan', 'tampilan'],
+  // Data requests (UU PDP) are the clinic owner's to make.
+  owner: [...FULL_ACCESS, 'onboarding', 'data-privasi'],
   admin: [
-    'dashboard',
     'pasien',
     'reservasi',
     'kunjungan',
     'billing',
     'operasional',
+    'recall-reminder',
+    'informed-consent',
     'gudang',
     'laporan-kunjungan',
     'info-klinik',
     'tarif',
     'referral',
     'langganan',
+    'keamanan',
+    'tampilan',
   ],
-  dokter: ['pasien', 'reservasi', 'kunjungan'],
-  pending: [],
+  dokter: ['pasien', 'reservasi', 'kunjungan', 'informed-consent', 'share-fee-saya', 'keamanan', 'tampilan'],
+  pending: ['keamanan', 'tampilan'],
 };
 
 const VIEW_ONLY_FEATURES: Partial<Record<UserRole, FeatureKey[]>> = {
@@ -78,6 +98,8 @@ export function canSeeHargaModal(role: UserRole | undefined): boolean {
 
 export function defaultRouteForRole(role: UserRole | undefined): string {
   if (role === 'super_admin') return '/super-admin/dashboard';
+  if (role === 'multi_clinic_owner') return '/multi-klinik/dashboard';
   if (role === 'dokter') return '/list-pasien';
+  if (role === 'admin') return '/list-kunjungan';
   return '/dashboard';
 }

@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import CustomSelect from '@/components/form/CustomSelect';
 import AuditLogDetailModal from './AuditLogDetailModal';
+import SettingsTabs from '@/components/settings/SettingsTabs';
 import '../../styles/audit-log.css';
 import { ApiError } from '@/lib/api-client';
 import { auditLogApi, AuditLogEntry, AuditActionType } from '@/lib/audit-log';
@@ -18,6 +19,8 @@ const ACTION_OPTIONS = [
   { value: 'LOGIN', label: 'Login' },
   { value: 'LOGOUT', label: 'Logout' },
   { value: 'EXPORT', label: 'Ekspor' },
+  { value: 'VIEW', label: 'Lihat' },
+  { value: 'ALERT', label: 'Peringatan Keamanan' },
 ];
 
 const ENTITY_OPTIONS = [
@@ -41,11 +44,13 @@ const ACTION_LABEL: Record<AuditActionType, string> = {
   LOGOUT: 'Logout',
   EXPORT: 'Ekspor',
   VIEW: 'Lihat',
+  ALERT: 'Peringatan Keamanan',
 };
 
 function actionTagClass(action: AuditActionType) {
   switch (action) {
     case 'DELETE':
+    case 'ALERT':
       return 'tag-delete';
     case 'CREATE':
       return 'tag-create';
@@ -158,6 +163,7 @@ function AuditLogPageInner() {
     <DashboardLayout>
       <FeatureGuard feature="audit-log">
         <main className="content audit-log-page">
+          <SettingsTabs />
           <div className="page-header">
             <div className="page-title-block">
               <div className="page-title">

@@ -11,7 +11,9 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { authApi } from '@/lib/auth-api';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
+import { defaultRouteForRole } from '@/lib/permissions';
 import { formatCurrency } from '@/lib/format';
+import { useEscapeKey } from '@/lib/a11y';
 import '../../../styles/super-admin.css';
 
 const ROLE_LABEL: Record<string, string> = {
@@ -38,6 +40,7 @@ export default function SuperAdminClinicDetailPage() {
   const [loading, setLoading] = useState(true);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  useEscapeKey(() => setModalOpen(false), modalOpen);
   const [selectedPlanId, setSelectedPlanId] = useState('');
   const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -95,10 +98,10 @@ export default function SuperAdminClinicDetailPage() {
   const handleImpersonate = async (target: User) => {
     setImpersonatingId(target.id);
     try {
-      const { accessToken, user } = await authApi.impersonate(target.id);
-      startImpersonation(accessToken, user);
+      const { user } = await authApi.impersonate(target.id);
+      startImpersonation(user);
       success(`Masuk sebagai ${target.name}`);
-      router.push('/dashboard');
+      router.push(defaultRouteForRole(user.role));
     } catch (err) {
       showError(err instanceof ApiError ? err.message : 'Gagal login sebagai pengguna ini');
     } finally {

@@ -8,7 +8,6 @@ import { canAccessFeature, type FeatureKey } from '@/lib/permissions';
 import {
   FiGrid,
   FiUsers,
-  FiClock,
   FiCalendar,
   FiClipboard,
   FiEdit3,
@@ -19,12 +18,10 @@ import {
   FiActivity,
   FiTrendingUp,
   FiSettings,
-  FiHome,
-  FiUserCheck,
   FiChevronLeft,
   FiChevronRight,
-  FiShield,
   FiBox,
+  FiBell,
 } from 'react-icons/fi';
 import './sidebar.css';
 
@@ -50,7 +47,6 @@ interface NavGroupDef {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const canManageUsers = user?.role === 'owner' || user?.role === 'super_admin';
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -71,25 +67,28 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: 'Pasien',
       groupId: 'pasien',
       icon: <FiUsers />,
-      items: [{ label: 'Daftar & Tambah Pasien', icon: <FiEdit3 />, href: '/list-pasien', feature: 'pasien' }],
+      items: [{ label: 'Pasien', icon: <FiEdit3 />, href: '/list-pasien', feature: 'pasien' }],
     },
     {
       title: 'Reservasi',
       groupId: 'reservasi',
       icon: <FiCalendar />,
-      items: [{ label: 'Daftar Reservasi', icon: <FiCalendar />, href: '/reservasi', feature: 'reservasi' }],
+      items: [
+        { label: 'Buat Reservasi', icon: <FiCalendar />, href: '/reservasi', feature: 'reservasi' },
+        { label: 'Follow Up Pasien', icon: <FiBell />, href: '/recall-reminder', feature: 'recall-reminder' },
+      ],
     },
     {
       title: 'Kunjungan',
       groupId: 'kunjungan',
       icon: <FiClipboard />,
-      items: [{ label: 'Daftar & Buat Kunjungan', icon: <FiEdit3 />, href: '/list-kunjungan', feature: 'kunjungan' }],
+      items: [{ label: 'Kunjungan', icon: <FiEdit3 />, href: '/list-kunjungan', feature: 'kunjungan' }],
     },
     {
       title: 'Billing & Kasir',
       groupId: 'billing',
       icon: <FiCreditCard />,
-      items: [{ label: 'Riwayat Transaksi', icon: <FiClock />, href: '/transaksi', feature: 'billing' }],
+      items: [{ label: 'Transaksi', icon: <FiCreditCard />, href: '/transaksi', feature: 'billing' }],
     },
     {
       title: 'Operasional',
@@ -98,6 +97,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       items: [
         { label: 'Catat Operasional', icon: <FiEdit3 />, href: '/catat-operasional', feature: 'operasional' },
         { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter', feature: 'share-fee-dokter' },
+        { label: 'Share Fee Saya', icon: <FiDollarSign />, href: '/share-fee-saya', feature: 'share-fee-saya' },
         { label: 'Gudang & Stok', icon: <FiBox />, href: '/gudang', feature: 'gudang' },
       ],
     },
@@ -111,21 +111,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { label: 'Referral', icon: <FiUsers />, href: '/referral', feature: 'referral' },
       ],
     },
-    {
-      title: 'Pengaturan',
-      groupId: 'pengaturan',
-      icon: <FiSettings />,
-      items: [
-        { label: 'Info Klinik', icon: <FiHome />, href: '/info-klinik', feature: 'info-klinik' },
-        ...(canManageUsers
-          ? [{ label: 'User Management', icon: <FiUserCheck />, href: '/user-management', feature: 'user-management' as FeatureKey }]
-          : []),
-        { label: 'Tarif & Tindakan', icon: <FiDollarSign />, href: '/tarif', feature: 'tarif' },
-        { label: 'Log Aktivitas', icon: <FiShield />, href: '/audit-log', feature: 'audit-log' as FeatureKey },
-        { label: 'Langganan', icon: <FiCreditCard />, href: '/langganan', feature: 'langganan' as FeatureKey },
-      ],
-    },
   ];
+
+  const SETTINGS_ROUTES = ['/pengaturan', '/info-klinik', '/user-management', '/tarif', '/audit-log', '/langganan', '/tampilan', '/keamanan', '/api-klinik', '/data-privasi'];
+  const isSettingsActive = SETTINGS_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   // Buang item tanpa href/tanpa akses, lalu buang grup yang jadi kosong.
   const visibleGroups = groupDefs
@@ -184,11 +173,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 href={group.items[0].href!}
                 className={`nav-item ${pathname === group.items[0].href ? 'active' : ''}`}
                 onClick={handleNavItemClick}
-                title={group.title}
+                title={group.items[0].label}
               >
                 <div className="nav-item-left">
-                  <span className="nav-icon">{group.icon}</span>
-                  <span className="nav-label">{group.title}</span>
+                  <span className="nav-icon">{group.items[0].icon}</span>
+                  <span className="nav-label">{group.items[0].label}</span>
                 </div>
               </Link>
             ) : (
@@ -205,6 +194,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               />
             )
           )}
+
+          <Link
+            href="/pengaturan"
+            className={`nav-item ${isSettingsActive ? 'active' : ''}`}
+            onClick={handleNavItemClick}
+            title="Pengaturan"
+          >
+            <div className="nav-item-left">
+              <span className="nav-icon">
+                <FiSettings />
+              </span>
+              <span className="nav-label">Pengaturan</span>
+            </div>
+          </Link>
         </nav>
       </aside>
     </>

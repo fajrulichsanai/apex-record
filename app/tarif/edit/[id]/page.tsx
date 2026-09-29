@@ -91,9 +91,9 @@ export default function EditTarifPage() {
       <main className="content tarif-page">
         <div className="breadcrumb">
           <Link href="/tarif">Master Data</Link>
-          <span className="material-symbols-rounded">chevron_right</span>
+          <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
           <Link href="/tarif">Tarif</Link>
-          <span className="material-symbols-rounded">chevron_right</span>
+          <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
           <span className="breadcrumb-current">Edit</span>
         </div>
 
@@ -112,7 +112,7 @@ export default function EditTarifPage() {
           {!loading && loadError && (
             <div className="modal-body">
               <div className="satusehat-empty">
-                <span className="material-symbols-rounded">error</span>
+                <span aria-hidden="true" className="material-symbols-rounded">error</span>
                 <div className="empty-title">Gagal memuat data</div>
                 <div className="empty-sub">{loadError}</div>
               </div>
@@ -189,7 +189,7 @@ export default function EditTarifPage() {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  <span className="material-symbols-rounded">save</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">save</span>
                   {submitting ? 'Menyimpan…' : 'Save'}
                 </button>
               </div>

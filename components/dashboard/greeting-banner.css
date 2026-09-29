@@ -10,12 +10,13 @@
   font-size: 20px;
   font-weight: 600;
   margin: 0;
+  color: var(--text-dark);
 }
 
 .owner-badge {
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  color: #fff;
+  background: var(--accent-soft);
+  border: none;
+  color: var(--accent);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.04em;

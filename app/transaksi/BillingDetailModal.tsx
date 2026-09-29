@@ -8,6 +8,8 @@ import { billingApi, BillingDetail, DiscountType } from '@/lib/billing';
 import { Tarif } from '@/lib/tarif';
 import { useToast } from '@/lib/toast-context';
 import { waLink } from '@/lib/utils/whatsapp';
+import PaymentModal, { PAYMENT_METHOD_LABEL } from './PaymentModal';
+import { useEscapeKey } from '@/lib/a11y';
 import './BillingDetailModal.css';
 
 interface BillingDetailModalProps {
@@ -74,6 +76,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
   const [sendingWa, setSendingWa] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     isMounted.current = true;
@@ -102,13 +105,9 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [billingId]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !saving) onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [saving, onClose]);
+  useEscapeKey(() => {
+    if (!saving) onClose();
+  });
 
   function startEdit() {
     if (!detail) return;
@@ -192,11 +191,23 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
       return;
     }
 
+    // Open the WA tab synchronously (still inside the click's call stack) so
+    // browsers don't treat it as an unsolicited popup and silently block it —
+    // that only holds if window.open runs before the first await below.
+    const message = `Halo ${detail.patient?.name || ''}, berikut invoice pembayaran ${detail.invoiceNumber} sebesar ${formatRupiah(detail.grandTotal)}. Mohon lampirkan file PDF invoice yang baru terunduh pada chat ini. Terima kasih.`;
+    // No noopener/noreferrer here on purpose: those force window.open() to
+    // always return null (even on success), which would break the blocked-
+    // popup check below. wa.me is a hardcoded, trusted destination, so the
+    // usual tabnabbing risk that noopener guards against doesn't apply.
+    const waWindow = window.open(waLink(phone, message), '_blank');
+    if (!waWindow) {
+      showError('Browser memblokir pop-up WhatsApp. Izinkan pop-up untuk situs ini lalu coba lagi.');
+      return;
+    }
+
     setSendingWa(true);
     try {
       await billingApi.downloadInvoicePdf(billingId);
-      const message = `Halo ${detail.patient?.name || ''}, berikut invoice pembayaran ${detail.invoiceNumber} sebesar ${formatRupiah(detail.grandTotal)}. Mohon lampirkan file PDF invoice yang baru terunduh pada chat ini. Terima kasih.`;
-      window.open(waLink(phone, message), '_blank', 'noopener,noreferrer');
       success('Invoice PDF diunduh, silakan lampirkan di chat WhatsApp yang terbuka');
     } catch (err) {
       showError(err instanceof ApiError ? err.message : 'Gagal mengunduh invoice PDF');
@@ -211,6 +222,8 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
 
   const canEdit = detail && detail.status !== 'cancelled' && detail.status !== 'refunded';
   const canCancel = detail && detail.status === 'unpaid' && detail.paidAmount === 0;
+  // An unpaid Rp 0 bill can still be marked settled with a Rp 0 payment.
+  const canPay = !!detail && (detail.status === 'unpaid' || detail.status === 'partial');
 
   const handleCancelBilling = async () => {
     if (!detail) return;
@@ -238,14 +251,14 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
             {detail && <div className="billing-modal-subtitle">{detail.invoiceNumber}</div>}
           </div>
           <button type="button" className="billing-modal-close" onClick={onClose} disabled={saving} aria-label="Tutup">
-            <span className="material-symbols-rounded">close</span>
+            <span aria-hidden="true" className="material-symbols-rounded">close</span>
           </button>
         </div>
 
         {loading ? (
           <div className="billing-modal-loading">Memuat detail...</div>
         ) : loadError ? (
-          <div className="billing-modal-loading" style={{ color: '#FF4D4F' }}>
+          <div className="billing-modal-loading" style={{ color: 'var(--tag-cancel)' }}>
             {loadError}
           </div>
         ) : detail ? (
@@ -288,14 +301,14 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                           onChange={(e) => updateRow(row.key, { quantity: Math.max(1, Number(e.target.value) || 1) })}
                           title="Jumlah"
                         />
-                        <button
+                        <button aria-label="Hapus tindakan"
                           type="button"
                           className="billing-modal-close"
                           onClick={() => setItems((prev) => prev.filter((r) => r.key !== row.key))}
                           disabled={items.length === 1}
                           title="Hapus tindakan"
                         >
-                          <span className="material-symbols-rounded">close</span>
+                          <span aria-hidden="true" className="material-symbols-rounded">close</span>
                         </button>
                       </div>
                     ))}
@@ -305,7 +318,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                     className="btn-outline billing-add-item-btn"
                     onClick={() => setItems((prev) => [...prev, { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal' }])}
                   >
-                    <span className="material-symbols-rounded">add</span>
+                    <span aria-hidden="true" className="material-symbols-rounded">add</span>
                     Tambah Tindakan
                   </button>
 
@@ -434,7 +447,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                           {detail.payments.map((p) => (
                             <tr key={p.id}>
                               <td>{p.receiptNumber}</td>
-                              <td>{p.method}</td>
+                              <td>{PAYMENT_METHOD_LABEL[p.method] ?? p.method}</td>
                               <td>{formatRupiah(p.amount)}</td>
                               <td>{formatDateTime(p.paidAt)}</td>
                             </tr>
@@ -462,21 +475,27 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                   <button type="button" className="btn-outline" onClick={onClose}>
                     Tutup
                   </button>
-                  {detail.status === 'paid' && (
+                  {(detail.status === 'paid' || detail.status === 'partial') && (
                     <button type="button" className="btn-outline" onClick={handleSendInvoiceWa} disabled={sendingWa}>
-                      <span className="material-symbols-rounded">chat</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">chat</span>
                       {sendingWa ? 'Menyiapkan…' : 'Kirim Invoice ke WA'}
                     </button>
                   )}
                   {canCancel && (
                     <button type="button" className="btn-outline" onClick={() => setConfirmCancel(true)}>
-                      <span className="material-symbols-rounded">cancel</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">cancel</span>
                       Batalkan Transaksi
                     </button>
                   )}
                   {canEdit && (
-                    <button type="button" className="btn-primary" onClick={startEdit}>
+                    <button type="button" className={canPay ? 'btn-outline' : 'btn-primary'} onClick={startEdit}>
                       Edit Invoice
+                    </button>
+                  )}
+                  {canPay && (
+                    <button type="button" className="btn-primary" onClick={() => setPaying(true)}>
+                      <span aria-hidden="true" className="material-symbols-rounded">payments</span>
+                      {Number(detail.paidAmount) > 0 ? 'Pelunasan' : 'Bayar'}
                     </button>
                   )}
                 </>
@@ -485,6 +504,30 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
           </>
         ) : null}
       </div>
+
+      {paying && detail && (
+        <PaymentModal
+          billing={{
+            id: detail.id,
+            invoiceNumber: detail.invoiceNumber,
+            patientName: detail.patient?.name,
+            grandTotal: detail.grandTotal,
+            paidAmount: detail.paidAmount,
+            outstandingAmount: detail.outstandingAmount,
+          }}
+          onClose={() => setPaying(false)}
+          onPaid={async (result) => {
+            setPaying(false);
+            success(
+              result.billingStatus === 'paid'
+                ? 'Pembayaran dicatat — tagihan LUNAS'
+                : `Pembayaran dicatat — sisa Rp ${Math.round(result.outstandingAmount).toLocaleString('id-ID')}`,
+            );
+            await loadDetail();
+            onUpdated();
+          }}
+        />
+      )}
 
       <ConfirmationModal
         isOpen={confirmCancel}

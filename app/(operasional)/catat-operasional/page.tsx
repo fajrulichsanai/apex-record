@@ -172,7 +172,7 @@ export default function CatatOperasionalPage() {
                 success(`${filteredRecords.length} catatan telah diekspor ke Excel`);
               }}
             >
-              <span className="material-symbols-rounded">download</span>
+              <span aria-hidden="true" className="material-symbols-rounded">download</span>
               Ekspor
             </button>
             <button
@@ -181,7 +181,7 @@ export default function CatatOperasionalPage() {
               onClick={() => setFormModal({ mode: 'create' })}
               disabled={loading}
             >
-              <span className="material-symbols-rounded">add</span>
+              <span aria-hidden="true" className="material-symbols-rounded">add</span>
               Tambah Operasional
             </button>
           </div>
@@ -190,7 +190,7 @@ export default function CatatOperasionalPage() {
         <div className="stat-grid">
           <div className="stat-card total">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 payments
               </span>
             </div>
@@ -202,7 +202,7 @@ export default function CatatOperasionalPage() {
           </div>
           <div className="stat-card allperiod">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 account_balance_wallet
               </span>
             </div>
@@ -214,7 +214,7 @@ export default function CatatOperasionalPage() {
           </div>
           <div className="stat-card kategori">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 category
               </span>
             </div>
@@ -226,7 +226,7 @@ export default function CatatOperasionalPage() {
           </div>
           <div className="stat-card jumlah">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 receipt_long
               </span>
             </div>
@@ -242,7 +242,7 @@ export default function CatatOperasionalPage() {
           <div className="panel-toolbar">
             <div className="toolbar-row">
               <div className="search-box">
-                <span className="material-symbols-rounded">search</span>
+                <span aria-hidden="true" className="material-symbols-rounded">search</span>
                 <input
                   type="text"
                   placeholder="Cari berdasarkan deskripsi…"
@@ -263,12 +263,15 @@ export default function CatatOperasionalPage() {
               <input
                 type="date"
                 className="date-input"
+                aria-label="Dari tanggal"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
+              <span className="sort-label" aria-hidden="true">–</span>
               <input
                 type="date"
                 className="date-input"
+                aria-label="Sampai tanggal"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
@@ -277,26 +280,44 @@ export default function CatatOperasionalPage() {
 
           <div className="panel-sort">
             <span className="sort-label">{filteredRecords.length} catatan ditemukan</span>
-            <span className="sort-label" onClick={() => setSortAsc((v) => !v)}>
-              <span className="material-symbols-rounded">{sortAsc ? 'arrow_upward' : 'arrow_downward'}</span>
-              Tanggal
-            </span>
+            <button
+              type="button"
+              className="sort-toggle"
+              onClick={() => setSortAsc((v) => !v)}
+              aria-label={sortAsc ? 'Urutkan tanggal terbaru dulu' : 'Urutkan tanggal terlama dulu'}
+            >
+              <span aria-hidden="true" className="material-symbols-rounded">{sortAsc ? 'arrow_upward' : 'arrow_downward'}</span>
+              Tanggal {sortAsc ? 'terlama' : 'terbaru'}
+            </button>
           </div>
 
           {loading ? (
             <div className="empty-list">
               <div className="empty-icon-wrap">
-                <span className="material-symbols-rounded">hourglass_empty</span>
+                <span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span>
               </div>
               <div className="empty-title">Memuat data operasional...</div>
             </div>
           ) : filteredRecords.length === 0 ? (
             <div className="empty-list">
               <div className="empty-icon-wrap">
-                <span className="material-symbols-rounded">search_off</span>
+                <span aria-hidden="true" className="material-symbols-rounded">{records.length === 0 ? 'receipt_long' : 'search_off'}</span>
               </div>
-              <div className="empty-title">Tidak ada catatan operasional ditemukan</div>
-              <div className="empty-sub">Coba ubah kata kunci pencarian atau filter yang digunakan</div>
+              {records.length === 0 ? (
+                <>
+                  <div className="empty-title">Belum ada catatan operasional</div>
+                  <div className="empty-sub">Catat gaji, sewa, listrik, atau bahan habis pakai supaya laba bersih di laporan akurat.</div>
+                  <button type="button" className="btn-primary" onClick={() => setFormModal({ mode: 'create' })}>
+                    <span aria-hidden="true" className="material-symbols-rounded">add</span>
+                    Catat Pengeluaran
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="empty-title">Tidak ada catatan yang cocok</div>
+                  <div className="empty-sub">Coba ubah kata kunci pencarian, kategori, atau rentang tanggal.</div>
+                </>
+              )}
             </div>
           ) : (
             <div className="op-table-wrap">
@@ -306,14 +327,14 @@ export default function CatatOperasionalPage() {
                     <th>Tanggal</th>
                     <th>Kategori</th>
                     <th>Deskripsi</th>
-                    <th>Nominal</th>
-                    <th></th>
+                    <th className="num">Nominal</th>
+                    <th aria-label="Aksi"></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRecords.map((item) => (
                     <tr key={item.id}>
-                      <td>{new Date(item.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                      <td className="op-date">{new Date(item.tanggal).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                       <td><span className="tag">{kategoriLabel(item.kategori)}</span></td>
                       <td className="op-deskripsi" title={item.deskripsi}>{item.deskripsi}</td>
                       <td className="op-nominal">Rp {item.nominal.toLocaleString('id-ID')}</td>
@@ -325,7 +346,7 @@ export default function CatatOperasionalPage() {
                             aria-label="Edit"
                             onClick={() => setFormModal({ mode: 'edit', record: item })}
                           >
-                            <span className="material-symbols-rounded">edit</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">edit</span>
                           </button>
                           <button
                             type="button"
@@ -333,7 +354,7 @@ export default function CatatOperasionalPage() {
                             aria-label="Hapus"
                             onClick={() => handleDelete(item.id, item.deskripsi)}
                           >
-                            <span className="material-symbols-rounded">delete</span>
+                            <span aria-hidden="true" className="material-symbols-rounded">delete</span>
                           </button>
                         </div>
                       </td>

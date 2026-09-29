@@ -5,9 +5,10 @@ import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
 import CustomSelect from '@/components/form/CustomSelect';
 import { paymentApi } from '@/lib/subscription';
 import type { Payment } from '@/types/subscription';
-import { ApiError, apiFileUrl } from '@/lib/api-client';
+import { ApiError, openProtectedFile } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency } from '@/lib/format';
+import { useEscapeKey } from '@/lib/a11y';
 import '../../styles/super-admin.css';
 
 const STATUS_OPTIONS = [
@@ -27,6 +28,7 @@ export default function SuperAdminPaymentsPage() {
   const [status, setStatus] = useState('pending');
   const [page, setPage] = useState(1);
   const [reviewing, setReviewing] = useState<{ payment: Payment; action: 'confirm' | 'reject' } | null>(null);
+  useEscapeKey(() => setReviewing(null), reviewing !== null);
   const [reviewNotes, setReviewNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { success, error: showError } = useToast();
@@ -98,6 +100,7 @@ export default function SuperAdminPaymentsPage() {
                 <th>Waktu</th>
                 <th>Klinik</th>
                 <th>Paket</th>
+                <th>Kuantitas</th>
                 <th>Jumlah</th>
                 <th>Status</th>
                 <th>Bukti</th>
@@ -106,24 +109,33 @@ export default function SuperAdminPaymentsPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="empty-row">Memuat...</td></tr>
+                <tr><td colSpan={8} className="empty-row">Memuat...</td></tr>
               ) : rows.length === 0 ? (
-                <tr><td colSpan={7} className="empty-row">Tidak ada klaim pembayaran untuk filter ini.</td></tr>
+                <tr><td colSpan={8} className="empty-row">Tidak ada klaim pembayaran untuk filter ini.</td></tr>
               ) : (
                 rows.map((row) => (
                   <tr key={row.id}>
                     <td className="col-time">{formatDateTime(row.createdAt)}</td>
-                    <td style={{ fontWeight: 600 }}>{row.clinicName || `Klinik #${row.clinicId}`}</td>
+                    <td style={{ fontWeight: 600 }}>
+                      {row.ownerId
+                        ? `${row.ownerName || `Owner #${row.ownerId}`} (Multi-Klinik)`
+                        : row.clinicName || `Klinik #${row.clinicId}`}
+                    </td>
                     <td>{row.plan?.name || '-'}</td>
+                    <td>{row.quantity > 1 ? `${row.quantity} klinik` : '-'}</td>
                     <td>Rp {formatCurrency(row.amount)}</td>
                     <td>
                       <span className={`tag ${tagClass(row.status)}`}>{tagLabel(row.status)}</span>
                     </td>
                     <td>
                       {row.proofUrl ? (
-                        <a href={apiFileUrl(row.proofUrl)} target="_blank" rel="noopener noreferrer">
+                        <button
+                          type="button"
+                          style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary, #2563eb)', textDecoration: 'underline', cursor: 'pointer' }}
+                          onClick={() => openProtectedFile(row.proofUrl!).catch(() => showError('Gagal memuat bukti pembayaran'))}
+                        >
                           Lihat
-                        </a>
+                        </button>
                       ) : (
                         '-'
                       )}
@@ -165,11 +177,19 @@ export default function SuperAdminPaymentsPage() {
             </div>
             <div className="sa-modal-body">
               <p style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>
-                {reviewing.payment.clinicName || `Klinik #${reviewing.payment.clinicId}`} &middot; {reviewing.payment.plan?.name} &middot; Rp {formatCurrency(reviewing.payment.amount)}
+                {reviewing.payment.ownerId
+                  ? `${reviewing.payment.ownerName || `Owner #${reviewing.payment.ownerId}`} (Multi-Klinik)`
+                  : reviewing.payment.clinicName || `Klinik #${reviewing.payment.clinicId}`}
+                {' '}&middot; {reviewing.payment.plan?.name} &middot; Rp {formatCurrency(reviewing.payment.amount)}
               </p>
-              {reviewing.action === 'confirm' && (
+              {reviewing.action === 'confirm' && !reviewing.payment.ownerId && (
                 <p style={{ fontSize: 13, color: 'var(--text-sub)' }}>
                   Konfirmasi akan memperpanjang langganan klinik ini sesuai durasi paket.
+                </p>
+              )}
+              {reviewing.action === 'confirm' && reviewing.payment.ownerId && (
+                <p style={{ fontSize: 13, color: '#B8791A', background: 'rgba(245,166,35,.12)', padding: '10px 12px', borderRadius: 8 }}>
+                  Pembayaran Multi Klinik ini mencakup <strong>{reviewing.payment.quantity} klinik</strong> yang terhubung ke akun ini. Konfirmasi akan memperpanjang langganan semua {reviewing.payment.quantity} klinik tersebut sekaligus.
                 </p>
               )}
               <div className="sa-field">

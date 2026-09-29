@@ -43,6 +43,7 @@ export default function ShareFeeDokterPage() {
           <button
             type="button"
             className={`filter-tab ${tab === 'config' ? 'active' : ''}`}
+            aria-pressed={tab === 'config'}
             onClick={() => setTab('config')}
           >
             Konfigurasi Fee
@@ -50,6 +51,7 @@ export default function ShareFeeDokterPage() {
           <button
             type="button"
             className={`filter-tab ${tab === 'report' ? 'active' : ''}`}
+            aria-pressed={tab === 'report'}
             onClick={() => setTab('report')}
           >
             Laporan Bulanan
@@ -61,7 +63,7 @@ export default function ShareFeeDokterPage() {
             <div className="stat-grid">
               <div className="stat-card total">
                 <div className="stat-icon">
-                  <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                     medical_services
                   </span>
                 </div>
@@ -72,7 +74,7 @@ export default function ShareFeeDokterPage() {
               </div>
               <div className="stat-card rata">
                 <div className="stat-icon">
-                  <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                     percent
                   </span>
                 </div>
@@ -83,7 +85,7 @@ export default function ShareFeeDokterPage() {
               </div>
               <div className="stat-card fixed">
                 <div className="stat-icon">
-                  <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                     payments
                   </span>
                 </div>

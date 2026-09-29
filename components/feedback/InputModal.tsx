@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useEscapeKey } from '@/lib/a11y';
 import './InputModal.css';
 
 interface InputModalProps {
@@ -42,6 +43,8 @@ export default function InputModal({
       setTimeout(() => inputRef.current?.focus(), 0);
     }
   }, [isOpen, defaultValue, numeric]);
+
+  useEscapeKey(onCancel, isOpen);
 
   if (!isOpen) return null;
 

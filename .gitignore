@@ -53,3 +53,5 @@ playwright/.cache/
 .playwright/
 .playwright-mcp/
 /*.png
+/.next-build/
+/.next-old/

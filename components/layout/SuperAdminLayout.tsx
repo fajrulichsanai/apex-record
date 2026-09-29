@@ -4,6 +4,7 @@ import { useState } from 'react';
 import SuperAdminSidebar from './SuperAdminSidebar';
 import Navbar from './Navbar';
 import SuperAdminGuard from '@/components/auth/SuperAdminGuard';
+import { useEscapeKey } from '@/lib/a11y';
 import './dashboard-layout.css';
 
 interface SuperAdminLayoutProps {
@@ -15,6 +16,7 @@ export default function SuperAdminLayout({ children }: SuperAdminLayoutProps) {
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);
+  useEscapeKey(closeSidebar, sidebarOpen);
 
   return (
     <SuperAdminGuard>

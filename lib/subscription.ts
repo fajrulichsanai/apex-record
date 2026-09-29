@@ -2,6 +2,7 @@ import { apiClient, toQueryString } from './api-client';
 import type {
   ClinicSubscription,
   ClinicSubscriptionSummary,
+  OwnerCode,
   Payment,
   SubscriptionPlan,
   SuperAdminReportSummary,
@@ -9,7 +10,9 @@ import type {
 
 export interface CreatePaymentPayload {
   planId: number;
-  amount: number;
+  // Jumlah klinik yang dicover — hanya relevan untuk paket Multi Klinik.
+  // Amount dihitung di server dari plan.price * quantity + plan.ownerFee.
+  quantity?: number;
   notes?: string;
 }
 
@@ -65,7 +68,7 @@ export const paymentApi = {
     }
     const form = new FormData();
     form.append('planId', String(payload.planId));
-    form.append('amount', String(payload.amount));
+    if (payload.quantity) form.append('quantity', String(payload.quantity));
     if (payload.notes) form.append('notes', payload.notes);
     form.append('proof', proof);
     return apiClient.postForm<Payment>('/subscription-payments', form);
@@ -82,6 +85,11 @@ export const paymentApi = {
     apiClient.post<Payment>(`/subscription-payments/${id}/confirm`, payload),
   reject: (id: number, payload?: ConfirmPaymentPayload) =>
     apiClient.post<Payment>(`/subscription-payments/${id}/reject`, payload),
+};
+
+export const ownerCodeApi = {
+  list: () => apiClient.get<OwnerCode[]>('/owner-codes'),
+  create: (code: string) => apiClient.post<OwnerCode>('/owner-codes', { code }),
 };
 
 export const superAdminReportApi = {

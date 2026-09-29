@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - development
+      - dev-daffa
 jobs:
   deploy:
     name: Deploy to Staging VPS
@@ -20,10 +21,10 @@ jobs:
             echo "📁 Masuk ke direktori project..."
             cd ~/staging-apex-record/frontend/apex-record
 
-            echo "🔀 Pastikan di branch development..."
-            git fetch origin development
-            git checkout development
-            git reset --hard origin/development
+            echo "🔀 Pastikan di branch ${{ github.ref_name }}..."
+            git fetch origin ${{ github.ref_name }}
+            git checkout ${{ github.ref_name }}
+            git reset --hard origin/${{ github.ref_name }}
 
             echo "📦 Cek perubahan dependency..."
             CURRENT_HASH=$(sha256sum package-lock.json | awk '{print $1}')
@@ -37,10 +38,23 @@ jobs:
               echo "📦 Tidak ada perubahan dependency, skip install ✅"
             fi
 
-            echo "🔨 Build project..."
-            npm run build
+            echo "🔨 Build project (ke folder terpisah, server lama tetap jalan)..."
+            rm -rf .next-build
+            NEXT_DIST_DIR=.next-build npm run build
 
-            echo "♻️  Restart PM2..."
+            echo "🔁 Tukar hasil build lalu restart PM2..."
+            rm -rf .next-old
+            if [ -d .next ]; then mv .next .next-old; fi
+            mv .next-build .next
             pm2 restart apex-record-staging-frontend
+            rm -rf .next-old
+
+            echo "🩺 Cek header cache yang dikirim ke browser (lewat nginx)..."
+            sleep 5
+            for P in / /dashboard /landingpage /api/backend/auth/me; do
+              echo "--- $P"
+              curl -sS -o /dev/null -D - "https://staging.apexrecord.my.id$P" \
+                | grep -iE '^(HTTP|cache-control|expires|age|etag|last-modified|x-nextjs|x-cache|x-proxy-cache|cf-cache-status|server|vary):' || true
+            done
 
             echo "✅ Deploy selesai!"

@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import '../styles/page.css';
 import '../styles/verify-email.css';
+import { API_BASE } from '@/lib/api-client';
 
-const LOCAL_API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const LOCAL_API = API_BASE;
 
 type RequestState = 'idle' | 'loading' | 'sent' | 'error';
 
@@ -42,6 +43,14 @@ const ForgotPasswordPage = () => {
 
   return (
     <div className="verify-page">
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      {/* eslint-disable-next-line @next/next/no-page-custom-font -- scoped intentionally to the auth pages */}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+
       {/* LEFT PANEL */}
       <div className="left-panel">
         <div className="brand">
@@ -55,15 +64,8 @@ const ForgotPasswordPage = () => {
         </div>
 
         <div className="hero">
-          <h1>Kelola klinik<br/>lebih cerdas.</h1>
+          <h1>Kelola klinik<br/>lebih <span className="accent">cerdas.</span></h1>
           <p>Platform manajemen klinik end-to-end — rekam medis, antrian, farmasi, billing, dan analitik bisnis dalam satu ekosistem yang terintegrasi penuh.</p>
-        </div>
-
-        <div className="footer-row">
-          <span className="badge">
-            <span className="dot-green"></span>
-            Terintegrasi SATUSEHAT &middot; Kemenkes RI
-          </span>
         </div>
       </div>
 

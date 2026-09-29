@@ -11,6 +11,7 @@ import { tarifApi, type Tarif } from '@/lib/tarif';
 import { useToast } from '@/lib/toast-context';
 import { useAuth } from '@/lib/auth-context';
 import { isFeatureViewOnly, canSeeHargaModal } from '@/lib/permissions';
+import SettingsTabs from '@/components/settings/SettingsTabs';
 import '../styles/tarif.css';
 
 // Simple function to export CSV (Excel compatible)
@@ -140,6 +141,7 @@ export default function TarifPage() {
     <DashboardLayout>
       <FeatureGuard feature="tarif">
       <main className="content tarif-page">
+        <SettingsTabs />
         {/* Header */}
         <div className="page-header">
           <div className="page-title-block">
@@ -158,12 +160,12 @@ export default function TarifPage() {
               exportToExcel(filteredTarif, showHargaModal);
               success(`${filteredTarif.length} tarif telah diekspor ke Excel`);
             }}>
-              <span className="material-symbols-rounded">download</span>
+              <span aria-hidden="true" className="material-symbols-rounded">download</span>
               Ekspor
             </button>
             {!viewOnly && (
               <button className="btn-primary" type="button" onClick={() => router.push('/tarif/create')} disabled={loading}>
-                <span className="material-symbols-rounded">add</span>
+                <span aria-hidden="true" className="material-symbols-rounded">add</span>
                 Tambah Tarif
               </button>
             )}
@@ -174,7 +176,7 @@ export default function TarifPage() {
         <div className="stat-grid">
           <div className="stat-card total">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 receipt_long
               </span>
             </div>
@@ -187,7 +189,7 @@ export default function TarifPage() {
           {showHargaModal && (
             <div className="stat-card margin">
               <div className="stat-icon">
-                <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                   trending_up
                 </span>
               </div>
@@ -200,7 +202,7 @@ export default function TarifPage() {
           )}
           <div className="stat-card termahal">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 payments
               </span>
             </div>
@@ -212,7 +214,7 @@ export default function TarifPage() {
           </div>
           <div className="stat-card durasi">
             <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                 category
               </span>
             </div>
@@ -229,7 +231,7 @@ export default function TarifPage() {
           <div className="panel-toolbar">
             <div className="toolbar-row">
               <div className="search-box">
-                <span className="material-symbols-rounded">search</span>
+                <span aria-hidden="true" className="material-symbols-rounded">search</span>
                 <input
                   type="text"
                   placeholder="Cari berdasarkan title…"
@@ -257,14 +259,14 @@ export default function TarifPage() {
           {loading ? (
             <div className="empty-list">
               <div className="empty-icon-wrap">
-                <span className="material-symbols-rounded">hourglass_empty</span>
+                <span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span>
               </div>
               <div className="empty-title">Memuat data tarif...</div>
             </div>
           ) : filteredTarif.length === 0 ? (
             <div className="empty-list">
               <div className="empty-icon-wrap">
-                <span className="material-symbols-rounded">search_off</span>
+                <span aria-hidden="true" className="material-symbols-rounded">search_off</span>
               </div>
               <div className="empty-title">Tidak ada tarif ditemukan</div>
               <div className="empty-sub">Coba ubah kata kunci pencarian atau filter yang digunakan</div>
@@ -298,7 +300,7 @@ export default function TarifPage() {
                         {showHargaModal && (
                           <td>
                             <span className="tarif-margin">
-                              <span className="material-symbols-rounded">trending_up</span>
+                              <span aria-hidden="true" className="material-symbols-rounded">trending_up</span>
                               Rp {margin.toLocaleString('id-ID')}
                             </span>
                           </td>
@@ -314,10 +316,10 @@ export default function TarifPage() {
                           ) : (
                             <div className="tarif-actions">
                               <button type="button" className="action-btn edit" aria-label="Edit" onClick={() => router.push(`/tarif/edit/${item.id}`)}>
-                                <span className="material-symbols-rounded">edit</span>
+                                <span aria-hidden="true" className="material-symbols-rounded">edit</span>
                               </button>
                               <button type="button" className="action-btn delete" aria-label="Hapus" onClick={() => handleDelete(item.id, item.name)}>
-                                <span className="material-symbols-rounded">delete</span>
+                                <span aria-hidden="true" className="material-symbols-rounded">delete</span>
                               </button>
                             </div>
                           )}

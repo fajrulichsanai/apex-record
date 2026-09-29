@@ -7,7 +7,6 @@ import FeatureGuard from '@/components/auth/FeatureGuard';
 import InputModal from '@/components/feedback/InputModal';
 import AddVisitModal from './AddVisitModal';
 import EditVisitModal from './EditVisitModal';
-import PeriksaModal from './PeriksaModal';
 import {
   encounterApi,
   EncounterListItem,
@@ -18,11 +17,12 @@ import { encounterSoapApi, SoapNote } from '@/lib/encounter-soap';
 import { ApiError } from '@/lib/api-client';
 import '../../styles/kunjungan.css';
 
-type FilterValue = 'semua' | EncounterStatus;
+// 'aktif' = Menunggu + Berlangsung, dipakai kartu statistik "Menunggu / Berlangsung".
+type FilterValue = 'semua' | 'aktif' | EncounterStatus;
 
 function statusTagClass(status: EncounterStatus) {
-  if (status === 'arrived') return 'pending';
-  if (status === 'in_progress') return 'pending';
+  if (status === 'arrived') return 'waiting';
+  if (status === 'in_progress') return 'progress';
   if (status === 'finished') return 'done';
   return 'cancel';
 }
@@ -32,12 +32,6 @@ function statusLabel(status: EncounterStatus) {
   if (status === 'in_progress') return 'Berlangsung';
   if (status === 'finished') return 'Selesai';
   return 'Batal';
-}
-
-function syncStatusLabel(status?: string) {
-  if (status === 'synced') return 'Tersinkron ke Satu Sehat';
-  if (status === 'failed') return 'Gagal sinkron Satu Sehat';
-  return 'Belum sinkron Satu Sehat';
 }
 
 function initialsFromName(name?: string) {
@@ -51,6 +45,20 @@ function initialsFromName(name?: string) {
       .join('')
       .toUpperCase() || '?'
   );
+}
+
+/**
+ * Timezone klinik dipatok ke +07:00 (WIB), sama seperti sisi backend
+ * (lihat `todayInClinicTimezone` di encounters.service.ts) — dipakai agar
+ * batas "hari ini" di sini konsisten dengan yang dipakai backend saat
+ * memfilter daftar kunjungan hari ini.
+ */
+function clinicDate(value: string): string {
+  return new Date(new Date(value).getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function todayInClinicTimezone(): string {
+  return new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
 function formatDateTime(value?: string) {
@@ -75,6 +83,7 @@ function ListKunjunganPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [visits, setVisits] = useState<EncounterListItem[]>([]);
+  const [backlogVisits, setBacklogVisits] = useState<EncounterListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [currentFilter, setCurrentFilter] = useState<FilterValue>('semua');
@@ -84,13 +93,11 @@ function ListKunjunganPageInner() {
   const [detail, setDetail] = useState<EncounterDetail | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
-  const [syncLoading, setSyncLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [preselectReservationId, setPreselectReservationId] = useState<number | null>(null);
   const [showCancellationModal, setShowCancellationModal] = useState(false);
   const [pendingStatusChange, setPendingStatusChange] = useState<EncounterStatus | null>(null);
-  const [showPeriksaModal, setShowPeriksaModal] = useState(false);
   const [soapNote, setSoapNote] = useState<SoapNote | null>(null);
 
   useEffect(() => {
@@ -105,13 +112,30 @@ function ListKunjunganPageInner() {
     setLoading(true);
     setLoadError(null);
     try {
-      const res = await encounterApi.list();
-      setVisits(res.data);
+      const [todayRes, arrivedRes, inProgressRes] = await Promise.all([
+        encounterApi.list(),
+        encounterApi.list({ status: 'arrived', limit: 100 }),
+        encounterApi.list({ status: 'in_progress', limit: 100 }),
+      ]);
+      setVisits(todayRes.data);
+
+      // Kunjungan yang masih menunggu/berlangsung dari hari-hari sebelumnya —
+      // dulu "hilang" karena daftar utama hanya menampilkan hari ini. Backend
+      // sekarang mengembalikan status arrived/in_progress lintas semua
+      // tanggal, jadi di sini kita saring yang bukan hari ini saja supaya
+      // tidak duplikat dengan daftar utama.
+      const today = todayInClinicTimezone();
+      const backlog = [...arrivedRes.data, ...inProgressRes.data].filter(
+        (v) => clinicDate(v.arrivedTime) !== today,
+      );
+      setBacklogVisits(backlog);
+
+      const combined = [...todayRes.data, ...backlog];
       const queryEncounterId = Number(searchParams.get('encounterId'));
-      const preselected = queryEncounterId && res.data.some((v) => v.encounterId === queryEncounterId)
+      const preselected = queryEncounterId && combined.some((v) => v.encounterId === queryEncounterId)
         ? queryEncounterId
         : null;
-      setSelectedVisitId((prev) => preselected ?? prev ?? res.data[0]?.encounterId ?? null);
+      setSelectedVisitId((prev) => preselected ?? prev ?? combined[0]?.encounterId ?? null);
     } catch (err) {
       setLoadError(err instanceof ApiError ? err.message : 'Gagal memuat daftar kunjungan');
     } finally {
@@ -140,7 +164,9 @@ function ListKunjunganPageInner() {
   }, [selectedVisitId]);
 
   const filteredVisits = visits.filter((v) => {
-    const matchStatus = currentFilter === 'semua' || v.status === currentFilter;
+    const matchStatus =
+      currentFilter === 'semua' ||
+      (currentFilter === 'aktif' ? v.status === 'arrived' || v.status === 'in_progress' : v.status === currentFilter);
     const q = searchQuery.toLowerCase();
     const matchSearch =
       (v.patientName || '').toLowerCase().includes(q) ||
@@ -154,7 +180,10 @@ function ListKunjunganPageInner() {
   const doneCount = visits.filter((v) => v.status === 'finished').length;
   const cancelCount = visits.filter((v) => v.status === 'cancelled').length;
 
-  const selectedVisit = visits.find((v) => v.encounterId === selectedVisitId) ?? null;
+  const selectedVisit =
+    visits.find((v) => v.encounterId === selectedVisitId) ??
+    backlogVisits.find((v) => v.encounterId === selectedVisitId) ??
+    null;
 
   const handleSelectVisit = (id: number) => {
     setSelectedVisitId(id);
@@ -210,19 +239,6 @@ function ListKunjunganPageInner() {
     }
   };
 
-  const handlePeriksaSaved = async () => {
-    setShowPeriksaModal(false);
-    if (selectedVisitId) {
-      const [refreshed, note] = await Promise.all([
-        encounterApi.detail(selectedVisitId),
-        encounterSoapApi.get(selectedVisitId).catch(() => null),
-      ]);
-      setDetail(refreshed);
-      setSoapNote(note);
-    }
-    loadVisits();
-  };
-
   const handleCancellationModalConfirm = (reason: string) => {
     if (!reason.trim()) {
       setActionError('Alasan pembatalan wajib diisi');
@@ -232,21 +248,6 @@ function ListKunjunganPageInner() {
     if (pendingStatusChange) {
       performStatusChange(pendingStatusChange, reason);
       setPendingStatusChange(null);
-    }
-  };
-
-  const handleSyncSatusehat = async () => {
-    if (!selectedVisitId) return;
-    setActionError(null);
-    setSyncLoading(true);
-    try {
-      await encounterApi.syncToSatusehat(selectedVisitId);
-      const refreshed = await encounterApi.detail(selectedVisitId);
-      setDetail(refreshed);
-    } catch (err) {
-      setActionError(err instanceof ApiError ? err.message : 'Gagal sinkron ke Satu Sehat');
-    } finally {
-      setSyncLoading(false);
     }
   };
 
@@ -267,74 +268,115 @@ function ListKunjunganPageInner() {
             <p className="page-subtitle">Kelola seluruh kunjungan pasien klinik Anda</p>
           </div>
           <button className="btn-primary" onClick={handleAddVisit}>
-            <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+            <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>
               add
             </span>
             Buat Kunjungan
           </button>
         </div>
 
-        {/* Stats */}
+        {/* Stats — klik untuk memfilter daftar */}
         <div className="stat-grid">
-          <div className="stat-card total" onClick={() => handleSetFilter('semua')}>
-            <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-                event_note
-              </span>
-            </div>
-            <div className="stat-info">
-              <div className="stat-value">{totalCount}</div>
-              <div className="stat-label">Total Kunjungan</div>
-            </div>
-          </div>
-          <div className="stat-card pending" onClick={() => handleSetFilter('arrived')}>
-            <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-                schedule
-              </span>
-            </div>
-            <div className="stat-info">
-              <div className="stat-value">{pendingCount}</div>
-              <div className="stat-label">Menunggu / Berlangsung</div>
-            </div>
-          </div>
-          <div className="stat-card done" onClick={() => handleSetFilter('finished')}>
-            <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-                task_alt
-              </span>
-            </div>
-            <div className="stat-info">
-              <div className="stat-value">{doneCount}</div>
-              <div className="stat-label">Selesai</div>
-            </div>
-          </div>
-          <div className="stat-card cancel" onClick={() => handleSetFilter('cancelled')}>
-            <div className="stat-icon">
-              <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-                cancel
-              </span>
-            </div>
-            <div className="stat-info">
-              <div className="stat-value">{cancelCount}</div>
-              <div className="stat-label">Batal</div>
-            </div>
-          </div>
+          {([
+            { key: 'semua', cls: 'total', icon: 'event_note', value: totalCount, label: 'Total Kunjungan' },
+            { key: 'aktif', cls: 'pending', icon: 'schedule', value: pendingCount, label: 'Menunggu / Berlangsung' },
+            { key: 'finished', cls: 'done', icon: 'task_alt', value: doneCount, label: 'Selesai' },
+            { key: 'cancelled', cls: 'cancel', icon: 'cancel', value: cancelCount, label: 'Batal' },
+          ] as const).map((card) => (
+            <button
+              key={card.key}
+              type="button"
+              className={`stat-card ${card.cls} ${currentFilter === card.key ? 'active' : ''}`}
+              aria-pressed={currentFilter === card.key}
+              onClick={() => handleSetFilter(card.key)}
+            >
+              <div className="stat-icon">
+                <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  {card.icon}
+                </span>
+              </div>
+              <div className="stat-info">
+                <div className="stat-value">{card.value}</div>
+                <div className="stat-label">{card.label}</div>
+              </div>
+            </button>
+          ))}
         </div>
 
+        {/* Backlog: kunjungan belum selesai dari hari-hari sebelumnya */}
+        {backlogVisits.length > 0 && (
+          <div className="backlog-banner">
+            <div className="backlog-banner-header">
+              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                warning
+              </span>
+              <div>
+                <div className="backlog-banner-title">
+                  {backlogVisits.length} Kunjungan Belum Selesai dari Hari Sebelumnya
+                </div>
+                <div className="backlog-banner-sub">
+                  Kunjungan ini masih berstatus Menunggu/Berlangsung dan tidak akan hilang dari daftar sampai diselesaikan atau dibatalkan.
+                </div>
+              </div>
+            </div>
+            <div className="backlog-list">
+              {backlogVisits.map((visit) => {
+                const dt = formatDateTime(visit.arrivedTime);
+                return (
+                  <div
+                    key={visit.encounterId}
+                    className={`backlog-item ${visit.encounterId === selectedVisitId ? 'selected' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => handleSelectVisit(visit.encounterId)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handleSelectVisit(visit.encounterId);
+                      }
+                    }}
+                  >
+                    <div className="visit-avatar">{initialsFromName(visit.patientName)}</div>
+                    <div className="backlog-item-info">
+                      <div className="visit-row-top">
+                        <div className="backlog-item-name">{visit.patientName || `Pasien #${visit.patientId}`}</div>
+                        <span className={`tag ${statusTagClass(visit.status)}`}>{statusLabel(visit.status)}</span>
+                      </div>
+                      <div className="backlog-item-meta">
+                        {visit.practitionerName || '—'} · {typeof dt === 'string' ? dt : `${dt.date}, ${dt.time}`}
+                      </div>
+                    </div>
+                    <span aria-hidden="true" className="material-symbols-rounded chevron-icon">chevron_right</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Content */}
-        <div className="content-area">
+        <div className={`content-area ${showDetailOnMobile ? 'detail-open' : ''}`}>
           {/* List Panel */}
           <div className="panel">
             <div className="panel-toolbar">
               <div className="search-box">
-                <span className="material-symbols-rounded">search</span>
+                <span aria-hidden="true" className="material-symbols-rounded">search</span>
                 <input
                   type="text"
                   placeholder="Cari pasien, dokter, keluhan…"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="search-clear"
+                    aria-label="Hapus pencarian"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>close</span>
+                  </button>
+                )}
               </div>
               <div className="filter-tabs">
                 <button
@@ -377,7 +419,41 @@ function ListKunjunganPageInner() {
             </div>
 
             {loadError ? (
-              <div style={{ padding: '16px', color: '#FF4D4F' }}>{loadError}</div>
+              <div className="inline-error">{loadError}</div>
+            ) : !loading && filteredVisits.length === 0 ? (
+              <div className="detail-empty" style={{ padding: '32px 16px' }}>
+                <div className="empty-icon-wrap">
+                  <span aria-hidden="true" className="material-symbols-rounded">{visits.length === 0 ? 'event_available' : 'search_off'}</span>
+                </div>
+                {visits.length === 0 ? (
+                  <>
+                    <div className="empty-title">Belum ada kunjungan hari ini</div>
+                    <div className="empty-sub">Kunjungan baru akan muncul di sini setelah dibuat.</div>
+                    <button type="button" className="btn-primary" style={{ marginTop: 8 }} onClick={handleAddVisit}>
+                      <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>add</span>
+                      Buat Kunjungan
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="empty-title">Tidak ada kunjungan yang cocok</div>
+                    <div className="empty-sub">
+                      Filter atau kata kunci pencarian saat ini menyembunyikan {visits.length} kunjungan hari ini.
+                    </div>
+                    <button
+                      type="button"
+                      className="btn-outline"
+                      style={{ marginTop: 12 }}
+                      onClick={() => {
+                        setCurrentFilter('semua');
+                        setSearchQuery('');
+                      }}
+                    >
+                      Reset Filter &amp; Pencarian
+                    </button>
+                  </>
+                )}
+              </div>
             ) : (
               <div className="visit-list">
                 {filteredVisits.map((visit) => {
@@ -386,20 +462,27 @@ function ListKunjunganPageInner() {
                     <div
                       key={visit.encounterId}
                       className={`visit-row-item ${visit.encounterId === selectedVisitId ? 'selected' : ''}`}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => handleSelectVisit(visit.encounterId)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleSelectVisit(visit.encounterId);
+                        }
+                      }}
                     >
                       <div className="visit-avatar">{initialsFromName(visit.patientName)}</div>
                       <div className="visit-row-info">
-                        <div className="visit-row-name">{visit.patientName || `Pasien #${visit.patientId}`}</div>
-                        <div className="visit-row-meta">
+                        <div className="visit-row-top">
+                          <div className="visit-row-name">{visit.patientName || `Pasien #${visit.patientId}`}</div>
                           <span className={`tag ${statusTagClass(visit.status)}`}>{statusLabel(visit.status)}</span>
-                          <span className="visit-row-sub">
-                            · {visit.practitionerName || '—'} ·{' '}
-                            {typeof dt === 'string' ? dt : `${dt.date} ${dt.time}`}
-                          </span>
+                        </div>
+                        <div className="visit-row-sub">
+                          {visit.practitionerName || '—'} · {typeof dt === 'string' ? dt : dt.time}
                         </div>
                       </div>
-                      <span className="material-symbols-rounded chevron-icon">chevron_right</span>
+                      <span aria-hidden="true" className="material-symbols-rounded chevron-icon">chevron_right</span>
                     </div>
                   );
                 })}
@@ -412,7 +495,7 @@ function ListKunjunganPageInner() {
             {!selectedVisit ? (
               <div className="detail-empty">
                 <div className="empty-icon-wrap">
-                  <span className="material-symbols-rounded">event_busy</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">event_busy</span>
                 </div>
                 <div className="empty-title">Belum ada kunjungan dipilih</div>
                 <div className="empty-sub">
@@ -421,6 +504,10 @@ function ListKunjunganPageInner() {
               </div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', flex: 1 }}>
+                <button type="button" className="detail-back" onClick={() => setShowDetailOnMobile(false)}>
+                  <span aria-hidden="true" className="material-symbols-rounded">arrow_back</span>
+                  Kembali ke daftar
+                </button>
                 <div className="detail-header">
                   <div className="detail-avatar">{initialsFromName(selectedVisit.patientName)}</div>
                   <div className="detail-name-block">
@@ -435,12 +522,9 @@ function ListKunjunganPageInner() {
                   {(selectedVisit.status === 'arrived' || selectedVisit.status === 'in_progress') && (
                     <button
                       className="btn-outline"
-                      style={{ fontSize: '12.5px' }}
                       onClick={() => setShowEditModal(true)}
                     >
-                      <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                        edit
-                      </span>
+                      <span aria-hidden="true" className="material-symbols-rounded">edit</span>
                       Edit
                     </button>
                   )}
@@ -467,89 +551,69 @@ function ListKunjunganPageInner() {
                     <div className="info-label">Keluhan Utama</div>
                     <div className="info-value">{selectedVisit.chiefComplaint || '—'}</div>
                   </div>
-                  <div className="info-cell" style={{ gridColumn: '1/-1' }}>
-                    <div className="info-label">Status Satu Sehat</div>
-                    <div className="info-value">{syncStatusLabel(detail?.syncStatus)}</div>
-                  </div>
                 </div>
 
                 <div className="detail-section">
                   <div className="section-title">
-                    <span className="material-symbols-rounded">bolt</span>
-                    Ubah Status
+                    <span aria-hidden="true" className="material-symbols-rounded">bolt</span>
+                    Langkah Berikutnya
                   </div>
                   <div className="quick-actions">
                     {selectedVisit.status === 'arrived' && (
                       <button
-                        className="btn-outline"
-                        style={{ fontSize: '12.5px' }}
+                        className="btn-primary"
                         disabled={actionLoading}
                         onClick={() => handleChangeStatus('in_progress')}
                       >
+                        <span aria-hidden="true" className="material-symbols-rounded">play_arrow</span>
                         Mulai Periksa
                       </button>
                     )}
                     {(selectedVisit.status === 'in_progress' || selectedVisit.status === 'finished') && (
                       <button
-                        className="btn-outline"
-                        style={{ fontSize: '12.5px' }}
-                        onClick={() => setShowPeriksaModal(true)}
+                        className={selectedVisit.status === 'in_progress' && !isSoapFilled ? 'btn-primary' : 'btn-outline'}
+                        onClick={() => router.push(`/list-kunjungan/${selectedVisit.encounterId}/rekam-medis`)}
                       >
-                        <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                          description
-                        </span>
+                        <span aria-hidden="true" className="material-symbols-rounded">menu_book</span>
                         {isSoapFilled ? 'Edit SOAP' : 'Isi SOAP'}
                       </button>
                     )}
                     {selectedVisit.status === 'in_progress' && isSoapFilled && (
                       <button
-                        className="btn-outline"
-                        style={{ fontSize: '12.5px' }}
+                        className="btn-primary"
                         disabled={actionLoading}
                         onClick={() => handleChangeStatus('finished')}
                       >
+                        <span aria-hidden="true" className="material-symbols-rounded">task_alt</span>
                         Selesaikan Kunjungan
+                      </button>
+                    )}
+                    {selectedVisit.status === 'finished' && (
+                      <button
+                        className="btn-primary"
+                        onClick={() => router.push(`/transaksi?encounterId=${selectedVisit.encounterId}`)}
+                      >
+                        <span aria-hidden="true" className="material-symbols-rounded">receipt</span>
+                        Buat Tagihan
                       </button>
                     )}
                     {(selectedVisit.status === 'arrived' || selectedVisit.status === 'in_progress') && (
                       <button
                         className="btn-outline danger"
-                        style={{ fontSize: '12.5px', color: '#FF4D4F', borderColor: '#FFCCC7' }}
                         disabled={actionLoading}
                         onClick={() => handleChangeStatus('cancelled')}
                       >
                         Batalkan
                       </button>
                     )}
-                    {selectedVisit.status === 'finished' && (
-                      <button
-                        className="btn-outline"
-                        style={{ fontSize: '12.5px' }}
-                        onClick={() => router.push(`/transaksi?encounterId=${selectedVisit.encounterId}`)}
-                      >
-                        <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                          receipt
-                        </span>
-                        Buat Tagihan
-                      </button>
-                    )}
-                    {selectedVisit.status === 'finished' && detail?.syncStatus !== 'synced' && (
-                      <button
-                        className="btn-outline"
-                        style={{ fontSize: '12.5px' }}
-                        disabled={syncLoading}
-                        onClick={handleSyncSatusehat}
-                      >
-                        <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
-                          sync
-                        </span>
-                        {syncLoading ? 'Mensinkronkan…' : 'Sync ke Satu Sehat'}
-                      </button>
-                    )}
                   </div>
-                  {actionError && (
-                    <div style={{ color: '#FF4D4F', fontSize: '13px', marginTop: '8px' }}>{actionError}</div>
+                  {selectedVisit.status === 'in_progress' && !isSoapFilled && (
+                    <div className="next-step-hint">
+                      <span aria-hidden="true" className="material-symbols-rounded">info</span>
+                      Isi SOAP terlebih dahulu untuk bisa menyelesaikan kunjungan.
+                    </div>
                   )}
+                  {actionError && <div className="action-error">{actionError}</div>}
                 </div>
               </div>
             )}
@@ -573,15 +637,6 @@ function ListKunjunganPageInner() {
         />
       )}
 
-      {showPeriksaModal && detail && (
-        <PeriksaModal
-          visit={detail}
-          practitionerName={selectedVisit?.practitionerName || detail.practitioner?.name}
-          onClose={() => setShowPeriksaModal(false)}
-          onSaved={handlePeriksaSaved}
-        />
-      )}
-
       <InputModal
         isOpen={showCancellationModal}
         title="Alasan Pembatalan"
@@ -595,5 +650,4 @@ function ListKunjunganPageInner() {
   );
 }
 
-//test
 

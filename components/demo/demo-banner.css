@@ -1,0 +1,37 @@
+.demo-banner {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 16px;
+  padding: 8px 16px;
+  background: #14532d;
+  color: #f0fdf4;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.demo-banner-actions {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.demo-banner button {
+  border: 1px solid rgba(240, 253, 244, 0.5);
+  background: transparent;
+  color: inherit;
+  border-radius: 999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.demo-banner button.demo-banner-primary {
+  background: #f0fdf4;
+  color: #14532d;
+  border-color: #f0fdf4;
+}

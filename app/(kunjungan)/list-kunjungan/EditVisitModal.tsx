@@ -117,7 +117,7 @@ export default function EditVisitModal({ visit, onClose, onUpdated }: EditVisitM
             <p>Perbarui data kunjungan pasien</p>
           </div>
           <button className="visit-modal-close" type="button" onClick={onClose} disabled={submitting} aria-label="Tutup">
-            <span className="material-symbols-rounded">close</span>
+            <span aria-hidden="true" className="material-symbols-rounded">close</span>
           </button>
         </div>
 
@@ -132,7 +132,7 @@ export default function EditVisitModal({ visit, onClose, onUpdated }: EditVisitM
               <div className="visit-form-body">
                 <div className="visit-form-field">
                   <label>
-                    <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                    <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '15px' }}>
                       person
                     </span>
                     Pasien <span className="req">*</span>
@@ -148,7 +148,7 @@ export default function EditVisitModal({ visit, onClose, onUpdated }: EditVisitM
 
                 <div className="visit-form-field">
                   <label>
-                    <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                    <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '15px' }}>
                       medical_services
                     </span>
                     Dokter <span className="req">*</span>
@@ -164,7 +164,7 @@ export default function EditVisitModal({ visit, onClose, onUpdated }: EditVisitM
 
                 <div className="visit-form-field">
                   <label>
-                    <span className="material-symbols-rounded" style={{ fontSize: '15px' }}>
+                    <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '15px' }}>
                       edit_note
                     </span>
                     Keluhan Utama
@@ -177,7 +177,7 @@ export default function EditVisitModal({ visit, onClose, onUpdated }: EditVisitM
                   />
                 </div>
 
-                {error && <div style={{ color: '#FF4D4F', fontSize: '13px' }}>{error}</div>}
+                {error && <div style={{ color: 'var(--red)', fontSize: '13px' }}>{error}</div>}
               </div>
 
               <div className="visit-form-footer">
@@ -185,7 +185,7 @@ export default function EditVisitModal({ visit, onClose, onUpdated }: EditVisitM
                   Batal
                 </button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  <span className="material-symbols-rounded" style={{ fontSize: '16px' }}>
+                  <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '16px' }}>
                     check_circle
                   </span>
                   {submitting ? 'Menyimpan…' : 'Simpan Perubahan'}

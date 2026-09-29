@@ -69,14 +69,15 @@ export interface UpdateEncounterPayload {
   chiefComplaint?: string;
 }
 
-export interface SyncResult {
-  success: boolean;
-  satusehatId?: string;
-  error?: string;
-}
-
 export const encounterApi = {
-  list: (query?: { date?: string; status?: EncounterStatus; practitionerId?: number; page?: number; limit?: number }) =>
+  list: (query?: {
+    date?: string;
+    status?: EncounterStatus;
+    practitionerId?: number;
+    unbilled?: boolean;
+    page?: number;
+    limit?: number;
+  }) =>
     apiClient.get<EncounterListResponse>(
       '/encounters' +
         (query
@@ -100,7 +101,4 @@ export const encounterApi = {
 
   updateStatus: (id: number, payload: UpdateEncounterStatusPayload) =>
     apiClient.patch<EncounterDetail>(`/encounters/${id}/status`, payload),
-
-  syncToSatusehat: (id: number) =>
-    apiClient.post<SyncResult>(`/satusehat/sync/encounter/${id}`),
 };

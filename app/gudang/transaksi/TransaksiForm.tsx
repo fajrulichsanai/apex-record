@@ -101,9 +101,9 @@ export default function TransaksiForm() {
         <main className="content gudang-page">
           <div className="breadcrumb">
             <Link href="/gudang">Gudang & Stok</Link>
-            <span className="material-symbols-rounded">chevron_right</span>
+            <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
             <Link href="/gudang/transaksi">Transaksi Stok</Link>
-            <span className="material-symbols-rounded">chevron_right</span>
+            <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
             <span className="breadcrumb-current">Tambah Transaksi</span>
           </div>
 

@@ -49,28 +49,28 @@ export default function GudangDashboardPage() {
 
         {loading || !dashboard ? (
           <div className="empty-list">
-            <div className="empty-icon-wrap"><span className="material-symbols-rounded">hourglass_empty</span></div>
+            <div className="empty-icon-wrap"><span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span></div>
             <div className="empty-title">Memuat data dashboard...</div>
           </div>
         ) : (
           <>
             <div className="stat-grid">
               <div className="stat-card total">
-                <div className="stat-icon"><span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>inventory_2</span></div>
+                <div className="stat-icon"><span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>inventory_2</span></div>
                 <div className="stat-info">
                   <div className="stat-value">{dashboard.totalItems}</div>
                   <div className="stat-label">Total Barang Aktif</div>
                 </div>
               </div>
               <div className="stat-card margin">
-                <div className="stat-icon"><span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span></div>
+                <div className="stat-icon"><span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span></div>
                 <div className="stat-info">
                   <div className="stat-value">Rp {dashboard.totalInventoryValue.toLocaleString('id-ID')}</div>
                   <div className="stat-label">Nilai Total Inventory</div>
                 </div>
               </div>
               <div className="stat-card termahal">
-                <div className="stat-icon"><span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span></div>
+                <div className="stat-icon"><span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span></div>
                 <div className="stat-info">
                   <div className="stat-value">{dashboard.lowStockCount}</div>
                   <div className="stat-label">Stok Kritis</div>
@@ -78,7 +78,7 @@ export default function GudangDashboardPage() {
                 </div>
               </div>
               <div className="stat-card durasi">
-                <div className="stat-icon"><span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>event_busy</span></div>
+                <div className="stat-icon"><span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>event_busy</span></div>
                 <div className="stat-info">
                   <div className="stat-value">{dashboard.nearExpiryCount}</div>
                   <div className="stat-label">Mendekati Expired</div>
@@ -94,7 +94,7 @@ export default function GudangDashboardPage() {
 
               {dashboard.lowStockItems.length === 0 ? (
                 <div className="empty-list">
-                  <div className="empty-icon-wrap"><span className="material-symbols-rounded">check_circle</span></div>
+                  <div className="empty-icon-wrap"><span aria-hidden="true" className="material-symbols-rounded">check_circle</span></div>
                   <div className="empty-title">Semua stok aman</div>
                   <div className="empty-sub">Tidak ada barang di bawah stok minimum saat ini</div>
                 </div>
@@ -116,8 +116,8 @@ export default function GudangDashboardPage() {
                           <td className="gudang-name">{item.name}</td>
                           <td>{item.sku}</td>
                           <td>
-                            <span className="gudang-margin">
-                              <span className="material-symbols-rounded" style={{ fontSize: 14 }}>warning</span>
+                            <span className="stock-low">
+                              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: 14 }}>warning</span>
                               {item.stokSaatIni}
                             </span>
                           </td>

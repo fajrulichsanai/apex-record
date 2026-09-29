@@ -95,7 +95,7 @@ export default function BarangPage() {
           <div className="page-header-actions">
             {!viewOnly && (
               <button className="btn-primary" type="button" onClick={() => router.push('/gudang/barang/create')} disabled={loading}>
-                <span className="material-symbols-rounded">add</span>
+                <span aria-hidden="true" className="material-symbols-rounded">add</span>
                 Tambah Barang
               </button>
             )}
@@ -104,7 +104,7 @@ export default function BarangPage() {
 
         <div className="stat-grid">
           <div className="stat-card total">
-            <div className="stat-icon"><span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>inventory_2</span></div>
+            <div className="stat-icon"><span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>inventory_2</span></div>
             <div className="stat-info">
               <div className="stat-value">{totalCount}</div>
               <div className="stat-label">Total Barang Aktif</div>
@@ -112,7 +112,7 @@ export default function BarangPage() {
             </div>
           </div>
           <div className="stat-card margin">
-            <div className="stat-icon"><span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span></div>
+            <div className="stat-icon"><span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span></div>
             <div className="stat-info">
               <div className="stat-value">Rp {totalValue.toLocaleString('id-ID')}</div>
               <div className="stat-label">Nilai Inventory</div>
@@ -120,7 +120,7 @@ export default function BarangPage() {
             </div>
           </div>
           <div className="stat-card termahal">
-            <div className="stat-icon"><span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span></div>
+            <div className="stat-icon"><span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span></div>
             <div className="stat-info">
               <div className="stat-value">{lowStockCount}</div>
               <div className="stat-label">Stok Kritis</div>
@@ -128,7 +128,7 @@ export default function BarangPage() {
             </div>
           </div>
           <div className="stat-card durasi">
-            <div className="stat-icon"><span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>category</span></div>
+            <div className="stat-icon"><span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>category</span></div>
             <div className="stat-info">
               <div className="stat-value">{kategoriCount}</div>
               <div className="stat-label">Kategori</div>
@@ -141,7 +141,7 @@ export default function BarangPage() {
           <div className="panel-toolbar">
             <div className="toolbar-row">
               <div className="search-box">
-                <span className="material-symbols-rounded">search</span>
+                <span aria-hidden="true" className="material-symbols-rounded">search</span>
                 <input
                   type="text"
                   placeholder="Cari nama atau SKU…"
@@ -161,7 +161,7 @@ export default function BarangPage() {
                 className={`btn-outline${filterLowStock ? ' active' : ''}`}
                 onClick={() => setFilterLowStock((v) => !v)}
               >
-                <span className="material-symbols-rounded">warning</span>
+                <span aria-hidden="true" className="material-symbols-rounded">warning</span>
                 Stok Kritis
               </button>
             </div>
@@ -173,12 +173,12 @@ export default function BarangPage() {
 
           {loading ? (
             <div className="empty-list">
-              <div className="empty-icon-wrap"><span className="material-symbols-rounded">hourglass_empty</span></div>
+              <div className="empty-icon-wrap"><span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span></div>
               <div className="empty-title">Memuat data barang...</div>
             </div>
           ) : filteredItems.length === 0 ? (
             <div className="empty-list">
-              <div className="empty-icon-wrap"><span className="material-symbols-rounded">search_off</span></div>
+              <div className="empty-icon-wrap"><span aria-hidden="true" className="material-symbols-rounded">search_off</span></div>
               <div className="empty-title">Tidak ada barang ditemukan</div>
               <div className="empty-sub">Coba ubah kata kunci pencarian atau filter yang digunakan</div>
             </div>
@@ -207,9 +207,9 @@ export default function BarangPage() {
                         </td>
                         <td>{item.kategori ? <span className="tag">{item.kategori}</span> : '-'}</td>
                         <td>
-                          <span className={isLow ? 'gudang-margin' : undefined}>
-                            {isLow && <span className="material-symbols-rounded" style={{ fontSize: 14 }}>warning</span>}
-                            {item.stokSaatIni} {item.satuanPakai} <span style={{ color: 'var(--text-sub)', fontSize: 11 }}>(min {item.stokMinimum})</span>
+                          <span className={isLow ? 'stock-low' : undefined}>
+                            {isLow && <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: 14 }}>warning</span>}
+                            {item.stokSaatIni} {item.satuanPakai} <span className="stock-min">(min {item.stokMinimum})</span>
                           </span>
                         </td>
                         <td>Rp {(item.hargaBeli || 0).toLocaleString('id-ID')}</td>
@@ -225,10 +225,10 @@ export default function BarangPage() {
                           ) : (
                             <div className="gudang-actions">
                               <button type="button" className="action-btn edit" aria-label="Edit" onClick={() => router.push(`/gudang/barang/edit/${item.id}`)}>
-                                <span className="material-symbols-rounded">edit</span>
+                                <span aria-hidden="true" className="material-symbols-rounded">edit</span>
                               </button>
                               <button type="button" className="action-btn delete" aria-label="Hapus" onClick={() => handleDelete(item.id, item.name)}>
-                                <span className="material-symbols-rounded">delete</span>
+                                <span aria-hidden="true" className="material-symbols-rounded">delete</span>
                               </button>
                             </div>
                           )}

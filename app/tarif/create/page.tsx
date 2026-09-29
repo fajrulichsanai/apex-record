@@ -99,9 +99,9 @@ export default function CreateTarifPage() {
       <main className="content tarif-page">
         <div className="breadcrumb">
           <Link href="/tarif">Master Data</Link>
-          <span className="material-symbols-rounded">chevron_right</span>
+          <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
           <Link href="/tarif">Tarif</Link>
-          <span className="material-symbols-rounded">chevron_right</span>
+          <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
           <span className="breadcrumb-current">Tambah Baru</span>
         </div>
 
@@ -191,13 +191,13 @@ export default function CreateTarifPage() {
                   </div>
 
                   {items.length > 1 && (
-                    <button
+                    <button aria-label="Hapus kategori ini"
                       type="button"
                       className="btn-remove"
                       onClick={() => removeItem(item.id)}
                       title="Hapus kategori ini"
                     >
-                      <span className="material-symbols-rounded">close</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">close</span>
                     </button>
                   )}
                 </div>
@@ -209,7 +209,7 @@ export default function CreateTarifPage() {
               className="btn-add-item"
               onClick={addItem}
             >
-              <span className="material-symbols-rounded">add</span>
+              <span aria-hidden="true" className="material-symbols-rounded">add</span>
               Tambah Kategori
             </button>
           </div>
@@ -219,7 +219,7 @@ export default function CreateTarifPage() {
               Batal
             </button>
             <button type="submit" className="btn-primary" disabled={submitting}>
-              <span className="material-symbols-rounded">save</span>
+              <span aria-hidden="true" className="material-symbols-rounded">save</span>
               {submitting ? 'Menyimpan…' : 'Simpan Semua Tarif'}
             </button>
           </div>

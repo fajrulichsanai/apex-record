@@ -1,73 +1,93 @@
 'use client';
 
-import Select from 'react-select';
+import Select, { type StylesConfig } from 'react-select';
 import './CustomSelect.css';
 
 interface CustomSelectProps {
   value: string;
   onChange: (value: string) => void;
-  options: Array<{ value: string; label: string }>;
+  options: Option[];
   placeholder?: string;
   disabled?: boolean;
   error?: boolean;
 }
 
-const customStyles = {
-  control: (base: any, state: any) => ({
+// Colours come from the --cs-* tokens in CustomSelect.css so the control
+// and its portalled menu follow the light/dark theme.
+type Option = { value: string; label: string };
+
+const buildStyles = (error: boolean): StylesConfig<Option, false> => ({
+  control: (base, state) => ({
     ...base,
     minHeight: '40px',
-    border: state.isFocused ? '1.5px solid #4F7EF8' : state.selectOption?.error ? '1.5px solid #FF4D4F' : '1.5px solid #E8ECF4',
-    borderRadius: '8px',
-    backgroundColor: '#FFFFFF',
-    boxShadow: state.isFocused ? '0 0 0 3px rgba(79, 126, 248, 0.12)' : 'none',
+    border: `1px solid ${state.isFocused ? 'var(--cs-accent)' : error ? 'var(--cs-danger)' : 'var(--cs-border)'}`,
+    borderRadius: '10px',
+    backgroundColor: state.isFocused ? 'var(--cs-surface)' : 'var(--cs-bg)',
+    boxShadow: state.isFocused ? '0 0 0 3px rgba(126, 217, 87, 0.22)' : 'none',
     cursor: 'pointer',
     fontSize: '13.5px',
     fontFamily: 'inherit',
-    color: '#1A2340',
+    color: 'var(--cs-text)',
     transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
     '&:hover': {
-      borderColor: !state.isDisabled ? '#4F7EF8' : 'inherit',
+      borderColor: state.isFocused ? 'var(--cs-accent)' : 'var(--cs-muted)',
     },
   }),
-  menu: (base: any) => ({
+  menu: (base) => ({
     ...base,
-    borderRadius: '8px',
-    boxShadow: '0 6px 20px rgba(15, 23, 42, 0.12)',
-    border: '1px solid #E8ECF4',
+    borderRadius: '12px',
+    backgroundColor: 'var(--cs-surface)',
+    boxShadow: 'var(--cs-shadow)',
+    border: '1px solid var(--cs-border)',
+    overflow: 'hidden',
     zIndex: 9999,
   }),
-  option: (base: any, state: any) => ({
+  menuList: (base) => ({
     ...base,
-    backgroundColor: state.isSelected ? '#EBF1FF' : state.isFocused ? '#F5F6FA' : 'transparent',
-    color: state.isSelected ? '#4F7EF8' : '#1A2340',
+    padding: '4px',
+  }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected ? 'var(--cs-accent-soft)' : state.isFocused ? 'var(--cs-hover)' : 'transparent',
+    color: state.isSelected ? 'var(--cs-accent-ink)' : 'var(--cs-text)',
+    borderRadius: '8px',
     cursor: 'pointer',
     fontWeight: state.isSelected ? 600 : 400,
     fontSize: '13.5px',
     padding: '10px 12px',
     '&:active': {
-      backgroundColor: '#EBF1FF',
+      backgroundColor: 'var(--cs-accent-soft)',
     },
   }),
-  singleValue: (base: any) => ({
+  singleValue: (base) => ({
     ...base,
-    color: '#1A2340',
+    color: 'var(--cs-text)',
     fontSize: '13.5px',
   }),
-  placeholder: (base: any) => ({
+  input: (base) => ({
     ...base,
-    color: '#A0AEC0',
+    color: 'var(--cs-text)',
+  }),
+  placeholder: (base) => ({
+    ...base,
+    color: 'var(--cs-muted)',
     fontSize: '13.5px',
+  }),
+  noOptionsMessage: (base) => ({
+    ...base,
+    color: 'var(--cs-muted)',
+    fontSize: '13px',
   }),
   indicatorSeparator: () => ({
     display: 'none',
   }),
-  dropdownIndicator: (base: any) => ({
+  dropdownIndicator: (base) => ({
     ...base,
-    color: '#A0AEC0',
+    color: 'var(--cs-muted)',
     padding: '4px 8px',
     fontSize: '18px',
   }),
-};
+});
 
 export default function CustomSelect({
   value,
@@ -88,8 +108,8 @@ export default function CustomSelect({
       placeholder={placeholder}
       menuPortalTarget={typeof document !== 'undefined' ? document.body : undefined}
       styles={{
-        ...customStyles,
-        menuPortal: (base: any) => ({ ...base, zIndex: 9999 }),
+        ...buildStyles(error),
+        menuPortal: (base) => ({ ...base, zIndex: 9999 }),
       }}
     />
   );

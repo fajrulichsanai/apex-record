@@ -10,8 +10,12 @@ import {
   FiDollarSign,
   FiBarChart2,
   FiShield,
+  FiKey,
+  FiUsers,
+  FiUploadCloud,
   FiChevronLeft,
   FiChevronRight,
+  FiDatabase,
 } from 'react-icons/fi';
 import './sidebar.css';
 
@@ -23,10 +27,14 @@ interface SuperAdminSidebarProps {
 const NAV_ITEMS = [
   { label: 'Dashboard', icon: <FiGrid />, href: '/super-admin/dashboard' },
   { label: 'Klinik', icon: <FiHome />, href: '/super-admin/clinics' },
+  { label: 'Multi-Klinik Owner', icon: <FiUsers />, href: '/super-admin/multi-clinic-owners' },
+  { label: 'Owner Code', icon: <FiKey />, href: '/super-admin/owner-codes' },
+  { label: 'Migrasi Data Pasien', icon: <FiUploadCloud />, href: '/super-admin/patient-migration' },
   { label: 'Paket Langganan', icon: <FiDollarSign />, href: '/super-admin/plans' },
   { label: 'Konfirmasi Pembayaran', icon: <FiCreditCard />, href: '/super-admin/payments' },
   { label: 'Laporan', icon: <FiBarChart2 />, href: '/super-admin/reports' },
   { label: 'Log Aktivitas', icon: <FiShield />, href: '/super-admin/audit-log' },
+  { label: 'Permintaan Data', icon: <FiDatabase />, href: '/super-admin/data-requests' },
 ];
 
 export default function SuperAdminSidebar({ isOpen, onClose }: SuperAdminSidebarProps) {

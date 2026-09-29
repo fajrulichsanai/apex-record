@@ -73,7 +73,7 @@ export default function TransaksiPage() {
           <div className="page-header-actions">
             {!viewOnly && (
               <button className="btn-primary" type="button" onClick={() => router.push('/gudang/transaksi/create')} disabled={loading || barangList.length === 0}>
-                <span className="material-symbols-rounded">add</span>
+                <span aria-hidden="true" className="material-symbols-rounded">add</span>
                 Tambah Transaksi
               </button>
             )}
@@ -102,12 +102,12 @@ export default function TransaksiPage() {
 
           {loading ? (
             <div className="empty-list">
-              <div className="empty-icon-wrap"><span className="material-symbols-rounded">hourglass_empty</span></div>
+              <div className="empty-icon-wrap"><span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span></div>
               <div className="empty-title">Memuat data transaksi...</div>
             </div>
           ) : filteredTransaksi.length === 0 ? (
             <div className="empty-list">
-              <div className="empty-icon-wrap"><span className="material-symbols-rounded">search_off</span></div>
+              <div className="empty-icon-wrap"><span aria-hidden="true" className="material-symbols-rounded">search_off</span></div>
               <div className="empty-title">Belum ada transaksi stok</div>
               <div className="empty-sub">Tambahkan transaksi stock in/out pertama Anda</div>
             </div>

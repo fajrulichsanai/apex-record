@@ -63,7 +63,7 @@ export default function EditPasienPage() {
         {!loading && loadError && (
           <div className="patient-form-card modal-body">
             <div className="satusehat-empty">
-              <span className="material-symbols-rounded">error</span>
+              <span aria-hidden="true" className="material-symbols-rounded">error</span>
               <div className="empty-title">Gagal memuat data</div>
               <div className="empty-sub">{loadError}</div>
             </div>
