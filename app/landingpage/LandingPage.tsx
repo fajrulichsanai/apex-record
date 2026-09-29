@@ -39,8 +39,8 @@ const FEATURES = [
         <path d="M8 2v4M16 2v4" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
       </svg>
     ),
-    title: 'Catatan Operasional & Pengeluaran',
-    desc: 'Catat pengeluaran operasional — gaji, sewa, utilitas, bahan habis pakai — supaya laba bersih yang tampil di laporan benar-benar akurat.',
+    title: 'Laporan Keuangan & Pengeluaran',
+    desc: 'Pendapatan dan laba bersih, berapa tagihan lunas, berapa yang masih DP beserta sisa piutangnya, kunjungan gratis, serta total diskon yang sudah diberikan. Pengeluaran operasional seperti gaji dan sewa ikut dihitung.',
   },
   {
     icon: (
@@ -50,7 +50,7 @@ const FEATURES = [
       </svg>
     ),
     title: 'Tarif, Billing & Invoice',
-    desc: 'Atur tarif tindakan dan diskon, billing otomatis, dengan pembayaran cash, transfer, QRIS, asuransi, hingga BPJS.',
+    desc: 'Atur tarif dan diskon, terima cash, transfer, QRIS, asuransi, hingga BPJS. Pasien bisa bayar DP dulu lalu pelunasan belakangan, dan kontrol yang sudah dibayar di awal atau konsultasi gratis tetap tercatat sebagai kunjungan Rp 0.',
   },
   {
     icon: (
@@ -105,7 +105,7 @@ const FEATURES = [
       </svg>
     ),
     title: 'Audit Log Menyeluruh',
-    desc: 'Setiap akses dan perubahan data tercatat siapa, kapan, dan apa — aktivitas tak wajar ditandai otomatis sebagai peringatan.',
+    desc: 'Akses dan perubahan rekam medis tercatat: siapa, kapan, dan apa yang diubah. Aktivitas tak wajar ditandai otomatis sebagai peringatan.',
   },
 ];
 
@@ -199,6 +199,18 @@ const FAQS = [
   {
     q: 'Bisakah jadwal dokter dan reservasi tampil di website klinik saya?',
     a: 'Bisa. Buat API key di Pengaturan → API, lalu tim IT atau pembuat website Anda tinggal menampilkan jam buka, profil & jadwal dokter, layanan, slot kosong, dan formulir reservasi. Dokumentasinya tersedia langsung di halaman tersebut. Kuota request mengikuti paket langganan.',
+  },
+  {
+    q: 'Apakah pasien bisa bayar DP dulu?',
+    a: 'Bisa. Saat membuat tagihan, pilih Lunas, DP, atau Bayar Nanti. Sisa tagihan terlihat jelas di daftar transaksi dan bisa dilunasi kapan saja lewat tombol Pelunasan, dengan metode bayar yang berbeda sekalipun. Laporan keuangan menampilkan berapa tagihan yang masih DP dan sisa piutangnya.',
+  },
+  {
+    q: 'Bagaimana dengan kunjungan kontrol yang tidak ditagih lagi?',
+    a: 'Misalnya kontrol lanjutan yang sudah dibayar di awal atau konsultasi gratis. Buat tagihan Rp 0 dan langsung tercatat lunas, jadi kunjungannya tetap masuk rekam medis dan laporan kunjungan, dan di laporan keuangan tampil sebagai kunjungan gratis.',
+  },
+  {
+    q: 'Kalau berhenti berlangganan, data klinik saya bagaimana?',
+    a: 'Data tetap milik klinik. Setelah langganan berakhir, data masih bisa dilihat. Pemilik klinik bisa meminta salinan seluruh data atau menutup akun kapan saja dari menu Pengaturan → Data & Privasi, dan kami tanggapi paling lambat 3 x 24 jam.',
   },
   {
     q: 'Apa yang terjadi setelah masa uji coba 15 hari berakhir?',
@@ -443,6 +455,11 @@ export default function LandingPage() {
                 </Reveal>
               ))}
             </div>
+            <Reveal className="sec-note">
+              <b>Data tetap milik klinik.</b> Minta salinan seluruh data atau tutup akun kapan saja dari menu Pengaturan →
+              Data &amp; Privasi, sesuai UU Pelindungan Data Pribadi. Baca{' '}
+              <a href="/kebijakan-privasi">Kebijakan Privasi</a>.
+            </Reveal>
           </div>
         </section>
 

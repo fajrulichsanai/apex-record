@@ -403,6 +403,9 @@
 
 /* ---------- security ---------- */
 .lp .sec-grid{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.lp .sec-note{ margin-top: 16px; padding: 14px 18px; border-radius: var(--radius-md); background: var(--accent-soft); color: var(--accent-ink); font-size: 13.5px; line-height: 1.6; text-align: center; }
+.lp .sec-note b{ color: var(--accent-ink); }
+.lp .sec-note a{ color: var(--accent-ink); font-weight: 600; }
 
 /* ---------- onboarding steps ---------- */
 .lp .steps{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
