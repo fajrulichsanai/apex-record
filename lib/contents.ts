@@ -10,6 +10,10 @@ export interface ContentPhotoFrame {
   zoom: number;
   ox: number;
   oy: number;
+  /** Rotation in degrees, clockwise, kept within -180..180. */
+  rot?: number;
+  /** Mirrored horizontally (intraoral photos taken with a mirror). */
+  flip?: boolean;
 }
 
 export interface ContentSettings {
@@ -21,6 +25,14 @@ export interface ContentSettings {
   contactTitle?: string;
   contactLine?: string;
   handle?: string;
+  template?: string;
+  /** FDI tooth numbers, e.g. ["11", "21"]. */
+  teeth?: string[];
+  region?: string;
+  condition?: string;
+  visits?: number;
+  /** False once the caption was typed by hand. */
+  autoCaption?: boolean;
 }
 
 export interface ClinicContent {

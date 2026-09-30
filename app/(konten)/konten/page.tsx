@@ -8,6 +8,7 @@ import FeatureGuard from '@/components/auth/FeatureGuard';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { CONTENT_STATUS_LABEL, contentsApi, type ClinicContent } from '@/lib/contents';
+import { CONTENT_TEMPLATES } from '@/lib/content-templates';
 import '../../styles/konten.css';
 
 const formatDate = (iso: string) =>
@@ -73,6 +74,18 @@ export default function KontenPage() {
               <FiPlus aria-hidden="true" /> Buat konten
             </Link>
           </div>
+
+          <section className="kt-start" aria-labelledby="kt-start-title">
+            <h2 id="kt-start-title">Mulai dari template</h2>
+            <div className="kt-templates">
+              {CONTENT_TEMPLATES.map((t) => (
+                <Link key={t.id} href={`/konten/baru?template=${t.id}`} className="kt-template">
+                  <b>{t.title}</b>
+                  <span>{t.desc}</span>
+                </Link>
+              ))}
+            </div>
+          </section>
 
           {loading ? (
             <p className="kt-empty">Memuat…</p>

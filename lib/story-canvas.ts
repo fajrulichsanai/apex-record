@@ -42,7 +42,12 @@ const THEMES = {
 } as const;
 
 export const DISCLAIMER = 'Dipublikasikan atas izin pasien · Hasil tiap pasien dapat berbeda';
-export const DEFAULT_FRAME: ContentPhotoFrame = { zoom: 1, ox: 0, oy: 0 };
+export const DEFAULT_FRAME: ContentPhotoFrame = { zoom: 1, ox: 0, oy: 0, rot: 0, flip: false };
+export const MIN_ZOOM = 1;
+export const MAX_ZOOM = 5;
+
+/** Any angle, as degrees within -180..180. */
+export const normalizeAngle = (deg: number) => ((((deg + 180) % 360) + 360) % 360) - 180;
 
 /** Where each photo sits on the story. */
 export function storyRects(layout: ContentLayout): Record<StorySlot, Rect> {
@@ -55,18 +60,33 @@ export function storyRects(layout: ContentLayout): Record<StorySlot, Rect> {
   return { before: [x0, top, x1 - x0, h], after: [x0, top + h + gap, x1 - x0, h] };
 }
 
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
 /**
- * Cover-fits the photo into its rect, applies zoom and pan, and keeps the pan
- * inside the photo's edges. Returns the clamped frame and where to draw.
+ * Cover-fits the photo into its rect at any rotation, applies zoom and pan,
+ * and keeps the pan inside the photo's edges so the frame never shows a gap.
+ * Returns the clamped frame and how to draw it: centre, size, angle, mirror.
  */
 export function placePhoto(img: { width: number; height: number }, frame: ContentPhotoFrame, rect: Rect) {
   const [x, y, w, h] = rect;
-  const k = Math.max(w / img.width, h / img.height) * frame.zoom;
+  const rot = normalizeAngle(frame.rot ?? 0);
+  const zoom = clamp(frame.zoom, MIN_ZOOM, MAX_ZOOM);
+  const a = (rot * Math.PI) / 180;
+  const cos = Math.cos(a), sin = Math.sin(a);
+  // The frame's extent measured along the (rotated) photo's own axes.
+  const needW = w * Math.abs(cos) + h * Math.abs(sin);
+  const needH = w * Math.abs(sin) + h * Math.abs(cos);
+  const k = Math.max(needW / img.width, needH / img.height) * zoom;
   const dw = img.width * k, dh = img.height * k;
-  const mx = (dw - w) / 2, my = (dh - h) / 2;
-  const ox = Math.max(-mx, Math.min(mx, frame.ox));
-  const oy = Math.max(-my, Math.min(my, frame.oy));
-  return { frame: { zoom: frame.zoom, ox, oy }, draw: [x + (w - dw) / 2 + ox, y + (h - dh) / 2 + oy, dw, dh] as Rect };
+  // Clamp the pan along the photo's axes, then turn it back to the story's.
+  const mu = (dw - needW) / 2, mv = (dh - needH) / 2;
+  const u = clamp(frame.ox * cos + frame.oy * sin, -mu, mu);
+  const v = clamp(-frame.ox * sin + frame.oy * cos, -mv, mv);
+  const ox = u * cos - v * sin, oy = u * sin + v * cos;
+  return {
+    frame: { zoom, ox, oy, rot, flip: !!frame.flip },
+    draw: { cx: x + w / 2 + ox, cy: y + h / 2 + oy, w: dw, h: dh, angle: a, flip: !!frame.flip },
+  };
 }
 
 /** The slot under a point in story coordinates, if any. */
@@ -175,8 +195,11 @@ export function drawStory(g: CanvasRenderingContext2D, d: StoryData, f: StoryFon
     g.fillStyle = T.slot;
     g.fillRect(x, y, w, h);
     if (img) {
-      const [ix, iy, iw, ih] = placePhoto(img, d.frames[k], R[k]).draw;
-      g.drawImage(img, ix, iy, iw, ih);
+      const p = placePhoto(img, d.frames[k], R[k]).draw;
+      g.translate(p.cx, p.cy);
+      g.rotate(p.angle);
+      if (p.flip) g.scale(-1, 1);
+      g.drawImage(img, -p.w / 2, -p.h / 2, p.w, p.h);
     } else {
       tooth(x + w / 2, y + h / 2 - 30, 0.9, T.slotInk);
       txt(k === 'before' ? 'Pilih foto sebelum' : 'Pilih foto sesudah', x + w / 2, y + h / 2 + 110, `400 30px ${f.display}`, T.slotInk, 'center');
