@@ -5,518 +5,431 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ApexRecord Bento</title>
 <style>
-  @font-face {
-    font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: block;
-    src: url(fonts/inter-latin.woff2) format('woff2');
-  }
+  @font-face { font-family: 'Inter'; font-weight: 400; src: url(fonts/Inter-400.woff2) format('woff2'); }
+  @font-face { font-family: 'Inter'; font-weight: 500; src: url(fonts/Inter-500.woff2) format('woff2'); }
+  @font-face { font-family: 'Inter'; font-weight: 600; src: url(fonts/Inter-600.woff2) format('woff2'); }
+  @font-face { font-family: 'Inter'; font-weight: 700; src: url(fonts/Inter-700.woff2) format('woff2'); }
+  @font-face { font-family: 'Inter Tight'; font-weight: 600; src: url(fonts/InterTight-600.woff2) format('woff2'); }
+  @font-face { font-family: 'Inter Tight'; font-weight: 700; src: url(fonts/InterTight-700.woff2) format('woff2'); }
+  @font-face { font-family: 'Inter Tight'; font-weight: 800; src: url(fonts/InterTight-800.woff2) format('woff2'); }
+  @font-face { font-family: 'JetBrains Mono'; font-weight: 500; src: url(fonts/JetBrainsMono-500.woff2) format('woff2'); }
+  @font-face { font-family: 'JetBrains Mono'; font-weight: 600; src: url(fonts/JetBrainsMono-600.woff2) format('woff2'); }
+
+  /* Token warna mengikuti app/landingpage/landingpage.css */
   :root {
-    --bg: #f5f5f7;
-    --card: #ffffff;
-    --ink: #1d1d1f;
-    --muted: #6e6e73;
-    --line: rgba(0, 0, 0, 0.07);
-    --chip: #f2f2f5;
-    --blue: #4f7ef8;
-    --blue-dk: #3b6ce6;
-    --indigo: #5e5cf0;
-    --green: #22b35e;
-    --purple: #a855f7;
-    --orange: #ff8a00;
-    --pink: #ff375f;
-    --teal: #14b8c4;
-    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05);
-    --r: 30px;
-    --gap: 18px;
-    --pad: 48px;
+    --bg: #EEECE6; --surface: #FFFFFF; --soft: #FAF9F6;
+    --ink: #17160F; --ink-2: #55534A; --ink-3: #8D8B7E;
+    --line: rgba(23,22,15,.08); --line-strong: rgba(23,22,15,.14);
+    --accent: #3E8E36; --lime: #7ED957; --accent-soft: #E3F3DA; --accent-ink: #2B6B22;
+    --warn-soft: #FCEACB; --warn-ink: #8A5A00; --danger-soft: #FBE1DE; --danger-ink: #C1381F;
+    --info-soft: #DCEAFB; --info-ink: #1D5FAE;
+    --grid-line: rgba(23,22,15,.05);
+    --shadow: 0 1px 2px rgba(23,22,15,.04), 0 24px 48px -28px rgba(23,22,15,.28);
+    --display: 'Inter Tight', sans-serif; --sans: 'Inter', sans-serif; --mono: 'JetBrains Mono', monospace;
   }
   body.dark {
-    --bg: #000000;
-    --card: #141416;
-    --ink: #f5f5f7;
-    --muted: #8e8e93;
-    --line: rgba(255, 255, 255, 0.08);
-    --chip: #232326;
-    --shadow: none;
+    --bg: #17160F; --surface: #242320; --soft: #1D1C17;
+    --ink: #F3F1EA; --ink-2: #B8B5A9; --ink-3: #85826F;
+    --line: rgba(255,255,255,.08); --line-strong: rgba(255,255,255,.14);
+    --accent: #6BC85F; --accent-soft: #23361F; --accent-ink: #6BC85F;
+    --warn-soft: #3A2C10; --warn-ink: #E8A930; --danger-soft: #3A1F17; --danger-ink: #E5573C;
+    --info-soft: #1B2A3A; --info-ink: #5B9BE0;
+    --grid-line: rgba(255,255,255,.045);
+    --shadow: 0 30px 60px -30px rgba(0,0,0,.7);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { background: var(--bg); }
-  body {
-    font-family: 'Inter', -apple-system, 'Segoe UI', sans-serif;
-    color: var(--ink);
-    -webkit-font-smoothing: antialiased;
-    overflow: hidden;
-  }
-  .canvas {
-    width: var(--w); height: var(--h);
-    padding: var(--pad);
-    display: flex; flex-direction: column; gap: 28px;
-    position: relative; overflow: hidden;
-  }
-  .ambient {
-    position: absolute; inset: 0; pointer-events: none; z-index: 0;
-    background:
-      radial-gradient(600px 400px at 10% 0%, rgba(79,126,248,.12), transparent 70%),
-      radial-gradient(500px 400px at 100% 100%, rgba(168,85,247,.10), transparent 70%);
-  }
-  body.dark .ambient {
-    background:
-      radial-gradient(700px 500px at 5% 0%, rgba(79,126,248,.22), transparent 70%),
-      radial-gradient(600px 500px at 100% 100%, rgba(168,85,247,.16), transparent 70%);
-  }
+  body { font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; overflow: hidden; }
 
-  /* ---------- Header (portrait) ---------- */
-  .header { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 14px; }
-  .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 22px; letter-spacing: -.01em; }
-  .mark {
-    width: 40px; height: 40px; border-radius: 12px; color: #fff;
-    background: linear-gradient(135deg, #7ea2ff, var(--blue) 55%, var(--indigo));
-    display: grid; place-items: center; box-shadow: 0 6px 18px rgba(79,126,248,.35);
+  .slide {
+    width: 1920px; height: 1080px; position: relative; overflow: hidden;
+    padding: 52px 64px 44px; display: flex; flex-direction: column; gap: 30px;
   }
-  .mark svg { width: 22px; height: 22px; }
-  .header h1 { font-size: 64px; line-height: 1.02; font-weight: 800; letter-spacing: -.045em; }
-  .header p { font-size: 22px; color: var(--muted); letter-spacing: -.01em; max-width: 820px; }
-  .grad-text {
-    background: linear-gradient(90deg, var(--blue), var(--indigo) 50%, var(--purple));
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+  .bg-grid {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image: linear-gradient(var(--grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 70% 60% at 20% 0%, #000 30%, transparent 100%);
   }
+  .glow { position: absolute; width: 1100px; height: 1100px; border-radius: 50%; pointer-events: none;
+    background: radial-gradient(circle, rgba(126,217,87,.22), transparent 62%); }
+  body:not(.dark) .glow { opacity: .55; }
+  .z { position: relative; }
 
-  /* ---------- Grid ---------- */
+  /* top & bottom bar */
+  .top, .bottom { position: relative; display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .logo { width: 46px; height: 46px; background: url(logo.png) center/152% no-repeat; }
+  .dark .logo { background-color: #F3F1EA; border-radius: 13px; background-size: 118%; }
+  .word { font-family: var(--display); font-weight: 700; font-size: 25px; letter-spacing: -.01em; }
+  .word em { font-style: normal; color: var(--accent); }
+  .dark .word em { color: var(--lime); }
+  .kicker { font-family: var(--mono); font-size: 14px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+  .bottom { border-top: 1px solid var(--line-strong); padding-top: 18px; }
+  .foot { font-family: var(--mono); font-size: 15px; color: var(--ink-2); }
+
+  /* bento */
   .bento {
-    position: relative; z-index: 1; flex: 1; min-height: 0;
-    display: grid; gap: var(--gap);
-    grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
-    grid-template-rows: var(--row-tpl);
+    position: relative; flex: 1; min-height: 0; display: grid; gap: 20px;
+    grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: repeat(4, minmax(0, 1fr));
   }
-  .tile {
-    background: var(--card); border-radius: var(--r); box-shadow: var(--shadow);
-    padding: 26px; position: relative; overflow: hidden;
-    display: flex; flex-direction: column; gap: 12px; min-width: 0; min-height: 0;
-    border: 1px solid var(--line);
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 26px; box-shadow: var(--shadow);
+    padding: 26px 28px; display: flex; flex-direction: column; gap: 14px; min-width: 0; min-height: 0; overflow: hidden; position: relative;
   }
-  .eyebrow {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-size: 14px; font-weight: 600; letter-spacing: .01em; color: var(--accent, var(--blue));
-  }
-  .eyebrow svg { width: 18px; height: 18px; }
-  .title { font-size: 28px; line-height: 1.1; font-weight: 700; letter-spacing: -.03em; }
-  .desc { font-size: 15px; line-height: 1.45; color: var(--muted); }
-  .grow { flex: 1; min-height: 0; }
+  .eyebrow { font-family: var(--mono); font-size: 12.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+  .dark .eyebrow { color: var(--lime); }
+  .ttl { font-family: var(--display); font-weight: 700; font-size: 27px; line-height: 1.12; letter-spacing: -.018em; }
+  .ttl.sm { font-size: 22px; }
+  .sub { font-size: 14.5px; line-height: 1.5; color: var(--ink-2); }
+  .sp { flex: 1; min-height: 0; }
+  .row { display: flex; align-items: center; }
+  .mono { font-family: var(--mono); }
+
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+  .chip.ok { background: var(--accent-soft); color: var(--accent-ink); }
+  .chip.warn { background: var(--warn-soft); color: var(--warn-ink); }
+  .chip.bad { background: var(--danger-soft); color: var(--danger-ink); }
+  .chip.info { background: var(--info-soft); color: var(--info-ink); }
+  .chip.line { border: 1px solid var(--line-strong); color: var(--ink-2); background: var(--surface); }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: var(--chip); border-radius: 999px; padding: 7px 12px;
-    font-size: 13px; font-weight: 600; color: var(--ink); white-space: nowrap;
-  }
-  .chip svg { width: 14px; height: 14px; }
-  .chip.accent { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
-  svg.i { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .big { font-weight: 800; letter-spacing: -.045em; line-height: 1; }
+  svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
 
-  /* hero */
-  .t-hero {
-    background: linear-gradient(150deg, #6f95ff 0%, var(--blue) 35%, var(--indigo) 75%, #7c3aed 100%);
-    color: #fff; border: none; justify-content: space-between; padding: 34px;
-  }
-  .t-hero .glow { position: absolute; border-radius: 50%; filter: blur(10px); opacity: .5; }
-  .t-hero .g1 { width: 320px; height: 320px; right: -90px; top: -90px; background: radial-gradient(circle, rgba(255,255,255,.55), transparent 65%); }
-  .t-hero .g2 { width: 260px; height: 260px; left: -80px; bottom: -110px; background: radial-gradient(circle, rgba(168,85,247,.9), transparent 65%); }
-  .t-hero .brand { position: relative; }
-  .t-hero .mark { background: rgba(255,255,255,.2); box-shadow: inset 0 0 0 1px rgba(255,255,255,.35); backdrop-filter: blur(6px); }
-  .t-hero h2 { position: relative; font-size: 58px; line-height: 1.02; font-weight: 800; letter-spacing: -.045em; }
-  .t-hero p { position: relative; font-size: 17px; line-height: 1.45; color: rgba(255,255,255,.82); max-width: 440px; }
-  .t-hero .ver { position: relative; font-size: 13px; font-weight: 600; opacity: .75; }
+  /* hero text block (tanpa card) */
+  .hero { display: flex; flex-direction: column; justify-content: center; padding-right: 24px; }
+  .pill { align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; padding: 8px 16px 8px 12px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--line-strong); font-size: 14px; font-weight: 600; color: var(--ink-2); box-shadow: var(--shadow); }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--lime); box-shadow: 0 0 0 4px rgba(126,217,87,.25); }
+  h1 { font-family: var(--display); font-weight: 800; font-size: 66px; line-height: 1.02; letter-spacing: -.028em; margin-top: 22px; }
+  .hl { white-space: nowrap; background: linear-gradient(transparent 62%, var(--lime) 62%, var(--lime) 92%, transparent 92%); padding: 0 6px; margin: 0 -6px; }
+  .dark .hl { background: none; color: var(--lime); padding: 0; margin: 0; }
+  .lead { font-size: 19px; line-height: 1.5; color: var(--ink-2); margin-top: 18px; max-width: 640px; }
+  .trust { display: flex; gap: 22px; margin-top: 22px; flex-wrap: wrap; }
+  .trust span { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 500; color: var(--ink-2); }
+  .trust svg { color: var(--accent); }
+  .dark .trust svg { color: var(--lime); }
 
-  /* satusehat */
-  .t-sat { --accent: var(--green); }
-  .sync-list { display: flex; flex-direction: column; gap: 10px; }
-  .sync-row {
-    display: flex; align-items: center; gap: 12px; padding: 12px 14px;
-    background: var(--chip); border-radius: 16px;
-  }
-  .avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
-  .sync-row .who { flex: 1; min-width: 0; }
-  .sync-row .who b { display: block; font-size: 14px; font-weight: 600; }
-  .sync-row .who span { font-size: 12px; color: var(--muted); }
-  .pill { font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; }
-  .pill svg { width: 12px; height: 12px; stroke-width: 3; }
-  .pill.ok { background: rgba(34,179,94,.14); color: var(--green); }
-  .pill.wait { background: rgba(255,138,0,.14); color: var(--orange); }
-  .sat-badge {
-    display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); font-weight: 500;
-  }
-  .sat-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgba(34,179,94,.18); }
+  /* list rows */
+  .lrow { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 14px; background: var(--soft); border: 1px solid var(--line); }
+  .lrow + .lrow { margin-top: 8px; }
+  .av { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; font-family: var(--mono); font-size: 12px; font-weight: 600; background: var(--accent-soft); color: var(--accent-ink); flex-shrink: 0; }
+  .who { flex: 1; min-width: 0; }
+  .who b { display: block; font-size: 15px; font-weight: 600; }
+  .who em { display: block; font-style: normal; font-size: 12.5px; color: var(--ink-3); margin-top: 2px; }
+  .amt { font-family: var(--mono); font-size: 14px; font-weight: 600; }
 
-  /* dashboard */
-  .t-dash { --accent: var(--blue); }
-  .stats { display: grid; grid-template-columns: repeat(var(--stat-cols, 2), 1fr); grid-auto-rows: 1fr; gap: 10px; flex: 1; min-height: 0; margin-top: 6px; }
-  .stat { background: var(--chip); border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
-  .stat .lbl { font-size: 12px; color: var(--muted); font-weight: 500; }
-  .stat .val { font-size: 28px; font-weight: 800; letter-spacing: -.04em; }
-  .stat .val small { font-size: 16px; font-weight: 700; letter-spacing: -.02em; }
-  .stat .delta { font-size: 12px; font-weight: 700; color: var(--green); }
+  /* diagnosis */
+  .search { display: flex; align-items: center; gap: 12px; background: var(--soft); border: 2px solid var(--accent); border-radius: 14px; padding: 13px 16px; box-shadow: 0 0 0 5px rgba(126,217,87,.2); font-size: 17px; font-weight: 500; }
+  .caret { display: inline-block; width: 2px; height: 20px; background: var(--accent); margin-left: 2px; vertical-align: -4px; }
+  .dx { display: flex; align-items: center; gap: 16px; padding: 12px 12px; border-bottom: 1px solid var(--line); }
+  .dx:last-child { border-bottom: none; }
+  .dx.on { background: var(--accent-soft); border-radius: 12px; border-bottom-color: transparent; }
+  .code { font-family: var(--mono); font-size: 13.5px; font-weight: 600; min-width: 74px; padding: 4px 8px; border-radius: 7px; text-align: center; background: var(--info-soft); color: var(--info-ink); }
+  .code.sn { background: var(--accent-soft); color: var(--accent-ink); }
+  .dx b { display: block; font-size: 15px; font-weight: 600; }
+  .dx small { display: block; font-size: 12px; color: var(--ink-3); margin-top: 2px; }
 
-  /* pasien */
-  .t-pas { --accent: var(--purple); }
-  .stepper { display: flex; align-items: flex-start; gap: 0; }
-  .step { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; position: relative; }
-  .step::before {
-    content: ''; position: absolute; top: 17px; left: -50%; width: 100%; height: 3px;
-    background: var(--chip); z-index: 0;
-  }
-  .step:first-child::before { display: none; }
-  .step.done::before, .step.now::before { background: var(--purple); }
-  .step .n {
-    position: relative; z-index: 1; width: 36px; height: 36px; border-radius: 50%;
-    display: grid; place-items: center; font-size: 14px; font-weight: 700;
-    background: var(--chip); color: var(--muted);
-  }
-  .step.done .n { background: var(--purple); color: #fff; }
-  .step.done .n svg { width: 16px; height: 16px; stroke-width: 3; }
-  .step.now .n { background: var(--card); color: var(--purple); box-shadow: inset 0 0 0 3px var(--purple); }
-  .step .s { font-size: 12.5px; font-weight: 600; color: var(--muted); }
-  .step.done .s, .step.now .s { color: var(--ink); }
+  /* odontogram */
+  .odo { display: flex; flex-direction: column; gap: 6px; }
+  .jaw { display: grid; grid-template-columns: repeat(16, 1fr); gap: 4px; }
+  .jaw.mid { border-bottom: 1.5px dashed var(--line-strong); padding-bottom: 8px; margin-bottom: 2px; }
+  .tooth { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .tooth i { width: 100%; aspect-ratio: 1; border-radius: 6px; border: 1.5px solid var(--line-strong); background: var(--soft); position: relative; display: block; }
+  .tooth i::after { content: ''; position: absolute; inset: 28%; border-radius: 2px; border: 1.2px solid var(--line-strong); }
+  .tooth span { font-family: var(--mono); font-size: 9.5px; color: var(--ink-3); }
+  .tooth.car i { background: var(--danger-soft); border-color: var(--danger-ink); }
+  .tooth.car i::after { background: var(--danger-ink); border-color: var(--danger-ink); }
+  .tooth.fill i { background: var(--accent-soft); border-color: var(--accent); }
+  .tooth.fill i::after { background: var(--lime); border-color: var(--accent); }
+  .tooth.miss i { background: transparent; border-style: dashed; }
+  .tooth.miss i::after { inset: 18%; border: none; background:
+    linear-gradient(45deg, transparent 45%, var(--ink-3) 45%, var(--ink-3) 55%, transparent 55%),
+    linear-gradient(-45deg, transparent 45%, var(--ink-3) 45%, var(--ink-3) 55%, transparent 55%); }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-2); }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .legend i { width: 11px; height: 11px; border-radius: 3px; display: block; }
 
-  /* reservasi */
-  .t-res { --accent: var(--orange); }
-  .sources { display: flex; gap: 10px; }
-  .src { flex: 1; background: var(--chip); border-radius: 16px; padding: 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
-  .src svg { width: 22px; height: 22px; color: var(--orange); }
+  /* stok */
+  .flow { display: grid; grid-template-columns: 0.9fr auto 1.4fr; gap: 16px; align-items: center; }
+  .items { display: flex; flex-direction: column; gap: 6px; }
+  .item { display: flex; justify-content: space-between; font-size: 13.5px; padding: 7px 12px; border-radius: 10px; background: var(--soft); border: 1px solid var(--line); }
+  .item .mono { color: var(--danger-ink); font-weight: 600; font-size: 13px; }
 
-  /* billing */
-  .t-bill { --accent: var(--teal); }
-  .receipt { background: var(--chip); border-radius: 20px; padding: 16px 18px; display: flex; flex-direction: column; gap: 9px; }
-  .rline { display: flex; justify-content: space-between; font-size: 14px; gap: 10px; }
-  .rline span:first-child { color: var(--muted); }
-  .rline b { font-weight: 600; }
-  .rline.disc b { color: var(--pink); }
-  .rsep { border-top: 1.5px dashed var(--line); margin: 3px 0; }
-  .rtotal { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 6px; }
-  .rtotal .big { font-size: 30px; }
-  .rtotal .lbl { font-size: 12px; color: var(--muted); font-weight: 600; display: block; margin-bottom: 4px; }
+  /* signature */
+  .sig { flex: 1; min-height: 0; border: 1.5px dashed var(--line-strong); border-radius: 14px; background: var(--soft); position: relative; }
+  .sig svg { position: absolute; left: 18px; top: 8px; width: calc(100% - 36px); height: calc(100% - 34px); }
+  .sig small { position: absolute; left: 14px; bottom: 8px; font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
 
-  /* laporan */
-  .t-lap { --accent: var(--indigo); }
-  .chart { position: relative; flex: 1; min-height: 0; }
-  .chart svg { position: absolute; inset: 0; width: 100%; height: 100%; }
-  .lap-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; }
-  .lap-head .big { font-size: 34px; }
-  .lap-head .delta { font-size: 13px; font-weight: 700; color: var(--green); }
+  /* heatmap */
+  .heat { display: grid; grid-template-columns: 34px repeat(12, 1fr); gap: 5px; align-items: center; }
+  .heat i { aspect-ratio: 1.35; border-radius: 5px; display: block; background: rgba(62,142,54,var(--o)); }
+  .dark .heat i { background: rgba(126,217,87,var(--o)); }
+  .heat span { font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
+  .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .kpi { background: var(--soft); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+  .kpi .k { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-3); margin-bottom: 6px; }
+  .kpi .v { font-family: var(--display); font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
+  .kpi .v.g { color: var(--accent); }
+  .dark .kpi .v.g { color: var(--lime); }
+  .banner { font-size: 13.5px; line-height: 1.5; color: var(--accent-ink); background: var(--accent-soft); border-radius: 12px; padding: 11px 14px; }
 
-  /* small tiles */
-  .t-sm { justify-content: space-between; padding: 22px; gap: 8px; }
-  .t-sm .ico {
-    width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; color: #fff;
-    background: var(--accent);
-  }
-  .t-sm .ico svg { width: 22px; height: 22px; }
-  .t-sm .k { font-size: 15px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
-  .t-sm .v { font-size: 13px; color: var(--muted); line-height: 1.35; }
-  .t-sm .big { font-size: 36px; color: var(--accent); }
-  .t-tarif { --accent: var(--pink); }
-  .t-fee { --accent: var(--green); }
-  .t-role { --accent: var(--blue); }
-  .t-ops { --accent: var(--orange); }
-  .t-res-sm { --accent: var(--orange); }
-  .ring { width: 58px; height: 58px; }
+  /* tabel tarif */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  .tbl th { text-align: right; font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); padding: 0 12px 10px; }
+  .tbl th:first-child, .tbl td:first-child { text-align: left; padding-left: 0; }
+  .tbl td { text-align: right; padding: 11px 12px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 13.5px; color: var(--ink-2); }
+  .tbl td:first-child { font-family: var(--sans); font-size: 15px; font-weight: 600; color: var(--ink); }
+  .tbl td:last-child, .tbl th:last-child { padding-right: 0; }
 
-  .footer {
-    position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center;
-    font-size: 15px; color: var(--muted); font-weight: 500;
-  }
-  .footer b { color: var(--ink); font-weight: 700; }
+  /* cabang */
+  .bar { height: 10px; border-radius: 999px; background: var(--soft); border: 1px solid var(--line); overflow: hidden; margin-top: 7px; }
+  .bar i { display: block; height: 100%; border-radius: 999px; background: var(--lime); }
+  .branch { font-size: 14px; }
+  .branch .row { justify-content: space-between; }
+  .branch b { font-weight: 600; }
 
-  /* ---------- Format tweaks ---------- */
-  body.f-ig-square { --pad: 40px; --gap: 16px; }
-  body.f-ig-square .t-hero h2 { font-size: 50px; }
-  body.f-ig-square .title { font-size: 24px; }
-  body.f-ig-square .stat .val { font-size: 22px; }
-  body.f-ig-square .stat { padding: 10px 12px; border-radius: 14px; }
-  body.f-ig-square .step .s { font-size: 10.5px; }
-  body.f-ig-square .step .n { width: 30px; height: 30px; font-size: 12px; }
-  body.f-ig-square .step::before { top: 14px; }
-  body.f-ig-square .tile { padding: 22px; }
-  body.f-ig-square .rline { font-size: 12.5px; }
-  body.f-ig-square .rtotal .big { font-size: 22px; }
-  body.f-ig-square .receipt { padding: 12px 14px; gap: 7px; }
-
-  body.f-desktop { --pad: 64px; --gap: 20px; --r: 34px; }
-  body.f-desktop .t-hero h2 { font-size: 76px; }
-  body.f-desktop .t-hero p { font-size: 20px; max-width: 520px; }
-  body.f-desktop .title { font-size: 30px; }
-  body.f-desktop .tile { padding: 28px; }
-  body.f-desktop .t-sm .k { font-size: 20px; }
-  body.f-desktop .t-sm .v { font-size: 15px; margin-top: 4px; }
-  body.f-desktop .t-sm .big { font-size: 56px; }
-  body.f-desktop .t-sm .ico { width: 50px; height: 50px; border-radius: 15px; }
-  body.f-desktop .t-sm .ico svg { width: 26px; height: 26px; }
-  body.f-desktop .rtotal .big { font-size: 26px; }
-  body.f-desktop .rline { font-size: 13.5px; }
-  body.f-desktop .stat .val { font-size: 38px; }
-  body.f-desktop .stat .lbl { font-size: 13px; }
-  body.f-ig-square .t-dash .stat .val { font-size: 30px; }
-  body.f-desktop .t-bill .title, body.f-desktop .t-sat .title { font-size: 28px; }
-  body.f-ig-portrait .header h1 { font-size: 66px; }
-  body.f-ig-portrait .t-pas { gap: 8px; padding: 22px 26px; }
-  body.f-ig-portrait .t-pas .title { font-size: 24px; }
-  body.f-ig-portrait .stat { padding: 11px 14px; gap: 3px; }
-  body.f-ig-portrait .stat .val { font-size: 24px; }
-  body.f-ig-portrait .t-sm { padding: 20px; }
-  body.f-ig-portrait .t-sm .big { font-size: 32px; }
-  body.f-ig-square .lap-head .big { font-size: 26px; }
-  body.f-ig-square .rline { flex-direction: column; gap: 0; }
-  body.f-ig-square .rline span:first-child { font-size: 11.5px; }
-  body.f-ig-square .rtotal .big { font-size: 22px; }
+  /* api */
+  .code-card { background: #17160F; color: #E9E6DC; border-color: rgba(255,255,255,.08); }
+  .dark .code-card { background: #0E0D09; }
+  .code-card .eyebrow { color: var(--lime); }
+  .code-card pre { font-family: var(--mono); font-size: 13.5px; line-height: 1.75; white-space: pre; }
+  .code-card .c { color: #A09D8B; } .code-card .k { color: #7ED957; } .code-card .s { color: #E8C27A; }
+  .usage { background: rgba(255,255,255,.06); border-radius: 12px; padding: 10px 14px; }
+  .usage .row { justify-content: space-between; font-size: 12px; color: rgba(255,255,255,.6); margin-bottom: 7px; }
+  .usage b { color: #fff; font-family: var(--mono); font-weight: 600; }
+  .usage .bar { background: rgba(255,255,255,.1); border: none; height: 6px; margin: 0; }
 </style>
 </head>
 <body>
-<div class="canvas" id="canvas">
-  <div class="ambient"></div>
-</div>
+<div id="root"></div>
 
 <script>
 const I = {
-  activity: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
-  users: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-  calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
-  card: '<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
-  chart: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
-  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/>',
-  dollar: '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
-  briefcase: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>',
-  tag: '<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>',
   check: '<polyline points="20 6 9 17 4 12"/>',
-  refresh: '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
-  download: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
-  grid: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>',
-  globe: '<circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>',
-  monitor: '<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/>',
-  phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
-  user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+  arrow: '<line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>',
+  alert: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  lock: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  wa: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  sync: '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
 };
-const ic = (n) => `<svg class="i" viewBox="0 0 24 24">${I[n]}</svg>`;
+const ic = (n, s = '') => `<svg class="i" viewBox="0 0 24 24" style="${s}">${I[n]}</svg>`;
 
-const T = {
-  hero: () => `
-    <div class="tile t-hero" style="grid-area:hero">
-      <div class="glow g1"></div><div class="glow g2"></div>
-      <div class="brand"><div class="mark">${ic('activity')}</div>ApexRecord</div>
-      <div style="display:flex;flex-direction:column;gap:16px;position:relative">
-        <h2>Kelola klinik<br>lebih cerdas.</h2>
-        <p>Rekam medis, reservasi, kasir, hingga laporan keuangan — semua dalam satu platform.</p>
-      </div>
-    </div>`,
+const tooth = (n, st = '') => `<div class="tooth ${st}"><span>${n}</span><i></i></div>`;
+const toothB = (n, st = '') => `<div class="tooth ${st}"><i></i><span>${n}</span></div>`;
+const upper = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+const lower = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+const odoState = { 16: 'fill', 26: 'car', 18: 'miss', 36: 'car', 46: 'fill', 47: 'fill', 38: 'miss', 24: 'fill' };
 
-  sat: (v) => `
-    <div class="tile t-sat" style="grid-area:sat">
-      <span class="eyebrow">${ic('refresh')} Integrasi SATUSEHAT</span>
-      <div class="title">Sinkron otomatis ke SATUSEHAT.</div>
-      <div class="grow"></div>
-      <div class="sync-list">
-        ${[
-          ['SR', 'Siti Rahma', 'Kunjungan · 09:12', '#a855f7', 1],
-          ['BP', 'Budi Pratama', 'Kunjungan · 09:40', '#4f7ef8', 1],
-          ...(v === 'short' ? [] : [['DK', 'Dimas Kurnia', 'Kunjungan · 10:21', '#14b8c4', 0]]),
-        ].map(([a, n, t, c, ok]) => `
-          <div class="sync-row">
-            <div class="avatar" style="background:${c}">${a}</div>
-            <div class="who"><b>${n}</b><span>${t}</span></div>
-            ${ok ? `<span class="pill ok">${ic('check')} Terkirim</span>` : `<span class="pill wait">Mengirim…</span>`}
-          </div>`).join('')}
-      </div>
-      <div class="sat-badge"><span class="dot"></span>Standar FHIR · Terhubung</div>
-    </div>`,
+// Heatmap: intensitas kunjungan Sen–Sab × jam 08–19 (data ilustrasi)
+const heatRows = [
+  ['Sen', [.10,.18,.22,.16,.12,.14,.22,.30,.42,.55,.46,.24]],
+  ['Sel', [.08,.14,.20,.18,.10,.12,.18,.26,.38,.50,.40,.20]],
+  ['Rab', [.12,.20,.26,.20,.14,.16,.24,.34,.48,.62,.52,.28]],
+  ['Kam', [.14,.22,.30,.24,.16,.18,.28,.40,.62,.95,.70,.34]],
+  ['Jum', [.10,.16,.18,.12,.06,.10,.20,.30,.44,.58,.48,.22]],
+  ['Sab', [.30,.46,.62,.70,.54,.40,.34,.30,.26,.22,.16,.10]],
+];
 
-  dash: (v) => `
-    <div class="tile t-dash" style="grid-area:dash">
-      <span class="eyebrow">${ic('grid')} Dashboard</span>
-      <div class="title">Semua angka penting, sekilas.</div>
-      <div class="stats">
-        <div class="stat"><span class="lbl">Total Pasien</span><span class="val">2.481</span><span class="delta">▲ 12% bulan ini</span></div>
-        <div class="stat"><span class="lbl">Kunjungan Hari Ini</span><span class="val">36</span><span class="delta">▲ 8 dari kemarin</span></div>
-        <div class="stat"><span class="lbl">Pendapatan Bulan Ini</span><span class="val"><small>Rp</small>184,5<small>jt</small></span><span class="delta">▲ 18%</span></div>
-        <div class="stat"><span class="lbl">Dokter Aktif</span><span class="val">6</span><span class="delta" style="color:var(--muted)">2 sedang praktik</span></div>
-      </div>
-      ${v === 'short' ? '' : `<div class="chips">
-        <span class="chip accent">+ Pasien</span><span class="chip">+ Kunjungan</span><span class="chip">+ Reservasi</span><span class="chip">Input Transaksi</span>
-      </div>`}
-    </div>`,
+const topBar = (kicker) => `
+  <div class="top"><div class="brand"><div class="logo"></div><div class="word">Apex<em>Record</em></div></div><span class="kicker">${kicker}</span></div>`;
+const bottom = (right) => `
+  <div class="bottom"><span class="foot">apexrecord.my.id</span><span class="foot">${right}</span></div>`;
 
-  pas: (v) => `
-    <div class="tile t-pas" style="grid-area:pas">
-      <span class="eyebrow">${ic('users')} Data Pasien</span>
-      <div class="title">Registrasi pasien 6 langkah, rapi & lengkap.</div>
-      <div class="grow"></div>
-      <div class="stepper">
-        ${['Identitas', 'Alamat', 'Wali', 'Marketing', 'Medis', 'Preferensi'].map((s, i) => `
-          <div class="step ${i < 3 ? 'done' : i === 3 ? 'now' : ''}">
-            <div class="n">${i < 3 ? ic('check') : i + 1}</div><div class="s">${s}</div>
-          </div>`).join('')}
-      </div>
-      ${v === 'short' ? '' : `<div class="grow"></div>
-      <div class="chips">
-        <span class="chip accent">Bayi tanpa NIK</span>
-        <span class="chip">Catatan alergi</span>
-        <span class="chip">Golongan darah</span>
-      </div>`}
-    </div>`,
+const SLIDES = {
+  // ================= 01 · REKAM MEDIS & OPERASIONAL HARIAN =================
+  klinis: () => `
+  <section class="slide">
+    <div class="bg-grid"></div>
+    <div class="glow" style="left:-520px;top:-560px"></div>
+    ${topBar('01 · Rekam Medis &amp; Operasional')}
+    <div class="bento">
 
-  bill: (v) => `
-    <div class="tile t-bill" style="grid-area:bill">
-      <span class="eyebrow">${ic('card')} Billing & Kasir</span>
-      <div class="title">Kasir cepat, tagihan akurat.</div>
-      <div class="grow"></div>
-      <div class="receipt">
-        <div class="rline"><span>Scaling gigi</span><b>Rp350.000</b></div>
-        <div class="rline"><span>Tambal komposit</span><b>Rp250.000</b></div>
-        ${v === 'narrow' ? '' : '<div class="rline"><span>Biaya tambahan</span><b>Rp25.000</b></div>'}
-        <div class="rline disc"><span>Diskon</span><b>${v === 'narrow' ? '−Rp50.000' : '−Rp75.000'}</b></div>
-        <div class="rsep"></div>
-        <div class="rtotal">
-          <div><span class="lbl">Total Bayar</span><span class="big">Rp550.000</span></div>
-          <span class="pill ok">${ic('check')} Lunas</span>
+      <div class="hero z" style="grid-column:1/6;grid-row:1/3">
+        <span class="pill"><span class="dot"></span>Klinik Pratama · Klinik Utama · TPMD · TPMDG</span>
+        <h1>Kelola klinik &amp; praktik Anda tanpa <span class="hl">drama administrasi.</span></h1>
+        <p class="lead">Dari pasien datang, diperiksa, bayar, sampai laporan ke akuntan — semua dalam satu platform.</p>
+        <div class="trust">
+          <span>${ic('check')}15 hari gratis</span><span>${ic('check')}Setup aktif &lt; 10 menit</span><span>${ic('check')}Terhubung SATUSEHAT</span>
         </div>
       </div>
-      <div class="chips">
-        <span class="chip accent">Tunai</span><span class="chip">Transfer</span><span class="chip">Asuransi</span><span class="chip">BPJS</span>
+
+      <div class="card" style="grid-column:6/10;grid-row:1/4">
+        <span class="eyebrow">Diagnosis · ICD-10 &amp; SNOMED CT</span>
+        <div class="ttl">Ga perlu hafal kode. Cukup ketik seperti bicara.</div>
+        <div class="sp"></div>
+        <div class="search">${ic('search', 'color:var(--ink-3)')}<span>gigi berlubang<span class="caret"></span></span></div>
+        <div>
+          <div class="dx on"><span class="code">K02.1</span><div style="flex:1"><b>Karies dentin</b><small>Caries of dentine · ICD-10</small></div><span class="chip ok">Pilih ↵</span></div>
+          <div class="dx"><span class="code">K02.0</span><div><b>Karies terbatas pada email</b><small>Caries limited to enamel · ICD-10</small></div></div>
+          <div class="dx"><span class="code">K02.9</span><div><b>Karies gigi, tidak spesifik</b><small>Dental caries, unspecified · ICD-10</small></div></div>
+          <div class="dx"><span class="code sn">80967001</span><div><b>Dental caries</b><small>Padanan SNOMED CT</small></div></div>
+        </div>
+        <div class="sp"></div>
+        <div class="chips"><span class="chip ok">18.500+ kode ICD-10</span><span class="chip ok">499.000+ konsep SNOMED CT</span><span class="chip info">Catatan SOAP</span></div>
       </div>
-    </div>`,
 
-  lap: () => {
-    const data = [38, 52, 45, 61, 58, 72, 66, 80, 74, 88, 84, 100];
-    const bars = data.map((d, i) => {
-      const x = i * (100 / data.length) + 1.2;
-      const w = 100 / data.length - 2.4;
-      return `<rect x="${x}" y="${100 - d}" width="${w}" height="${d}" rx="1.6" fill="url(#bg)" opacity="${i === data.length - 1 ? 1 : .55 + i * .03}"/>`;
-    }).join('');
-    const pts = data.map((d, i) => `${i * (100 / data.length) + 50 / data.length},${100 - d * 0.82 - 6}`).join(' ');
-    return `
-    <div class="tile t-lap" style="grid-area:lap">
-      <span class="eyebrow">${ic('chart')} Laporan</span>
-      <div class="title">Tren klinik, <span style="white-space:nowrap">real-time.</span></div>
-      <div class="lap-head">
-        <div><div class="stat lbl" style="background:none;padding:0;font-size:12px;color:var(--muted);font-weight:500;margin-bottom:6px">Pendapatan 12 bulan</div><span class="big">Rp1,86 M</span></div>
-        <span class="delta">▲ 24% YoY</span>
+      <div class="card" style="grid-column:10/13;grid-row:1/3">
+        <span class="eyebrow">Odontogram</span>
+        <div class="ttl sm">Catatan per gigi, bukan per kertas.</div>
+        <div class="sp"></div>
+        <div class="odo">
+          <div class="jaw mid">${upper.map((n) => tooth(n, odoState[n])).join('')}</div>
+          <div class="jaw">${lower.map((n) => toothB(n, odoState[n])).join('')}</div>
+        </div>
+        <div class="legend">
+          <span><i style="background:var(--danger-ink)"></i>Karies</span>
+          <span><i style="background:var(--lime)"></i>Tambalan</span>
+          <span><i style="border:1.5px dashed var(--ink-3)"></i>Hilang</span>
+        </div>
       </div>
-      <div class="chart">
-        <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-          <defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#7c7af7"/><stop offset="1" stop-color="#4f7ef8" stop-opacity=".55"/>
-          </linearGradient></defs>
-          ${bars}
-          <polyline points="${pts}" fill="none" stroke="#a855f7" stroke-width="1.1" vector-effect="non-scaling-stroke" style="stroke-width:3px"/>
-        </svg>
+
+      <div class="card" style="grid-column:1/6;grid-row:3/5">
+        <div class="row" style="justify-content:space-between">
+          <span class="eyebrow">Reservasi &amp; Antrian Online</span>
+          <span class="chip line">${ic('wa', 'width:14px;height:14px')}Cek status via WhatsApp</span>
+        </div>
+        <div class="ttl">Booking dari website klinik, slot ikut jadwal dokter.</div>
+        <div class="sp"></div>
+        <div>
+          <div class="lrow"><span class="av">SW</span><div class="who"><b>Sari W.</b><em>Kontrol rutin · Dr. Amelia</em></div><span class="mono" style="font-size:13px;color:var(--ink-3)">09:00</span><span class="chip warn">Menunggu</span></div>
+          <div class="lrow"><span class="av">BH</span><div class="who"><b>Budi H.</b><em>Scaling gigi · Dr. Rangga</em></div><span class="mono" style="font-size:13px;color:var(--ink-3)">09:30</span><span class="chip info">Diperiksa</span></div>
+          <div class="lrow"><span class="av">NR</span><div class="who"><b>Nadia R.</b><em>Konsultasi umum · Dr. Amelia</em></div><span class="mono" style="font-size:13px;color:var(--ink-3)">08:15</span><span class="chip ok">Selesai</span></div>
+        </div>
       </div>
-      <div class="chips">
-        <span class="chip">Per dokter</span><span class="chip">Per metode bayar</span>
-        <span class="chip accent">${ic('download')} Export Excel</span>
+
+      <div class="card" style="grid-column:6/10;grid-row:4/5;gap:12px">
+        <span class="eyebrow">Gudang &amp; Farmasi</span>
+        <div class="flow">
+          <div class="ttl sm" style="font-size:21px">Tindakan selesai, stok ikut berkurang.</div>
+          <span style="color:var(--ink-3)">${ic('arrow', 'width:22px;height:22px')}</span>
+          <div class="items">
+            <div class="item"><span>Sarung tangan nitril</span><span class="mono">−2 pcs</span></div>
+            <div class="item"><span>Masker 3 ply</span><span class="mono">−1 pcs</span></div>
+            <div class="item" style="background:var(--warn-soft);border-color:transparent;color:var(--warn-ink)"><span style="display:flex;gap:6px;align-items:center">${ic('alert', 'width:14px;height:14px')}Stok kritis: Komposit A2</span><span class="mono" style="color:var(--warn-ink)">2 tube</span></div>
+          </div>
+        </div>
       </div>
-    </div>`;
-  },
 
-  res: () => `
-    <div class="tile t-sm t-res-sm" style="grid-area:res">
-      <div class="ico">${ic('calendar')}</div>
-      <div><div class="k">Reservasi dari mana saja</div><div class="v">Website, dashboard & telepon</div></div>
-    </div>`,
-
-  resWide: () => `
-    <div class="tile t-res" style="grid-area:res">
-      <span class="eyebrow">${ic('calendar')} Reservasi</span>
-      <div class="title">Booking dari mana saja.</div>
-      <div class="grow"></div>
-      <div class="sources">
-        <div class="src">${ic('globe')}Website</div>
-        <div class="src">${ic('monitor')}Dashboard</div>
-        <div class="src">${ic('phone')}Telepon</div>
+      <div class="card" style="grid-column:10/13;grid-row:3/4;gap:10px">
+        <span class="eyebrow">${ic('sync', 'width:14px;height:14px')}SATUSEHAT</span>
+        <div class="ttl sm" style="font-size:20px">Kunjungan tersinkron otomatis.</div>
+        <div class="sp"></div>
+        <div class="row" style="gap:8px;flex-wrap:wrap">
+          <span class="chip ok">${ic('check', 'width:13px;height:13px')}Encounter terkirim</span>
+          <span class="chip ok">${ic('check', 'width:13px;height:13px')}Diagnosis</span>
+          <span class="chip warn">Mengirim…</span>
+        </div>
       </div>
-    </div>`,
 
-  tarif: (v) => `
-    <div class="tile t-sm t-tarif" style="grid-area:tarif">
-      ${v === 'short' ? '<span class="eyebrow" style="--accent:var(--pink)">' + ic('tag') + ' Tarif & Tindakan</span>' : `<div class="ico">${ic('tag')}</div>`}
-      <div><div class="big">42%</div><div class="k" style="margin-top:6px">Margin otomatis</div><div class="v">Harga modal vs jual per tindakan</div></div>
-    </div>`,
+      <div class="card" style="grid-column:10/13;grid-row:4/5;gap:10px">
+        <div class="row" style="justify-content:space-between"><span class="eyebrow">Informed Consent</span><span class="chip ok">${ic('check', 'width:13px;height:13px')}Tertanda</span></div>
+        <div class="sig">
+          <svg viewBox="0 0 300 70" preserveAspectRatio="xMinYMid meet" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 48c14-26 26-38 32-30s-12 38-4 36 20-40 30-38-6 32 4 30 16-22 24-20-2 18 8 16 18-14 28-12 6 10 16 8 22-6 38-10 40-4 56-6"/>
+          </svg>
+          <small>Ditandatangani pasien · 09:14</small>
+        </div>
+      </div>
 
-  fee: () => `
-    <div class="tile t-sm t-fee" style="grid-area:fee">
-      <div class="ico">${ic('dollar')}</div>
-      <div><div class="k">Share fee dokter</div><div class="v">Fixed atau persentase, laporan bulanan otomatis</div></div>
-    </div>`,
+    </div>
+    ${bottom('*Data ilustrasi')}
+  </section>`,
 
-  role: () => `
-    <div class="tile t-sm t-role" style="grid-area:role">
-      <div class="ico">${ic('shield')}</div>
-      <div><div class="k">Akses berbasis peran</div><div class="v">Owner · Admin · Dokter</div></div>
-    </div>`,
+  // ================= 02 · LAPORAN & BISNIS =================
+  bisnis: () => `
+  <section class="slide">
+    <div class="bg-grid"></div>
+    <div class="glow" style="right:-560px;top:-620px"></div>
+    ${topBar('02 · Laporan &amp; Bisnis')}
+    <div class="bento">
 
-  ops: () => `
-    <div class="tile t-sm t-ops" style="grid-area:ops">
-      <div class="ico">${ic('briefcase')}</div>
-      <div><div class="k">Catat operasional</div><div class="v">Biaya bulanan per kategori</div></div>
-    </div>`,
-};
+      <div class="hero z" style="grid-column:1/6;grid-row:1/3">
+        <span class="pill"><span class="dot"></span>Laporan Keuangan Pro</span>
+        <h1>Tahu persis klinik Anda <span class="hl">untung berapa.</span></h1>
+        <p class="lead">Pendapatan, margin per tindakan, fee dokter, dan biaya bahan — terhitung otomatis dari data yang sudah ada.</p>
+        <div class="trust">
+          <span>${ic('check')}Tanpa rekap Excel</span><span>${ic('check')}PDF siap kirim ke akuntan</span><span>${ic('check')}Multi-cabang</span>
+        </div>
+      </div>
 
-const LAYOUTS = {
-  'ig-portrait': {
-    w: 1080, h: 1350, cols: 4, rows: 6, header: true,
-    rowTpl: '1fr 1fr 162px 1fr 1fr 146px',
-    areas: [
-      'sat sat dash dash',
-      'sat sat dash dash',
-      'pas pas pas pas',
-      'bill bill lap lap',
-      'bill bill lap lap',
-      'res tarif fee role',
-    ],
-    tiles: ['sat:short', 'dash:short', 'pas:short', 'bill:narrow', 'lap', 'res', 'tarif:short', 'fee', 'role'],
-  },
-  'ig-square': {
-    w: 1080, h: 1080, cols: 4, rows: 4,
-    areas: [
-      'hero hero sat sat',
-      'hero hero sat sat',
-      'dash dash bill lap',
-      'dash dash bill lap',
-    ],
-    tiles: ['hero', 'sat', 'dash', 'bill:narrow', 'lap'],
-  },
-  'desktop': {
-    w: 1920, h: 1080, cols: 6, rows: 4,
-    areas: [
-      'hero hero sat  sat  dash dash',
-      'hero hero sat  sat  dash dash',
-      'pas  pas  bill lap  lap  role',
-      'tarif fee bill lap  lap  res',
-    ],
-    tiles: ['hero', 'sat', 'dash', 'pas', 'bill:narrow', 'lap', 'role', 'res', 'tarif', 'fee'],
-  },
+      <div class="card" style="grid-column:6/10;grid-row:1/4">
+        <div class="row" style="justify-content:space-between"><span class="eyebrow">Heatmap Jam Kunjungan</span><span class="mono" style="font-size:12px;color:var(--ink-3)">SEN–SAB · 08–19</span></div>
+        <div class="ttl">Jam berapa klinik Anda paling ramai?</div>
+        <div class="sp"></div>
+        <div class="heat">
+          ${heatRows.map(([d, vals]) => `<span>${d}</span>${vals.map((o) => `<i style="--o:${Math.max(.07, o)}"></i>`).join('')}`).join('')}
+          <span></span>${['08','','10','','12','','14','','16','','18',''].map((h) => `<span style="text-align:center">${h}</span>`).join('')}
+        </div>
+        <div class="sp"></div>
+        <div class="kpis">
+          <div class="kpi"><div class="k">Jam tersibuk</div><div class="v">Kam 17.00</div></div>
+          <div class="kpi"><div class="k">Retensi 90 hari</div><div class="v g">62%</div></div>
+          <div class="kpi"><div class="k">LTV : CAC</div><div class="v">4,2×</div></div>
+        </div>
+        <div class="banner">62% pasien lama kembali sebelum 90 hari — retensi klinik Anda di atas rata-rata.</div>
+      </div>
+
+      <div class="card" style="grid-column:10/13;grid-row:1/3">
+        <span class="eyebrow">Fee Share Dokter</span>
+        <div class="ttl sm">Bagi hasil dihitung otomatis per tindakan.</div>
+        <div class="sp"></div>
+        <div>
+          <div class="lrow"><span class="av">AP</span><div class="who"><b>drg. Anisa Putri</b><em>34 tindakan · 40%</em></div><span class="amt">Rp5,82jt</span></div>
+          <div class="lrow"><span class="av">RP</span><div class="who"><b>drg. Rizky Pratama</b><em>18 tindakan · nominal tetap</em></div><span class="amt">Rp2,64jt</span></div>
+        </div>
+        <div class="chips"><span class="chip ok">Persentase</span><span class="chip ok">Nominal tetap</span><span class="chip line">Ekspor Excel</span></div>
+      </div>
+
+      <div class="card" style="grid-column:1/6;grid-row:3/5">
+        <div class="row" style="justify-content:space-between">
+          <span class="eyebrow">Tarif, Billing &amp; Invoice</span>
+          <div class="chips"><span class="chip line">Tunai</span><span class="chip line">Transfer</span><span class="chip line">Asuransi</span><span class="chip line">BPJS</span></div>
+        </div>
+        <div class="ttl">Margin tiap tindakan, langsung kelihatan.</div>
+        <div class="sp"></div>
+        <table class="tbl">
+          <tr><th>Tindakan</th><th>Modal</th><th>Harga jual</th><th>Margin</th></tr>
+          <tr><td>Scaling gigi</td><td>Rp120.000</td><td>Rp350.000</td><td><span class="chip ok">66%</span></td></tr>
+          <tr><td>Tambal komposit</td><td>Rp95.000</td><td>Rp275.000</td><td><span class="chip ok">65%</span></td></tr>
+          <tr><td>Cabut gigi</td><td>Rp110.000</td><td>Rp250.000</td><td><span class="chip ok">56%</span></td></tr>
+        </table>
+      </div>
+
+      <div class="card" style="grid-column:6/10;grid-row:4/5;gap:10px">
+        <div class="row" style="justify-content:space-between"><span class="eyebrow">Multi-Cabang, Satu Dashboard</span><span class="mono" style="font-size:12px;color:var(--ink-3)">PENDAPATAN · SEP 2026</span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:4px">
+          <div class="branch"><div class="row"><b>Sudirman</b><span class="amt">Rp84,2jt</span></div><div class="bar"><i style="width:100%"></i></div></div>
+          <div class="branch"><div class="row"><b>Dago</b><span class="amt">Rp61,5jt</span></div><div class="bar"><i style="width:73%"></i></div></div>
+          <div class="branch"><div class="row"><b>Buah Batu</b><span class="amt">Rp38,8jt</span></div><div class="bar"><i style="width:46%"></i></div></div>
+        </div>
+        <div class="sub" style="font-size:13.5px">Owner memantau performa tiap cabang &amp; tiap dokter dari satu akun.</div>
+      </div>
+
+      <div class="card" style="grid-column:10/13;grid-row:3/4;gap:10px">
+        <span class="eyebrow">${ic('lock', 'width:14px;height:14px')}Keamanan Data</span>
+        <div class="ttl sm" style="font-size:20px">NIK terenkripsi, setiap akses tercatat.</div>
+        <div class="sp"></div>
+        <div class="mono" style="font-size:12px;color:var(--ink-2);background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:8px 12px">09:14 · Dr. Amelia · <span style="color:var(--accent-ink)">buka RM #0231</span></div>
+      </div>
+
+      <div class="card code-card" style="grid-column:10/13;grid-row:4/5;gap:10px">
+        <span class="eyebrow">API Website Klinik</span>
+        <pre><span class="k">GET</span> <span class="s">/slots?date=2026-10-01</span>
+<span class="c">// jadwal website selalu sinkron</span></pre>
+        <div class="sp"></div>
+        <div class="usage"><div class="row"><span>Pemakaian hari ini</span><b>2.067 / 10.000</b></div><div class="bar"><i style="width:21%"></i></div></div>
+      </div>
+
+    </div>
+    ${bottom('*Data ilustrasi')}
+  </section>`,
 };
 
 const params = new URLSearchParams(location.search);
-const format = params.get('f') || 'ig-portrait';
-const theme = params.get('theme') || 'light';
-const L = LAYOUTS[format];
-document.body.className = `f-${format} ${theme}`;
-document.documentElement.style.setProperty('--w', L.w + 'px');
-document.documentElement.style.setProperty('--h', L.h + 'px');
-
-const canvas = document.getElementById('canvas');
-let html = '';
-if (L.header) {
-  html += `
-    <div class="header">
-      <div class="brand"><div class="mark">${ic('activity')}</div>ApexRecord</div>
-      <h1>Kelola klinik <span class="grad-text">lebih cerdas.</span></h1>
-      <p>Rekam medis, reservasi, kasir & laporan klinik dalam satu platform.</p>
-    </div>`;
-}
-html += `<div class="bento" style="--cols:${L.cols};--row-tpl:${L.rowTpl || `repeat(${L.rows}, minmax(0, 1fr))`};grid-template-areas:${L.areas.map((a) => `'${a}'`).join(' ')}">
-  ${L.tiles.map((t) => { const [k, v] = t.split(':'); return T[k](v); }).join('')}
-</div>`;
-if (L.footer) {
-  html += `<div class="footer"><span><b>ApexRecord</b> · Sistem Manajemen Klinik</span><span>Terintegrasi SATUSEHAT Kemenkes RI</span></div>`;
-}
-canvas.insertAdjacentHTML('beforeend', html);
+const slide = params.get('s') || 'klinis';
+document.body.className = params.get('theme') === 'dark' ? 'dark' : '';
+document.getElementById('root').innerHTML = SLIDES[slide]();
 </script>
 </body>
 </html>
