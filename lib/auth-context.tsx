@@ -11,8 +11,8 @@ interface AuthState {
   /**
    * Records the signed-in user. The access token itself never reaches page
    * code: the /api/backend proxy stores it in an httpOnly cookie when the
-   * login/verify response passes through. Also used to refresh the cached
-   * profile (e.g. after enabling MFA).
+   * login response passes through. Also used to refresh the cached
+   * profile.
    */
   login: (user: User) => void;
   /** Ends the session server-side (token revoked) and clears local state. */

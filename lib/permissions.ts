@@ -22,7 +22,6 @@ export type FeatureKey =
   | 'audit-log'
   | 'langganan'
   | 'onboarding'
-  | 'keamanan'
   | 'tampilan'
   | 'api'
   | 'data-privasi'
@@ -48,7 +47,6 @@ const FULL_ACCESS: FeatureKey[] = [
   'referral',
   'audit-log',
   'langganan',
-  'keamanan',
   'tampilan',
   'api',
   'konten',
@@ -58,8 +56,8 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
   // A super admin belongs to no clinic, so clinic pages have nothing to show
   // (the backend refuses them with NO_CLINIC_ASSIGNED); clinic data is reached
   // by impersonating the owner. The API and user pages have their own clinic picker.
-  super_admin: ['api', 'user-management', 'keamanan', 'tampilan'],
-  multi_clinic_owner: ['keamanan', 'tampilan'],
+  super_admin: ['api', 'user-management', 'tampilan'],
+  multi_clinic_owner: ['tampilan'],
   // Data requests (UU PDP) are the clinic owner's to make.
   owner: [...FULL_ACCESS, 'onboarding', 'data-privasi'],
   admin: [
@@ -77,11 +75,10 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'referral',
     'langganan',
     'konten',
-    'keamanan',
     'tampilan',
   ],
-  dokter: ['pasien', 'reservasi', 'kunjungan', 'informed-consent', 'share-fee-saya', 'keamanan', 'tampilan'],
-  pending: ['keamanan', 'tampilan'],
+  dokter: ['pasien', 'reservasi', 'kunjungan', 'informed-consent', 'share-fee-saya', 'tampilan'],
+  pending: ['tampilan'],
 };
 
 const VIEW_ONLY_FEATURES: Partial<Record<UserRole, FeatureKey[]>> = {

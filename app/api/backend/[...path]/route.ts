@@ -13,12 +13,12 @@ import {
  *
  * The browser never holds the access token: this handler reads it from an
  * httpOnly cookie and adds the Authorization header on the way to the
- * backend. Responses that mint a token (login, MFA verify, refresh,
+ * backend. Responses that mint a token (login, refresh,
  * impersonate) have it moved into the cookie and removed from the body.
  */
 
 // Endpoints whose JSON response carries `data.accessToken`.
-const TOKEN_ISSUING = new Set(['auth/login', 'auth/mfa/verify-login', 'auth/refresh']);
+const TOKEN_ISSUING = new Set(['auth/login', 'auth/refresh']);
 
 // Request headers worth forwarding. Everything else (cookies in particular)
 // stays on this side of the proxy.
@@ -139,7 +139,7 @@ async function proxy(req: NextRequest, ctx: RouteContext) {
     if (sessionToken && !req.cookies.get(IMPERSONATOR_COOKIE)) {
       setTokenCookie(res, req, IMPERSONATOR_COOKIE, sessionToken);
     }
-  } else if (path === 'auth/login' || path === 'auth/mfa/verify-login') {
+  } else if (path === 'auth/login') {
     // A fresh login replaces any parked impersonation state.
     clearCookie(res, IMPERSONATOR_COOKIE);
   }

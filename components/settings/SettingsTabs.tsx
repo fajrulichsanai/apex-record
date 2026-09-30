@@ -14,7 +14,6 @@ const TABS: { label: string; href: string; feature: FeatureKey; requireManageUse
   { label: 'Langganan', href: '/langganan', feature: 'langganan' },
   { label: 'Tampilan', href: '/tampilan', feature: 'tampilan' },
   { label: 'API', href: '/api-klinik', feature: 'api' },
-  { label: 'Keamanan Akun', href: '/keamanan', feature: 'keamanan' },
   { label: 'Data & Privasi', href: '/data-privasi', feature: 'data-privasi' },
 ];
 

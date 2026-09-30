@@ -948,7 +948,6 @@ const routes: [RegExp, Handler][] = [
     dokter: { complete: true, count: demoPractitioners.length },
     allComplete: true,
   })],
-  [/^\/auth\/mfa\/status$/, () => ({ enabled: true })],
   [/^\/auth\/me$/, () => ({ id: 900001, email: 'demo@apexrecord.id', name: 'drg. Demo Pratama', role: 'owner', clinicId: DEMO_CLINIC_ID, isActive: true })],
   [/^\/notifications$/, () => ({
     items: demoEncounters.slice(-5).reverse().map((e, i) => ({

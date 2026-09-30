@@ -120,7 +120,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     },
   ];
 
-  const SETTINGS_ROUTES = ['/pengaturan', '/info-klinik', '/user-management', '/tarif', '/audit-log', '/langganan', '/tampilan', '/keamanan', '/api-klinik', '/data-privasi'];
+  const SETTINGS_ROUTES = ['/pengaturan', '/info-klinik', '/user-management', '/tarif', '/audit-log', '/langganan', '/tampilan', '/api-klinik', '/data-privasi'];
   const isSettingsActive = SETTINGS_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   // Buang item tanpa href/tanpa akses, lalu buang grup yang jadi kosong.

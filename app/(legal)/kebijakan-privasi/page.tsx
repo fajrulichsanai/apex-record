@@ -161,7 +161,6 @@ const sections: LegalSection[] = [
           <li>Semua koneksi ke ApexRecord memakai HTTPS.</li>
           <li>Password disimpan sebagai hash bcrypt, tidak pernah dalam bentuk aslinya.</li>
           <li>NIK pasien dan NIK dokter dienkripsi sebelum disimpan di database.</li>
-          <li>Akun pemilik klinik dan super admin wajib memakai verifikasi dua langkah (MFA).</li>
           <li>Login yang berkali-kali gagal dikunci sementara; logout dan ganti password mencabut sesi lama.</li>
           <li>Akses dibatasi sesuai peran (dokter, admin, pemilik), dan akses maupun perubahan rekam medis dicatat di audit log.</li>
         </ul>

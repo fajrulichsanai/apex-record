@@ -78,16 +78,6 @@ export function setOnSubscriptionExpired(handler: (() => void) | null) {
   onSubscriptionExpired = handler;
 }
 
-// Set by MfaGateProvider so an MFA_SETUP_REQUIRED response from any request
-// — anywhere in the app — routes the user to the setup screen, covering an
-// already-open session for a role that just became MFA-enforced (a fresh
-// login/verify already gets mfaSetupRequired directly in its response).
-let onMfaSetupRequired: (() => void) | null = null;
-
-export function setOnMfaSetupRequired(handler: (() => void) | null) {
-  onMfaSetupRequired = handler;
-}
-
 // Set by AuthProvider so a 401 from any request — a missing, invalid, or
 // expired token — clears the stale session and bounces to login instead of
 // leaving the user stuck on a protected page where every action now fails
@@ -130,9 +120,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const code = body?.error?.code;
     if (code === 'SUBSCRIPTION_EXPIRED') {
       onSubscriptionExpired?.();
-    }
-    if (code === 'MFA_SETUP_REQUIRED') {
-      onMfaSetupRequired?.();
     }
     if (res.status === 401 && hasSession()) {
       // Only a *previously logged-in* session going 401 (token now invalid/
