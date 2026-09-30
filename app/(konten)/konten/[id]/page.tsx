@@ -299,16 +299,22 @@ export default function KontenEditorPage() {
     try {
       await fn();
     } catch (err) {
-      error(err instanceof ApiError ? err.message : 'Terjadi kesalahan');
+      error(err instanceof Error && err.message ? err.message : 'Terjadi kesalahan');
     } finally {
       setBusy(null);
     }
   };
 
-  const renderPng = () =>
-    new Promise<Blob>((resolve, reject) =>
-      canvasRef.current?.toBlob((b) => (b ? resolve(b) : reject(new Error('Gagal membuat gambar'))), 'image/png'),
-    );
+  const renderImage = (type: 'image/png' | 'image/jpeg', quality?: number) =>
+    new Promise<Blob>((resolve, reject) => {
+      const canvas = canvasRef.current;
+      if (!canvas) {
+        reject(new Error('Gagal membuat gambar'));
+        return;
+      }
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Gagal membuat gambar'))), type, quality);
+    });
+  const renderPng = () => renderImage('image/png');
 
   const onSave = () =>
     run('save', async () => {
@@ -325,7 +331,9 @@ export default function KontenEditorPage() {
       }
       const id = await save();
       if (id === null) return;
-      const published = await contentsApi.publish(id, await renderPng());
+      // JPEG, not PNG: a 1080×1920 photo story is several MB as PNG — more
+      // than the upload limit in front of the API — and ~0.5 MB as JPEG.
+      const published = await contentsApi.publish(id, await renderImage('image/jpeg', 0.9));
       setStatus(published.status);
       setPublishedAt(published.publishedAt);
       success('Konten diterbitkan');

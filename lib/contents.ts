@@ -80,7 +80,7 @@ export const contentsApi = {
   },
   publish: (id: number, image: Blob) => {
     const form = new FormData();
-    form.append('file', image, `story-${id}.png`);
+    form.append('file', image, `story-${id}.${image.type === 'image/png' ? 'png' : 'jpg'}`);
     return apiClient.postForm<ClinicContent>(`/contents/${id}/publish`, form);
   },
   unpublish: (id: number) => apiClient.post<ClinicContent>(`/contents/${id}/unpublish`),
