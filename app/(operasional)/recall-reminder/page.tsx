@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import { useAuth } from '@/lib/auth-context';
+import { canAccessFeature } from '@/lib/permissions';
 import { clinicApi } from '@/lib/clinic';
 import { patientRecallApi, type PatientRecall } from '@/lib/recall';
 import RecallDueList from './RecallDueList';
@@ -26,13 +27,21 @@ export default function RecallReminderPage() {
   const [clinicName, setClinicName] = useState<string | undefined>(undefined);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    patientRecallApi.list({ limit: 100 }).then((res) => setSummary(res.data));
-  }, [refreshKey]);
+  const allowed = canAccessFeature(user?.role, 'recall-reminder');
 
   useEffect(() => {
+    // FeatureGuard hides the page for other roles, but these effects run anyway.
+    if (!allowed) return;
+    patientRecallApi
+      .list({ limit: 100 })
+      .then((res) => setSummary(res.data))
+      .catch(() => setSummary([]));
+  }, [refreshKey, allowed]);
+
+  useEffect(() => {
+    if (!allowed) return;
     clinicApi.get().then((res) => setClinicName(res.name)).catch(() => {});
-  }, []);
+  }, [allowed]);
 
   const belumDihubungi = summary.filter((r) => r.status === 'belum_dihubungi');
   const overdueCount = belumDihubungi.filter((r) => isOverdue(r.dueDate)).length;

@@ -3,7 +3,6 @@ import { Poppins } from "next/font/google";
 import { AuthProvider } from "@/lib/auth-context";
 import { ToastProvider } from "@/lib/toast-context";
 import { SubscriptionGateProvider } from "@/lib/subscription-gate-context";
-import { MfaGateProvider } from "@/lib/mfa-gate-context";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme-context";
 import ImpersonationBanner from "@/components/subscription/ImpersonationBanner";
 import DemoBanner from "@/components/demo/DemoBanner";
@@ -47,13 +46,11 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <ToastProvider>
-              <MfaGateProvider>
-                <SubscriptionGateProvider>
-                  <DemoBanner />
-                  <ImpersonationBanner />
-                  {children}
-                </SubscriptionGateProvider>
-              </MfaGateProvider>
+              <SubscriptionGateProvider>
+                <DemoBanner />
+                <ImpersonationBanner />
+                {children}
+              </SubscriptionGateProvider>
             </ToastProvider>
           </AuthProvider>
         </ThemeProvider>

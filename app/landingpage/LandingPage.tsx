@@ -117,8 +117,8 @@ const SECURITY = [
         <path d="M8 11V8a4 4 0 118 0v3M12 15v2" stroke="currentColor" strokeWidth={2} strokeLinecap="round" />
       </svg>
     ),
-    title: 'Verifikasi Dua Langkah',
-    desc: 'Akun owner dan super admin wajib MFA dengan aplikasi authenticator — password bocor saja tidak cukup untuk masuk.',
+    title: 'Data Sensitif Dienkripsi',
+    desc: 'NIK pasien dan dokter dienkripsi sebelum disimpan, dan password hanya disimpan sebagai hash — tidak pernah dalam bentuk aslinya.',
   },
   {
     icon: (
@@ -177,7 +177,7 @@ const AUDIENCE = [
 const FAQS = [
   {
     q: 'Data pasien saya aman?',
-    a: 'Ya. Semua koneksi memakai HTTPS, NIK pasien dienkripsi sebelum disimpan, password tidak pernah disimpan dalam bentuk aslinya, akses diatur berdasarkan peran (dokter, admin, owner), akun owner dilindungi verifikasi dua langkah (MFA), login yang berulang kali gagal dikunci sementara, serta akses dan perubahan rekam medis tercatat di audit log.',
+    a: 'Ya. Semua koneksi memakai HTTPS, NIK pasien dienkripsi sebelum disimpan, password tidak pernah disimpan dalam bentuk aslinya, akses diatur berdasarkan peran (dokter, admin, owner), login yang berulang kali gagal dikunci sementara, serta akses dan perubahan rekam medis tercatat di audit log.',
     open: true,
   },
   {

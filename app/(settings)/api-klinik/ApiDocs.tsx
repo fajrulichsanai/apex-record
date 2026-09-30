@@ -51,6 +51,15 @@ const ENDPOINTS: Endpoint[] = [
   },
   {
     method: 'GET',
+    path: '/contents',
+    desc: 'Konten before–after yang sudah diterbitkan (menu Konten), terbaru dulu, maks. 50. imageUrl adalah gambar story 1080 × 1920.',
+    response: `[
+  { "id": 4, "title": "Veneer komposit", "caption": "2 kali kunjungan",
+    "imageUrl": "https://…", "publishedAt": "2026-09-29T08:00:00.000Z" }
+]`,
+  },
+  {
+    method: 'GET',
     path: '/slots',
     desc: 'Slot reservasi yang masih kosong pada tanggal tertentu.',
     params: [

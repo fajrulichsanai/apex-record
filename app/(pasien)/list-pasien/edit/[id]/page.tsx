@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import FeatureGuard from '@/components/auth/FeatureGuard';
 import PatientWizard from '@/components/pasien/PatientWizard';
 import { patientsApi, Patient, PatientPayload } from '@/lib/patients';
 import { ApiError } from '@/lib/api-client';
@@ -51,6 +52,7 @@ export default function EditPasienPage() {
 
   return (
     <DashboardLayout>
+      <FeatureGuard feature="pasien">
       <main className="content patient-form-page">
         <div className="page-header">
           <div className="page-title-block">
@@ -80,6 +82,7 @@ export default function EditPasienPage() {
           />
         )}
       </main>
+      </FeatureGuard>
     </DashboardLayout>
   );
 }

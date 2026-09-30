@@ -96,14 +96,13 @@ export default function CatatOperasionalPage() {
     return [...filtered].sort((a, b) => (sortAsc ? (a.tanggal > b.tanggal ? 1 : -1) : (a.tanggal < b.tanggal ? 1 : -1)));
   }, [records, searchQuery, filterKategori, startDate, endDate, sortAsc]);
 
-  const now = new Date();
-  const thisMonthRecords = useMemo(
-    () => records.filter((r) => {
+  const thisMonthRecords = useMemo(() => {
+    const now = new Date();
+    return records.filter((r) => {
       const d = new Date(r.tanggal);
       return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    }),
-    [records, now]
-  );
+    });
+  }, [records]);
 
   const totalBulanIni = thisMonthRecords.reduce((sum, r) => sum + r.nominal, 0);
   const totalSemuaPeriode = records.reduce((sum, r) => sum + r.nominal, 0);

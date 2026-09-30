@@ -9,7 +9,7 @@ browser ──(cookie apex_session, same origin)──▶ Next.js /api/backend/*
 - `app/api/backend/[...path]/route.ts` forwards every API call to the backend
   and adds `Authorization` from the `apex_session` cookie (httpOnly,
   SameSite=Lax, Secure over HTTPS, expires with the token).
-- Login, MFA verify, refresh and impersonate responses have `accessToken`
+- Login, refresh and impersonate responses have `accessToken`
   moved into that cookie and stripped from the JSON the page receives.
 - Logout (`POST /api/backend/auth/logout`) revokes the token on the backend
   and clears the cookie. Exiting impersonation (`DELETE

@@ -19,8 +19,6 @@ export const DEMO_USER: User = {
   emailVerifiedAt: '2026-01-05T08:00:00.000Z',
   lastLoginAt: new Date().toISOString(),
   createdAt: '2026-01-05T08:00:00.000Z',
-  // Owners must have MFA; the demo user "has" it so the MFA gate stays quiet.
-  mfaEnabled: true,
 };
 
 export function isDemoMode(): boolean {

@@ -948,7 +948,6 @@ const routes: [RegExp, Handler][] = [
     dokter: { complete: true, count: demoPractitioners.length },
     allComplete: true,
   })],
-  [/^\/auth\/mfa\/status$/, () => ({ enabled: true })],
   [/^\/auth\/me$/, () => ({ id: 900001, email: 'demo@apexrecord.id', name: 'drg. Demo Pratama', role: 'owner', clinicId: DEMO_CLINIC_ID, isActive: true })],
   [/^\/notifications$/, () => ({
     items: demoEncounters.slice(-5).reverse().map((e, i) => ({
@@ -969,6 +968,14 @@ const routes: [RegExp, Handler][] = [
   [/^\/api\/master-data\//, () => []],
   // Data & Privasi: no requests yet (submitting is blocked in the demo).
   [/^\/data-requests$/, () => []],
+  // Konten: the demo clinic has none yet (creating one is a write).
+  [/^\/contents$/, () => []],
+  [
+    /^\/contents\/\d+$/,
+    () => {
+      throw new ApiError('Konten tidak ditemukan', 404);
+    },
+  ],
 ];
 
 export async function demoRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
