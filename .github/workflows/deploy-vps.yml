@@ -40,6 +40,10 @@ jobs:
 
             echo "🔨 Build project (ke folder terpisah, server lama tetap jalan)..."
             rm -rf .next-build
+            # tsconfig also includes .next/types — generated for the build that
+            # is running now. A page removed since then would fail the type
+            # check, and the running server doesn't need these files.
+            rm -rf .next/types .next/dev/types
             NEXT_DIST_DIR=.next-build npm run build
 
             echo "🔁 Tukar hasil build lalu restart PM2..."
