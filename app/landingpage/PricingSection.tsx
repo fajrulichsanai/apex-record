@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Reveal from './Reveal';
 
-const APP_URL = 'https://staging.apexrecord.my.id';
+const APP_URL = 'https://app.apexrecord.my.id';
 
 function CheckIcon() {
   return (
