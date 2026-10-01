@@ -970,6 +970,7 @@ const routes: [RegExp, Handler][] = [
   [/^\/data-requests$/, () => []],
   // Konten: the demo clinic has none yet (creating one is a write).
   [/^\/contents$/, () => []],
+  [/^\/contents\/templates$/, () => []],
   [
     /^\/contents\/\d+$/,
     () => {

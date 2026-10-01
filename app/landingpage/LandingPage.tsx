@@ -8,7 +8,7 @@ import ThemeToggle from './ThemeToggle';
 import { COMPANY, LEGAL_LINKS } from '@/lib/company';
 import './landingpage.css';
 
-const APP_URL = 'https://staging.apexrecord.my.id';
+const APP_URL = 'https://app.apexrecord.my.id';
 // Opens the real app screens with fictional data — no sign-up needed.
 const DEMO_URL = `${APP_URL}/demo`;
 

@@ -94,6 +94,14 @@ function hasSession() {
   return typeof window !== 'undefined' && !!localStorage.getItem('user');
 }
 
+function nonJsonErrorMessage(status: number): string {
+  if (status === 413) return 'File terlalu besar untuk diunggah ke server.';
+  if (status === 502 || status === 503 || status === 504) {
+    return 'Server sedang tidak dapat dihubungi. Coba lagi sebentar.';
+  }
+  return `Respons server tidak valid (HTTP ${status}).`;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (isDemoMode()) {
     // Demo tab: answered in the browser with fictional data (lazy-loaded so
@@ -114,7 +122,15 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     },
   });
 
-  const body: ApiEnvelope<T> = await res.json();
+  // A proxy in front of the API (nginx) answers some failures — upload too
+  // large, backend down, timeout — with an HTML page, not our JSON envelope.
+  const text = await res.text();
+  let body: ApiEnvelope<T>;
+  try {
+    body = text ? JSON.parse(text) : ({} as ApiEnvelope<T>);
+  } catch {
+    throw new ApiError(nonJsonErrorMessage(res.status), res.status);
+  }
 
   if (!res.ok || (body.success === false)) {
     const code = body?.error?.code;
