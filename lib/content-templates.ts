@@ -6,9 +6,11 @@
 
 export interface ContentTemplate {
   id: string;
+  /** Short treatment name, the gallery group (max 40). */
+  name: string;
   /** Story headline (max 64). */
   title: string;
-  /** One line shown on the template card. */
+  /** One line shown on the card. */
   desc: string;
   /** Complaints/diagnoses offered as one-tap chips; the first is preselected. */
   conditions: string[];
@@ -16,21 +18,29 @@ export interface ContentTemplate {
   visits: number | null;
 }
 
+/** Examples to start a clinic's own treatment template from. */
 export const CONTENT_TEMPLATES: ContentTemplate[] = [
-  { id: 'veneer-komposit', title: 'Veneer komposit', desc: 'Merapikan bentuk & warna gigi depan', conditions: ['Gigi kusam', 'Bentuk gigi tidak rata', 'Celah antar gigi'], visits: 1 },
-  { id: 'veneer-porselen', title: 'Veneer porselen', desc: 'Lapisan porselen tipis, tahan lama', conditions: ['Perubahan warna gigi', 'Bentuk gigi tidak ideal'], visits: 2 },
-  { id: 'bleaching', title: 'Bleaching', desc: 'Memutihkan gigi', conditions: ['Gigi kuning', 'Noda pada gigi'], visits: 1 },
-  { id: 'scaling', title: 'Scaling & polishing', desc: 'Membersihkan karang & noda', conditions: ['Karang gigi', 'Noda kopi & rokok', 'Gusi berdarah'], visits: 1 },
-  { id: 'tambal-estetik', title: 'Tambal estetik', desc: 'Tambalan sewarna gigi', conditions: ['Gigi berlubang', 'Tambalan lama rusak', 'Gigi berlubang di sela gigi'], visits: 1 },
-  { id: 'diastema', title: 'Penutupan diastema', desc: 'Menutup celah gigi depan', conditions: ['Celah antar gigi depan'], visits: 1 },
-  { id: 'gigi-patah', title: 'Perbaikan gigi patah', desc: 'Mengembalikan bentuk gigi', conditions: ['Gigi patah karena benturan', 'Gigi gompal'], visits: 1 },
-  { id: 'psa', title: 'Perawatan saluran akar', desc: 'Menyelamatkan gigi yang terinfeksi', conditions: ['Gigi berlubang dalam', 'Infeksi saraf gigi', 'Gigi menghitam'], visits: 3 },
-  { id: 'crown', title: 'Mahkota gigi (crown)', desc: 'Melindungi & memperbaiki gigi', conditions: ['Gigi rapuh setelah PSA', 'Gigi patah besar'], visits: 2 },
-  { id: 'gigi-tiruan', title: 'Gigi tiruan', desc: 'Mengganti gigi yang hilang', conditions: ['Gigi hilang', 'Gigi tiruan lama longgar'], visits: 3 },
-  { id: 'implan', title: 'Implan gigi', desc: 'Akar gigi tiruan permanen', conditions: ['Gigi hilang'], visits: 3 },
-  { id: 'ortodonti', title: 'Ortodonti (behel)', desc: 'Merapikan susunan gigi', conditions: ['Gigi berjejal', 'Gigi maju', 'Gigitan tidak pas'], visits: null },
-  { id: 'gingivektomi', title: 'Gingivektomi', desc: 'Merapikan gusi (gummy smile)', conditions: ['Gusi terlihat berlebih', 'Gusi tidak rata'], visits: 1 },
+  { id: 'tambal', name: 'Tambal', title: 'Tambal estetik', desc: 'Tambalan sewarna gigi', conditions: ['Gigi berlubang', 'Tambalan lama rusak', 'Gigi berlubang di sela gigi'], visits: 1 },
+  { id: 'cabut', name: 'Cabut', title: 'Pencabutan gigi', desc: 'Gigi yang tidak bisa dipertahankan', conditions: ['Sisa akar', 'Gigi goyang', 'Gigi berlubang parah'], visits: 1 },
+  { id: 'scaling', name: 'Scaling', title: 'Scaling & polishing', desc: 'Membersihkan karang & noda', conditions: ['Karang gigi', 'Noda kopi & rokok', 'Gusi berdarah'], visits: 1 },
+  { id: 'saluran-akar', name: 'Saluran akar', title: 'Perawatan saluran akar', desc: 'Menyelamatkan gigi yang terinfeksi', conditions: ['Gigi berlubang dalam', 'Infeksi saraf gigi', 'Gigi menghitam'], visits: 3 },
+  { id: 'odontektomi', name: 'Odontektomi', title: 'Odontektomi gigi bungsu', desc: 'Operasi gigi bungsu', conditions: ['Gigi bungsu impaksi', 'Gigi bungsu tumbuh miring'], visits: 2 },
+  { id: 'gigi-tiruan', name: 'Gigi tiruan', title: 'Gigi tiruan', desc: 'Mengganti gigi yang hilang', conditions: ['Gigi hilang', 'Gigi tiruan lama longgar'], visits: 3 },
+  { id: 'kawat-gigi', name: 'Kawat gigi', title: 'Kawat gigi (behel)', desc: 'Merapikan susunan gigi', conditions: ['Gigi berjejal', 'Gigi maju', 'Gigitan tidak pas'], visits: null },
+  { id: 'veneer', name: 'Veneer', title: 'Veneer komposit', desc: 'Merapikan bentuk & warna gigi depan', conditions: ['Gigi kusam', 'Bentuk gigi tidak rata', 'Celah antar gigi'], visits: 1 },
+  { id: 'bleaching', name: 'Bleaching', title: 'Bleaching', desc: 'Memutihkan gigi', conditions: ['Gigi kuning', 'Noda pada gigi'], visits: 1 },
+  { id: 'diastema', name: 'Diastema', title: 'Penutupan diastema', desc: 'Menutup celah gigi depan', conditions: ['Celah antar gigi depan'], visits: 1 },
+  { id: 'gigi-patah', name: 'Gigi patah', title: 'Perbaikan gigi patah', desc: 'Mengembalikan bentuk gigi', conditions: ['Gigi patah karena benturan', 'Gigi gompal'], visits: 1 },
+  { id: 'crown', name: 'Crown', title: 'Mahkota gigi (crown)', desc: 'Melindungi & memperbaiki gigi', conditions: ['Gigi rapuh setelah PSA', 'Gigi patah besar'], visits: 2 },
+  { id: 'implan', name: 'Implan', title: 'Implan gigi', desc: 'Akar gigi tiruan permanen', conditions: ['Gigi hilang'], visits: 3 },
+  { id: 'gingivektomi', name: 'Gingivektomi', title: 'Gingivektomi', desc: 'Merapikan gusi (gummy smile)', conditions: ['Gusi terlihat berlebih', 'Gusi tidak rata'], visits: 1 },
 ];
+
+/** The example whose name matches a clinic template's, for its complaint chips. */
+export const presetByName = (name: string | null | undefined) => {
+  const n = name?.trim().toLowerCase();
+  return n ? (CONTENT_TEMPLATES.find((t) => t.name.toLowerCase() === n || t.title.toLowerCase() === n) ?? null) : null;
+};
 
 export const findTemplate = (id: string | null | undefined) => CONTENT_TEMPLATES.find((t) => t.id === id) ?? null;
 

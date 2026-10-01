@@ -37,6 +37,8 @@ export interface ContentSettings {
 
 export interface ClinicContent {
   id: number;
+  /** The treatment template it was made from; groups the gallery. */
+  templateId: number | null;
   title: string;
   caption: string | null;
   layout: ContentLayout;
@@ -53,6 +55,7 @@ export interface ClinicContent {
 }
 
 export interface ContentPayload {
+  templateId?: number | null;
   title: string;
   caption?: string;
   layout: ContentLayout;
@@ -62,6 +65,39 @@ export interface ContentPayload {
   afterImageUrl?: string | null;
   settings: ContentSettings;
 }
+
+/** A clinic's template for one treatment (Tambal, Cabut, …). */
+export interface ContentTemplateRecord {
+  id: number;
+  /** Treatment name, the gallery group. */
+  name: string;
+  /** Headline on the story. */
+  title: string;
+  layout: ContentLayout;
+  background: ContentBackground;
+  showDisclaimer: boolean;
+  settings: ContentSettings | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContentTemplatePayload {
+  name: string;
+  title: string;
+  layout: ContentLayout;
+  background: ContentBackground;
+  showDisclaimer: boolean;
+  settings: ContentSettings;
+}
+
+export const templatesApi = {
+  list: () => apiClient.get<ContentTemplateRecord[]>('/contents/templates'),
+  get: (id: number) => apiClient.get<ContentTemplateRecord>(`/contents/templates/${id}`),
+  create: (payload: ContentTemplatePayload) => apiClient.post<ContentTemplateRecord>('/contents/templates', payload),
+  update: (id: number, payload: Partial<ContentTemplatePayload>) =>
+    apiClient.patch<ContentTemplateRecord>(`/contents/templates/${id}`, payload),
+  remove: (id: number) => apiClient.delete<void>(`/contents/templates/${id}`),
+};
 
 export const CONTENT_STATUS_LABEL: Record<ContentStatus, string> = {
   draft: 'Draft',
