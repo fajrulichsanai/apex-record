@@ -7,6 +7,7 @@ export const RESOURCE_TYPES = [
   'Procedure',
   'Observation',
   'MedicationRequest',
+  'MedicationDispense',
   'Practitioner',
   'Location',
 ] as const;
@@ -23,6 +24,7 @@ export const RESOURCE_LABELS: Record<SatusehatResourceType, string> = {
   Procedure: 'Tindakan',
   Observation: 'Tanda Vital',
   MedicationRequest: 'Resep',
+  MedicationDispense: 'Pengeluaran Obat',
   Practitioner: 'Tenaga Kesehatan',
   Location: 'Lokasi',
 };
@@ -94,6 +96,26 @@ export interface SyncLog {
   responsePayload?: unknown;
 }
 
+/** Satu langkah pengiriman kunjungan (urutan Playbook RME Rawat Jalan) */
+export interface SyncStep {
+  step: string;
+  resourceType: string;
+  localType: string;
+  localId: number;
+  status: 'success' | 'failed' | 'skipped';
+  satusehatId?: string;
+  message?: string;
+}
+
+export interface MedicationKfa {
+  medicationId: number;
+  name: string;
+  genericName?: string;
+  strength?: string;
+  dosageForm?: string;
+  kfaCode?: string | null;
+}
+
 export interface SatusehatConfigPayload {
   satusehatOrgId: string;
   satusehatClientId: string;
@@ -122,6 +144,16 @@ export const satusehatApi = {
     apiClient.post<{ success: true; satusehatId?: string }>(
       `/satusehat/sync/${type}/${localId}`,
     ),
+
+  /** Kirim seluruh data satu kunjungan, hasilnya laporan per langkah */
+  syncEncounterFull: (encounterId: number) =>
+    apiClient.post<{ success: boolean; steps: SyncStep[] }>(`/satusehat/encounters/${encounterId}/sync`),
+
+  listMedications: (query: { page?: number; limit?: number; search?: string }) =>
+    apiClient.get<MedicationKfa[]>(`/medications?${toQueryString(query)}`),
+
+  updateMedicationKfa: (id: number, kfaCode: string) =>
+    apiClient.put<MedicationKfa>(`/medications/${id}`, { kfaCode }),
 
   processQueue: () =>
     apiClient.post<{ processed: number; succeeded: number; failed: number }>(

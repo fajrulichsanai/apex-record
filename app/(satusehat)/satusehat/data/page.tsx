@@ -12,11 +12,22 @@ import {
   type ResourceList,
   type SatusehatResourceType,
   type SyncState,
+  type SyncStep,
 } from '@/lib/satusehat';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 
 const PAGE_SIZE = 20;
+
+const TYPE_HINTS: Partial<Record<SatusehatResourceType, string>> = {
+  Patient: 'Kirim = cari IHS Number pasien di SATUSEHAT berdasarkan NIK. Pasien tanpa NIK tidak bisa diverifikasi.',
+  Practitioner: 'Kirim = cari IHS tenaga kesehatan di SATUSEHAT berdasarkan NIK.',
+  Location: 'Kirim = daftarkan ruangan sebagai resource Location milik organisasi klinik.',
+  Encounter:
+    'Kirim = kirim seluruh data kunjungan sesuai Playbook RME Rawat Jalan: pasien, nakes, lokasi → kunjungan → anamnesis → tanda vital & OHIS → diagnosis → tindakan → resep & pengeluaran obat → kunjungan selesai. Kunjungan yang selesai juga terkirim otomatis.',
+  MedicationRequest: 'Resep hanya bisa dikirim bila obatnya sudah memiliki kode KFA (menu Kode KFA Obat).',
+  MedicationDispense: 'Pengeluaran obat dikirim setelah resepnya terkirim.',
+};
 
 function isResourceType(v: string | null): v is SatusehatResourceType {
   return !!v && (RESOURCE_TYPES as readonly string[]).includes(v);
@@ -39,6 +50,7 @@ function DataContent() {
   const [data, setData] = useState<ResourceList | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncingId, setSyncingId] = useState<number | null>(null);
+  const [report, setReport] = useState<{ encounterId: number; success: boolean; steps: SyncStep[] } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,14 +88,25 @@ function DataContent() {
   async function handleSync(localId: number) {
     setSyncingId(localId);
     try {
-      const res = await satusehatApi.syncResource(type, localId);
-      showToast(`Berhasil dikirim ke SATUSEHAT (ID ${res.satusehatId ?? '-'})`, 'success');
+      if (type === 'Encounter') {
+        // Kunjungan dikirim lengkap sesuai urutan Playbook RME Rawat Jalan
+        const res = await satusehatApi.syncEncounterFull(localId);
+        setReport({ encounterId: localId, ...res });
+        const failed = res.steps.filter((s) => s.status === 'failed').length;
+        showToast(
+          failed ? `Terkirim sebagian: ${failed} langkah gagal` : 'Seluruh data kunjungan terkirim ke SATUSEHAT',
+          failed ? 'warning' : 'success',
+        );
+      } else {
+        const res = await satusehatApi.syncResource(type, localId);
+        showToast(`Berhasil dikirim ke SATUSEHAT (ID ${res.satusehatId ?? '-'})`, 'success');
+      }
     } catch (err) {
       // Backend mengembalikan 400 berisi alasan gagal dari SATUSEHAT
       showToast(err instanceof Error ? err.message : 'Gagal mengirim data', 'error', 8000);
     } finally {
-      void load();
       setSyncingId(null);
+      void load();
     }
   }
 
@@ -115,6 +138,54 @@ function DataContent() {
         ))}
       </div>
 
+      {report && (
+        <div className="ss-card">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <h2 style={{ margin: 0 }}>
+              Laporan pengiriman kunjungan #{report.encounterId}{' '}
+              <span className={`ss-badge ${report.success ? 'synced' : 'failed'}`}>
+                {report.success ? 'Lengkap' : 'Ada yang gagal'}
+              </span>
+            </h2>
+            <button type="button" className="ss-btn sm" onClick={() => setReport(null)}>
+              Tutup
+            </button>
+          </div>
+          <div className="ss-table-wrap">
+            <table className="ss-table">
+              <thead>
+                <tr>
+                  <th>Langkah</th>
+                  <th>Resource</th>
+                  <th>ID SATUSEHAT</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {report.steps.map((s, i) => (
+                  <tr key={i}>
+                    <td>{s.step}</td>
+                    <td>
+                      {s.resourceType}
+                      <span className="sub">
+                        {s.localType} #{s.localId}
+                      </span>
+                      {s.message && <span className={s.status === 'failed' ? 'err' : 'sub'}>{s.message}</span>}
+                    </td>
+                    <td className="ss-mono">{s.satusehatId || '-'}</td>
+                    <td>
+                      <span className={`ss-badge ${s.status === 'success' ? 'synced' : s.status === 'failed' ? 'failed' : 'pending'}`}>
+                        {s.status === 'success' ? 'Berhasil' : s.status === 'failed' ? 'Gagal' : 'Dilewati'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       <div className="ss-card">
         <form className="ss-toolbar" onSubmit={onSearch}>
           <select
@@ -143,14 +214,9 @@ function DataContent() {
           </button>
         </form>
 
-        {type === 'Patient' && (
+        {TYPE_HINTS[type] && (
           <p className="ss-muted" style={{ marginBottom: 12 }}>
-            Pasien dianggap terverifikasi bila sudah memiliki IHS Number / ID Pasien SATUSEHAT (dicocokkan lewat NIK).
-          </p>
-        )}
-        {(type === 'Practitioner' || type === 'Location') && (
-          <p className="ss-muted" style={{ marginBottom: 12 }}>
-            Terverifikasi bila sudah memiliki ID SATUSEHAT. Lengkapi ID-nya di menu pengelolaan masing-masing.
+            {TYPE_HINTS[type]}
           </p>
         )}
 
