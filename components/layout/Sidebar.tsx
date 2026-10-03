@@ -23,6 +23,12 @@ import {
   FiUserCheck,
   FiChevronLeft,
   FiChevronRight,
+  FiCloud,
+  FiDatabase,
+  FiList,
+  FiMapPin,
+  FiMap,
+  FiKey,
 } from 'react-icons/fi';
 import './sidebar.css';
 
@@ -105,6 +111,21 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       items: [
         { label: 'Kunjungan', icon: <FiActivity />, href: '/laporan-kunjungan', feature: 'laporan-kunjungan' },
         { label: 'Keuangan', icon: <FiTrendingUp />, href: '/laporan-keuangan', feature: 'laporan-keuangan' },
+      ],
+    },
+    {
+      title: 'SATUSEHAT',
+      groupId: 'satusehat',
+      icon: <FiCloud />,
+      items: [
+        { label: 'Ringkasan', icon: <FiGrid />, href: '/satusehat', feature: 'satusehat' },
+        { label: 'Data & Status Sync', icon: <FiDatabase />, href: '/satusehat/data', feature: 'satusehat' },
+        { label: 'Log Sinkronisasi', icon: <FiList />, href: '/satusehat/log', feature: 'satusehat' },
+        { label: 'Master Sarana (MSI)', icon: <FiMapPin />, href: '/satusehat/sarana', feature: 'satusehat' },
+        { label: 'Master Wilayah', icon: <FiMap />, href: '/satusehat/wilayah', feature: 'satusehat' },
+        ...(canManageUsers
+          ? [{ label: 'Konfigurasi', icon: <FiKey />, href: '/satusehat/konfigurasi', feature: 'satusehat' as FeatureKey }]
+          : []),
       ],
     },
     {

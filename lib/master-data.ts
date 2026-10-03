@@ -50,7 +50,11 @@ export interface SaranaItem {
   alamat?: string;
   provinsi?: SaranaWilayah;
   kabkota?: SaranaWilayah;
-  jenis_sarana?: { kode: string; nama: string };
+  website?: string;
+  jenis_sarana?: { kode: string; nama: string; nama_alt?: string };
+  subjenis?: { kode: string; nama: string };
+  kelas_sarana?: { kode: string; nama: string };
+  sarana_administrasi?: { kode?: string; nama?: string; kode_sarana?: string };
   status_sarana?: string;
   status_aktif?: boolean;
 }
@@ -70,6 +74,8 @@ export interface SearchSaranaQuery {
   kode_sarana?: string;
   kode_provinsi?: string;
   kode_kabkota?: string;
+  status_aktif?: 'true' | 'false';
+  status_sarana?: 'draft' | 'verified' | 'valid' | 'reverified';
 }
 
 export const saranaApi = {
@@ -80,4 +86,29 @@ export const saranaApi = {
 
   getByKodeSatusehat: (kode: string) =>
     apiClient.get<SaranaItem>(`/api/master-data/sarana/${kode}`),
+};
+
+// ── Master Wilayah v2 (berhalaman) ───────────────────────────────────────
+
+export type WilayahLevel = 'provinces' | 'cities' | 'districts' | 'sub-districts';
+
+export interface WilayahV2Response {
+  items: WilayahItem[];
+  meta: {
+    item_count?: number;
+    page?: { current?: number; next?: number; total_page?: number };
+  } | null;
+}
+
+export const wilayahV2Api = {
+  list: (
+    level: WilayahLevel,
+    query: {
+      current_page?: number;
+      codes?: string;
+      province_codes?: string;
+      city_codes?: string;
+      district_codes?: string;
+    },
+  ) => apiClient.get<WilayahV2Response>(`/api/master-data/v2/${level}?${toQueryString(query)}`),
 };
