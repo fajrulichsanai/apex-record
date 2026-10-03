@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - development
+      - dev-daffa
 jobs:
   deploy:
     name: Deploy to Staging VPS
@@ -19,14 +20,45 @@ jobs:
             set -e
             echo "📁 Masuk ke direktori project..."
             cd ~/staging-apex-record/frontend/apex-record
-            echo "🔀 Pastikan di branch development..."
-            git fetch origin development
-            git checkout development
-            git reset --hard origin/development
-            echo "📦 Install dependencies..."
-            npm ci
-            echo "🔨 Build project..."
-            npm run build
-            echo "♻️  Restart PM2..."
+
+            echo "🔀 Pastikan di branch ${{ github.ref_name }}..."
+            git fetch origin ${{ github.ref_name }}
+            git checkout ${{ github.ref_name }}
+            git reset --hard origin/${{ github.ref_name }}
+
+            echo "📦 Cek perubahan dependency..."
+            CURRENT_HASH=$(sha256sum package-lock.json | awk '{print $1}')
+            PREVIOUS_HASH=$(cat .last-lock-hash 2>/dev/null || echo "none")
+
+            if [ "$CURRENT_HASH" != "$PREVIOUS_HASH" ]; then
+              echo "📦 Dependency berubah, install ulang..."
+              npm install --prefer-offline --no-audit --no-fund
+              echo "$CURRENT_HASH" > .last-lock-hash
+            else
+              echo "📦 Tidak ada perubahan dependency, skip install ✅"
+            fi
+
+            echo "🔨 Build project (ke folder terpisah, server lama tetap jalan)..."
+            rm -rf .next-build
+            # tsconfig also includes .next/types — generated for the build that
+            # is running now. A page removed since then would fail the type
+            # check, and the running server doesn't need these files.
+            rm -rf .next/types .next/dev/types
+            NEXT_DIST_DIR=.next-build npm run build
+
+            echo "🔁 Tukar hasil build lalu restart PM2..."
+            rm -rf .next-old
+            if [ -d .next ]; then mv .next .next-old; fi
+            mv .next-build .next
             pm2 restart apex-record-staging-frontend
+            rm -rf .next-old
+
+            echo "🩺 Cek header cache yang dikirim ke browser (lewat nginx)..."
+            sleep 5
+            for P in / /dashboard /landingpage /api/backend/auth/me; do
+              echo "--- $P"
+              curl -sS -o /dev/null -D - "https://staging.apexrecord.my.id$P" \
+                | grep -iE '^(HTTP|cache-control|expires|age|etag|last-modified|x-nextjs|x-cache|x-proxy-cache|cf-cache-status|server|vary):' || true
+            done
+
             echo "✅ Deploy selesai!"

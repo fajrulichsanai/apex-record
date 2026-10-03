@@ -1,16 +1,27 @@
 import { apiClient, toQueryString } from './api-client';
 
 export const RESOURCE_TYPES = [
-  'Patient',
   'Encounter',
-  'Condition',
+  'Patient',
   'Procedure',
-  'Observation',
   'MedicationRequest',
-  'MedicationDispense',
   'Practitioner',
   'Location',
 ] as const;
+
+/** Filter log (dicocokkan sebagai awalan resource_type di server) */
+export const LOG_RESOURCE_TYPES = [
+  'Patient',
+  'Practitioner',
+  'Location',
+  'Encounter',
+  'Observation',
+  'Condition',
+  'Procedure',
+  'Medication',
+  'MedicationRequest',
+] as const;
+export type LogResourceType = (typeof LOG_RESOURCE_TYPES)[number];
 
 export type SatusehatResourceType = (typeof RESOURCE_TYPES)[number];
 
@@ -18,15 +29,24 @@ export type SatusehatResourceType = (typeof RESOURCE_TYPES)[number];
 export type SyncState = 'synced' | 'pending' | 'failed';
 
 export const RESOURCE_LABELS: Record<SatusehatResourceType, string> = {
-  Patient: 'Pasien',
   Encounter: 'Kunjungan',
-  Condition: 'Diagnosis',
+  Patient: 'Pasien',
   Procedure: 'Tindakan',
-  Observation: 'Tanda Vital',
   MedicationRequest: 'Resep',
-  MedicationDispense: 'Pengeluaran Obat',
   Practitioner: 'Tenaga Kesehatan',
   Location: 'Lokasi',
+};
+
+export const LOG_RESOURCE_LABELS: Record<LogResourceType, string> = {
+  Patient: 'Pasien',
+  Practitioner: 'Tenaga Kesehatan',
+  Location: 'Lokasi',
+  Encounter: 'Kunjungan',
+  Observation: 'Observasi (tanda vital, OHIS)',
+  Condition: 'Diagnosis',
+  Procedure: 'Tindakan',
+  Medication: 'Obat (Medication)',
+  MedicationRequest: 'Resep',
 };
 
 export const SYNC_STATE_LABELS: Record<SyncState, string> = {
@@ -92,8 +112,6 @@ export interface SyncLog {
   errorMessage: string | null;
   retryCount: number;
   createdAt: string;
-  requestPayload?: unknown;
-  responsePayload?: unknown;
 }
 
 /** Satu langkah pengiriman kunjungan (urutan Playbook RME Rawat Jalan) */
@@ -107,20 +125,23 @@ export interface SyncStep {
   message?: string;
 }
 
-export interface MedicationKfa {
-  medicationId: number;
-  name: string;
-  genericName?: string;
-  strength?: string;
-  dosageForm?: string;
-  kfaCode?: string | null;
+export interface SatusehatConfig {
+  configured: boolean;
+  organizationId: string | null;
+  clientId: string | null;
+  hasClientSecret: boolean;
+  environment: 'sandbox' | 'production';
+  poliLocationId: string | null;
+  tokenValidUntil: string | null;
 }
 
 export interface SatusehatConfigPayload {
-  satusehatOrgId: string;
-  satusehatClientId: string;
-  satusehatClientSecret: string;
-  satusehatEnvironment: 'sandbox' | 'production';
+  organizationId: string;
+  clientId: string;
+  /** Kosongkan untuk mempertahankan secret yang tersimpan */
+  clientSecret?: string;
+  environment: 'sandbox' | 'production';
+  poliLocationId?: string;
 }
 
 export const satusehatApi = {
@@ -134,40 +155,23 @@ export const satusehatApi = {
   listSyncLogs: (query: {
     page?: number;
     limit?: number;
-    resourceType?: SatusehatResourceType;
+    resourceType?: LogResourceType;
     status?: SyncLog['status'];
   }) => apiClient.get<Paged<SyncLog>>(`/satusehat/sync-logs?${toQueryString(query)}`),
 
-  getSyncLog: (id: number) => apiClient.get<SyncLog>(`/satusehat/sync-logs/${id}`),
-
   syncResource: (type: SatusehatResourceType, localId: number) =>
-    apiClient.post<{ success: true; satusehatId?: string }>(
-      `/satusehat/sync/${type}/${localId}`,
-    ),
+    apiClient.post<{ success: true; satusehatId?: string }>(`/satusehat/sync/${type}/${localId}`),
 
   /** Kirim seluruh data satu kunjungan, hasilnya laporan per langkah */
   syncEncounterFull: (encounterId: number) =>
     apiClient.post<{ success: boolean; steps: SyncStep[] }>(`/satusehat/encounters/${encounterId}/sync`),
 
-  listMedications: (query: { page?: number; limit?: number; search?: string }) =>
-    apiClient.get<MedicationKfa[]>(`/medications?${toQueryString(query)}`),
-
-  updateMedicationKfa: (id: number, kfaCode: string) =>
-    apiClient.put<MedicationKfa>(`/medications/${id}`, { kfaCode }),
-
   processQueue: () =>
-    apiClient.post<{ processed: number; succeeded: number; failed: number }>(
-      '/satusehat/sync-queue/process',
-    ),
+    apiClient.post<{ processed: number; succeeded: number; failed: number }>('/satusehat/sync-queue/process'),
 
-  saveConfig: (payload: SatusehatConfigPayload) =>
-    apiClient.post<{ satusehatOrgId: string; satusehatEnvironment: string; message: string }>(
-      '/settings/clinic/satusehat',
-      payload,
-    ),
+  getConfig: () => apiClient.get<SatusehatConfig>('/satusehat/config'),
 
-  testConnection: () =>
-    apiClient.post<{ connected: boolean; environment: string; tokenExpiresAt?: string; message: string }>(
-      '/settings/clinic/satusehat/test',
-    ),
+  saveConfig: (payload: SatusehatConfigPayload) => apiClient.put<SatusehatConfig>('/satusehat/config', payload),
+
+  testConnection: () => apiClient.post<{ connected: boolean; tokenExpiresAt: string }>('/satusehat/config/test'),
 };

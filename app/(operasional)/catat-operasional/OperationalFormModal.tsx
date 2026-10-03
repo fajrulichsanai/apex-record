@@ -9,6 +9,7 @@ import {
   type OperationalRecord,
 } from '@/lib/operational';
 import { useToast } from '@/lib/toast-context';
+import { useEscapeKey } from '@/lib/a11y';
 
 const CUSTOM_KATEGORI_VALUE = '__custom__';
 
@@ -19,6 +20,7 @@ interface OperationalFormModalProps {
 }
 
 export default function OperationalFormModal({ initial, onClose, onSaved }: OperationalFormModalProps) {
+  useEscapeKey(onClose);
   const { success, error } = useToast();
   const isEdit = !!initial;
 
@@ -84,8 +86,8 @@ export default function OperationalFormModal({ initial, onClose, onSaved }: Oper
       <div className="op-modal-box">
         <div className="op-modal-header">
           <h2>{isEdit ? 'Edit Operasional' : 'Tambah Operasional'}</h2>
-          <button type="button" className="op-modal-close" onClick={onClose}>
-            <span className="material-symbols-rounded">close</span>
+          <button aria-label="Tutup" type="button" className="op-modal-close" onClick={onClose}>
+            <span aria-hidden="true" className="material-symbols-rounded">close</span>
           </button>
         </div>
 

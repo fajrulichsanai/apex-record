@@ -1,7 +1,8 @@
-import { apiClient } from './api-client';
+import { API_BASE, apiClient, ApiError } from './api-client';
+
 
 export type EncounterStatus = 'arrived' | 'in_progress' | 'finished' | 'cancelled';
-export type PaymentMethod = 'cash' | 'transfer' | 'insurance' | 'bpjs';
+export type PaymentMethod = 'cash' | 'transfer' | 'qris' | 'insurance' | 'bpjs';
 
 export interface VisitReportQuery {
   dateFrom: string;
@@ -22,6 +23,22 @@ export interface VisitReportResponse {
   };
   byDay: { date: string; count: number }[];
   byDoctor: { practitionerName: string; count: number }[];
+  demographics: {
+    byGender: { gender: 'male' | 'female' | null; count: number }[];
+    byAgeGroup: { group: string; count: number }[];
+    newVsReturning: { new: number; returning: number };
+  };
+  procedureMix: {
+    topProcedures: { tarifName: string; kategori: string; count: number }[];
+    byKategori: { kategori: string; count: number }[];
+    avgProceduresPerVisit: number;
+  };
+  byHour: { hour: number; count: number }[];
+  byDayOfWeek: { day: string; count: number }[];
+  comparison: {
+    previousTotal: number;
+    changePercent: number | null;
+  };
   encounters: {
     encounterId: number;
     date: string;
@@ -39,6 +56,25 @@ export interface FinancialReportQuery {
   type?: 'summary' | 'detailed';
 }
 
+export interface FinancialPaymentStats {
+  lunas: { count: number; amount: number };
+  /** Bills whose first payment was a DP; open* are the ones still partial. */
+  dp: { count: number; dpTotal: number; settledCount: number; openCount: number; openPaid: number; openOutstanding: number };
+  unpaid: { count: number; amount: number };
+  /** Rp 0 bills: follow-up already paid for, free consultation. */
+  free: { count: number };
+}
+
+export interface FinancialDiscountStats {
+  totalDiscount: number;
+  itemDiscount: number;
+  billDiscount: number;
+  billingsWithDiscount: number;
+  billCount: number;
+  grossBeforeDiscount: number;
+  discountRate: number;
+}
+
 export interface FinancialReportResponse {
   summary: {
     totalBilling: number;
@@ -47,12 +83,128 @@ export interface FinancialReportResponse {
     collectionRate: number;
     totalRefunded: number;
   };
+  comparison: {
+    previousPendapatan: number;
+    changePercent: number | null;
+  };
   byDay: { date: string; revenue: number; collected: number }[];
   byPaymentMethod: { method: PaymentMethod; amount: number }[];
-  byDoctor: { practitionerName: string; revenue: number }[];
+  byDoctor: { practitionerName: string; revenue: number; doctorFeeShare: number }[];
+  ringkasan: {
+    pendapatanTotal: number;
+    modal: number;
+    labaBersih: number;
+    pengeluaran: number;
+    marginPersen: number;
+  };
+  tindakanTerlaris: {
+    tarifId: number;
+    namaTindakan: string;
+    modal: number;
+    hargaJual: number;
+    frekuensi: number;
+    totalDiskon: number;
+    labaBersih: number;
+  }[];
+  /** Bills in the period by how they were paid. Missing on older backends. */
+  paymentStats?: FinancialPaymentStats;
+  /** Discounts given in the period. Missing on older backends. */
+  discountStats?: FinancialDiscountStats;
+  businessMetrics: {
+    ltv: { averageLtv: number; averageVisitsPerPatient: number; patientCount: number };
+    arpv: number;
+    pareto: { top20PercentPatientShare: number; patientCount: number };
+    dso: { averageDays: number; outstandingCount: number };
+    retention: {
+      retentionRatePercent: number | null;
+      previousPeriodPatients: number;
+      returningPatients: number;
+    };
+    categoryProfitability: {
+      kategori: string;
+      frekuensi: number;
+      pendapatan: number;
+      modal: number;
+      labaBersih: number;
+      marginPersen: number;
+    }[];
+    marketing: {
+      totalAdSpend: number;
+      newPatients: number;
+      cac: number | null;
+      ltvCacRatio: number | null;
+    };
+  };
 }
 
-function toQueryString(query: VisitReportQuery | FinancialReportQuery) {
+export interface FinancialReportProResponse extends FinancialReportResponse {
+  labaKotor: number;
+  monthlyTrend: {
+    month: string;
+    revenue: number;
+    modal: number;
+    expense: number;
+    netProfit: number;
+    marginPercent: number;
+    visits: number;
+    newPatients: number;
+  }[];
+  byDoctorProfit: { practitionerName: string; revenue: number; doctorFeeShare: number; labaBersih: number }[];
+  discountRanking: {
+    tarifId: number;
+    namaTindakan: string;
+    modal: number;
+    hargaJual: number;
+    frekuensi: number;
+    totalDiskon: number;
+    labaBersih: number;
+  }[];
+  visitHeatmap: { dayOfWeek: number; hour: number; count: number }[];
+  stockReport: {
+    totalInventoryValue: number;
+    totalActiveItems: number;
+    usage: { barangId: number; barangName: string; satuan: string; qtyUsed: number; totalCost: number }[];
+  };
+}
+
+export interface PatientOriginPoint {
+  kecamatan: string;
+  city: string;
+  count: number;
+  lat: number | null;
+  lng: number | null;
+  resolved: boolean;
+}
+
+export interface PatientOriginKelurahan {
+  kelurahan: string;
+  kecamatan: string | null;
+  city: string | null;
+  count: number;
+}
+
+export interface FinancialVisitDetailQuery {
+  dateFrom: string;
+  dateTo: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface FinancialVisitDetailResponse {
+  data: {
+    encounterId: number;
+    patientName: string;
+    birthDate: string | null;
+    tindakan: string;
+    jamMasuk: string;
+    jamKeluar: string | null;
+  }[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+function toQueryString(
+  query: VisitReportQuery | FinancialReportQuery | FinancialVisitDetailQuery,
+) {
   return new URLSearchParams(
     Object.fromEntries(
       Object.entries(query as unknown as Record<string, unknown>)
@@ -68,4 +220,63 @@ export const reportsApi = {
 
   getFinancial: (query: FinancialReportQuery) =>
     apiClient.get<FinancialReportResponse>(`/reports/financial?${toQueryString(query)}`),
+
+  getFinancialVisitDetail: (query: FinancialVisitDetailQuery) =>
+    apiClient.get<FinancialVisitDetailResponse>(
+      `/reports/financial/visit-detail?${toQueryString(query)}`,
+    ),
+
+  getFinancialPro: (query: FinancialReportQuery) =>
+    apiClient.get<FinancialReportProResponse>(`/reports/financial-pro?${toQueryString(query)}`),
+
+  getPatientOriginMap: () =>
+    apiClient.get<PatientOriginPoint[]>('/reports/financial-pro/patient-origin-map'),
+  getPatientOriginByKelurahan: () =>
+    apiClient.get<PatientOriginKelurahan[]>('/reports/financial-pro/patient-origin-kelurahan'),
+
+  downloadFinancialProPdf: async (query: FinancialReportQuery) => {
+    const res = await fetch(`${API_BASE}/reports/financial-pro/pdf?${toQueryString(query)}`);
+    if (!res.ok) {
+      let message = 'Gagal mengunduh laporan keuangan PDF';
+      try {
+        const body = await res.json();
+        if (body?.error?.message) message = body.error.message;
+      } catch {
+        // ignore — fall back to the generic message
+      }
+      throw new ApiError(message, res.status);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `laporan-keuangan_${query.dateFrom}_${query.dateTo}.pdf`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  },
+
+  downloadInvestorReportPdf: async () => {
+    const res = await fetch(`${API_BASE}/reports/investor/pdf`);
+    if (!res.ok) {
+      let message = 'Gagal mengunduh laporan investor';
+      try {
+        const body = await res.json();
+        if (body?.error?.message) message = body.error.message;
+      } catch {
+        // ignore — fall back to the generic message
+      }
+      throw new ApiError(message, res.status);
+    }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = 'laporan-investor.pdf';
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  },
 };

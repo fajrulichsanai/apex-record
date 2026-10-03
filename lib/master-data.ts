@@ -112,3 +112,40 @@ export const wilayahV2Api = {
     },
   ) => apiClient.get<WilayahV2Response>(`/api/master-data/v2/${level}?${toQueryString(query)}`),
 };
+
+// ── Kamus Farmasi & Alat Kesehatan (KFA) SATUSEHAT ───────────────────────
+
+export interface KfaCoding {
+  code: string;
+  name: string;
+}
+
+export interface KfaProduct {
+  kfaCode: string;
+  name: string;
+  active: boolean;
+  group: string | null;
+  dosageForm: KfaCoding | null;
+  route: KfaCoding | null;
+  uom: string | null;
+  manufacturer: string | null;
+  nie: string | null;
+  generic: boolean | null;
+  template: KfaCoding | null;
+  activeIngredients: { kfaCode: string; name: string; strength: string | null }[];
+}
+
+export interface KfaSearchResult {
+  total: number;
+  page: number;
+  size: number;
+  items: KfaProduct[];
+}
+
+export const kfaApi = {
+  search: (keyword: string, page = 1, size = 20) =>
+    apiClient.get<KfaSearchResult>(
+      `/api/master-data/kfa/products?${toQueryString({ keyword, page, size, product_type: 'farmasi' })}`,
+    ),
+  get: (kfaCode: string) => apiClient.get<KfaProduct>(`/api/master-data/kfa/products/${kfaCode}`),
+};

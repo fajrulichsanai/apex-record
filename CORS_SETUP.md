@@ -1,5 +1,9 @@
 # CORS Setup untuk ApexRecord
 
+> **Usang.** Browser sekarang memanggil backend lewat proxy same-origin
+> `/api/backend/*` dengan cookie httpOnly, jadi `/api/*` sengaja tidak lagi
+> mengirim `Access-Control-Allow-Origin: *`. Lihat `docs/SESSION.md`.
+
 Dokumentasi lengkap untuk konfigurasi CORS di Next.js project ApexRecord.
 
 ## Overview
@@ -134,3 +138,5 @@ Untuk development, frontend dan API bisa same-origin (`http://localhost:3000`).
 3. Add email verification
 4. Implement login endpoint
 5. Add more API routes dengan CORS configuration sesuai kebutuhan
+
+test

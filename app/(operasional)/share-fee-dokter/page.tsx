@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
+import { useAuth } from '@/lib/auth-context';
+import { canAccessFeature } from '@/lib/permissions';
 import { doctorFeeApi, type DoctorFeeConfig } from '@/lib/doctor-fee';
 import FeeConfigTable from './FeeConfigTable';
 import MonthlyReportPanel from './MonthlyReportPanel';
@@ -14,10 +16,14 @@ export default function ShareFeeDokterPage() {
   const [tab, setTab] = useState<TabValue>('config');
   const [configs, setConfigs] = useState<DoctorFeeConfig[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { user } = useAuth();
+  const allowed = canAccessFeature(user?.role, 'share-fee-dokter');
 
   useEffect(() => {
-    doctorFeeApi.listConfigs().then(setConfigs);
-  }, [refreshKey]);
+    // FeatureGuard hides the page for other roles, but this effect runs anyway.
+    if (!allowed) return;
+    doctorFeeApi.listConfigs().then(setConfigs).catch(() => setConfigs([]));
+  }, [refreshKey, allowed]);
 
   const totalConfigured = configs.length;
   const percentageConfigs = configs.filter((c) => c.feeType === 'percentage');
@@ -43,6 +49,7 @@ export default function ShareFeeDokterPage() {
           <button
             type="button"
             className={`filter-tab ${tab === 'config' ? 'active' : ''}`}
+            aria-pressed={tab === 'config'}
             onClick={() => setTab('config')}
           >
             Konfigurasi Fee
@@ -50,6 +57,7 @@ export default function ShareFeeDokterPage() {
           <button
             type="button"
             className={`filter-tab ${tab === 'report' ? 'active' : ''}`}
+            aria-pressed={tab === 'report'}
             onClick={() => setTab('report')}
           >
             Laporan Bulanan
@@ -61,7 +69,7 @@ export default function ShareFeeDokterPage() {
             <div className="stat-grid">
               <div className="stat-card total">
                 <div className="stat-icon">
-                  <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                     medical_services
                   </span>
                 </div>
@@ -72,7 +80,7 @@ export default function ShareFeeDokterPage() {
               </div>
               <div className="stat-card rata">
                 <div className="stat-icon">
-                  <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                     percent
                   </span>
                 </div>
@@ -83,7 +91,7 @@ export default function ShareFeeDokterPage() {
               </div>
               <div className="stat-card fixed">
                 <div className="stat-icon">
-                  <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                     payments
                   </span>
                 </div>

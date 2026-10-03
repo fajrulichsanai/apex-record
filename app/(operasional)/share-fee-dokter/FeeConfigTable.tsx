@@ -91,7 +91,7 @@ export default function FeeConfigTable({ onChanged }: FeeConfigTableProps) {
     return (
       <div className="empty-list">
         <div className="empty-icon-wrap">
-          <span className="material-symbols-rounded">hourglass_empty</span>
+          <span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span>
         </div>
         <div className="empty-title">Memuat konfigurasi fee...</div>
       </div>
@@ -102,7 +102,7 @@ export default function FeeConfigTable({ onChanged }: FeeConfigTableProps) {
     return (
       <div className="empty-list">
         <div className="empty-icon-wrap">
-          <span className="material-symbols-rounded">search_off</span>
+          <span aria-hidden="true" className="material-symbols-rounded">search_off</span>
         </div>
         <div className="empty-title">Belum ada tindakan/tarif terdaftar</div>
         <div className="empty-sub">Tambahkan tarif terlebih dahulu di halaman Tarif & Tindakan</div>

@@ -70,7 +70,17 @@ const exportReportToExcel = (reports: DoctorMonthlyShareReport[], year: number, 
   document.body.removeChild(link);
 };
 
-export default function MonthlyReportPanel() {
+interface MonthlyReportPanelProps {
+  /**
+   * Restricted mode for the dokter's own "Share Fee Saya" page: the backend
+   * already scopes the API response to just the caller's own practitionerId
+   * (see reports.controller.ts), so there is only ever one entry — hide the
+   * multi-doctor picker list and show the breakdown directly, full width.
+   */
+  selfView?: boolean;
+}
+
+export default function MonthlyReportPanel({ selfView = false }: MonthlyReportPanelProps) {
   const { success, error, warning } = useToast();
   const now = new Date();
   const [year, setYear] = useState(String(now.getFullYear()));
@@ -79,10 +89,11 @@ export default function MonthlyReportPanel() {
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
+  const currentYear = now.getFullYear();
   const yearOptions = useMemo(() => {
-    const years = [now.getFullYear(), now.getFullYear() - 1, now.getFullYear() - 2];
+    const years = [currentYear, currentYear - 1, currentYear - 2];
     return years.map((y) => ({ value: String(y), label: String(y) }));
-  }, [now]);
+  }, [currentYear]);
 
   useEffect(() => {
     let active = true;
@@ -130,7 +141,7 @@ export default function MonthlyReportPanel() {
             success('Laporan share fee telah diekspor ke Excel');
           }}
         >
-          <span className="material-symbols-rounded">download</span>
+          <span aria-hidden="true" className="material-symbols-rounded">download</span>
           Ekspor
         </button>
       </div>
@@ -138,26 +149,39 @@ export default function MonthlyReportPanel() {
       {loading ? (
         <div className="empty-list">
           <div className="empty-icon-wrap">
-            <span className="material-symbols-rounded">hourglass_empty</span>
+            <span aria-hidden="true" className="material-symbols-rounded">hourglass_empty</span>
           </div>
           <div className="empty-title">Memuat laporan...</div>
         </div>
       ) : reports.length === 0 ? (
         <div className="empty-list">
           <div className="empty-icon-wrap">
-            <span className="material-symbols-rounded">search_off</span>
+            <span aria-hidden="true" className="material-symbols-rounded">search_off</span>
           </div>
           <div className="empty-title">Tidak ada tindakan pada periode ini</div>
-          <div className="empty-sub">Pilih bulan/tahun lain atau pastikan tindakan sudah dicatat</div>
+          <div className="empty-sub">
+            {selfView
+              ? 'Belum ada tindakan Anda yang tercatat pada bulan/tahun ini'
+              : 'Pilih bulan/tahun lain atau pastikan tindakan sudah dicatat'}
+          </div>
         </div>
       ) : (
-        <div className="report-layout">
+        <div className={`report-layout ${selfView ? 'self-view' : ''}`}>
           <div className="dokter-list">
             {reports.map((r) => (
               <div
                 key={r.practitionerId}
                 className={`dokter-row ${selectedId === r.practitionerId ? 'active' : ''}`}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedId === r.practitionerId}
                 onClick={() => setSelectedId(r.practitionerId)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedId(r.practitionerId);
+                  }
+                }}
               >
                 <div className="dokter-avatar">{initialsFromName(r.practitionerName)}</div>
                 <div className="dokter-info">
@@ -208,7 +232,7 @@ export default function MonthlyReportPanel() {
             ) : (
               <div className="empty-list">
                 <div className="empty-icon-wrap">
-                  <span className="material-symbols-rounded">person</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">person</span>
                 </div>
                 <div className="empty-title">Pilih dokter untuk melihat rincian</div>
               </div>

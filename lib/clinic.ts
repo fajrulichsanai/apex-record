@@ -23,6 +23,7 @@ export interface ClinicResponse {
   sipNumber?: string;
   operationalHours?: Record<string, string>;
   setupComplete: boolean;
+  logoUrl?: string | null;
 }
 
 export interface UpdateClinicPayload {
@@ -86,4 +87,11 @@ export function daysToOperationalHours(days: ClinicDayHours[]): Record<string, s
 export const clinicApi = {
   get: () => apiClient.get<ClinicResponse>('/settings/clinic'),
   update: (payload: UpdateClinicPayload) => apiClient.put<ClinicResponse>('/settings/clinic', payload),
+  /** Super Admin only — every clinic (tenant), not just the caller's own. */
+  listAll: () => apiClient.get<ClinicResponse[]>('/clinics'),
+  uploadLogo: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return apiClient.postForm<{ logoUrl: string }>('/settings/clinic/logo', form);
+  },
 };

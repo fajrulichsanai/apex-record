@@ -9,10 +9,13 @@ import { apiClient, ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import type { User, RoleOption } from '@/types/user';
 import type { Clinic } from '@/types/clinic';
+import SettingsTabs from '@/components/settings/SettingsTabs';
+import { pressable, useEscapeKey } from '@/lib/a11y';
 import '../styles/user-management.css';
 
 const ROLE_LABEL: Record<string, string> = {
   super_admin: 'Super Admin',
+  multi_clinic_owner: 'Multi-Klinik Owner',
   owner: 'Owner',
   admin: 'Admin',
   dokter: 'Dokter',
@@ -85,6 +88,10 @@ export default function UserManagementPage() {
     cancelText: 'Batalkan',
     isDangerous: false,
   });
+
+  useEscapeKey(() => setInviteModalOpen(false), inviteModalOpen);
+  useEscapeKey(() => setEditRoleModalOpen(false), editRoleModalOpen);
+  useEscapeKey(() => setConfirmModal((prev) => ({ ...prev, isOpen: false })), confirmModal.isOpen);
 
   const loadUsers = async () => {
     try {
@@ -248,6 +255,7 @@ export default function UserManagementPage() {
     <DashboardLayout>
       <FeatureGuard feature="user-management">
       <main className="content user-mgmt-page">
+        <SettingsTabs />
         {/* Page header */}
         <div className="page-header">
           <div className="page-header-icon">
@@ -485,21 +493,21 @@ export default function UserManagementPage() {
                 <div className="search-methods">
                   <div
                     className={`method-btn ${searchMethod === 'nik' ? 'active' : ''}`}
-                    onClick={() => setSearchMethod('nik')}
+                    {...pressable(() => setSearchMethod('nik'))}
                   >
                     <div className="method-btn-label">NIK</div>
                     <div className="method-btn-sub">16 digit KTP</div>
                   </div>
                   <div
                     className={`method-btn ${searchMethod === 'nama' ? 'active' : ''}`}
-                    onClick={() => setSearchMethod('nama')}
+                    {...pressable(() => setSearchMethod('nama'))}
                   >
                     <div className="method-btn-label">Nama</div>
                     <div className="method-btn-sub">Nama + TTL</div>
                   </div>
                   <div
                     className={`method-btn ${searchMethod === 'id' ? 'active' : ''}`}
-                    onClick={() => setSearchMethod('id')}
+                    {...pressable(() => setSearchMethod('id'))}
                   >
                     <div className="method-btn-label">ID</div>
                     <div className="method-btn-sub">ID Practitioner</div>
@@ -655,7 +663,7 @@ export default function UserManagementPage() {
                 <div
                   key={r.value}
                   className={`role-card ${inviteForm.role === r.value ? 'selected' : ''}`}
-                  onClick={() => setInviteForm((f) => ({ ...f, role: r.value }))}
+                  {...pressable(() => setInviteForm((f) => ({ ...f, role: r.value })))}
                 >
                   <div className="role-card-label">{r.label}</div>
                 </div>
@@ -711,7 +719,7 @@ export default function UserManagementPage() {
                 <div
                   key={r.value}
                   className={`role-card ${editRole === r.value ? 'selected' : ''}`}
-                  onClick={() => setEditRole(r.value)}
+                  {...pressable(() => setEditRole(r.value))}
                 >
                   <div className="role-card-label">{r.label}</div>
                 </div>
@@ -738,7 +746,7 @@ export default function UserManagementPage() {
           }}
         >
           <div className="confirmation-modal">
-            <div className="confirmation-icon-wrapper" style={{ color: confirmModal.isDangerous ? '#EF4444' : '#3B82F6' }}>
+            <div className="confirmation-icon-wrapper" style={{ color: confirmModal.isDangerous ? '#C1381F' : '#1D5FAE' }}>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 {confirmModal.isDangerous ? (
                   <path

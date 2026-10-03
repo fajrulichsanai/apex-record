@@ -20,13 +20,14 @@ import { useToast } from '@/lib/toast-context';
 const PAGE_SIZE = 20;
 
 const TYPE_HINTS: Partial<Record<SatusehatResourceType, string>> = {
+  Encounter:
+    'Kirim = kirim seluruh data kunjungan sesuai Playbook RME Rawat Jalan: pasien, nakes, lokasi → kunjungan → tanda vital & OHIS → diagnosis (SOAP) → tindakan (tarif ber-ICD-9) → resep (KFA) → kunjungan selesai. Kunjungan yang selesai juga terkirim otomatis.',
   Patient: 'Kirim = cari IHS Number pasien di SATUSEHAT berdasarkan NIK. Pasien tanpa NIK tidak bisa diverifikasi.',
   Practitioner: 'Kirim = cari IHS tenaga kesehatan di SATUSEHAT berdasarkan NIK.',
   Location: 'Kirim = daftarkan ruangan sebagai resource Location milik organisasi klinik.',
-  Encounter:
-    'Kirim = kirim seluruh data kunjungan sesuai Playbook RME Rawat Jalan: pasien, nakes, lokasi → kunjungan → anamnesis → tanda vital & OHIS → diagnosis → tindakan → resep & pengeluaran obat → kunjungan selesai. Kunjungan yang selesai juga terkirim otomatis.',
-  MedicationRequest: 'Resep hanya bisa dikirim bila obatnya sudah memiliki kode KFA (menu Kode KFA Obat).',
-  MedicationDispense: 'Pengeluaran obat dikirim setelah resepnya terkirim.',
+  Procedure: 'Hanya item tagihan yang tarifnya memiliki kode ICD-9-CM. Kirim = kirim ulang kunjungannya.',
+  MedicationRequest:
+    'Resep hanya bisa dikirim bila obatnya dipilih dari pencarian KFA di form resep. Kirim = kirim ulang kunjungannya.',
 };
 
 function isResourceType(v: string | null): v is SatusehatResourceType {

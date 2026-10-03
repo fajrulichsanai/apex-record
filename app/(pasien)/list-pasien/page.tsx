@@ -1,11 +1,12 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
-import { patientsApi, Patient, Encounter, ApiGender } from '@/lib/patients';
+import { patientsApi, Patient, Encounter, ApiGender, TimelineItem } from '@/lib/patients';
 import { ApiError } from '@/lib/api-client';
+import { pressable, useEscapeKey } from '@/lib/a11y';
 import '../../styles/list-pasien.css';
 
 type UiGender = 'laki-laki' | 'perempuan' | 'bayi';
@@ -72,6 +73,30 @@ const ENCOUNTER_STATUS_LABEL: Record<string, string> = {
   cancelled: 'Dibatalkan',
 };
 
+const TIMELINE_TYPE_META: Record<
+  TimelineItem['type'],
+  { label: string; icon: string; dot: string }
+> = {
+  kunjungan: { label: 'Kunjungan', icon: 'calendar_month', dot: 'var(--info)' },
+  billing: { label: 'Invoice', icon: 'receipt_long', dot: 'var(--accent)' },
+  foto: { label: 'Foto Klinis', icon: 'photo_camera', dot: 'var(--orange)' },
+  treatment_plan: { label: 'Treatment Plan', icon: 'timeline', dot: 'var(--violet)' },
+  recall: { label: 'Recall', icon: 'event_repeat', dot: '#FF6B9D' },
+};
+
+function formatDateTime(dateStr?: string) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('id-ID', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function ListPasienContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -83,11 +108,19 @@ function ListPasienContent() {
   const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
   const [showDetailOnMobile, setShowDetailOnMobile] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  useEscapeKey(() => setShowDeleteConfirm(false), showDeleteConfirm);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const [encounters, setEncounters] = useState<Encounter[]>([]);
   const [encountersLoading, setEncountersLoading] = useState(false);
+
+
+  const [detailTab, setDetailTab] = useState<'ringkasan' | 'timeline'>('ringkasan');
+  const [timeline, setTimeline] = useState<TimelineItem[]>([]);
+  const [timelineLoading, setTimelineLoading] = useState(false);
+
+  const detailPanelRef = useRef<HTMLDivElement>(null);
 
   const loadPatients = useCallback(async () => {
     setLoading(true);
@@ -137,6 +170,26 @@ function ListPasienContent() {
     };
   }, [selectedPatient]);
 
+  useEffect(() => {
+    if (!selectedPatient || detailTab !== 'timeline') return;
+    let active = true;
+    setTimelineLoading(true);
+    patientsApi
+      .getTimeline(selectedPatient.id)
+      .then((data) => {
+        if (active) setTimeline(data);
+      })
+      .catch(() => {
+        if (active) setTimeline([]);
+      })
+      .finally(() => {
+        if (active) setTimelineLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [selectedPatient, detailTab]);
+
   const totalCount = patients.length;
   const maleCount = patients.filter((p) => apiGenderToUi(p) === 'laki-laki').length;
   const femaleCount = patients.filter((p) => apiGenderToUi(p) === 'perempuan').length;
@@ -145,7 +198,14 @@ function ListPasienContent() {
   const handleSelectPatient = (id: number) => {
     setSelectedPatientId(id);
     setShowDetailOnMobile(true);
+    setDetailTab('ringkasan');
   };
+
+  useEffect(() => {
+    if (showDetailOnMobile && window.innerWidth <= 900) {
+      detailPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [selectedPatientId, showDetailOnMobile]);
 
   const handleSetFilter = (filter: FilterValue) => {
     setCurrentFilter(filter);
@@ -190,7 +250,7 @@ function ListPasienContent() {
             <p className="page-subtitle">Kelola seluruh data pasien klinik Anda</p>
           </div>
           <button className="btn-primary" onClick={handleAddPatient}>
-            <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+            <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>
               add
             </span>
             Tambah Pasien
@@ -199,9 +259,9 @@ function ListPasienContent() {
 
         {/* Stats */}
         <div className="stat-grid">
-          <div className="stat-card total" onClick={() => handleSetFilter('semua')}>
+          <div className="stat-card total" {...pressable(() => handleSetFilter('semua'))}>
             <div className="stat-icon">
-              <span
+              <span aria-hidden="true"
                 className="material-symbols-rounded"
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
@@ -213,9 +273,9 @@ function ListPasienContent() {
               <div className="stat-label">Total Pasien</div>
             </div>
           </div>
-          <div className="stat-card male" onClick={() => handleSetFilter('laki-laki')}>
+          <div className="stat-card male" {...pressable(() => handleSetFilter('laki-laki'))}>
             <div className="stat-icon">
-              <span
+              <span aria-hidden="true"
                 className="material-symbols-rounded"
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
@@ -227,9 +287,9 @@ function ListPasienContent() {
               <div className="stat-label">Laki-laki</div>
             </div>
           </div>
-          <div className="stat-card female" onClick={() => handleSetFilter('perempuan')}>
+          <div className="stat-card female" {...pressable(() => handleSetFilter('perempuan'))}>
             <div className="stat-icon">
-              <span
+              <span aria-hidden="true"
                 className="material-symbols-rounded"
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
@@ -241,9 +301,9 @@ function ListPasienContent() {
               <div className="stat-label">Perempuan</div>
             </div>
           </div>
-          <div className="stat-card baby" onClick={() => handleSetFilter('bayi')}>
+          <div className="stat-card baby" {...pressable(() => handleSetFilter('bayi'))}>
             <div className="stat-icon">
-              <span
+              <span aria-hidden="true"
                 className="material-symbols-rounded"
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
@@ -263,7 +323,7 @@ function ListPasienContent() {
           <div className="panel">
             <div className="panel-toolbar">
               <div className="search-box">
-                <span className="material-symbols-rounded">search</span>
+                <span aria-hidden="true" className="material-symbols-rounded">search</span>
                 <input
                   type="text"
                   placeholder="Cari nama, No. RM, NIK…"
@@ -307,7 +367,7 @@ function ListPasienContent() {
 
             {loadError && (
               <div className="satusehat-empty">
-                <span className="material-symbols-rounded">error</span>
+                <span aria-hidden="true" className="material-symbols-rounded">error</span>
                 <div className="empty-title">Gagal memuat data</div>
                 <div className="empty-sub">{loadError}</div>
               </div>
@@ -322,7 +382,7 @@ function ListPasienContent() {
                     <div
                       key={patient.id}
                       className={`patient-item ${patient.id === selectedPatientId ? 'selected' : ''}`}
-                      onClick={() => handleSelectPatient(patient.id)}
+                      {...pressable(() => handleSelectPatient(patient.id))}
                     >
                       <div className={`patient-avatar ${genderTagClass(uiGender)}`}>
                         {initialsFromName(patient.name)}
@@ -342,7 +402,7 @@ function ListPasienContent() {
                         <div
                           className={`status-dot ${patient.syncStatus === 'failed' ? 'inactive' : ''}`}
                         />
-                        <span className="material-symbols-rounded chevron-icon">
+                        <span aria-hidden="true" className="material-symbols-rounded chevron-icon">
                           chevron_right
                         </span>
                       </div>
@@ -353,11 +413,11 @@ function ListPasienContent() {
           </div>
 
           {/* Detail Panel */}
-          <div className={`detail-panel ${showDetailOnMobile ? 'show' : ''}`}>
+          <div ref={detailPanelRef} className={`detail-panel ${showDetailOnMobile ? 'show' : ''}`}>
             {!selectedPatient ? (
               <div className="detail-empty">
                 <div className="empty-icon-wrap">
-                  <span className="material-symbols-rounded">person_search</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">person_search</span>
                 </div>
                 <div className="empty-title">Belum ada pasien dipilih</div>
                 <div className="empty-sub">
@@ -367,7 +427,9 @@ function ListPasienContent() {
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', flex: 1 }}>
                 <div className="detail-header">
-                  <div className="detail-avatar">{initialsFromName(selectedPatient.name)}</div>
+                  <div className={`detail-avatar ${genderTagClass(apiGenderToUi(selectedPatient))}`}>
+                    {initialsFromName(selectedPatient.name)}
+                  </div>
                   <div className="detail-name-block">
                     <div className="detail-name">{selectedPatient.name}</div>
                     <div className="detail-rm">No. Rekam Medis: {selectedPatient.noRm}</div>
@@ -387,19 +449,26 @@ function ListPasienContent() {
                     </div>
                   </div>
                   <div className="detail-actions">
+                    <button
+                      className="btn-outline"
+                      onClick={() => router.push(`/list-pasien/${selectedPatient.id}/rekam-medis`)}
+                    >
+                      <span aria-hidden="true" className="material-symbols-rounded">folder_shared</span>
+                      Rekam Medis
+                    </button>
                     <button className="btn-outline" onClick={handleEditPatient}>
-                      <span className="material-symbols-rounded">edit</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">edit</span>
                       Edit
                     </button>
-                    <button
+                    <button aria-label="Hapus pasien"
                       className="btn-outline danger"
-                      style={{ color: '#FF4D4F', borderColor: '#FFCCC7' }}
+                      style={{ color: 'var(--red)', borderColor: 'rgba(193,56,31,.35)' }}
                       onClick={() => {
                         setDeleteError(null);
                         setShowDeleteConfirm(true);
                       }}
                     >
-                      <span className="material-symbols-rounded">delete</span>
+                      <span aria-hidden="true" className="material-symbols-rounded">delete</span>
                     </button>
                   </div>
                 </div>
@@ -440,29 +509,87 @@ function ListPasienContent() {
                   </div>
                 </div>
 
-                <div className="detail-section">
-                  <div className="section-title">
-                    <span className="material-symbols-rounded">calendar_month</span>
-                    Riwayat Kunjungan
-                  </div>
-                  {encountersLoading && <div className="empty-sub">Memuat riwayat kunjungan…</div>}
-                  {!encountersLoading && encounters.length === 0 && (
-                    <div className="empty-sub">Belum ada riwayat kunjungan.</div>
-                  )}
-                  {!encountersLoading &&
-                    encounters.map((enc) => (
-                      <div className="visit-item" key={enc.id}>
-                        <div className="visit-dot" />
-                        <div className="visit-info">
-                          <div className="visit-type">{enc.serviceType}</div>
-                          <div className="visit-date">
-                            {formatDate(enc.arrivedTime)} ·{' '}
-                            {ENCOUNTER_STATUS_LABEL[enc.status] ?? enc.status}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                <div className="detail-tabs">
+                  <button
+                    type="button"
+                    className={`filter-tab ${detailTab === 'ringkasan' ? 'active' : ''}`}
+                    onClick={() => setDetailTab('ringkasan')}
+                  >
+                    Ringkasan
+                  </button>
+                  <button
+                    type="button"
+                    className={`filter-tab ${detailTab === 'timeline' ? 'active' : ''}`}
+                    onClick={() => setDetailTab('timeline')}
+                  >
+                    Timeline Aktivitas
+                  </button>
                 </div>
+
+                {detailTab === 'ringkasan' && (
+                  <>
+                    <div className="detail-section">
+                      <div className="section-title">
+                        <span aria-hidden="true" className="material-symbols-rounded">calendar_month</span>
+                        Riwayat Kunjungan
+                      </div>
+                      {encountersLoading && <div className="empty-sub">Memuat riwayat kunjungan…</div>}
+                      {!encountersLoading && encounters.length === 0 && (
+                        <div className="empty-sub">Belum ada riwayat kunjungan.</div>
+                      )}
+                      {!encountersLoading &&
+                        encounters.map((enc) => (
+                          <div className="visit-item" key={enc.id}>
+                            <div className="visit-dot" />
+                            <div className="visit-info">
+                              <div className="visit-type">{enc.serviceType}</div>
+                              <div className="visit-date">
+                                {formatDate(enc.arrivedTime)} ·{' '}
+                                {ENCOUNTER_STATUS_LABEL[enc.status] ?? enc.status}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </>
+                )}
+
+                {detailTab === 'timeline' && (
+                  <div className="detail-section">
+                    <div className="section-title">
+                      <span aria-hidden="true" className="material-symbols-rounded">history</span>
+                      Timeline Aktivitas Pasien
+                    </div>
+                    {timelineLoading && <div className="empty-sub">Memuat timeline aktivitas…</div>}
+                    {!timelineLoading && timeline.length === 0 && (
+                      <div className="empty-sub">Belum ada aktivitas tercatat.</div>
+                    )}
+                    {!timelineLoading &&
+                      timeline.map((item, idx) => {
+                        const meta = TIMELINE_TYPE_META[item.type];
+                        return (
+                          <div className="visit-item" key={`${item.type}-${idx}`}>
+                            <div className="visit-dot" style={{ background: meta.dot }} />
+                            <div className="visit-info">
+                              <div className="visit-type" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span aria-hidden="true"
+                                  className="material-symbols-rounded"
+                                  style={{ fontSize: '14px', color: meta.dot }}
+                                >
+                                  {meta.icon}
+                                </span>
+                                {item.title}
+                              </div>
+                              <div className="visit-date">
+                                {formatDateTime(item.date)}
+                                {item.subtitle ? ` · ${item.subtitle}` : ''}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -475,7 +602,7 @@ function ListPasienContent() {
             <div className="modal-header">
               <div className="modal-header-title">
                 <div className="modal-header-icon">
-                  <span className="material-symbols-rounded">warning</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">warning</span>
                 </div>
                 <div>
                   <h2>Hapus Pasien</h2>
@@ -487,7 +614,7 @@ function ListPasienContent() {
                 onClick={() => setShowDeleteConfirm(false)}
                 aria-label="Tutup"
               >
-                <span className="material-symbols-rounded">close</span>
+                <span aria-hidden="true" className="material-symbols-rounded">close</span>
               </button>
             </div>
             <div className="modal-body">
@@ -498,7 +625,7 @@ function ListPasienContent() {
               </p>
               {deleteError && (
                 <div className="satusehat-empty">
-                  <span className="material-symbols-rounded">error</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">error</span>
                   <div className="empty-title">Gagal menghapus</div>
                   <div className="empty-sub">{deleteError}</div>
                 </div>
@@ -515,11 +642,11 @@ function ListPasienContent() {
               <button
                 type="button"
                 className="btn-primary"
-                style={{ background: '#FF4D4F', borderColor: '#FF4D4F' }}
+                style={{ background: 'var(--red)', borderColor: 'var(--red)' }}
                 onClick={handleDeletePatient}
                 disabled={deleting}
               >
-                <span className="material-symbols-rounded" style={{ fontSize: '18px' }}>
+                <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>
                   delete
                 </span>
                 {deleting ? 'Menghapus…' : 'Hapus Pasien'}

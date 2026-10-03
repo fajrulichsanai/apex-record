@@ -42,3 +42,16 @@ next-env.d.ts
 
 # claude-flow
 .claude-flow/
+
+# graphify
+graphify-out/
+
+# playwright MCP
+test-results/
+playwright-report/
+playwright/.cache/
+.playwright/
+.playwright-mcp/
+/*.png
+/.next-build/
+/.next-old/

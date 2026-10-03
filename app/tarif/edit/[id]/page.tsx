@@ -10,7 +10,9 @@ import { tarifApi, Tarif } from '@/lib/tarif';
 import { ApiError } from '@/lib/api-client';
 import { formatCurrencyInput, parseCurrency } from '@/lib/format';
 import { useToast } from '@/lib/toast-context';
+import BomPanel from './BomPanel';
 import '../../../styles/tarif.css';
+import '../../../styles/gudang.css';
 
 export default function EditTarifPage() {
   const router = useRouter();
@@ -89,9 +91,9 @@ export default function EditTarifPage() {
       <main className="content tarif-page">
         <div className="breadcrumb">
           <Link href="/tarif">Master Data</Link>
-          <span className="material-symbols-rounded">chevron_right</span>
+          <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
           <Link href="/tarif">Tarif</Link>
-          <span className="material-symbols-rounded">chevron_right</span>
+          <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
           <span className="breadcrumb-current">Edit</span>
         </div>
 
@@ -110,7 +112,7 @@ export default function EditTarifPage() {
           {!loading && loadError && (
             <div className="modal-body">
               <div className="satusehat-empty">
-                <span className="material-symbols-rounded">error</span>
+                <span aria-hidden="true" className="material-symbols-rounded">error</span>
                 <div className="empty-title">Gagal memuat data</div>
                 <div className="empty-sub">{loadError}</div>
               </div>
@@ -120,6 +122,7 @@ export default function EditTarifPage() {
           {!loading && !loadError && tarif && (
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
+                <h2 className="form-section-title">Informasi Tarif</h2>
                 <div className="form-row">
                   <div className="form-field full">
                     <label>Title</label>
@@ -186,13 +189,15 @@ export default function EditTarifPage() {
                   Cancel
                 </button>
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  <span className="material-symbols-rounded">save</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">save</span>
                   {submitting ? 'Menyimpan…' : 'Save'}
                 </button>
               </div>
             </form>
           )}
         </div>
+
+        {!loading && !loadError && tarif && <BomPanel tarifId={tarif.id} />}
       </main>
       </FeatureGuard>
     </DashboardLayout>

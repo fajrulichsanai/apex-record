@@ -4,11 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { FiRefreshCw } from 'react-icons/fi';
 import { Pager, SatusehatShell, SyncBadge, formatDateTime } from '@/components/satusehat/SatusehatShell';
 import {
-  RESOURCE_LABELS,
-  RESOURCE_TYPES,
+  LOG_RESOURCE_LABELS,
+  LOG_RESOURCE_TYPES,
   satusehatApi,
+  type LogResourceType,
   type Paged,
-  type SatusehatResourceType,
   type SyncLog,
 } from '@/lib/satusehat';
 import { useToast } from '@/lib/toast-context';
@@ -17,13 +17,11 @@ const PAGE_SIZE = 20;
 
 export default function SatusehatLogPage() {
   const { showToast } = useToast();
-  const [resourceType, setResourceType] = useState<SatusehatResourceType | ''>('');
+  const [resourceType, setResourceType] = useState<LogResourceType | ''>('');
   const [status, setStatus] = useState<SyncLog['status'] | ''>('');
   const [page, setPage] = useState(1);
   const [data, setData] = useState<Paged<SyncLog> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [detail, setDetail] = useState<SyncLog | null>(null);
-  const [detailLoading, setDetailLoading] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -47,25 +45,10 @@ export default function SatusehatLogPage() {
     void load();
   }, [load]);
 
-  async function openDetail(id: number) {
-    if (detail?.id === id) {
-      setDetail(null);
-      return;
-    }
-    setDetailLoading(id);
-    try {
-      setDetail(await satusehatApi.getSyncLog(id));
-    } catch (err) {
-      showToast(err instanceof Error ? err.message : 'Gagal memuat detail log', 'error');
-    } finally {
-      setDetailLoading(null);
-    }
-  }
-
   return (
     <SatusehatShell
       title="Log Sinkronisasi"
-      subtitle="Riwayat setiap pengiriman data ke SATUSEHAT beserta respons-nya"
+      subtitle="Riwayat setiap pengiriman data ke SATUSEHAT. Isi data klinis tidak disimpan di log demi keamanan."
       actions={
         <button type="button" className="ss-btn" onClick={load} disabled={loading}>
           <FiRefreshCw /> Muat ulang
@@ -79,13 +62,13 @@ export default function SatusehatLogPage() {
             value={resourceType}
             onChange={(e) => {
               setPage(1);
-              setResourceType(e.target.value as SatusehatResourceType | '');
+              setResourceType(e.target.value as LogResourceType | '');
             }}
           >
             <option value="">Semua resource</option>
-            {RESOURCE_TYPES.map((t) => (
+            {LOG_RESOURCE_TYPES.map((t) => (
               <option key={t} value={t}>
-                {RESOURCE_LABELS[t]} ({t})
+                {LOG_RESOURCE_LABELS[t]}
               </option>
             ))}
           </select>
@@ -114,69 +97,38 @@ export default function SatusehatLogPage() {
                 <th>ID SATUSEHAT</th>
                 <th>HTTP</th>
                 <th>Status</th>
-                <th />
               </tr>
             </thead>
             <tbody>
               {loading && !data ? (
                 <tr>
-                  <td colSpan={7} className="ss-empty">
+                  <td colSpan={6} className="ss-empty">
                     Memuat...
                   </td>
                 </tr>
               ) : !data || data.items.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="ss-empty">
+                  <td colSpan={6} className="ss-empty">
                     Belum ada log.
                   </td>
                 </tr>
               ) : (
-                data.items.flatMap((log) => {
-                  const rows = [
-                    <tr key={log.id}>
-                      <td style={{ whiteSpace: 'nowrap' }}>{formatDateTime(log.createdAt)}</td>
-                      <td>
-                        {RESOURCE_LABELS[log.resourceType as SatusehatResourceType] ?? log.resourceType}
-                        <span className="sub">{log.resourceType}</span>
-                        {log.errorMessage && <span className="err">{log.errorMessage}</span>}
-                      </td>
-                      <td className="ss-mono">{log.localId}</td>
-                      <td className="ss-mono">{log.satusehatId || '-'}</td>
-                      <td className="ss-mono">{log.httpStatus ?? '-'}</td>
-                      <td>
-                        <SyncBadge status={log.status} />
-                      </td>
-                      <td>
-                        <button type="button" className="ss-btn sm" onClick={() => openDetail(log.id)}>
-                          {detailLoading === log.id ? '...' : detail?.id === log.id ? 'Tutup' : 'Detail'}
-                        </button>
-                      </td>
-                    </tr>,
-                  ];
-                  if (detail?.id === log.id) {
-                    rows.push(
-                      <tr key={`${log.id}-detail`}>
-                        <td colSpan={7}>
-                          <div className="ss-grid">
-                            <div>
-                              <p className="ss-muted" style={{ marginBottom: 6 }}>
-                                Request
-                              </p>
-                              <pre className="ss-json">{JSON.stringify(detail.requestPayload ?? null, null, 2)}</pre>
-                            </div>
-                            <div>
-                              <p className="ss-muted" style={{ marginBottom: 6 }}>
-                                Response
-                              </p>
-                              <pre className="ss-json">{JSON.stringify(detail.responsePayload ?? null, null, 2)}</pre>
-                            </div>
-                          </div>
-                        </td>
-                      </tr>,
-                    );
-                  }
-                  return rows;
-                })
+                data.items.map((log) => (
+                  <tr key={log.id}>
+                    <td style={{ whiteSpace: 'nowrap' }}>{formatDateTime(log.createdAt)}</td>
+                    <td>
+                      {LOG_RESOURCE_LABELS[log.resourceType.split(':')[0] as LogResourceType] ?? log.resourceType}
+                      <span className="sub">{log.resourceType}</span>
+                      {log.errorMessage && <span className="err">{log.errorMessage}</span>}
+                    </td>
+                    <td className="ss-mono">{log.localId}</td>
+                    <td className="ss-mono">{log.satusehatId || '-'}</td>
+                    <td className="ss-mono">{log.httpStatus ?? '-'}</td>
+                    <td>
+                      <SyncBadge status={log.status} />
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>
