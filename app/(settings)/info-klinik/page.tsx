@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
+import SaranaSearchCard from '@/components/settings/SaranaSearchCard';
 import { ApiError } from '@/lib/api-client';
 import {
   clinicApi,
@@ -500,6 +501,8 @@ export default function InfoKlinikPage() {
                     })}
                   </div>
                 </div>
+
+                <SaranaSearchCard />
               </div>
             </div>
           </div>

@@ -262,3 +262,28 @@
   .info-klinik-page .page-title-row { flex-wrap: wrap; gap: 12px; }
   .info-klinik-page .page-title-text h1 { font-size: 17px; }
 }
+
+/* ── Master Sarana Index (SATUSEHAT) ── */
+.info-klinik-page .msi-search-form { display: grid; grid-template-columns: 150px 1fr auto; gap: 8px; }
+.info-klinik-page .msi-empty { margin-top: 14px; font-size: 13px; color: var(--text-mid); }
+.info-klinik-page .msi-list { list-style: none; margin: 14px 0 0; padding: 0; }
+.info-klinik-page .msi-item {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  padding: 10px 0; border-top: 1px solid var(--border, #e5e7eb);
+}
+.info-klinik-page .msi-item-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 13px; }
+.info-klinik-page .msi-item-main span { color: var(--text-mid); }
+.info-klinik-page .msi-meta { font-size: 12px; }
+.info-klinik-page .msi-copy,
+.info-klinik-page .msi-pager button {
+  flex-shrink: 0; font-size: 12px; padding: 6px 10px; border-radius: 8px;
+  border: 1px solid var(--border, #e5e7eb); background: transparent; cursor: pointer;
+}
+.info-klinik-page .msi-pager button:disabled { opacity: .5; cursor: default; }
+.info-klinik-page .msi-pager {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 12px; font-size: 12px; color: var(--text-mid);
+}
+@media (max-width: 768px) {
+  .info-klinik-page .msi-search-form { grid-template-columns: 1fr; }
+}
