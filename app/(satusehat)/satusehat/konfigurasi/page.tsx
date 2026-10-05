@@ -5,6 +5,8 @@ import Link from 'next/link';
 import { SatusehatShell, formatDateTime } from '@/components/satusehat/SatusehatShell';
 import { satusehatApi, type SatusehatConfig, type SatusehatConfigPayload } from '@/lib/satusehat';
 import { useToast } from '@/lib/toast-context';
+import { useAuth } from '@/lib/auth-context';
+import { kfaApi, type KfaCatalogStatus } from '@/lib/master-data';
 
 const EMPTY: SatusehatConfigPayload = {
   organizationId: '',
@@ -21,6 +23,28 @@ export default function SatusehatConfigPage() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const { user } = useAuth();
+  const [kfaStatus, setKfaStatus] = useState<KfaCatalogStatus | null>(null);
+  const [kfaSyncing, setKfaSyncing] = useState(false);
+
+  useEffect(() => {
+    kfaApi
+      .catalogStatus()
+      .then(setKfaStatus)
+      .catch(() => setKfaStatus(null));
+  }, []);
+
+  async function handleKfaSync(full: boolean) {
+    setKfaSyncing(true);
+    try {
+      setKfaStatus(await kfaApi.syncCatalog(full));
+      showToast('Sinkron katalog KFA dimulai di latar belakang', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Gagal memulai sinkron KFA', 'error');
+    } finally {
+      setKfaSyncing(false);
+    }
+  }
 
   useEffect(() => {
     satusehatApi
@@ -144,7 +168,7 @@ export default function SatusehatConfigPage() {
             <small>Disimpan terenkripsi di server dan tidak pernah ditampilkan kembali.</small>
           </label>
           <label>
-            Location ID Poli Gigi (opsional)
+            Location ID Poli (opsional)
             <input
               className="ss-input"
               value={form.poliLocationId ?? ''}
@@ -169,6 +193,31 @@ export default function SatusehatConfigPage() {
             <p className="ss-muted">Token aktif s/d {formatDateTime(config.tokenValidUntil)}</p>
           )}
         </form>
+      </div>
+
+      <div className="ss-card" style={{ marginTop: 16 }}>
+        <h3 style={{ margin: '0 0 8px' }}>Katalog Obat KFA</h3>
+        {kfaStatus ? (
+          <p className="ss-muted">
+            {kfaStatus.products > 0
+              ? `${kfaStatus.products.toLocaleString('id-ID')} obat tersimpan di server — pencarian obat di resep memakai data lokal.`
+              : 'Belum ada salinan lokal — pencarian obat langsung ke API KFA SATUSEHAT.'}
+            {kfaStatus.lastSyncedAt && ` Sinkron terakhir ${formatDateTime(kfaStatus.lastSyncedAt)}.`}
+            {kfaStatus.running && ' Sinkron sedang berjalan…'}
+          </p>
+        ) : (
+          <p className="ss-muted">Status katalog KFA tidak tersedia.</p>
+        )}
+        {user?.role === 'super_admin' && (
+          <div className="ss-actions">
+            <button type="button" className="ss-btn" onClick={() => handleKfaSync(false)} disabled={kfaSyncing}>
+              Sinkron perubahan
+            </button>
+            <button type="button" className="ss-btn" onClick={() => handleKfaSync(true)} disabled={kfaSyncing}>
+              Sinkron penuh
+            </button>
+          </div>
+        )}
       </div>
     </SatusehatShell>
   );

@@ -1,6 +1,22 @@
 import { apiClient } from './api-client';
 import type { SoapDiagnosis } from './terminology';
 
+export type DischargeCondition = 'stable' | 'improved' | 'worsened';
+export type Prognosis = 'good' | 'fair' | 'guarded' | 'bad';
+
+export const DISCHARGE_CONDITION_OPTIONS: { value: DischargeCondition; label: string }[] = [
+  { value: 'stable', label: 'Stabil' },
+  { value: 'improved', label: 'Membaik' },
+  { value: 'worsened', label: 'Memburuk' },
+];
+
+export const PROGNOSIS_OPTIONS: { value: Prognosis; label: string }[] = [
+  { value: 'good', label: 'Baik (bonam)' },
+  { value: 'fair', label: 'Dubia ad bonam' },
+  { value: 'guarded', label: 'Dubia ad malam' },
+  { value: 'bad', label: 'Buruk (malam)' },
+];
+
 export interface SoapNote {
   id?: number;
   encounterId?: number;
@@ -11,6 +27,12 @@ export interface SoapNote {
   treatment?: string;
   plan?: string;
   controlPlan?: string;
+  /** Data terkode untuk SATUSEHAT (RME Rawat Jalan) */
+  chiefComplaintCode?: string | null;
+  chiefComplaintDisplay?: string | null;
+  educationGiven?: boolean | null;
+  dischargeCondition?: DischargeCondition | null;
+  prognosis?: Prognosis | null;
   signature?: string;
   updatedAt?: string;
   createdAt?: string;
@@ -25,6 +47,11 @@ export interface UpsertSoapNotePayload {
   treatment?: string;
   plan?: string;
   controlPlan?: string;
+  /** Kode SNOMED keluhan utama; '' menghapus */
+  chiefComplaintCode?: string;
+  educationGiven?: boolean;
+  dischargeCondition?: DischargeCondition;
+  prognosis?: Prognosis;
   signature?: string;
 }
 

@@ -13,15 +13,28 @@ import CustomSelect from '@/components/form/CustomSelect';
 import VoiceDictationButton from '@/components/form/VoiceDictationButton';
 import SoapNoteView from '@/components/rekam-medis/SoapNoteView';
 import DiagnosisPicker from '@/components/rekam-medis/DiagnosisPicker';
+import ChiefComplaintPicker, { type ChiefComplaintValue } from '@/components/rekam-medis/ChiefComplaintPicker';
+import SsrmeButton from '@/components/satusehat/SsrmeButton';
 import type { SoapDiagnosis } from '@/lib/terminology';
 import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
 import InformedConsentPanel from '@/components/rekam-medis/InformedConsentPanel';
 import OdontogramChart from '@/components/odontogram/OdontogramChart';
 import { UPPER_ROW, LOWER_ROW, PERMANENT_TEETH, getToothLayout } from '@/components/odontogram/odontogramData';
 import { encounterApi, EncounterDetail } from '@/lib/encounter';
-import { encounterSoapApi } from '@/lib/encounter-soap';
+import {
+  encounterSoapApi,
+  DISCHARGE_CONDITION_OPTIONS,
+  PROGNOSIS_OPTIONS,
+  type DischargeCondition,
+  type Prognosis,
+} from '@/lib/encounter-soap';
 import type { ToothCondition } from '@/lib/odontogram';
-import { physicalExaminationApi, PhysicalExamination } from '@/lib/physical-examination';
+import {
+  physicalExaminationApi,
+  PhysicalExamination,
+  PSYCHOLOGICAL_STATUS_OPTIONS,
+  PREGNANCY_STATUS_OPTIONS,
+} from '@/lib/physical-examination';
 import { dentalExaminationApi, DentalExamination, ProbingDepthEntry } from '@/lib/dental-examination';
 import { reservationsApi } from '@/lib/reservations';
 import { prescriptionsApi } from '@/lib/prescriptions';
@@ -98,7 +111,10 @@ type ExamField =
   | 'abdomenAuscultation'
   | 'extremities'
   | 'genitalia'
-  | 'rectal';
+  | 'rectal'
+  | 'psychologicalStatus'
+  | 'psychologicalNote'
+  | 'pregnancyStatus';
 
 const NUMERIC_EXAM_FIELDS: ExamField[] = [
   'height',
@@ -153,6 +169,9 @@ const EMPTY_EXAM: Record<ExamField, string> = {
   extremities: '',
   genitalia: '',
   rectal: '',
+  psychologicalStatus: '',
+  psychologicalNote: '',
+  pregnancyStatus: '',
 };
 
 function examFromResponse(data: PhysicalExamination | null): Record<ExamField, string> {
@@ -260,6 +279,14 @@ function composeObjectiveFromExam(exam: Record<ExamField, string>, painPointCoun
     exam.generalCondition && `Keadaan umum: ${exam.generalCondition}`,
     exam.consciousness && `Kesadaran: ${exam.consciousness}`,
     exam.nutritionalStatus && `Status gizi: ${exam.nutritionalStatus}`,
+    exam.psychologicalStatus &&
+      `Status psikologis: ${
+        PSYCHOLOGICAL_STATUS_OPTIONS.find((o) => o.value === exam.psychologicalStatus)?.label ?? exam.psychologicalStatus
+      }${exam.psychologicalNote ? ` (${exam.psychologicalNote})` : ''}`,
+    exam.pregnancyStatus &&
+      `Status kehamilan: ${
+        PREGNANCY_STATUS_OPTIONS.find((o) => o.value === exam.pregnancyStatus)?.label ?? exam.pregnancyStatus
+      }`,
     exam.height && exam.weight && `TB/BB: ${exam.height} cm / ${exam.weight} kg`,
   ].filter(Boolean);
   if (keadaan.length) lines.push(keadaan.join(', '));
@@ -562,6 +589,11 @@ export default function RekamMedisPage() {
   // ("bukan tempat isi saja") — Edit switches to the form.
   const [soapMode, setSoapMode] = useState<'view' | 'edit'>('edit');
   const [hasSavedNote, setHasSavedNote] = useState(false);
+  // Data terkode untuk SATUSEHAT (Playbook RME Rawat Jalan)
+  const [chiefComplaint, setChiefComplaint] = useState<ChiefComplaintValue | null>(null);
+  const [educationGiven, setEducationGiven] = useState<'' | 'yes' | 'no'>('');
+  const [dischargeCondition, setDischargeCondition] = useState<DischargeCondition | ''>('');
+  const [prognosis, setPrognosis] = useState<Prognosis | ''>('');
 
   // Plan's follow-up control scheduler — creates a Reservasi automatically
   // on save so a control visit doesn't rely on the doctor remembering to
@@ -608,6 +640,14 @@ export default function RekamMedisPage() {
           setTreatment(note.treatment || '');
           setPlan(note.plan || '');
           setSavedControlPlan(note.controlPlan || '');
+          setChiefComplaint(
+            note.chiefComplaintCode
+              ? { code: note.chiefComplaintCode, display: note.chiefComplaintDisplay || note.chiefComplaintCode }
+              : null,
+          );
+          setEducationGiven(note.educationGiven === true ? 'yes' : note.educationGiven === false ? 'no' : '');
+          setDischargeCondition(note.dischargeCondition || '');
+          setPrognosis(note.prognosis || '');
           setSignature(note.signature || null);
           setSoapUpdatedAt(note.updatedAt || note.createdAt || null);
           setHasSavedNote(true);
@@ -813,6 +853,10 @@ export default function RekamMedisPage() {
         treatment: treatment.trim() || undefined,
         plan: plan.trim() || undefined,
         controlPlan: controlPlanText,
+        chiefComplaintCode: chiefComplaint?.code ?? '',
+        educationGiven: educationGiven === '' ? undefined : educationGiven === 'yes',
+        dischargeCondition: dischargeCondition || undefined,
+        prognosis: prognosis || undefined,
         signature,
       });
       setSoapUpdatedAt(saved?.updatedAt || new Date().toISOString());
@@ -871,6 +915,7 @@ export default function RekamMedisPage() {
                     {statusLabel(detail.status)}
                   </div>
                 </div>
+                <SsrmeButton encounterId={encounterId} />
               </div>
 
               <div className="rm-layout">
@@ -950,6 +995,39 @@ export default function RekamMedisPage() {
                                 disabled={submittingExam}
                               />
                             </div>
+                            <div className="visit-form-field">
+                              <label>Status Psikologis</label>
+                              <CustomSelect
+                                value={exam.psychologicalStatus}
+                                onChange={setExamValue('psychologicalStatus')}
+                                options={[{ value: '', label: 'Belum diisi' }, ...PSYCHOLOGICAL_STATUS_OPTIONS]}
+                                disabled={submittingExam}
+                              />
+                            </div>
+                            {exam.psychologicalStatus && exam.psychologicalStatus !== 'normal' && (
+                              <div className="visit-form-field">
+                                <label>Keterangan Psikologis</label>
+                                <input
+                                  type="text"
+                                  maxLength={255}
+                                  value={exam.psychologicalNote}
+                                  onChange={setExamField('psychologicalNote')}
+                                  placeholder="mis. cemas menjelang tindakan"
+                                  disabled={submittingExam}
+                                />
+                              </div>
+                            )}
+                            {detail?.patient?.gender !== 'male' && (
+                              <div className="visit-form-field">
+                                <label>Status Kehamilan</label>
+                                <CustomSelect
+                                  value={exam.pregnancyStatus}
+                                  onChange={setExamValue('pregnancyStatus')}
+                                  options={[{ value: '', label: 'Belum diisi' }, ...PREGNANCY_STATUS_OPTIONS]}
+                                  disabled={submittingExam}
+                                />
+                              </div>
+                            )}
                             <div className="visit-form-field">
                               <label>Tinggi Badan</label>
                               <div className="rm-input-unit">
@@ -1665,6 +1743,10 @@ export default function RekamMedisPage() {
                       treatment={treatment}
                       plan={plan}
                       controlPlan={savedControlPlan}
+                      chiefComplaint={chiefComplaint ? `${chiefComplaint.display} (${chiefComplaint.code})` : undefined}
+                      education={educationGiven === 'yes' ? 'Diberikan' : educationGiven === 'no' ? 'Tidak diberikan' : undefined}
+                      prognosis={PROGNOSIS_OPTIONS.find((o) => o.value === prognosis)?.label}
+                      dischargeCondition={DISCHARGE_CONDITION_OPTIONS.find((o) => o.value === dischargeCondition)?.label}
                       signature={signature}
                       updatedAtLabel={formatExamDate(soapUpdatedAt)}
                       onEdit={() => setSoapMode('edit')}
@@ -1706,6 +1788,12 @@ export default function RekamMedisPage() {
                             placeholder="Keluhan/cerita pasien menurut pasien sendiri (opsional)"
                             disabled={submitting}
                           />
+                        </div>
+
+                        <div className="visit-form-field">
+                          <label>Keluhan Utama (SNOMED CT)</label>
+                          <ChiefComplaintPicker value={chiefComplaint} onChange={setChiefComplaint} disabled={submitting} />
+                          <small className="rm-field-hint">Dikirim ke SATUSEHAT sebagai keluhan utama terkode.</small>
                         </div>
 
                         <div className="visit-form-field">
@@ -1766,6 +1854,46 @@ export default function RekamMedisPage() {
                             placeholder="Rencana untuk kunjungan berikutnya (opsional)"
                             disabled={submitting}
                           />
+                        </div>
+
+                        <div className="rm-fieldset">
+                          <div className="rm-fieldset-title">
+                            <span aria-hidden="true" className="material-symbols-rounded">assignment_turned_in</span>
+                            Edukasi, Prognosis &amp; Kondisi Pulang
+                          </div>
+                          <div className="rm-field-grid cols-3">
+                            <div className="visit-form-field">
+                              <label>Edukasi ke Pasien</label>
+                              <CustomSelect
+                                value={educationGiven}
+                                onChange={(v) => setEducationGiven(v as '' | 'yes' | 'no')}
+                                options={[
+                                  { value: '', label: 'Belum diisi' },
+                                  { value: 'yes', label: 'Diberikan' },
+                                  { value: 'no', label: 'Tidak diberikan' },
+                                ]}
+                                disabled={submitting}
+                              />
+                            </div>
+                            <div className="visit-form-field">
+                              <label>Prognosis</label>
+                              <CustomSelect
+                                value={prognosis}
+                                onChange={(v) => setPrognosis(v as Prognosis | '')}
+                                options={[{ value: '', label: 'Belum diisi' }, ...PROGNOSIS_OPTIONS]}
+                                disabled={submitting}
+                              />
+                            </div>
+                            <div className="visit-form-field">
+                              <label>Kondisi Saat Pulang</label>
+                              <CustomSelect
+                                value={dischargeCondition}
+                                onChange={(v) => setDischargeCondition(v as DischargeCondition | '')}
+                                options={[{ value: '', label: 'Belum diisi' }, ...DISCHARGE_CONDITION_OPTIONS]}
+                                disabled={submitting}
+                              />
+                            </div>
+                          </div>
                         </div>
 
                         <div className="rm-fieldset">

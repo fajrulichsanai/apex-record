@@ -148,4 +148,15 @@ export const kfaApi = {
       `/api/master-data/kfa/products?${toQueryString({ keyword, page, size, product_type: 'farmasi' })}`,
     ),
   get: (kfaCode: string) => apiClient.get<KfaProduct>(`/api/master-data/kfa/products/${kfaCode}`),
+  /** Salinan lokal katalog obat KFA di server */
+  catalogStatus: () => apiClient.get<KfaCatalogStatus>('/api/master-data/kfa/catalog/status'),
+  /** Mulai sinkron katalog (super admin); berjalan di latar belakang */
+  syncCatalog: (full = false) => apiClient.post<KfaCatalogStatus>('/api/master-data/kfa/catalog/sync', { full }),
 };
+
+export interface KfaCatalogStatus {
+  products: number;
+  lastSyncedAt: string | null;
+  lastKfaUpdate: string | null;
+  running: boolean;
+}

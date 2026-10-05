@@ -42,7 +42,7 @@ export interface EncounterDetail {
   syncStatus: SatusehatSyncStatus;
   syncError?: string;
   lastSyncAt?: string;
-  patient?: { id: number; name: string; noRm: string };
+  patient?: { id: number; name: string; noRm: string; gender?: 'male' | 'female' | null };
   practitioner?: { id: number; name: string };
   location?: { id: number; name: string };
 }

@@ -12,6 +12,11 @@ interface SoapNoteViewProps {
   treatment?: string;
   plan?: string;
   controlPlan?: string;
+  /** Data terkode SATUSEHAT, sudah dalam bentuk label */
+  chiefComplaint?: string;
+  education?: string;
+  prognosis?: string;
+  dischargeCondition?: string;
   signature?: string | null;
   updatedAtLabel?: string | null;
   onEdit: () => void;
@@ -42,6 +47,10 @@ export default function SoapNoteView({
   treatment,
   plan,
   controlPlan,
+  chiefComplaint,
+  education,
+  prognosis,
+  dischargeCondition,
   signature,
   updatedAtLabel,
   onEdit,
@@ -64,6 +73,7 @@ export default function SoapNoteView({
 
       <div className="rm-section-body">
         <ViewField label="Subjective" value={subjective} />
+        <ViewField label="Keluhan Utama (SNOMED CT)" value={chiefComplaint} />
         <ViewField label="Objective" value={objective} />
         <ViewField label="Assessment" value={assessment} />
         <div className="rm-view-field">
@@ -73,6 +83,9 @@ export default function SoapNoteView({
         <ViewField label="Treatment — tindakan pada kunjungan ini" value={treatment} />
         <ViewField label="Plan (kunjungan berikutnya)" value={plan} />
         <ViewField label="Kontrol berikutnya" value={controlPlan} />
+        <ViewField label="Edukasi ke pasien" value={education} />
+        <ViewField label="Prognosis" value={prognosis} />
+        <ViewField label="Kondisi saat pulang" value={dischargeCondition} />
 
         <div className="rm-view-field">
           <label>Tanda Tangan Dokter</label>

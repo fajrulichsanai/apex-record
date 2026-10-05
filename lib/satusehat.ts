@@ -20,6 +20,10 @@ export const LOG_RESOURCE_TYPES = [
   'Procedure',
   'Medication',
   'MedicationRequest',
+  'AllergyIntolerance',
+  'ClinicalImpression',
+  'CarePlan',
+  'ServiceRequest',
 ] as const;
 export type LogResourceType = (typeof LOG_RESOURCE_TYPES)[number];
 
@@ -42,11 +46,15 @@ export const LOG_RESOURCE_LABELS: Record<LogResourceType, string> = {
   Practitioner: 'Tenaga Kesehatan',
   Location: 'Lokasi',
   Encounter: 'Kunjungan',
-  Observation: 'Observasi (tanda vital, OHIS)',
-  Condition: 'Diagnosis',
+  Observation: 'Observasi (pemeriksaan fisik, odontogram)',
+  Condition: 'Kondisi (keluhan, riwayat, diagnosis)',
   Procedure: 'Tindakan',
   Medication: 'Obat (Medication)',
   MedicationRequest: 'Resep',
+  AllergyIntolerance: 'Alergi',
+  ClinicalImpression: 'Riwayat, rasional klinis & prognosis',
+  CarePlan: 'Rencana rawat & instruksi medik',
+  ServiceRequest: 'Rencana tindak lanjut',
 };
 
 export const SYNC_STATE_LABELS: Record<SyncState, string> = {
@@ -174,4 +182,26 @@ export const satusehatApi = {
   saveConfig: (payload: SatusehatConfigPayload) => apiClient.put<SatusehatConfig>('/satusehat/config', payload),
 
   testConnection: () => apiClient.post<{ connected: boolean; tokenExpiresAt: string }>('/satusehat/config/test'),
+};
+
+/** SATUSEHAT Rekam Medis Elektronik (SSRME) — "RME Nasional" pasien */
+export interface SsrmeConsentLink {
+  verificationUrl: string;
+  expiredAt: string | null;
+}
+
+export interface SsrmeRecordLink {
+  shlinkUrl: string;
+  expiredAt: string | null;
+  partial: boolean;
+  warnings: unknown[];
+}
+
+export const ssrmeApi = {
+  /** Link persetujuan pasien (dibuka pasien lewat SATUSEHAT Mobile) */
+  consent: (encounterId: number, emergency = false) =>
+    apiClient.post<SsrmeConsentLink>(`/satusehat/ssrme/encounters/${encounterId}/consent`, { emergency }),
+  /** Link SSRME untuk dokter; 409 CONSENT_REQUIRED bila pasien belum setuju */
+  open: (encounterId: number) =>
+    apiClient.post<SsrmeRecordLink>(`/satusehat/ssrme/encounters/${encounterId}/open`),
 };
