@@ -405,3 +405,62 @@ export const onboardingApi = {
   fixPatient: (id: number, nik?: string) =>
     apiClient.post<FixNikResult>(`/satusehat/onboarding/patients/${id}/nik`, nik ? { nik } : {}),
 };
+
+// ── Super Admin: pantauan SATUSEHAT seluruh klinik ──────────────────────
+
+export interface AdminCount {
+  total: number;
+  linked: number;
+  failed: number;
+}
+
+export type ClinicHealth = 'ok' | 'warning' | 'setup';
+
+export interface AdminClinicRow {
+  id: number;
+  name: string;
+  city: string | null;
+  credential: {
+    source: 'clinic' | 'env' | null;
+    environment: 'sandbox' | 'production' | null;
+    organizationId: string | null;
+    verifiedName: string | null;
+    tokenValid: boolean;
+  };
+  profile: { facilityType: FacilityType | null; complete: boolean };
+  organizations: AdminCount;
+  locations: AdminCount;
+  practitioners: AdminCount;
+  patients: AdminCount;
+  encounters: AdminCount;
+  sync: { days: number; success: number; failed: number; lastSyncAt: string | null };
+  health: ClinicHealth;
+}
+
+export interface AdminOverview {
+  totals: { clinics: number; ready: number; attention: number; notSetUp: number };
+  clinics: AdminClinicRow[];
+}
+
+export interface AdminClinicDetail {
+  clinic: { id: number; name: string; city: string | null };
+  credentialSource: 'clinic' | 'env' | null;
+  verifiedName: string | null;
+  profile: FacilityProfile | null;
+  summary: SatusehatSummary;
+  organizations: { id: number; code: string; name: string; satusehatId: string | null; syncError: string | null }[];
+  locations: { id: number; name: string; active: boolean; satusehatId: string | null; syncError: string | null }[];
+  recentFailures: {
+    id: number;
+    resourceType: string;
+    localId: number;
+    httpStatus: number | null;
+    errorMessage: string | null;
+    createdAt: string;
+  }[];
+}
+
+export const satusehatAdminApi = {
+  overview: () => apiClient.get<AdminOverview>('/super-admin/satusehat/clinics'),
+  clinic: (id: number) => apiClient.get<AdminClinicDetail>(`/super-admin/satusehat/clinics/${id}`),
+};

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -16,6 +16,9 @@ import {
   FiChevronLeft,
   FiChevronRight,
   FiDatabase,
+  FiCloud,
+  FiMapPin,
+  FiMap,
 } from 'react-icons/fi';
 import './sidebar.css';
 
@@ -35,6 +38,9 @@ const NAV_ITEMS = [
   { label: 'Laporan', icon: <FiBarChart2 />, href: '/super-admin/reports' },
   { label: 'Log Aktivitas', icon: <FiShield />, href: '/super-admin/audit-log' },
   { label: 'Permintaan Data', icon: <FiDatabase />, href: '/super-admin/data-requests' },
+  { label: 'SATUSEHAT Klinik', icon: <FiCloud />, href: '/super-admin/satusehat', section: 'SATUSEHAT' },
+  { label: 'Master Sarana (MSI)', icon: <FiMapPin />, href: '/super-admin/satusehat/sarana' },
+  { label: 'Master Wilayah', icon: <FiMap />, href: '/super-admin/satusehat/wilayah' },
 ];
 
 export default function SuperAdminSidebar({ isOpen, onClose }: SuperAdminSidebarProps) {
@@ -69,10 +75,13 @@ export default function SuperAdminSidebar({ isOpen, onClose }: SuperAdminSidebar
 
       <nav className="nav">
         {NAV_ITEMS.map((item) => (
+          <Fragment key={item.href}>
+          {'section' in item && item.section && !collapsed && (
+            <div className="nav-section-label">{item.section}</div>
+          )}
           <Link
-            key={item.href}
             href={item.href}
-            className={`nav-item ${pathname === item.href ? 'active' : ''}`}
+            className={`nav-item ${pathname === item.href || (item.href === '/super-admin/satusehat' && pathname.startsWith('/super-admin/satusehat/clinics')) ? 'active' : ''}`}
             onClick={handleNavItemClick}
             title={item.label}
           >
@@ -81,6 +90,7 @@ export default function SuperAdminSidebar({ isOpen, onClose }: SuperAdminSidebar
               <span className="nav-label">{item.label}</span>
             </div>
           </Link>
+          </Fragment>
         ))}
       </nav>
     </aside>

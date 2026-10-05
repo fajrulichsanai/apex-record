@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import type { SyncState } from '@/lib/satusehat';
 import { SYNC_STATE_LABELS } from '@/lib/satusehat';
@@ -36,6 +37,34 @@ export function SatusehatShell({
         </main>
       </FeatureGuard>
     </DashboardLayout>
+  );
+}
+
+/** Kerangka halaman SATUSEHAT di panel Super Admin (master data, pantauan klinik). */
+export function AdminSatusehatShell({
+  title,
+  subtitle,
+  actions,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  actions?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <SuperAdminLayout>
+      <main className="ss-page">
+        <div className="ss-header">
+          <div>
+            <h1>{title}</h1>
+            {subtitle && <p>{subtitle}</p>}
+          </div>
+          {actions && <div className="ss-actions">{actions}</div>}
+        </div>
+        {children}
+      </main>
+    </SuperAdminLayout>
   );
 }
 

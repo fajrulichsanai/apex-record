@@ -26,8 +26,6 @@ import {
   FiCloud,
   FiDatabase,
   FiList,
-  FiMapPin,
-  FiMap,
   FiCheckSquare } from 'react-icons/fi';
 import './sidebar.css';
 
@@ -131,8 +129,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { label: 'Ringkasan', icon: <FiGrid />, href: '/satusehat', feature: 'satusehat' },
         { label: 'Data & Status Sync', icon: <FiDatabase />, href: '/satusehat/data', feature: 'satusehat' },
         { label: 'Log Sinkronisasi', icon: <FiList />, href: '/satusehat/log', feature: 'satusehat' },
-        { label: 'Master Sarana (MSI)', icon: <FiMapPin />, href: '/satusehat/sarana', feature: 'satusehat' },
-        { label: 'Master Wilayah', icon: <FiMap />, href: '/satusehat/wilayah', feature: 'satusehat' },
         ...(user?.role === 'owner' || user?.role === 'multi_clinic_owner' || user?.role === 'super_admin'
           ? [
               { label: 'Onboarding', icon: <FiCheckSquare />, href: '/satusehat/onboarding', feature: 'satusehat' as FeatureKey },
