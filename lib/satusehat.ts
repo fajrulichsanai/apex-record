@@ -135,6 +135,11 @@ export interface SyncStep {
 
 export interface SatusehatConfig {
   configured: boolean;
+  /** 'clinic' = kredensial klinik ini, 'env' = Kode Akses API dari env server */
+  source: 'clinic' | 'env' | null;
+  envAvailable: boolean;
+  envOrganizationId: string | null;
+  envEnvironment: 'sandbox' | 'production' | null;
   organizationId: string | null;
   clientId: string | null;
   hasClientSecret: boolean;
@@ -206,7 +211,7 @@ export const ssrmeApi = {
     apiClient.post<SsrmeRecordLink>(`/satusehat/ssrme/encounters/${encounterId}/open`),
 };
 
-/** Persiapan (prasyarat) SATUSEHAT: Autentikasi → Organization → Location → Practitioner → Patient */
+/** Onboarding SATUSEHAT: Autentikasi → Profil → Organization → Location → Practitioner → Patient */
 export interface OnboardingItem {
   id: number;
   name: string;
@@ -214,16 +219,135 @@ export interface OnboardingItem {
   note?: string | null;
 }
 
+/** Alamat + kode wilayah (extension administrativeCode SATUSEHAT) */
+export interface SatusehatAddress {
+  line?: string | null;
+  provinceCode?: string | null;
+  provinceName?: string | null;
+  cityCode?: string | null;
+  cityName?: string | null;
+  districtCode?: string | null;
+  districtName?: string | null;
+  villageCode?: string | null;
+  villageName?: string | null;
+  rt?: string | null;
+  rw?: string | null;
+  postalCode?: string | null;
+}
+
+export type FacilityType = 'klinik_pratama' | 'klinik_utama' | 'tpmd' | 'tpmdg';
+
+export const FACILITY_TYPE_LABELS: Record<FacilityType, string> = {
+  klinik_pratama: 'Klinik Pratama',
+  klinik_utama: 'Klinik Utama',
+  tpmd: 'Tempat Praktik Mandiri Dokter (TPMD)',
+  tpmdg: 'Tempat Praktik Mandiri Dokter Gigi (TPMDG)',
+};
+
+export interface FacilityProfile extends SatusehatAddress {
+  facilityType?: FacilityType | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+}
+
+export const ORGANIZATION_TYPE_LABELS: Record<string, string> = {
+  dept: 'Departemen / unit (dept)',
+  team: 'Tim (team)',
+  prov: 'Penyedia layanan kesehatan (prov)',
+  other: 'Lainnya (other)',
+};
+
+export const CONTACT_PURPOSE_LABELS: Record<string, string> = {
+  ADMIN: 'Administrasi',
+  BILL: 'Penagihan',
+  HR: 'SDM',
+  PAYOR: 'Penjamin',
+  PATINF: 'Informasi pasien',
+  PRESS: 'Humas',
+};
+
+export const PHYSICAL_TYPE_LABELS: Record<string, string> = {
+  si: 'Site (kompleks)',
+  bu: 'Building (gedung)',
+  wi: 'Wing (sayap gedung)',
+  lvl: 'Level (lantai)',
+  wa: 'Ward (bangsal)',
+  ro: 'Room (ruangan)',
+  area: 'Area',
+};
+
+export const DAY_LABELS: Record<string, string> = {
+  mon: 'Sen',
+  tue: 'Sel',
+  wed: 'Rab',
+  thu: 'Kam',
+  fri: 'Jum',
+  sat: 'Sab',
+  sun: 'Min',
+};
+
+export interface SatusehatOrganization {
+  id: number;
+  parentId: number | null;
+  code: string;
+  name: string;
+  type: string;
+  active: boolean;
+  phone: string | null;
+  email: string | null;
+  website: string | null;
+  address: SatusehatAddress | null;
+  contactName: string | null;
+  contactPhone: string | null;
+  contactPurpose: string | null;
+  satusehatId: string | null;
+  syncError: string | null;
+  lastSyncAt: string | null;
+}
+
+export type OrganizationPayload = Omit<SatusehatOrganization, 'id' | 'satusehatId' | 'syncError' | 'lastSyncAt'>;
+
+export interface LocationHours {
+  days: string[];
+  allDay?: boolean;
+  opening?: string | null;
+  closing?: string | null;
+}
+
+export interface OnboardingLocation {
+  id: number;
+  name: string;
+  active: boolean;
+  code: string | null;
+  description: string | null;
+  physicalType: string;
+  parentLocationId: number | null;
+  organizationId: number | null;
+  phone: string | null;
+  address: SatusehatAddress | null;
+  latitude: number | null;
+  longitude: number | null;
+  hours: LocationHours | null;
+  satusehatId: string | null;
+  syncError: string | null;
+}
+
+export type LocationPayload = Omit<OnboardingLocation, 'id' | 'satusehatId' | 'syncError'>;
+
 export interface OnboardingStatus {
-  auth: { configured: boolean; environment: 'sandbox' | 'production'; tokenValidUntil: string | null };
-  organization: {
-    id: string | null;
-    name: string | null;
-    suborgId: string | null;
-    poliOrgId: string | null;
-    pharmacyOrgId: string | null;
+  auth: {
+    /** 'env' = Kode Akses API dari env server, 'clinic' = Konfigurasi klinik */
+    source: 'env' | 'clinic' | null;
+    environment: 'sandbox' | 'production' | null;
+    organizationId: string | null;
+    tokenValidUntil: string | null;
   };
-  locations: OnboardingItem[];
+  profile: FacilityProfile & { clinicName: string; verifiedName: string | null };
+  organizations: SatusehatOrganization[];
+  locations: OnboardingLocation[];
   practitioners: OnboardingItem[];
   patients: { total: number; linked: number };
 }
@@ -238,13 +362,23 @@ export interface OnboardingBatchResult {
 export const onboardingApi = {
   status: () => apiClient.get<OnboardingStatus>('/satusehat/onboarding'),
   auth: () => apiClient.post<{ connected: boolean; tokenExpiresAt: string }>('/satusehat/onboarding/auth'),
+  saveProfile: (profile: FacilityProfile) => apiClient.put<FacilityProfile>('/satusehat/onboarding/profile', profile),
   verifyOrganization: () =>
     apiClient.post<{ id: string; name: string | null; active: boolean }>('/satusehat/onboarding/organization/verify'),
-  buildOrganization: () =>
-    apiClient.post<{ suborgId: string; poliOrgId: string; pharmacyOrgId: string }>(
-      '/satusehat/onboarding/organization/structure',
-    ),
-  locations: () => apiClient.post<OnboardingBatchResult>('/satusehat/onboarding/locations'),
+  applyTemplate: () => apiClient.post<SatusehatOrganization[]>('/satusehat/onboarding/organizations/template'),
+  saveOrganization: (id: number | null, payload: OrganizationPayload) =>
+    id
+      ? apiClient.put<SatusehatOrganization>(`/satusehat/onboarding/organizations/${id}`, payload)
+      : apiClient.post<SatusehatOrganization>('/satusehat/onboarding/organizations', payload),
+  deleteOrganization: (id: number) => apiClient.delete<null>(`/satusehat/onboarding/organizations/${id}`),
+  sendOrganization: (id: number) =>
+    apiClient.post<SatusehatOrganization>(`/satusehat/onboarding/organizations/${id}/send`),
+  saveLocation: (id: number | null, payload: LocationPayload) =>
+    id
+      ? apiClient.put<unknown>(`/satusehat/onboarding/locations/${id}`, payload)
+      : apiClient.post<unknown>('/satusehat/onboarding/locations', payload),
+  sendLocation: (id: number) =>
+    apiClient.post<{ id: number; satusehatId: string }>(`/satusehat/onboarding/locations/${id}/send`),
   practitioners: () => apiClient.post<OnboardingBatchResult>('/satusehat/onboarding/practitioners'),
   patients: () => apiClient.post<OnboardingBatchResult>('/satusehat/onboarding/patients'),
 };

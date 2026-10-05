@@ -136,7 +136,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         ...(user?.role === 'owner' || user?.role === 'multi_clinic_owner' || user?.role === 'super_admin'
           ? [
               { label: 'Konfigurasi', icon: <FiKey />, href: '/satusehat/konfigurasi', feature: 'satusehat' as FeatureKey },
-              { label: 'Persiapan', icon: <FiCheckSquare />, href: '/satusehat/persiapan', feature: 'satusehat' as FeatureKey },
+              { label: 'Onboarding', icon: <FiCheckSquare />, href: '/satusehat/onboarding', feature: 'satusehat' as FeatureKey },
             ]
           : []),
       ],

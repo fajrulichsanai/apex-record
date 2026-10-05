@@ -111,7 +111,14 @@ export default function SatusehatConfigPage() {
       requireWrite
     >
       <div className="ss-card">
-        {config?.configured && (
+        {config?.source === 'env' && (
+          <div className="ss-notice" style={{ marginBottom: 16 }}>
+            Memakai Kode Akses API dari env server — {config.envEnvironment === 'production' ? 'Production' : 'Sandbox'},
+            Organization ID <span className="ss-mono">{config.envOrganizationId}</span>. Form di bawah hanya perlu diisi
+            bila klinik ini memakai kredensial sendiri.
+          </div>
+        )}
+        {config?.source === 'clinic' && (
           <div className="ss-notice" style={{ marginBottom: 16 }}>
             Terkonfigurasi — {config.environment === 'production' ? 'Production' : 'Sandbox'}, Organization ID{' '}
             <span className="ss-mono">{config.organizationId}</span>.
