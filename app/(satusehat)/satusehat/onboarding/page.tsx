@@ -15,7 +15,6 @@ import {
   type FacilityType,
   type LocationPayload,
   type OnboardingBatchResult,
-  type OnboardingItem,
   type OnboardingLocation,
   type OnboardingStatus,
   type OrganizationPayload,
@@ -69,36 +68,6 @@ function SyncState({ id, error }: { id: string | null; error?: string | null }) 
   return <span className="ss-badge pending">Draf</span>;
 }
 
-function ItemTable({ items, empty }: { items: OnboardingItem[]; empty: string }) {
-  if (!items.length) return <p className="ss-muted">{empty}</p>;
-  return (
-    <div className="ss-table-wrap">
-      <table className="ss-table">
-        <thead>
-          <tr>
-            <th>Nama</th>
-            <th>ID SATUSEHAT</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((i) => (
-            <tr key={i.id}>
-              <td>{i.name}</td>
-              <td className="ss-mono">{i.satusehatId ?? '—'}</td>
-              <td>
-                <span className={`ss-badge ${i.satusehatId ? 'synced' : 'pending'}`}>
-                  {i.satusehatId ? 'Terdaftar' : (i.note ?? 'Belum')}
-                </span>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 function BatchResult({ result }: { result: OnboardingBatchResult | undefined }) {
   if (!result) return null;
   const failed = result.results.filter((r) => r.error);
@@ -115,6 +84,121 @@ function BatchResult({ result }: { result: OnboardingBatchResult | undefined }) 
           ))}
         </ul>
       )}
+    </div>
+  );
+}
+
+/**
+ * Form NIK di baris tabel: isi/ganti NIK lalu langsung dicocokkan ke
+ * SATUSEHAT. Kosongkan untuk mencoba ulang NIK yang sudah tersimpan.
+ */
+function NikFix({
+  hasNik,
+  onSubmit,
+}: {
+  hasNik: boolean;
+  onSubmit: (nik?: string) => Promise<void>;
+}) {
+  const [nik, setNik] = useState('');
+  const [busy, setBusy] = useState(false);
+  const valid = nik.length === 16;
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    setBusy(true);
+    try {
+      await onSubmit(nik || undefined);
+      setNik('');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form className="ss-nikfix" onSubmit={submit}>
+      <input
+        className="ss-input"
+        inputMode="numeric"
+        autoComplete="off"
+        maxLength={16}
+        aria-label="NIK"
+        placeholder={hasNik ? 'NIK baru (opsional)' : 'Isi NIK 16 digit'}
+        value={nik}
+        disabled={busy}
+        onChange={(e) => setNik(e.target.value.replace(/\D/g, ''))}
+      />
+      <button
+        type="submit"
+        className="ss-btn sm primary"
+        disabled={busy || (nik ? !valid : !hasNik)}
+        title={nik && !valid ? 'NIK harus 16 digit' : ''}
+      >
+        {busy ? 'Mencocokkan...' : nik ? 'Simpan & cocokkan' : 'Cocokkan ulang'}
+      </button>
+    </form>
+  );
+}
+
+interface PersonRow {
+  id: number;
+  name: string;
+  detail?: string | null;
+  nikMasked: string | null | undefined;
+  satusehatId: string | null;
+  problem: string | null;
+}
+
+function PersonTable({
+  rows,
+  empty,
+  disabled,
+  onFix,
+}: {
+  rows: PersonRow[];
+  empty: string;
+  disabled: boolean;
+  onFix: (row: PersonRow, nik?: string) => Promise<void>;
+}) {
+  if (!rows.length) return <p className="ss-muted">{empty}</p>;
+  return (
+    <div className="ss-table-wrap">
+      <table className="ss-table">
+        <thead>
+          <tr>
+            <th>Nama</th>
+            <th>NIK</th>
+            <th>ID SATUSEHAT / masalah</th>
+            <th>Perbaiki</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.id}>
+              <td>
+                {r.name}
+                {r.detail && <div className="ss-muted">{r.detail}</div>}
+              </td>
+              <td className="ss-mono">{r.nikMasked ?? <span className="ss-badge failed">Kosong</span>}</td>
+              <td>
+                {r.satusehatId ? (
+                  <span className="ss-mono">{r.satusehatId}</span>
+                ) : (
+                  <span className="ss-row-problem">{r.problem ?? 'Belum dicocokkan'}</span>
+                )}
+              </td>
+              <td>
+                {r.satusehatId ? (
+                  <span className="ss-badge synced">Terdaftar</span>
+                ) : disabled ? (
+                  <span className="ss-muted">Atur autentikasi dulu</span>
+                ) : (
+                  <NikFix hasNik={!!r.nikMasked} onSubmit={(nik) => onFix(r, nik)} />
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -716,6 +800,8 @@ export default function SatusehatOnboardingPage() {
   const [batch, setBatch] = useState<Partial<Record<BatchKey, OnboardingBatchResult>>>({});
   const [orgForm, setOrgForm] = useState<SatusehatOrganization | 'new' | null>(null);
   const [locForm, setLocForm] = useState<OnboardingLocation | 'new' | null>(null);
+  /** Pesan gagal terakhir per baris (key: 'prac-1' / 'pat-1') */
+  const [rowErrors, setRowErrors] = useState<Record<string, string | undefined>>({});
 
   const reload = useCallback(async () => {
     try {
@@ -738,7 +824,14 @@ export default function SatusehatOnboardingPage() {
     try {
       const res = await fn();
       if (key === 'practitioners' || key === 'patients') {
-        setBatch((b) => ({ ...b, [key]: res as OnboardingBatchResult }));
+        const result = res as OnboardingBatchResult;
+        setBatch((b) => ({ ...b, [key]: result }));
+        const prefix = key === 'practitioners' ? 'prac' : 'pat';
+        setRowErrors((e) => {
+          const next = { ...e };
+          for (const r of result.results) next[`${prefix}-${r.id}`] = r.error ?? undefined;
+          return next;
+        });
       }
       showToast(ok, 'success');
       await reload();
@@ -747,6 +840,19 @@ export default function SatusehatOnboardingPage() {
     } finally {
       setBusy(null);
     }
+  }
+
+  async function fixNik(kind: 'prac' | 'pat', row: { id: number; name: string }, nik?: string) {
+    const key = `${kind}-${row.id}`;
+    try {
+      const res =
+        kind === 'prac' ? await onboardingApi.fixPractitioner(row.id, nik) : await onboardingApi.fixPatient(row.id, nik);
+      setRowErrors((e) => ({ ...e, [key]: undefined }));
+      showToast(`${row.name} terhubung (${res.satusehatId})`, 'success');
+    } catch (err) {
+      setRowErrors((e) => ({ ...e, [key]: errText(err) }));
+    }
+    await reload();
   }
 
   async function removeOrganization(org: SatusehatOrganization) {
@@ -1018,7 +1124,22 @@ export default function SatusehatOnboardingPage() {
         </Step>
 
         <Step no={5} title="Practitioner (tenaga kesehatan)" done={pracDone} doc={`${DOC}/onboardings/apis/practitioner/`}>
-          <ItemTable items={s.practitioners} empty="Belum ada data dokter/tenaga kesehatan." />
+          <p className="ss-muted">
+            Tenaga kesehatan dicari di SATUSEHAT berdasarkan NIK. Bila NIK kosong atau tidak ditemukan, isi/perbaiki NIK
+            langsung di tabel.
+          </p>
+          <PersonTable
+            rows={s.practitioners.map((p) => ({
+              id: p.id,
+              name: p.name,
+              nikMasked: p.nikMasked,
+              satusehatId: p.satusehatId,
+              problem: rowErrors[`prac-${p.id}`] ?? p.note ?? null,
+            }))}
+            empty="Belum ada data dokter/tenaga kesehatan."
+            disabled={!configured}
+            onFix={(row, nik) => fixNik('prac', row, nik)}
+          />
           <BatchResult result={batch.practitioners} />
           {errorOf('practitioners')}
           <button
@@ -1036,6 +1157,27 @@ export default function SatusehatOnboardingPage() {
             {s.patients.linked} dari {s.patients.total} pasien sudah memiliki ID SATUSEHAT. Pasien baru juga dicocokkan
             otomatis saat kunjungannya dikirim.
           </p>
+          {s.patients.pending.length > 0 && (
+            <>
+              <p className="ss-muted">
+                Pasien belum terhubung{s.patients.pending.length >= 100 ? ' (100 terbaru)' : ''} — isi/perbaiki NIK langsung
+                di tabel:
+              </p>
+              <PersonTable
+                rows={s.patients.pending.map((p) => ({
+                  id: p.id,
+                  name: p.name,
+                  detail: p.birthDate ? `Lahir ${new Date(p.birthDate).toLocaleDateString('id-ID')}` : null,
+                  nikMasked: p.nikMasked,
+                  satusehatId: null,
+                  problem: rowErrors[`pat-${p.id}`] ?? p.error,
+                }))}
+                empty=""
+                disabled={!configured}
+                onFix={(row, nik) => fixNik('pat', row, nik)}
+              />
+            </>
+          )}
           <BatchResult result={batch.patients} />
           {errorOf('patients')}
           <button

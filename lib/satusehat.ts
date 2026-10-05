@@ -217,6 +217,24 @@ export interface OnboardingItem {
   name: string;
   satusehatId: string | null;
   note?: string | null;
+  /** NIK tersamar (mis. ***1234), null bila belum diisi */
+  nikMasked?: string | null;
+}
+
+/** Pasien yang belum punya ID SATUSEHAT */
+export interface OnboardingPendingPatient {
+  id: number;
+  name: string;
+  birthDate: string | null;
+  nikMasked: string | null;
+  error: string | null;
+}
+
+export interface FixNikResult {
+  id: number;
+  name: string;
+  satusehatId: string;
+  nikMasked: string;
 }
 
 /** Alamat + kode wilayah (extension administrativeCode SATUSEHAT) */
@@ -349,7 +367,7 @@ export interface OnboardingStatus {
   organizations: SatusehatOrganization[];
   locations: OnboardingLocation[];
   practitioners: OnboardingItem[];
-  patients: { total: number; linked: number };
+  patients: { total: number; linked: number; pending: OnboardingPendingPatient[] };
 }
 
 export interface OnboardingBatchResult {
@@ -381,4 +399,9 @@ export const onboardingApi = {
     apiClient.post<{ id: number; satusehatId: string }>(`/satusehat/onboarding/locations/${id}/send`),
   practitioners: () => apiClient.post<OnboardingBatchResult>('/satusehat/onboarding/practitioners'),
   patients: () => apiClient.post<OnboardingBatchResult>('/satusehat/onboarding/patients'),
+  /** Simpan NIK (opsional — kosong = coba ulang) lalu langsung cocokkan ke SATUSEHAT */
+  fixPractitioner: (id: number, nik?: string) =>
+    apiClient.post<FixNikResult>(`/satusehat/onboarding/practitioners/${id}/nik`, nik ? { nik } : {}),
+  fixPatient: (id: number, nik?: string) =>
+    apiClient.post<FixNikResult>(`/satusehat/onboarding/patients/${id}/nik`, nik ? { nik } : {}),
 };

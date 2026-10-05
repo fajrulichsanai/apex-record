@@ -150,3 +150,6 @@
 @media (max-width: 640px) {
   .ss-page .ss-form.ss-form-wide, .ss-page .ss-address { grid-template-columns: 1fr; }
 }
+.ss-page .ss-nikfix { display: flex; gap: 6px; align-items: center; min-width: 260px; }
+.ss-page .ss-nikfix .ss-input { width: 170px; padding: 6px 8px; font-size: 12.5px; font-family: ui-monospace, monospace; }
+.ss-page .ss-row-problem { color: var(--red, #DC2626); font-size: 12.5px; }
