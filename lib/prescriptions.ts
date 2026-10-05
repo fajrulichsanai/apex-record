@@ -1,4 +1,5 @@
 import { API_BASE, apiClient, ApiError } from './api-client';
+import type { Signa } from './signa';
 
 
 export interface PrescriptionItem {
@@ -13,6 +14,12 @@ export interface PrescriptionItem {
   duration?: string;
   quantity?: string;
   instructions?: string;
+  /** Bentuk sediaan, mis. "Tablet" */
+  dosageForm?: string | null;
+  /** Numero (jumlah) — ditulis "No. XV" */
+  numero?: number | null;
+  /** Aturan pakai terstruktur */
+  signa?: Signa | null;
   /** Racikan: SD = d.t.d, EP = dibagi rata */
   compoundType?: CompoundType | null;
   compoundFormCode?: string | null;
@@ -23,6 +30,13 @@ export interface PrescriptionItem {
 }
 
 export type CompoundType = 'SD' | 'EP';
+
+/** Tanda tangan dokter pada lembar resep */
+export interface PrescriptionSignature {
+  signature: string;
+  signedAt: string;
+  signedBy: number | null;
+}
 
 export interface CompoundIngredient {
   /** Kode KFA zat aktif (91…) atau produk (92…/93…) */
@@ -73,6 +87,9 @@ export interface CreatePrescriptionItemPayload {
   drugName: string;
   kfaCode?: string;
   kfaName?: string;
+  dosageForm?: string;
+  numero?: number;
+  signa?: Signa;
   dosage?: string;
   frequency?: string;
   duration?: string;
@@ -89,6 +106,15 @@ export const prescriptionsApi = {
 
   setCoding: (encounterId: number, itemId: number, payload: PrescriptionCodingPayload) =>
     apiClient.put<PrescriptionItem>(`/encounters/${encounterId}/prescriptions/${itemId}/coding`, payload),
+
+  getSignature: (encounterId: number) =>
+    apiClient.get<PrescriptionSignature | null>(`/encounters/${encounterId}/prescriptions/signature`),
+
+  saveSignature: (encounterId: number, signature: string) =>
+    apiClient.put<PrescriptionSignature>(`/encounters/${encounterId}/prescriptions/signature`, { signature }),
+
+  removeSignature: (encounterId: number) =>
+    apiClient.delete<null>(`/encounters/${encounterId}/prescriptions/signature`),
 
   remove: (encounterId: number, itemId: number) =>
     apiClient.delete<void>(`/encounters/${encounterId}/prescriptions/${itemId}`),

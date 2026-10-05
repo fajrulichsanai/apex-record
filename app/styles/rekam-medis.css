@@ -794,3 +794,37 @@
 button.rx-kfa { border: 0; cursor: pointer; font-family: inherit; }
 button.rx-kfa:hover { filter: brightness(.95); text-decoration: underline; }
 .rx-fix-row td { background: var(--bg); }
+
+/* Resep sederhana: nama obat, sediaan, dosis, numero, aturan pakai */
+.rx-form { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 10px; }
+.rx-form > * { min-width: 0; }
+.rx-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--text-sub); }
+.rx-field-drug { grid-column: span 2; }
+.rx-field-signa { grid-column: span 2; }
+.rx-field input, .rx-field select {
+  width: 100%; padding: 9px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text-main); font: inherit; font-size: 13px; font-weight: 400; outline: none;
+}
+.rx-field input:focus, .rx-field select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.rx-hint { font-size: 11.5px; font-weight: 500; color: var(--text-muted); }
+.rx-preview {
+  display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: var(--radius-sm);
+  background: var(--surface); border: 1px solid var(--border); font-size: 13px; color: var(--text-main);
+}
+.rx-preview-no { float: right; font-weight: 700; }
+.rx-r { font-weight: 800; color: var(--accent-ink, var(--primary)); margin-right: 2px; }
+.rx-signa { display: block; font-weight: 700; font-style: italic; color: var(--text-main); }
+.rx-drug-sub { display: block; font-size: 11.5px; font-weight: 500; color: var(--text-muted); margin-top: 2px; }
+.rx-numero { white-space: nowrap; font-weight: 700; }
+.rx-sign { display: flex; flex-direction: column; gap: 8px; padding: 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.rx-sign-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 13px; }
+.rx-sign-saved { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.rx-sign-saved img { max-width: 240px; max-height: 90px; padding: 6px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.rx-sign-actions { display: flex; gap: 8px; }
+@media (max-width: 860px) {
+  .rx-form { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 520px) {
+  .rx-form { grid-template-columns: 1fr; }
+  .rx-field-drug, .rx-field-signa { grid-column: auto; }
+}
