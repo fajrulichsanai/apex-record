@@ -13,7 +13,61 @@ export interface PrescriptionItem {
   duration?: string;
   quantity?: string;
   instructions?: string;
+  /** Racikan: SD = d.t.d, EP = dibagi rata */
+  compoundType?: CompoundType | null;
+  compoundFormCode?: string | null;
+  compoundFormName?: string | null;
+  compoundUnit?: string | null;
+  ingredients?: CompoundIngredient[] | null;
+  routeCode?: string | null;
 }
+
+export type CompoundType = 'SD' | 'EP';
+
+export interface CompoundIngredient {
+  /** Kode KFA zat aktif (91…) atau produk (92…/93…) */
+  kfaCode: string;
+  name: string;
+  amount: number;
+  amountUnit: string;
+  perAmount: number;
+  perUnit: string;
+}
+
+/** Pasang kode KFA, atau jadikan racikan dengan bahan berkode KFA */
+export interface PrescriptionCodingPayload {
+  kfaCode?: string;
+  kfaName?: string;
+  compoundType?: CompoundType;
+  compoundFormCode?: string;
+  compoundFormName?: string;
+  compoundUnit?: string;
+  ingredients?: CompoundIngredient[];
+  routeCode?: string;
+}
+
+/** Bentuk sediaan racikan (medication-form, kode dari playbook resmi SATUSEHAT) */
+export const COMPOUND_FORMS: { code: string; name: string; unit: string }[] = [
+  { code: 'BS047', name: 'Serbuk Oral (puyer)', unit: 'POWD' },
+  { code: 'BS019', name: 'Kapsul', unit: 'CAP' },
+  { code: 'BS066', name: 'Tablet', unit: 'TAB' },
+  { code: 'BS055', name: 'Sirup', unit: 'SYRUP' },
+  { code: 'BS030', name: 'Krim / salep', unit: 'CRM' },
+  { code: 'BS059', name: 'Supositoria', unit: 'SUPP' },
+];
+
+export const STRENGTH_UNITS = ['mg', 'g', 'mcg', 'mL', 'IU', 'TAB', 'CAP', 'POWD', 'OINT', 'CRM', 'SUPP', 'SYRUP'];
+
+/** Rute pemberian WHO ATC */
+export const ROUTE_OPTIONS: { code: string; name: string }[] = [
+  { code: 'O', name: 'Oral' },
+  { code: 'SL', name: 'Sublingual' },
+  { code: 'R', name: 'Rektal' },
+  { code: 'V', name: 'Vaginal' },
+  { code: 'N', name: 'Nasal' },
+  { code: 'TD', name: 'Transdermal / topikal' },
+  { code: 'P', name: 'Parenteral' },
+];
 
 export interface CreatePrescriptionItemPayload {
   drugName: string;
@@ -32,6 +86,9 @@ export const prescriptionsApi = {
 
   create: (encounterId: number, payload: CreatePrescriptionItemPayload) =>
     apiClient.post<PrescriptionItem>(`/encounters/${encounterId}/prescriptions`, payload),
+
+  setCoding: (encounterId: number, itemId: number, payload: PrescriptionCodingPayload) =>
+    apiClient.put<PrescriptionItem>(`/encounters/${encounterId}/prescriptions/${itemId}/coding`, payload),
 
   remove: (encounterId: number, itemId: number) =>
     apiClient.delete<void>(`/encounters/${encounterId}/prescriptions/${itemId}`),

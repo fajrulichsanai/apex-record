@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useState, type FormEvent } from 'react';
+import { Fragment, Suspense, useCallback, useEffect, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FiRefreshCw, FiSend } from 'react-icons/fi';
@@ -16,6 +16,7 @@ import {
   type SyncStep,
 } from '@/lib/satusehat';
 import { useAuth } from '@/lib/auth-context';
+import RxCodingFix from '@/components/form/RxCodingFix';
 import { useToast } from '@/lib/toast-context';
 
 const PAGE_SIZE = 20;
@@ -62,6 +63,9 @@ function DataContent() {
   const [loading, setLoading] = useState(true);
   const [syncingId, setSyncingId] = useState<number | null>(null);
   const [report, setReport] = useState<{ encounterId: number; success: boolean; steps: SyncStep[] } | null>(null);
+  /** Obat gagal di laporan yang sedang / sudah diperbaiki */
+  const [fixingRx, setFixingRx] = useState<number | null>(null);
+  const [fixedRx, setFixedRx] = useState<number[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -103,6 +107,8 @@ function DataContent() {
         // Kunjungan dikirim lengkap sesuai urutan Playbook RME Rawat Jalan
         const res = await satusehatApi.syncEncounterFull(localId);
         setReport({ encounterId: localId, ...res });
+        setFixingRx(null);
+        setFixedRx([]);
         const failed = res.steps.filter((s) => s.status === 'failed').length;
         showToast(
           failed ? `Terkirim sebagian: ${failed} langkah gagal` : 'Seluruh data kunjungan terkirim ke SATUSEHAT',
@@ -165,9 +171,21 @@ function DataContent() {
                 {report.success ? 'Lengkap' : 'Ada yang gagal'}
               </span>
             </h2>
-            <button type="button" className="ss-btn sm" onClick={() => setReport(null)}>
-              Tutup
-            </button>
+            <div className="ss-actions">
+              {fixedRx.length > 0 && (
+                <button
+                  type="button"
+                  className="ss-btn sm primary"
+                  disabled={syncingId !== null}
+                  onClick={() => handleSync(report.encounterId)}
+                >
+                  {syncingId === report.encounterId ? 'Mengirim...' : 'Kirim ulang kunjungan'}
+                </button>
+              )}
+              <button type="button" className="ss-btn sm" onClick={() => setReport(null)}>
+                Tutup
+              </button>
+            </div>
           </div>
           <div className="ss-table-wrap">
             <table className="ss-table">
@@ -180,24 +198,62 @@ function DataContent() {
                 </tr>
               </thead>
               <tbody>
-                {report.steps.map((s, i) => (
-                  <tr key={i}>
-                    <td>{s.step}</td>
-                    <td>
-                      {s.resourceType}
-                      <span className="sub">
-                        {s.localType} #{s.localId}
-                      </span>
-                      {s.message && <span className={s.status === 'failed' ? 'err' : 'sub'}>{s.message}</span>}
-                    </td>
-                    <td className="ss-mono">{s.satusehatId || '-'}</td>
-                    <td>
-                      <span className={`ss-badge ${s.status === 'success' ? 'synced' : s.status === 'failed' ? 'failed' : 'pending'}`}>
-                        {s.status === 'success' ? 'Berhasil' : s.status === 'failed' ? 'Gagal' : 'Dilewati'}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {report.steps.map((s, i) => {
+                  const rxFixable =
+                    s.status === 'failed' && s.localType === 'rx_item' && /KFA|racikan/i.test(s.message ?? '');
+                  const drugName = /"([^"]+)"/.exec(s.message ?? '')?.[1] ?? `Obat #${s.localId}`;
+                  return (
+                    <Fragment key={i}>
+                      <tr>
+                        <td>{s.step}</td>
+                        <td>
+                          {s.resourceType}
+                          <span className="sub">
+                            {s.localType} #{s.localId}
+                          </span>
+                          {s.message && <span className={s.status === 'failed' ? 'err' : 'sub'}>{s.message}</span>}
+                          {rxFixable &&
+                            (fixedRx.includes(s.localId) ? (
+                              <span className="sub">✓ Sudah diperbaiki — klik “Kirim ulang kunjungan”</span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="ss-btn sm"
+                                style={{ marginTop: 6 }}
+                                onClick={() => setFixingRx(fixingRx === s.localId ? null : s.localId)}
+                              >
+                                {fixingRx === s.localId ? 'Tutup' : 'Perbaiki obat'}
+                              </button>
+                            ))}
+                        </td>
+                        <td className="ss-mono">{s.satusehatId || '-'}</td>
+                        <td>
+                          <span
+                            className={`ss-badge ${s.status === 'success' ? 'synced' : s.status === 'failed' ? 'failed' : 'pending'}`}
+                          >
+                            {s.status === 'success' ? 'Berhasil' : s.status === 'failed' ? 'Gagal' : 'Dilewati'}
+                          </span>
+                        </td>
+                      </tr>
+                      {rxFixable && fixingRx === s.localId && (
+                        <tr>
+                          <td colSpan={4}>
+                            <RxCodingFix
+                              encounterId={report.encounterId}
+                              item={{ id: s.localId, drugName }}
+                              onCancel={() => setFixingRx(null)}
+                              onSaved={() => {
+                                setFixingRx(null);
+                                setFixedRx((list) => [...list, s.localId]);
+                                showToast(`${drugName} diperbarui`, 'success');
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>

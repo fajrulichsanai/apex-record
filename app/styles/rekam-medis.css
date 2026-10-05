@@ -791,3 +791,6 @@
   .rm-header .ssrme { margin-left: 0; width: 100%; }
   .ssrme-panel { left: 0; right: auto; }
 }
+button.rx-kfa { border: 0; cursor: pointer; font-family: inherit; }
+button.rx-kfa:hover { filter: brightness(.95); text-decoration: underline; }
+.rx-fix-row td { background: var(--bg); }

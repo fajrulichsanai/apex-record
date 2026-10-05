@@ -1,0 +1,60 @@
+.rxfix {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border: 1.5px dashed var(--border, #CBD5E1);
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  font-size: 13px;
+  text-align: left;
+}
+.rxfix-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.rxfix-tabs { display: inline-flex; border: 1.5px solid var(--border, #CBD5E1); border-radius: 8px; overflow: hidden; }
+.rxfix-tabs button { padding: 6px 12px; border: 0; background: transparent; color: var(--text-sub, #64748B); font-size: 12.5px; cursor: pointer; }
+.rxfix-tabs button.active { background: var(--primary, #2563EB); color: #fff; }
+.rxfix-body { display: grid; gap: 8px; }
+.rxfix-body small { color: var(--text-sub, #64748B); }
+.rxfix-label { font-weight: 600; font-size: 12.5px; }
+.rxfix-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.rxfix-grid label, .rxfix-inline { display: grid; gap: 4px; font-weight: 500; }
+.rxfix-inline { display: flex; align-items: center; gap: 8px; }
+.rxfix-inline input { width: 80px; }
+.rxfix select, .rxfix input:not([type='checkbox']) {
+  padding: 7px 9px; border: 1.5px solid var(--border, #CBD5E1); border-radius: 8px;
+  background: var(--surface, #fff); color: var(--text-main, #0F172A); font-size: 13px; min-width: 0;
+}
+.rxfix-ingredient { display: grid; grid-template-columns: minmax(0, 1fr) 90px 90px 32px; gap: 8px; align-items: start; }
+.rxfix-remove { height: 34px; border: 1.5px solid var(--border, #CBD5E1); border-radius: 8px; background: transparent; cursor: pointer; font-size: 16px; }
+.rxfix-remove:disabled { opacity: .4; cursor: not-allowed; }
+.rxfix-link { justify-self: start; border: 0; background: none; color: var(--primary, #2563EB); font-weight: 600; cursor: pointer; padding: 2px 0; }
+.rxfix-error { color: var(--red, #DC2626); background: rgba(220, 38, 38, .08); padding: 8px 10px; border-radius: 8px; }
+.rxfix-actions { display: flex; gap: 8px; }
+.rxfix-primary, .rxfix-secondary { padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 13px; }
+.rxfix-primary { background: var(--primary, #2563EB); border: 1.5px solid var(--primary, #2563EB); color: #fff; }
+.rxfix-primary:disabled { opacity: .5; cursor: not-allowed; }
+.rxfix-secondary { background: transparent; border: 1.5px solid var(--border, #CBD5E1); color: var(--text-main, #0F172A); }
+@media (max-width: 640px) {
+  .rxfix-ingredient { grid-template-columns: 1fr 1fr 32px; }
+  .rxfix-ing-drug { grid-column: 1 / -1; }
+}
+
+/* KfaDrugPicker di dalam form ini — juga dipakai di luar halaman rekam medis */
+.rxfix .kfa-picker { display: flex; flex-direction: column; gap: 4px; position: relative; min-width: 0; }
+.rxfix .kfa-picker input { width: 100%; }
+.rxfix .kfa-status { display: flex; align-items: center; gap: 4px; font-size: 11.5px; line-height: 1.3; }
+.rxfix .kfa-status.ok { color: #15803D; font-weight: 600; }
+.rxfix .kfa-status.warn { color: #B45309; }
+/* Ikon Material Symbols belum tentu dimuat di halaman ini → pakai tanda centang teks */
+.rxfix .kfa-status .material-symbols-rounded { font-size: 0; }
+.rxfix .kfa-status.ok .material-symbols-rounded::before { content: '✓'; font-size: 12px; }
+.rxfix .kfa-clear { margin-left: auto; padding: 0; border: none; background: none; color: var(--primary, #2563EB); font-size: 11.5px; cursor: pointer; }
+.rxfix .kfa-list {
+  position: absolute; top: 40px; left: 0; z-index: 30; width: max(100%, 380px); max-width: 90vw; max-height: 280px;
+  margin: 0; padding: 4px; list-style: none; overflow-y: auto; background: var(--surface, #fff);
+  border: 1px solid var(--border, #CBD5E1); border-radius: 8px; box-shadow: 0 8px 24px rgba(15, 23, 42, .12);
+}
+.rxfix .kfa-list li { display: flex; flex-direction: column; gap: 2px; padding: 7px 9px; border-radius: 6px; cursor: pointer; }
+.rxfix .kfa-list li.active, .rxfix .kfa-list li[role='option']:hover { background: var(--primary-lt, #EEF2FF); }
+.rxfix .kfa-list .kfa-name { font-size: 13px; color: var(--text-main, #0F172A); }
+.rxfix .kfa-list .kfa-meta, .rxfix .kfa-list .kfa-note { font-size: 11.5px; color: var(--text-sub, #64748B); cursor: default; }
+.rxfix .kfa-list .kfa-note.err { color: var(--red, #DC2626); }

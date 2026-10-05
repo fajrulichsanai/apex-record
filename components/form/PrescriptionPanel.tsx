@@ -1,8 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import ConfirmationModal from '@/components/feedback/ConfirmationModal';
 import KfaDrugPicker from '@/components/form/KfaDrugPicker';
+import RxCodingFix from '@/components/form/RxCodingFix';
 import { ApiError } from '@/lib/api-client';
 import { prescriptionsApi, type PrescriptionItem } from '@/lib/prescriptions';
 import { useToast } from '@/lib/toast-context';
@@ -37,6 +38,8 @@ export default function PrescriptionPanel({ encounterId }: PrescriptionPanelProp
   const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [submitting, setSubmitting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; name: string } | null>(null);
+  /** Obat yang sedang diperbaiki kodenya (KFA / racikan) */
+  const [fixingId, setFixingId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -112,33 +115,72 @@ export default function PrescriptionPanel({ encounterId }: PrescriptionPanelProp
                 </thead>
                 <tbody>
                   {items.map((item) => (
-                    <tr key={item.id}>
-                      <td className="rx-drug-name">
-                        {item.drugName}
-                        {item.kfaCode ? (
-                          <span className="rx-kfa ok">KFA {item.kfaCode}</span>
-                        ) : (
-                          <span className="rx-kfa warn" title="Tidak terkirim ke SATUSEHAT">
-                            tanpa KFA
-                          </span>
-                        )}
-                      </td>
-                      <td>{item.dosage || '—'}</td>
-                      <td>{item.frequency || '—'}</td>
-                      <td>{item.duration || '—'}</td>
-                      <td>{item.quantity || '—'}</td>
-                      <td>{item.instructions || '—'}</td>
-                      <td>
-                        <button
-                          type="button"
-                          className="rx-delete-btn"
-                          aria-label="Hapus"
-                          onClick={() => setConfirmDelete({ id: item.id, name: item.drugName })}
-                        >
-                          <span aria-hidden="true" className="material-symbols-rounded">delete</span>
-                        </button>
-                      </td>
-                    </tr>
+                    <Fragment key={item.id}>
+                      <tr>
+                        <td className="rx-drug-name">
+                          {item.drugName}
+                          {item.kfaCode ? (
+                            <button
+                              type="button"
+                              className="rx-kfa ok"
+                              title="Ganti produk KFA"
+                              onClick={() => setFixingId(fixingId === item.id ? null : item.id)}
+                            >
+                              KFA {item.kfaCode}
+                            </button>
+                          ) : item.compoundType && item.ingredients?.length ? (
+                            <button
+                              type="button"
+                              className="rx-kfa ok"
+                              title="Ubah racikan"
+                              onClick={() => setFixingId(fixingId === item.id ? null : item.id)}
+                            >
+                              Racikan · {item.ingredients.length} bahan
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="rx-kfa warn"
+                              title="Belum bisa dikirim ke SATUSEHAT — pilih produk KFA atau isi racikan"
+                              onClick={() => setFixingId(fixingId === item.id ? null : item.id)}
+                            >
+                              tanpa KFA · Perbaiki
+                            </button>
+                          )}
+                        </td>
+                        <td>{item.dosage || '—'}</td>
+                        <td>{item.frequency || '—'}</td>
+                        <td>{item.duration || '—'}</td>
+                        <td>{item.quantity || '—'}</td>
+                        <td>{item.instructions || '—'}</td>
+                        <td>
+                          <button
+                            type="button"
+                            className="rx-delete-btn"
+                            aria-label="Hapus"
+                            onClick={() => setConfirmDelete({ id: item.id, name: item.drugName })}
+                          >
+                            <span aria-hidden="true" className="material-symbols-rounded">delete</span>
+                          </button>
+                        </td>
+                      </tr>
+                      {fixingId === item.id && (
+                        <tr className="rx-fix-row">
+                          <td colSpan={7}>
+                            <RxCodingFix
+                              encounterId={encounterId}
+                              item={item}
+                              onCancel={() => setFixingId(null)}
+                              onSaved={async () => {
+                                setFixingId(null);
+                                success('Obat diperbarui — siap dikirim ke SATUSEHAT');
+                                await load();
+                              }}
+                            />
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
