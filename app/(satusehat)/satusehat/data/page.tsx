@@ -141,9 +141,9 @@ function DataContent() {
     >
       {configured === false && (
         <div className="ss-notice warn" style={{ marginBottom: 16 }}>
-          Klinik yang sedang aktif belum menyimpan kredensial SATUSEHAT (Organization ID, Client ID, Client Secret), jadi
-          data belum bisa dikirim.{' '}
-          {isOwner && <Link href="/satusehat/konfigurasi">Isi konfigurasi →</Link>}
+          Kredensial SATUSEHAT (Organization ID, Client ID, Client Secret) belum diatur di env server, jadi data belum
+          bisa dikirim.{' '}
+          {isOwner && <Link href="/satusehat/onboarding">Buka Onboarding →</Link>}
         </div>
       )}
       <div className="ss-tabs" role="tablist">

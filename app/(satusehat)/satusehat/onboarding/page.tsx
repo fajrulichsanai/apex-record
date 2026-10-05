@@ -906,8 +906,7 @@ export default function SatusehatOnboardingPage() {
             <div className="ss-notice warn">
               Kode Akses API belum diatur. Isi <span className="ss-mono">SATUSEHAT_ORGANIZATION_ID</span>,{' '}
               <span className="ss-mono">SATUSEHAT_CLIENT_ID</span>, <span className="ss-mono">SATUSEHAT_CLIENT_SECRET</span>{' '}
-              (dan <span className="ss-mono">SATUSEHAT_ENVIRONMENT</span>) di env server, atau{' '}
-              <Link href="/satusehat/konfigurasi">isi Konfigurasi klinik</Link>.
+              (dan <span className="ss-mono">SATUSEHAT_ENVIRONMENT</span>) di env server.
             </div>
           )}
           {errorOf('auth')}

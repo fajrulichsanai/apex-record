@@ -72,7 +72,7 @@ export default function SatusehatSummaryPage() {
           {!config?.configured && (
             <div className="ss-notice warn">
               Integrasi SATUSEHAT belum dikonfigurasi. Data belum bisa dikirim.{' '}
-              {isOwner && <Link href="/satusehat/konfigurasi">Atur konfigurasi →</Link>}
+              {isOwner && <Link href="/satusehat/onboarding">Buka Onboarding →</Link>}
             </div>
           )}
 
