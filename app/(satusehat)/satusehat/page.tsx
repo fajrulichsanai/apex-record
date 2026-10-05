@@ -16,7 +16,7 @@ export default function SatusehatSummaryPage() {
   const [summary, setSummary] = useState<SatusehatSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
-  const isOwner = user?.role === 'owner' || user?.role === 'super_admin';
+  const isOwner = user?.role === 'owner' || user?.role === 'multi_clinic_owner' || user?.role === 'super_admin';
 
   const load = useCallback(async () => {
     setLoading(true);

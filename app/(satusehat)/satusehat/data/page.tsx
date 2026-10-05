@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState, type FormEvent } from 'react';
+import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FiRefreshCw, FiSend } from 'react-icons/fi';
 import { Pager, SatusehatShell, SyncBadge, formatDateTime } from '@/components/satusehat/SatusehatShell';
@@ -39,7 +40,16 @@ function DataContent() {
   const params = useSearchParams();
   const { user } = useAuth();
   const { showToast } = useToast();
-  const isOwner = user?.role === 'owner' || user?.role === 'super_admin';
+  const isOwner = user?.role === 'owner' || user?.role === 'multi_clinic_owner' || user?.role === 'super_admin';
+  // null = belum dimuat; false = klinik aktif belum menyimpan kredensial
+  const [configured, setConfigured] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    satusehatApi
+      .getConfig()
+      .then((c) => setConfigured(c.configured))
+      .catch(() => setConfigured(null));
+  }, []);
 
   const typeParam = params.get('type');
   const type: SatusehatResourceType = isResourceType(typeParam) ? typeParam : 'Encounter';
@@ -111,7 +121,7 @@ function DataContent() {
     }
   }
 
-  const canSync = isOwner && data?.syncable;
+  const canSync = isOwner && data?.syncable && configured !== false;
 
   return (
     <SatusehatShell
@@ -123,6 +133,13 @@ function DataContent() {
         </button>
       }
     >
+      {configured === false && (
+        <div className="ss-notice warn" style={{ marginBottom: 16 }}>
+          Klinik yang sedang aktif belum menyimpan kredensial SATUSEHAT (Organization ID, Client ID, Client Secret), jadi
+          data belum bisa dikirim.{' '}
+          {isOwner && <Link href="/satusehat/konfigurasi">Isi konfigurasi →</Link>}
+        </div>
+      )}
       <div className="ss-tabs" role="tablist">
         {RESOURCE_TYPES.map((t) => (
           <button
