@@ -205,3 +205,46 @@ export const ssrmeApi = {
   open: (encounterId: number) =>
     apiClient.post<SsrmeRecordLink>(`/satusehat/ssrme/encounters/${encounterId}/open`),
 };
+
+/** Persiapan (prasyarat) SATUSEHAT: Autentikasi → Organization → Location → Practitioner → Patient */
+export interface OnboardingItem {
+  id: number;
+  name: string;
+  satusehatId: string | null;
+  note?: string | null;
+}
+
+export interface OnboardingStatus {
+  auth: { configured: boolean; environment: 'sandbox' | 'production'; tokenValidUntil: string | null };
+  organization: {
+    id: string | null;
+    name: string | null;
+    suborgId: string | null;
+    poliOrgId: string | null;
+    pharmacyOrgId: string | null;
+  };
+  locations: OnboardingItem[];
+  practitioners: OnboardingItem[];
+  patients: { total: number; linked: number };
+}
+
+export interface OnboardingBatchResult {
+  processed: number;
+  succeeded: number;
+  results: { id: number; name: string; satusehatId: string | null; error: string | null }[];
+  skippedWithoutNik?: number;
+}
+
+export const onboardingApi = {
+  status: () => apiClient.get<OnboardingStatus>('/satusehat/onboarding'),
+  auth: () => apiClient.post<{ connected: boolean; tokenExpiresAt: string }>('/satusehat/onboarding/auth'),
+  verifyOrganization: () =>
+    apiClient.post<{ id: string; name: string | null; active: boolean }>('/satusehat/onboarding/organization/verify'),
+  buildOrganization: () =>
+    apiClient.post<{ suborgId: string; poliOrgId: string; pharmacyOrgId: string }>(
+      '/satusehat/onboarding/organization/structure',
+    ),
+  locations: () => apiClient.post<OnboardingBatchResult>('/satusehat/onboarding/locations'),
+  practitioners: () => apiClient.post<OnboardingBatchResult>('/satusehat/onboarding/practitioners'),
+  patients: () => apiClient.post<OnboardingBatchResult>('/satusehat/onboarding/patients'),
+};

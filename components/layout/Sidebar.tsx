@@ -28,8 +28,7 @@ import {
   FiList,
   FiMapPin,
   FiMap,
-  FiKey,
-} from 'react-icons/fi';
+  FiKey, FiCheckSquare } from 'react-icons/fi';
 import './sidebar.css';
 
 interface SidebarProps {
@@ -134,8 +133,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { label: 'Log Sinkronisasi', icon: <FiList />, href: '/satusehat/log', feature: 'satusehat' },
         { label: 'Master Sarana (MSI)', icon: <FiMapPin />, href: '/satusehat/sarana', feature: 'satusehat' },
         { label: 'Master Wilayah', icon: <FiMap />, href: '/satusehat/wilayah', feature: 'satusehat' },
-        ...(user?.role === 'owner' || user?.role === 'super_admin'
-          ? [{ label: 'Konfigurasi', icon: <FiKey />, href: '/satusehat/konfigurasi', feature: 'satusehat' as FeatureKey }]
+        ...(user?.role === 'owner' || user?.role === 'multi_clinic_owner' || user?.role === 'super_admin'
+          ? [
+              { label: 'Konfigurasi', icon: <FiKey />, href: '/satusehat/konfigurasi', feature: 'satusehat' as FeatureKey },
+              { label: 'Persiapan', icon: <FiCheckSquare />, href: '/satusehat/persiapan', feature: 'satusehat' as FeatureKey },
+            ]
           : []),
       ],
     },
