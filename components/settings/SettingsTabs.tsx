@@ -3,8 +3,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { canAccessFeature, type FeatureKey } from '@/lib/permissions';
+import {type FeatureKey } from '@/lib/permissions';
 import './settings-tabs.css';
+import { useFeatures } from '@/lib/features-context';
 
 const TABS: { label: string; href: string; feature: FeatureKey; requireManageUsers?: boolean }[] = [
   { label: 'Info Klinik', href: '/info-klinik', feature: 'info-klinik' },
@@ -20,10 +21,11 @@ const TABS: { label: string; href: string; feature: FeatureKey; requireManageUse
 export default function SettingsTabs() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { can } = useFeatures();
   const canManageUsers = user?.role === 'owner' || user?.role === 'super_admin';
 
   const visibleTabs = TABS.filter(
-    (tab) => (!tab.requireManageUsers || canManageUsers) && canAccessFeature(user?.role, tab.feature)
+    (tab) => (!tab.requireManageUsers || canManageUsers) && can(tab.feature)
   );
 
   if (visibleTabs.length <= 1) return null;

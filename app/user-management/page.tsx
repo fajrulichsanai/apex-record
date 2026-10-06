@@ -10,6 +10,7 @@ import { useToast } from '@/lib/toast-context';
 import type { User, RoleOption } from '@/types/user';
 import type { Clinic } from '@/types/clinic';
 import SettingsTabs from '@/components/settings/SettingsTabs';
+import UserFeaturesModal from '@/components/features/UserFeaturesModal';
 import { pressable, useEscapeKey } from '@/lib/a11y';
 import '../styles/user-management.css';
 
@@ -19,6 +20,7 @@ const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
   admin: 'Admin',
   dokter: 'Dokter',
+  perawat: 'Perawat',
   pending: 'Pending',
 };
 
@@ -58,6 +60,8 @@ export default function UserManagementPage() {
 
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [editRoleModalOpen, setEditRoleModalOpen] = useState(false);
+  /** User yang sedang diatur fiturnya (owner) */
+  const [featuresUser, setFeaturesUser] = useState<User | null>(null);
 
   const [searchMethod, setSearchMethod] = useState<SearchMethod>('nik');
   const [searchInput, setSearchInput] = useState('');
@@ -420,6 +424,22 @@ export default function UserManagementPage() {
                     </div>
                     {!isSelf && (
                       <div className="user-actions">
+                        {['admin', 'dokter', 'perawat'].includes(u.role) && (
+                          <button
+                            className="user-action-btn features"
+                            aria-label="Atur fitur"
+                            title="Atur fitur"
+                            onClick={() => setFeaturesUser(u)}
+                          >
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                              />
+                            </svg>
+                          </button>
+                        )}
                         <button
                           className="user-action-btn edit"
                           aria-label="Ubah Peran"
@@ -684,6 +704,8 @@ export default function UserManagementPage() {
             </div>
           </div>
         </div>
+
+        <UserFeaturesModal user={featuresUser} onClose={() => setFeaturesUser(null)} />
 
         {/* MODAL: Ubah Peran */}
         <div

@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import { useAuth } from '@/lib/auth-context';
-import { canAccessFeature } from '@/lib/permissions';
+
 import { clinicApi } from '@/lib/clinic';
 import { patientRecallApi, type PatientRecall } from '@/lib/recall';
 import RecallDueList from './RecallDueList';
 import RecallIntervalConfigTable from './RecallIntervalConfigTable';
 import '../../styles/recall-reminder.css';
+import { useFeatures } from '@/lib/features-context';
 
 type TabValue = 'due' | 'config';
 
@@ -20,6 +21,7 @@ function isOverdue(dueDate: string) {
 
 export default function RecallReminderPage() {
   const { user } = useAuth();
+  const { can } = useFeatures();
   const canEditInterval = user?.role === 'owner' || user?.role === 'super_admin';
 
   const [tab, setTab] = useState<TabValue>('due');
@@ -27,7 +29,7 @@ export default function RecallReminderPage() {
   const [clinicName, setClinicName] = useState<string | undefined>(undefined);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const allowed = canAccessFeature(user?.role, 'recall-reminder');
+  const allowed = can('recall-reminder');
 
   useEffect(() => {
     // FeatureGuard hides the page for other roles, but these effects run anyway.

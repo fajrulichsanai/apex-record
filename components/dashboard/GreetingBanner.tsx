@@ -8,6 +8,7 @@ const ROLE_LABEL: Record<string, string> = {
   owner: 'OWNER',
   admin: 'ADMIN',
   dokter: 'DOKTER',
+  perawat: 'PERAWAT',
   pending: 'PENDING',
 };
 

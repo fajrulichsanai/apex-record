@@ -18,6 +18,7 @@ const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
   admin: 'Admin',
   dokter: 'Dokter',
+  perawat: 'Perawat',
   pending: 'Pending',
 };
 

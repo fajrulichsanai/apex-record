@@ -14,12 +14,15 @@ import { useToast } from '@/lib/toast-context';
 import { defaultRouteForRole } from '@/lib/permissions';
 import { formatCurrency } from '@/lib/format';
 import { useEscapeKey } from '@/lib/a11y';
+import ClinicFeaturesCard from '@/components/features/ClinicFeaturesCard';
+import UserFeaturesModal from '@/components/features/UserFeaturesModal';
 import '../../../styles/super-admin.css';
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
   admin: 'Admin',
   dokter: 'Dokter',
+  perawat: 'Perawat',
   pending: 'Pending',
 };
 
@@ -37,6 +40,7 @@ export default function SuperAdminClinicDetailPage() {
 
   const [history, setHistory] = useState<ClinicSubscription[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [featuresUser, setFeaturesUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -172,7 +176,17 @@ export default function SuperAdminClinicDetailPage() {
                           {u.isActive ? 'Aktif' : 'Nonaktif'}
                         </span>
                       </td>
-                      <td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        {['owner', 'admin', 'dokter', 'perawat'].includes(u.role) && (
+                          <button
+                            type="button"
+                            className="btn-outline btn-sm"
+                            style={{ marginRight: 6 }}
+                            onClick={() => setFeaturesUser(u)}
+                          >
+                            Atur fitur
+                          </button>
+                        )}
                         {u.isActive && (
                           <button
                             type="button"
@@ -191,6 +205,8 @@ export default function SuperAdminClinicDetailPage() {
             </table>
           </div>
         </div>
+
+        <ClinicFeaturesCard clinicId={clinicId} />
 
         <div className="table-wrap">
           <table className="sa-table">
@@ -227,6 +243,8 @@ export default function SuperAdminClinicDetailPage() {
           </table>
         </div>
       </div>
+
+      <UserFeaturesModal user={featuresUser} onClose={() => setFeaturesUser(null)} />
 
       {modalOpen && (
         <div className="sa-modal-overlay" onClick={() => setModalOpen(false)}>

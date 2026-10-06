@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { canAccessFeature, type FeatureKey } from '@/lib/permissions';
+import {type FeatureKey } from '@/lib/permissions';
 import {
   FiGrid,
   FiUsers,
@@ -28,6 +28,7 @@ import {
   FiList,
   FiCheckSquare } from 'react-icons/fi';
 import './sidebar.css';
+import { useFeatures } from '@/lib/features-context';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -36,6 +37,8 @@ interface SidebarProps {
 
 interface NavLeaf {
   label: string;
+  /** Nama saat item ini tampil sendirian (grup berisi satu item) */
+  soloLabel?: string;
   icon: React.ReactNode;
   href?: string;
   feature: FeatureKey;
@@ -51,6 +54,7 @@ interface NavGroupDef {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { can } = useFeatures();
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -110,8 +114,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       groupId: 'laporan',
       icon: <FiBarChart2 />,
       items: [
-        { label: 'Kunjungan', icon: <FiActivity />, href: '/laporan-kunjungan', feature: 'laporan-kunjungan' },
-        { label: 'Keuangan', icon: <FiTrendingUp />, href: '/laporan-keuangan', feature: 'laporan-keuangan' },
+        { label: 'Kunjungan', soloLabel: 'Laporan Kunjungan', icon: <FiActivity />, href: '/laporan-kunjungan', feature: 'laporan-kunjungan' },
+        { label: 'Keuangan', soloLabel: 'Laporan Keuangan', icon: <FiTrendingUp />, href: '/laporan-keuangan', feature: 'laporan-keuangan' },
         { label: 'Referral', icon: <FiUsers />, href: '/referral', feature: 'referral' },
       ],
     },
@@ -146,12 +150,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     .map((g) => ({
       ...g,
       items: g.items.filter(
-        (item): item is NavLeaf & { href: string } => !!item.href && canAccessFeature(user?.role, item.feature)
+        (item): item is NavLeaf & { href: string } => !!item.href && can(item.feature)
       ),
     }))
     .filter((g) => g.items.length > 0);
 
-  const canViewDashboard = canAccessFeature(user?.role, 'dashboard');
+  const canViewDashboard = can('dashboard');
 
   return (
     <>
@@ -198,11 +202,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 href={group.items[0].href!}
                 className={`nav-item ${pathname === group.items[0].href || pathname.startsWith(`${group.items[0].href}/`) ? 'active' : ''}`}
                 onClick={handleNavItemClick}
-                title={group.items[0].label}
+                title={group.items[0].soloLabel ?? group.items[0].label}
               >
                 <div className="nav-item-left">
                   <span className="nav-icon">{group.items[0].icon}</span>
-                  <span className="nav-label">{group.items[0].label}</span>
+                  <span className="nav-label">{group.items[0].soloLabel ?? group.items[0].label}</span>
                 </div>
               </Link>
             ) : (

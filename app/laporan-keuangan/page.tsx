@@ -38,13 +38,14 @@ import StatCard from '@/components/laporan/StatCard';
 import TindakanTerlarisTable from '@/components/laporan/TindakanTerlarisTable';
 import PaymentDiscountStats from '@/components/laporan/PaymentDiscountStats';
 import VisitDetailTable from '@/components/laporan/VisitDetailTable';
-import { canAccessFeature } from '@/lib/permissions';
+
 import { useAuth } from '@/lib/auth-context';
 import { reportsApi, FinancialReportResponse, PaymentMethod } from '@/lib/reports';
 import { useToast } from '@/lib/toast-context';
 import { exportToExcel } from '@/lib/export-excel';
 import { useChartTheme } from '@/lib/chart-theme';
 import '../styles/laporan.css';
+import { useFeatures } from '@/lib/features-context';
 
 type RangeOption = '7hari' | '30hari' | 'bulanini' | 'custom';
 
@@ -235,6 +236,7 @@ function buildFinancialInsights(report: FinancialReportResponse | null): Insight
 export default function LaporanKeuanganPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { can } = useFeatures();
   const [range, setRange] = useState<RangeOption>('bulanini');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
@@ -244,9 +246,9 @@ export default function LaporanKeuanganPage() {
   const { error: showError } = useToast();
   const chart = useChartTheme();
 
-  const canViewPro = canAccessFeature(user?.role, 'laporan-keuangan-pro');
+  const canViewPro = can('laporan-keuangan-pro');
 
-  const canView = canAccessFeature(user?.role, 'laporan-keuangan');
+  const canView = can('laporan-keuangan');
   const { dateFrom, dateTo } = getDateRange(range, customFrom, customTo);
 
   useEffect(() => {

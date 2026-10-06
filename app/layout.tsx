@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import { AuthProvider } from "@/lib/auth-context";
+import { FeaturesProvider } from "@/lib/features-context";
 import { ToastProvider } from "@/lib/toast-context";
 import { SubscriptionGateProvider } from "@/lib/subscription-gate-context";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme-context";
@@ -45,6 +46,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           <AuthProvider>
+            <FeaturesProvider>
             <ToastProvider>
               <SubscriptionGateProvider>
                 <DemoBanner />
@@ -52,6 +54,7 @@ export default function RootLayout({
                 {children}
               </SubscriptionGateProvider>
             </ToastProvider>
+            </FeaturesProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

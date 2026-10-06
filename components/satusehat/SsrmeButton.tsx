@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { ApiError } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
+import { useFeatures } from '@/lib/features-context';
 import { ssrmeApi, type SsrmeConsentLink, type SsrmeRecordLink } from '@/lib/satusehat';
 
 /** Dokter (dan owner yang praktik) boleh membuka; admin hanya memproses consent. */
-const CAN_OPEN = ['owner', 'multi_clinic_owner', 'dokter'];
+const CAN_OPEN = ['owner', 'multi_clinic_owner', 'dokter', 'perawat'];
 const CAN_CONSENT = [...CAN_OPEN, 'admin'];
 
 function formatExpiry(value: string | null) {
@@ -23,6 +24,7 @@ function formatExpiry(value: string | null) {
  */
 export default function SsrmeButton({ encounterId }: { encounterId: number }) {
   const { user } = useAuth();
+  const { can } = useFeatures();
   const role = user?.role ?? '';
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -32,7 +34,7 @@ export default function SsrmeButton({ encounterId }: { encounterId: number }) {
   const [consent, setConsent] = useState<SsrmeConsentLink | null>(null);
   const [record, setRecord] = useState<SsrmeRecordLink | null>(null);
 
-  if (!CAN_CONSENT.includes(role)) return null;
+  if (!CAN_CONSENT.includes(role) || !can('satusehat')) return null;
   const canOpen = CAN_OPEN.includes(role);
 
   async function openRecord() {

@@ -238,6 +238,7 @@
 .user-mgmt-page .user-action-btn:hover { background: var(--bg); color: var(--text-1); }
 .user-mgmt-page .user-action-btn.edit:hover { border-color: var(--accent); color: var(--accent); }
 .user-mgmt-page .user-action-btn.delete:hover { border-color: var(--danger); color: var(--danger); }
+.user-mgmt-page .user-action-btn.features:hover { border-color: var(--accent); color: var(--accent); }
 .user-mgmt-page .user-action-btn svg { width: 15px; height: 15px; }
 
 .user-mgmt-page .user-action-btn::after {

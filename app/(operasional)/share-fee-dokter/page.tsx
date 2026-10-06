@@ -4,11 +4,12 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import { useAuth } from '@/lib/auth-context';
-import { canAccessFeature } from '@/lib/permissions';
+
 import { doctorFeeApi, type DoctorFeeConfig } from '@/lib/doctor-fee';
 import FeeConfigTable from './FeeConfigTable';
 import MonthlyReportPanel from './MonthlyReportPanel';
 import '../../styles/share-fee-dokter.css';
+import { useFeatures } from '@/lib/features-context';
 
 type TabValue = 'config' | 'report';
 
@@ -17,7 +18,8 @@ export default function ShareFeeDokterPage() {
   const [configs, setConfigs] = useState<DoctorFeeConfig[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const { user } = useAuth();
-  const allowed = canAccessFeature(user?.role, 'share-fee-dokter');
+  const { can } = useFeatures();
+  const allowed = can('share-fee-dokter');
 
   useEffect(() => {
     // FeatureGuard hides the page for other roles, but this effect runs anyway.

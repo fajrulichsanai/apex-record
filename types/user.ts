@@ -1,4 +1,4 @@
-export type UserRole = 'super_admin' | 'multi_clinic_owner' | 'owner' | 'admin' | 'dokter' | 'pending';
+export type UserRole = 'super_admin' | 'multi_clinic_owner' | 'owner' | 'admin' | 'dokter' | 'perawat' | 'pending';
 
 export interface User {
   id: number;

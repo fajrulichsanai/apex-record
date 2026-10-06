@@ -81,6 +81,8 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'satusehat',
   ],
   dokter: ['pasien', 'reservasi', 'kunjungan', 'informed-consent', 'share-fee-saya', 'tampilan'],
+  // Perawat: akses sama persis dengan dokter
+  perawat: ['pasien', 'reservasi', 'kunjungan', 'informed-consent', 'share-fee-saya', 'tampilan'],
   pending: ['tampilan'],
 };
 
@@ -105,7 +107,7 @@ export function canSeeHargaModal(role: UserRole | undefined): boolean {
 export function defaultRouteForRole(role: UserRole | undefined): string {
   if (role === 'super_admin') return '/super-admin/dashboard';
   if (role === 'multi_clinic_owner') return '/multi-klinik/dashboard';
-  if (role === 'dokter') return '/list-pasien';
+  if (role === 'dokter' || role === 'perawat') return '/list-pasien';
   if (role === 'admin') return '/list-kunjungan';
   return '/dashboard';
 }

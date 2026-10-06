@@ -1,8 +1,9 @@
 'use client';
 
 import { useAuth } from '@/lib/auth-context';
-import { canAccessFeature, isFeatureViewOnly, type FeatureKey } from '@/lib/permissions';
+import {isFeatureViewOnly, type FeatureKey } from '@/lib/permissions';
 import './feature-guard.css';
+import { useFeatures } from '@/lib/features-context';
 
 interface FeatureGuardProps {
   feature: FeatureKey;
@@ -13,11 +14,12 @@ interface FeatureGuardProps {
 
 export default function FeatureGuard({ feature, requireWrite, children }: FeatureGuardProps) {
   const { user, loading } = useAuth();
+  const { can } = useFeatures();
 
   if (loading) return null;
 
   const denied =
-    !canAccessFeature(user?.role, feature) || (requireWrite && isFeatureViewOnly(user?.role, feature));
+    !can(feature) || (requireWrite && isFeatureViewOnly(user?.role, feature));
 
   if (denied) {
     return (
