@@ -27,6 +27,13 @@ export interface PrescriptionItem {
   compoundUnit?: string | null;
   ingredients?: CompoundIngredient[] | null;
   routeCode?: string | null;
+  /** Farmasi: obat diserahkan ke pasien (MedicationDispense) */
+  dispensedAt?: string | null;
+  batchNumber?: string | null;
+  batchExpiry?: string | null;
+  /** Obat diberikan langsung di klinik (MedicationAdministration) */
+  administeredAt?: string | null;
+  administeredDose?: string | null;
 }
 
 export type CompoundType = 'SD' | 'EP';
@@ -97,7 +104,41 @@ export interface CreatePrescriptionItemPayload {
   instructions?: string;
 }
 
+/** Pengkajian resep (Questionnaire Q0007) */
+export type ReviewAnswer = 'sesuai' | 'tidak_sesuai' | boolean;
+export interface ReviewQuestion {
+  linkId: string;
+  text: string;
+  kind: 'coding' | 'boolean';
+}
+export interface ReviewGroup {
+  linkId: string;
+  text: string;
+  items: ReviewQuestion[];
+}
+export interface PrescriptionReview {
+  answers: Record<string, ReviewAnswer>;
+  note: string | null;
+  reviewedAt: string;
+  reviewedBy: number;
+}
+
 export const prescriptionsApi = {
+  dispense: (encounterId: number, itemId: number, data: { batchNumber?: string; batchExpiry?: string }) =>
+    apiClient.post<PrescriptionItem>(`/encounters/${encounterId}/prescriptions/${itemId}/dispense`, data),
+  undoDispense: (encounterId: number, itemId: number) =>
+    apiClient.delete<PrescriptionItem>(`/encounters/${encounterId}/prescriptions/${itemId}/dispense`),
+  administer: (encounterId: number, itemId: number, data: { dose?: string }) =>
+    apiClient.post<PrescriptionItem>(`/encounters/${encounterId}/prescriptions/${itemId}/administer`, data),
+  undoAdminister: (encounterId: number, itemId: number) =>
+    apiClient.delete<PrescriptionItem>(`/encounters/${encounterId}/prescriptions/${itemId}/administer`),
+  getReview: (encounterId: number) =>
+    apiClient.get<{ review: PrescriptionReview | null; questions: ReviewGroup[] }>(
+      `/encounters/${encounterId}/prescriptions/review`,
+    ),
+  saveReview: (encounterId: number, data: { answers: Record<string, ReviewAnswer>; note?: string }) =>
+    apiClient.put<PrescriptionReview>(`/encounters/${encounterId}/prescriptions/review`, data),
+
   list: (encounterId: number) =>
     apiClient.get<PrescriptionItem[]>(`/encounters/${encounterId}/prescriptions`),
 

@@ -4,6 +4,7 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 import ConfirmationModal from '@/components/feedback/ConfirmationModal';
 import KfaDrugPicker, { type KfaDrugValue } from '@/components/form/KfaDrugPicker';
 import RxCodingFix from '@/components/form/RxCodingFix';
+import PharmacyPanel from '@/components/form/PharmacyPanel';
 import SignaturePad from '@/components/form/SignaturePad';
 import { ApiError } from '@/lib/api-client';
 import { kfaApi } from '@/lib/master-data';
@@ -412,6 +413,8 @@ export default function PrescriptionPanel({ encounterId }: PrescriptionPanelProp
               </>
             )}
           </div>
+
+          {items.length > 0 && <PharmacyPanel encounterId={encounterId} items={items} onChanged={load} />}
         </>
       )}
 
