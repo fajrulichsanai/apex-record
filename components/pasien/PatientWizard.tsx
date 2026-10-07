@@ -1,5 +1,6 @@
 'use client';
 
+import FamilyHistoryEditor, { type FamilyRow } from '@/components/pasien/FamilyHistoryEditor';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import { Patient, PatientPayload, patientsApi } from '@/lib/patients';
@@ -46,6 +47,7 @@ interface WizardForm {
   riwayatSyaraf: boolean;
   riwayatSistemikLainnya: boolean;
   catatanSistemikLainnya: string;
+  riwayatKeluarga: FamilyRow[];
   alergiObat: boolean;
   alergiMakanan: boolean;
 
@@ -91,6 +93,7 @@ const EMPTY_FORM: WizardForm = {
   riwayatSyaraf: false,
   riwayatSistemikLainnya: false,
   catatanSistemikLainnya: '',
+  riwayatKeluarga: [],
   alergiObat: false,
   alergiMakanan: false,
 
@@ -168,6 +171,9 @@ function patientToForm(patient: Patient): WizardForm {
     riwayatSyaraf: !!patient.riwayatSyaraf,
     riwayatSistemikLainnya: !!patient.riwayatSistemikLainnya,
     catatanSistemikLainnya: patient.catatanSistemikLainnya || '',
+    riwayatKeluarga: (patient.riwayatKeluarga ?? [])
+      .filter((e) => !e.removed)
+      .map((e) => ({ key: e.key, relationship: e.relationship, code: e.code, display: e.display, nameId: e.nameId, note: e.note ?? '' })),
     alergiObat: !!patient.alergiObat,
     alergiMakanan: !!patient.alergiMakanan,
 
@@ -213,6 +219,12 @@ function formToPayload(form: WizardForm): PatientPayload {
     riwayatParuParu: form.riwayatParuParu,
     riwayatSyaraf: form.riwayatSyaraf,
     riwayatSistemikLainnya: form.riwayatSistemikLainnya,
+    riwayatKeluarga: form.riwayatKeluarga.map((r) => ({
+      ...(r.key ? { key: r.key } : {}),
+      relationship: r.relationship,
+      code: r.code,
+      note: r.note || undefined,
+    })),
     catatanSistemikLainnya: form.riwayatSistemikLainnya
       ? form.catatanSistemikLainnya || undefined
       : undefined,
@@ -994,6 +1006,10 @@ export default function PatientWizard({
                   )}
                 </div>
               ))}
+              <FamilyHistoryEditor
+                value={form.riwayatKeluarga}
+                onChange={(rows) => update('riwayatKeluarga', rows)}
+              />
               <div className="form-field full wizard-switch-field">
                 <label>Punya Alergi?</label>
                 <button

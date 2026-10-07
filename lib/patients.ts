@@ -53,6 +53,7 @@ export interface Patient {
   riwayatSyaraf?: boolean;
   riwayatSistemikLainnya?: boolean;
   catatanSistemikLainnya?: string;
+  riwayatKeluarga?: FamilyHistoryEntry[] | null;
   alergiObat?: boolean;
   alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
@@ -99,6 +100,7 @@ export interface PatientPayload {
   riwayatSyaraf?: boolean;
   riwayatSistemikLainnya?: boolean;
   catatanSistemikLainnya?: string;
+  riwayatKeluarga?: FamilyHistoryInput[];
   alergiObat?: boolean;
   alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
@@ -246,3 +248,50 @@ export const patientsApi = {
   getReferralSummary: () =>
     apiClient.get<ReferralSummaryResponse>('/patients/referral-summary'),
 };
+
+/** Riwayat penyakit keluarga (dikirim ke SATUSEHAT sebagai FamilyMemberHistory) */
+export type FamilyRelationship =
+  | 'FTH'
+  | 'MTH'
+  | 'BRO'
+  | 'SIS'
+  | 'GRFTH'
+  | 'GRMTH'
+  | 'SON'
+  | 'DAU'
+  | 'UNCLE'
+  | 'AUNT'
+  | 'COUSN'
+  | 'FAMMEMB';
+
+export const FAMILY_RELATIONSHIP_OPTIONS: { value: FamilyRelationship; label: string }[] = [
+  { value: 'FTH', label: 'Ayah' },
+  { value: 'MTH', label: 'Ibu' },
+  { value: 'BRO', label: 'Saudara laki-laki' },
+  { value: 'SIS', label: 'Saudara perempuan' },
+  { value: 'GRFTH', label: 'Kakek' },
+  { value: 'GRMTH', label: 'Nenek' },
+  { value: 'SON', label: 'Anak laki-laki' },
+  { value: 'DAU', label: 'Anak perempuan' },
+  { value: 'UNCLE', label: 'Paman' },
+  { value: 'AUNT', label: 'Bibi' },
+  { value: 'COUSN', label: 'Sepupu' },
+  { value: 'FAMMEMB', label: 'Anggota keluarga lain' },
+];
+
+export interface FamilyHistoryEntry {
+  key: string;
+  relationship: FamilyRelationship;
+  code: string;
+  display: string;
+  nameId: string | null;
+  note: string | null;
+  removed?: boolean;
+}
+
+export interface FamilyHistoryInput {
+  key?: string;
+  relationship: FamilyRelationship;
+  code: string;
+  note?: string | null;
+}

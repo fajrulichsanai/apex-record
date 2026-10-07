@@ -1167,3 +1167,19 @@
   --bg: #17160F;
 }
 
+
+/* Riwayat penyakit keluarga (FamilyHistoryEditor) */
+.fh-editor { display: flex; flex-direction: column; gap: 8px; }
+.fh-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fh-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; font-size: 13px; color: var(--text-main); }
+.fh-code { font-family: ui-monospace, monospace; font-size: 11.5px; padding: 1px 5px; border-radius: 5px; background: var(--bg); border: 1px solid var(--border); color: var(--text-sub); }
+.fh-note, .fh-muted { color: var(--text-muted); font-size: 12px; }
+.fh-remove { border: 0; background: none; font-size: 18px; line-height: 1; color: var(--text-muted); cursor: pointer; padding: 0 4px; }
+.fh-remove:hover { color: var(--red, #C1381F); }
+.fh-add { display: grid; grid-template-columns: 160px 1fr 1fr; gap: 8px; }
+.fh-add select, .fh-add input { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-main); font: inherit; font-size: 13px; }
+.fh-results { list-style: none; margin: 0; padding: 4px; max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.fh-results li.fh-muted { padding: 8px 10px; }
+.fh-results button { width: 100%; text-align: left; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text-main); font: inherit; font-size: 13px; cursor: pointer; }
+.fh-results button:hover, .fh-results button:focus-visible { background: var(--bg); }
+@media (max-width: 640px) { .fh-add { grid-template-columns: 1fr; } }
