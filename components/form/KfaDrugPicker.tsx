@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { ApiError } from '@/lib/api-client';
 import { kfaApi, type KfaProduct } from '@/lib/master-data';
+import './KfaDrugPicker.css';
 
 export interface KfaDrugValue {
   drugName: string;

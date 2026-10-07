@@ -1,0 +1,27 @@
+/* ── Pencarian obat KFA (SATUSEHAT) ── */
+.kfa-picker { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.kfa-status { display: flex; align-items: center; gap: 4px; font-size: 11.5px; line-height: 1.3; }
+.kfa-status.ok { color: #15803D; font-weight: 600; }
+.kfa-status.warn { color: #B45309; }
+.kfa-status .material-symbols-rounded { font-size: 15px; }
+.kfa-clear {
+  margin-left: auto; border: none; background: none; color: var(--accent, #4F7EF8);
+  font-size: 11.5px; cursor: pointer; padding: 0;
+}
+.kfa-quick { display: flex; flex-wrap: wrap; gap: 4px; }
+.kfa-quick button {
+  border: 1px solid var(--border); background: var(--surface); border-radius: 999px;
+  padding: 2px 8px; font-size: 11.5px; cursor: pointer; color: var(--text-main);
+}
+.kfa-list {
+  position: absolute; top: 42px; left: 0; z-index: 30; width: max(100%, 380px); max-width: 90vw;
+  max-height: 280px; overflow-y: auto; margin: 0; padding: 4px; list-style: none;
+  background: var(--surface, #fff); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+.kfa-list li { display: flex; flex-direction: column; gap: 2px; padding: 7px 9px; border-radius: 6px; cursor: pointer; }
+.kfa-list li.active, .kfa-list li[role='option']:hover { background: var(--accent-soft, #EEF1FE); }
+.kfa-list .kfa-name { font-size: 13px; color: var(--text-main); }
+.kfa-list .kfa-meta { font-size: 11.5px; color: var(--text-muted, #64748B); }
+.kfa-list .kfa-note { cursor: default; font-size: 12.5px; color: var(--text-muted, #64748B); }
+.kfa-list .kfa-note.err { color: var(--red, #DC2626); }

@@ -54,6 +54,7 @@ export interface Patient {
   riwayatSistemikLainnya?: boolean;
   catatanSistemikLainnya?: string;
   riwayatKeluarga?: FamilyHistoryEntry[] | null;
+  riwayatObat?: MedicationHistoryEntry[] | null;
   alergiObat?: boolean;
   alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
@@ -101,6 +102,7 @@ export interface PatientPayload {
   riwayatSistemikLainnya?: boolean;
   catatanSistemikLainnya?: string;
   riwayatKeluarga?: FamilyHistoryInput[];
+  riwayatObat?: MedicationHistoryInput[];
   alergiObat?: boolean;
   alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
@@ -287,6 +289,24 @@ export interface FamilyHistoryEntry {
   nameId: string | null;
   note: string | null;
   removed?: boolean;
+}
+
+/** Obat yang dikonsumsi pasien (MedicationStatement) */
+export interface MedicationHistoryEntry {
+  key: string;
+  kfaCode: string | null;
+  name: string;
+  dosage: string | null;
+  active: boolean;
+  removed?: boolean;
+}
+
+export interface MedicationHistoryInput {
+  key?: string;
+  kfaCode?: string | null;
+  name: string;
+  dosage?: string | null;
+  active: boolean;
 }
 
 export interface FamilyHistoryInput {

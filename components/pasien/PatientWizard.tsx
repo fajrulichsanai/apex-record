@@ -1,6 +1,7 @@
 'use client';
 
 import FamilyHistoryEditor, { type FamilyRow } from '@/components/pasien/FamilyHistoryEditor';
+import MedicationHistoryEditor, { type MedicationRow } from '@/components/pasien/MedicationHistoryEditor';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import { Patient, PatientPayload, patientsApi } from '@/lib/patients';
@@ -48,6 +49,7 @@ interface WizardForm {
   riwayatSistemikLainnya: boolean;
   catatanSistemikLainnya: string;
   riwayatKeluarga: FamilyRow[];
+  riwayatObat: MedicationRow[];
   alergiObat: boolean;
   alergiMakanan: boolean;
 
@@ -94,6 +96,7 @@ const EMPTY_FORM: WizardForm = {
   riwayatSistemikLainnya: false,
   catatanSistemikLainnya: '',
   riwayatKeluarga: [],
+  riwayatObat: [],
   alergiObat: false,
   alergiMakanan: false,
 
@@ -174,6 +177,9 @@ function patientToForm(patient: Patient): WizardForm {
     riwayatKeluarga: (patient.riwayatKeluarga ?? [])
       .filter((e) => !e.removed)
       .map((e) => ({ key: e.key, relationship: e.relationship, code: e.code, display: e.display, nameId: e.nameId, note: e.note ?? '' })),
+    riwayatObat: (patient.riwayatObat ?? [])
+      .filter((e) => !e.removed)
+      .map((e) => ({ key: e.key, kfaCode: e.kfaCode, name: e.name, dosage: e.dosage ?? '', active: e.active })),
     alergiObat: !!patient.alergiObat,
     alergiMakanan: !!patient.alergiMakanan,
 
@@ -224,6 +230,13 @@ function formToPayload(form: WizardForm): PatientPayload {
       relationship: r.relationship,
       code: r.code,
       note: r.note || undefined,
+    })),
+    riwayatObat: form.riwayatObat.map((r) => ({
+      ...(r.key ? { key: r.key } : {}),
+      kfaCode: r.kfaCode || undefined,
+      name: r.name,
+      dosage: r.dosage || undefined,
+      active: r.active,
     })),
     catatanSistemikLainnya: form.riwayatSistemikLainnya
       ? form.catatanSistemikLainnya || undefined
@@ -1009,6 +1022,10 @@ export default function PatientWizard({
               <FamilyHistoryEditor
                 value={form.riwayatKeluarga}
                 onChange={(rows) => update('riwayatKeluarga', rows)}
+              />
+              <MedicationHistoryEditor
+                value={form.riwayatObat}
+                onChange={(rows) => update('riwayatObat', rows)}
               />
               <div className="form-field full wizard-switch-field">
                 <label>Punya Alergi?</label>

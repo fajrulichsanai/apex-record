@@ -1183,3 +1183,13 @@
 .fh-results button { width: 100%; text-align: left; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text-main); font: inherit; font-size: 13px; cursor: pointer; }
 .fh-results button:hover, .fh-results button:focus-visible { background: var(--bg); }
 @media (max-width: 640px) { .fh-add { grid-template-columns: 1fr; } }
+
+/* Riwayat obat yang dikonsumsi (MedicationHistoryEditor) */
+.mh-add { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) auto auto; gap: 8px; align-items: start; }
+.mh-add > input[type="text"] { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-main); font: inherit; font-size: 13px; }
+.mh-active { display: inline-flex; align-items: center; gap: 6px; padding-top: 9px; font-size: 13px; font-weight: 500; color: var(--text-main); white-space: nowrap; }
+.mh-btn { padding: 9px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-main); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.mh-btn:disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 760px) { .mh-add { grid-template-columns: 1fr; } .mh-active { padding-top: 0; } }
+.mh-add .kfa-picker { min-width: 0; }
+.mh-add .kfa-picker input { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-main); font: inherit; font-size: 13px; }
