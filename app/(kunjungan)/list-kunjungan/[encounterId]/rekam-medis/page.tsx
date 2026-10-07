@@ -17,7 +17,6 @@ import ChiefComplaintPicker, { type ChiefComplaintValue } from '@/components/rek
 import SsrmeButton from '@/components/satusehat/SsrmeButton';
 import type { SoapDiagnosis } from '@/lib/terminology';
 import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
-import ClinicalRecordsPanel from '@/components/rekam-medis/ClinicalRecordsPanel';
 import InformedConsentPanel from '@/components/rekam-medis/InformedConsentPanel';
 import OdontogramChart from '@/components/odontogram/OdontogramChart';
 import { UPPER_ROW, LOWER_ROW, PERMANENT_TEETH, getToothLayout } from '@/components/odontogram/odontogramData';
@@ -35,6 +34,7 @@ import {
   PhysicalExamination,
   PSYCHOLOGICAL_STATUS_OPTIONS,
   PREGNANCY_STATUS_OPTIONS,
+  SMOKING_STATUS_OPTIONS,
 } from '@/lib/physical-examination';
 import { dentalExaminationApi, DentalExamination, ProbingDepthEntry } from '@/lib/dental-examination';
 import { reservationsApi } from '@/lib/reservations';
@@ -56,7 +56,6 @@ import '../../../../styles/odontogram.css';
 type SectionId =
   | 'informed-consent'
   | 'physical-exam'
-  | 'clinical-records'
   | 'odontogram'
   | 'dental-exam'
   | 'supporting-exam'
@@ -66,7 +65,6 @@ type SectionId =
 const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
   { id: 'informed-consent', label: 'Informed Consent', icon: 'draw' },
   { id: 'physical-exam', label: 'Pemeriksaan Fisik', icon: 'stethoscope' },
-  { id: 'clinical-records', label: 'Kondisi & Observasi', icon: 'monitor_heart' },
   { id: 'odontogram', label: 'Odontogram', icon: 'dentistry' },
   { id: 'dental-exam', label: 'Pemeriksaan Gigi Lanjutan', icon: 'cleaning_services' },
   { id: 'supporting-exam', label: 'Pemeriksaan Penunjang', icon: 'image' },
@@ -117,7 +115,13 @@ type ExamField =
   | 'rectal'
   | 'psychologicalStatus'
   | 'psychologicalNote'
-  | 'pregnancyStatus';
+  | 'pregnancyStatus'
+  | 'waistCircumference'
+  | 'headCircumference'
+  | 'gcsTotal'
+  | 'bloodGlucose'
+  | 'smokingStatus'
+  | 'otherFindings';
 
 const NUMERIC_EXAM_FIELDS: ExamField[] = [
   'height',
@@ -129,6 +133,10 @@ const NUMERIC_EXAM_FIELDS: ExamField[] = [
   'respiratoryRate',
   'temperature',
   'oxygenSaturation',
+  'waistCircumference',
+  'headCircumference',
+  'gcsTotal',
+  'bloodGlucose',
 ];
 
 const EMPTY_EXAM: Record<ExamField, string> = {
@@ -175,6 +183,12 @@ const EMPTY_EXAM: Record<ExamField, string> = {
   psychologicalStatus: '',
   psychologicalNote: '',
   pregnancyStatus: '',
+  waistCircumference: '',
+  headCircumference: '',
+  gcsTotal: '',
+  bloodGlucose: '',
+  smokingStatus: '',
+  otherFindings: '',
 };
 
 function examFromResponse(data: PhysicalExamination | null): Record<ExamField, string> {
@@ -281,6 +295,7 @@ function composeObjectiveFromExam(exam: Record<ExamField, string>, painPointCoun
   const keadaan = [
     exam.generalCondition && `Keadaan umum: ${exam.generalCondition}`,
     exam.consciousness && `Kesadaran: ${exam.consciousness}`,
+    exam.gcsTotal && `GCS ${exam.gcsTotal}`,
     exam.nutritionalStatus && `Status gizi: ${exam.nutritionalStatus}`,
     exam.psychologicalStatus &&
       `Status psikologis: ${
@@ -291,6 +306,12 @@ function composeObjectiveFromExam(exam: Record<ExamField, string>, painPointCoun
         PREGNANCY_STATUS_OPTIONS.find((o) => o.value === exam.pregnancyStatus)?.label ?? exam.pregnancyStatus
       }`,
     exam.height && exam.weight && `TB/BB: ${exam.height} cm / ${exam.weight} kg`,
+    exam.waistCircumference && `Lingkar perut: ${exam.waistCircumference} cm`,
+    exam.headCircumference && `Lingkar kepala: ${exam.headCircumference} cm`,
+    exam.smokingStatus &&
+      `Status merokok: ${
+        SMOKING_STATUS_OPTIONS.find((o) => o.value === exam.smokingStatus)?.label ?? exam.smokingStatus
+      }`,
   ].filter(Boolean);
   if (keadaan.length) lines.push(keadaan.join(', '));
 
@@ -304,6 +325,7 @@ function composeObjectiveFromExam(exam: Record<ExamField, string>, painPointCoun
     exam.respiratoryRate && `RR ${exam.respiratoryRate}x/menit`,
     exam.temperature && `Suhu ${exam.temperature}°C`,
     exam.oxygenSaturation && `SpO2 ${exam.oxygenSaturation}%`,
+    exam.bloodGlucose && `GDS ${exam.bloodGlucose} mg/dL`,
   ].filter(Boolean);
   if (vital.length) lines.push(`Tanda vital: ${vital.join(', ')}`);
 
@@ -359,6 +381,7 @@ function composeObjectiveFromExam(exam: Record<ExamField, string>, painPointCoun
     exam.rectal && `Rectal toucher: ${exam.rectal}`,
   ].filter(Boolean);
   if (lainnya.length) lines.push(lainnya.join('; '));
+  if (exam.otherFindings.trim()) lines.push(`Temuan lain: ${exam.otherFindings.trim()}`);
 
   return lines.join('\n');
 }
@@ -990,6 +1013,22 @@ export default function RekamMedisPage() {
                               />
                             </div>
                             <div className="visit-form-field">
+                              <label>GCS</label>
+                              <div className="rm-input-unit">
+                                <input
+                                  type="number"
+                                  aria-label="GCS"
+                                  value={exam.gcsTotal}
+                                  onChange={setExamField('gcsTotal')}
+                                  placeholder="15"
+                                  min={3}
+                                  max={15}
+                                  disabled={submittingExam}
+                                />
+                                <span className="unit">3–15</span>
+                              </div>
+                            </div>
+                            <div className="visit-form-field">
                               <label>Status Gizi</label>
                               <ExamFindingSelect
                                 value={exam.nutritionalStatus}
@@ -1032,6 +1071,15 @@ export default function RekamMedisPage() {
                               </div>
                             )}
                             <div className="visit-form-field">
+                              <label>Status Merokok</label>
+                              <CustomSelect
+                                value={exam.smokingStatus}
+                                onChange={setExamValue('smokingStatus')}
+                                options={[{ value: '', label: 'Belum diisi' }, ...SMOKING_STATUS_OPTIONS]}
+                                disabled={submittingExam}
+                              />
+                            </div>
+                            <div className="visit-form-field">
                               <label>Tinggi Badan</label>
                               <div className="rm-input-unit">
                                 <input
@@ -1065,6 +1113,36 @@ export default function RekamMedisPage() {
                                 </div>
                               </div>
                             )}
+                            <div className="visit-form-field">
+                              <label>Lingkar Perut</label>
+                              <div className="rm-input-unit">
+                                <input
+                                  type="number"
+                                  aria-label="Lingkar Perut"
+                                  value={exam.waistCircumference}
+                                  onChange={setExamField('waistCircumference')}
+                                  placeholder="80"
+                                  step="0.1"
+                                  disabled={submittingExam}
+                                />
+                                <span className="unit">cm</span>
+                              </div>
+                            </div>
+                            <div className="visit-form-field">
+                              <label>Lingkar Kepala</label>
+                              <div className="rm-input-unit">
+                                <input
+                                  type="number"
+                                  aria-label="Lingkar Kepala"
+                                  value={exam.headCircumference}
+                                  onChange={setExamField('headCircumference')}
+                                  placeholder="34"
+                                  step="0.1"
+                                  disabled={submittingExam}
+                                />
+                                <span className="unit">cm</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
 
@@ -1146,6 +1224,20 @@ export default function RekamMedisPage() {
                                   disabled={submittingExam}
                                 />
                                 <span className="unit">%</span>
+                              </div>
+                            </div>
+                            <div className="visit-form-field">
+                              <label>Gula Darah Sewaktu</label>
+                              <div className="rm-input-unit">
+                                <input
+                                  type="number"
+                                  aria-label="Gula Darah Sewaktu"
+                                  value={exam.bloodGlucose}
+                                  onChange={setExamField('bloodGlucose')}
+                                  placeholder="110"
+                                  disabled={submittingExam}
+                                />
+                                <span className="unit">mg/dL</span>
                               </div>
                             </div>
                           </div>
@@ -1431,6 +1523,27 @@ export default function RekamMedisPage() {
                             </div>
                           </div>
                         </div>
+
+                        <div className="rm-fieldset">
+                          <div className="rm-fieldset-title">
+                            <span aria-hidden="true" className="material-symbols-rounded">edit_note</span>
+                            Temuan Lain
+                          </div>
+                          <div className="visit-form-field">
+                            <label htmlFor="exam-other-findings">
+                              Temuan atau hasil pemeriksaan lain yang tidak ada kolomnya di atas
+                            </label>
+                            <textarea
+                              id="exam-other-findings"
+                              rows={3}
+                              maxLength={2000}
+                              value={exam.otherFindings}
+                              onChange={setExamField('otherFindings')}
+                              placeholder="mis. luka lecet di lutut kanan ± 2 cm, bersih"
+                              disabled={submittingExam}
+                            />
+                          </div>
+                        </div>
                       </div>
 
                       <div className="rm-section-footer">
@@ -1445,22 +1558,6 @@ export default function RekamMedisPage() {
                         </button>
                       </div>
                     </form>
-                  )}
-
-                  {activeSection === 'clinical-records' && (
-                    <div className="rm-section">
-                      <div className="rm-section-heading">
-                        <h2>Kondisi & Observasi</h2>
-                        <p>Daftar masalah pasien dan pengukuran tambahan dengan kode baku SATUSEHAT</p>
-                      </div>
-                      <div className="rm-section-body">
-                        <ClinicalRecordsPanel
-                          encounterId={encounterId}
-                          heightCm={exam.height ? Number(exam.height) : null}
-                          weightKg={exam.weight ? Number(exam.weight) : null}
-                        />
-                      </div>
-                    </div>
                   )}
 
                   {activeSection === 'odontogram' && (
