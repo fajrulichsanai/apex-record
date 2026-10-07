@@ -26,7 +26,8 @@ export type FeatureKey =
   | 'api'
   | 'data-privasi'
   | 'konten'
-  | 'satusehat';
+  | 'satusehat'
+  | 'imunisasi';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',

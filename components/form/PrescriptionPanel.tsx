@@ -5,6 +5,8 @@ import ConfirmationModal from '@/components/feedback/ConfirmationModal';
 import KfaDrugPicker, { type KfaDrugValue } from '@/components/form/KfaDrugPicker';
 import RxCodingFix from '@/components/form/RxCodingFix';
 import PharmacyPanel from '@/components/form/PharmacyPanel';
+import ImmunizationPanel from '@/components/form/ImmunizationPanel';
+import { useFeatures } from '@/lib/features-context';
 import SignaturePad from '@/components/form/SignaturePad';
 import { ApiError } from '@/lib/api-client';
 import { kfaApi } from '@/lib/master-data';
@@ -52,6 +54,7 @@ const DRUG_OPTIONS = ['Amoxicillin', 'Ibuprofen', 'Paracetamol', 'Asam Mefenamat
  * (dropdown per jenis sediaan → tulisan resep), dan tanda tangan dokter.
  */
 export default function PrescriptionPanel({ encounterId }: PrescriptionPanelProps) {
+  const { can } = useFeatures();
   const { success, error } = useToast();
   const [items, setItems] = useState<PrescriptionItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -415,6 +418,7 @@ export default function PrescriptionPanel({ encounterId }: PrescriptionPanelProp
           </div>
 
           {items.length > 0 && <PharmacyPanel encounterId={encounterId} items={items} onChanged={load} />}
+          {can('imunisasi') && <ImmunizationPanel encounterId={encounterId} />}
         </>
       )}
 
