@@ -17,6 +17,7 @@ import ChiefComplaintPicker, { type ChiefComplaintValue } from '@/components/rek
 import SsrmeButton from '@/components/satusehat/SsrmeButton';
 import type { SoapDiagnosis } from '@/lib/terminology';
 import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
+import DiagnosticsPanel from '@/components/rekam-medis/DiagnosticsPanel';
 import InformedConsentPanel from '@/components/rekam-medis/InformedConsentPanel';
 import OdontogramChart from '@/components/odontogram/OdontogramChart';
 import { UPPER_ROW, LOWER_ROW, PERMANENT_TEETH, getToothLayout } from '@/components/odontogram/odontogramData';
@@ -1821,9 +1822,11 @@ export default function RekamMedisPage() {
                     <div className="rm-section">
                       <div className="rm-section-heading">
                         <h2>Pemeriksaan Penunjang</h2>
-                        <p>Unggah foto atau hasil rontgen untuk kunjungan ini</p>
+                        <p>Laboratorium, radiologi, serta foto klinis/rontgen kunjungan ini</p>
                       </div>
                       <div className="rm-section-body">
+                        <DiagnosticsPanel encounterId={encounterId} />
+                        <h3 className="rm-subheading">Foto &amp; Rontgen</h3>
                         <SupportingExamPanel encounterId={encounterId} />
                       </div>
                     </div>

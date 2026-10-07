@@ -828,3 +828,4 @@ button.rx-kfa:hover { filter: brightness(.95); text-decoration: underline; }
   .rx-form { grid-template-columns: 1fr; }
   .rx-field-drug, .rx-field-signa { grid-column: auto; }
 }
+.rm-subheading { margin: 4px 0 12px; font-size: 15px; font-weight: 700; color: var(--text-main); }
