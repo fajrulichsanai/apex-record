@@ -5,6 +5,7 @@ export type FeatureKey =
   | 'pasien'
   | 'reservasi'
   | 'kunjungan'
+  | 'farmasi'
   | 'billing'
   | 'operasional'
   | 'share-fee-dokter'
@@ -34,6 +35,7 @@ const FULL_ACCESS: FeatureKey[] = [
   'pasien',
   'reservasi',
   'kunjungan',
+  'farmasi',
   'billing',
   'operasional',
   'share-fee-dokter',
@@ -67,6 +69,7 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'pasien',
     'reservasi',
     'kunjungan',
+    'farmasi',
     'billing',
     'operasional',
     'recall-reminder',
@@ -81,9 +84,9 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'tampilan',
     'satusehat',
   ],
-  dokter: ['pasien', 'reservasi', 'kunjungan', 'informed-consent', 'share-fee-saya', 'tampilan'],
+  dokter: ['pasien', 'reservasi', 'kunjungan', 'farmasi', 'informed-consent', 'share-fee-saya', 'tampilan'],
   // Perawat: akses sama persis dengan dokter
-  perawat: ['pasien', 'reservasi', 'kunjungan', 'informed-consent', 'share-fee-saya', 'tampilan'],
+  perawat: ['pasien', 'reservasi', 'kunjungan', 'farmasi', 'informed-consent', 'share-fee-saya', 'tampilan'],
   pending: ['tampilan'],
 };
 

@@ -26,7 +26,8 @@ import {
   FiCloud,
   FiDatabase,
   FiList,
-  FiCheckSquare } from 'react-icons/fi';
+  FiCheckSquare,
+  FiPackage } from 'react-icons/fi';
 import './sidebar.css';
 import { useFeatures } from '@/lib/features-context';
 
@@ -91,6 +92,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       groupId: 'kunjungan',
       icon: <FiClipboard />,
       items: [{ label: 'Kunjungan', icon: <FiEdit3 />, href: '/list-kunjungan', feature: 'kunjungan' }],
+    },
+    {
+      title: 'Farmasi',
+      groupId: 'farmasi',
+      icon: <FiPackage />,
+      items: [{ label: 'Farmasi', icon: <FiPackage />, href: '/farmasi', feature: 'farmasi' }],
     },
     {
       title: 'Billing & Kasir',
