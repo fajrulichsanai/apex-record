@@ -18,6 +18,7 @@ import SsrmeButton from '@/components/satusehat/SsrmeButton';
 import type { SoapDiagnosis } from '@/lib/terminology';
 import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
 import DiagnosticsPanel from '@/components/rekam-medis/DiagnosticsPanel';
+import ReferralPanel from '@/components/rekam-medis/ReferralPanel';
 import InformedConsentPanel from '@/components/rekam-medis/InformedConsentPanel';
 import OdontogramChart from '@/components/odontogram/OdontogramChart';
 import { UPPER_ROW, LOWER_ROW, PERMANENT_TEETH, getToothLayout } from '@/components/odontogram/odontogramData';
@@ -61,7 +62,8 @@ type SectionId =
   | 'dental-exam'
   | 'supporting-exam'
   | 'prescription'
-  | 'soap';
+  | 'soap'
+  | 'referral';
 
 const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
   { id: 'informed-consent', label: 'Informed Consent', icon: 'draw' },
@@ -71,6 +73,7 @@ const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
   { id: 'supporting-exam', label: 'Pemeriksaan Penunjang', icon: 'image' },
   { id: 'prescription', label: 'Resep Obat', icon: 'prescriptions' },
   { id: 'soap', label: 'Catatan SOAP', icon: 'medical_services' },
+  { id: 'referral', label: 'Rujukan', icon: 'local_hospital' },
 ];
 
 type ExamField =
@@ -1848,6 +1851,20 @@ export default function RekamMedisPage() {
                       </div>
                       <div className="rm-section-body">
                         <PrescriptionPanel encounterId={encounterId} />
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSection === 'referral' && (
+                    <div className="rm-section">
+                      <div className="rm-section-heading rm-view-heading">
+                        <div>
+                          <h2>Rujukan</h2>
+                          <p>Rujuk pasien ke rumah sakit — memakai diagnosis dari Catatan SOAP</p>
+                        </div>
+                      </div>
+                      <div className="rm-section-body">
+                        <ReferralPanel encounterId={encounterId} diagnoses={diagnoses} />
                       </div>
                     </div>
                   )}

@@ -1,0 +1,22 @@
+/* Rujukan pasien — melengkapi gaya .ph-* (PharmacyPanel.css) */
+.ref-form select,
+.ref-form textarea {
+  width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm, 10px);
+  background: var(--surface); color: var(--text-main); font: inherit; font-size: 13.5px; font-weight: 400;
+}
+.ref-form textarea { resize: vertical; }
+.ref-checks { display: flex; flex-direction: column; gap: 6px; }
+.ph-form label.ref-check,
+.ref-check { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; font-size: 13px; }
+.ref-check input { width: auto; accent-color: var(--accent); }
+.ref-warn { font-size: 12.5px; color: var(--orange, #8A5A00); background: var(--orange-soft, #FCEACB); border-radius: 8px; padding: 6px 10px; margin: 0; }
+.ref-q { display: flex; flex-direction: column; gap: 12px; padding: 12px; border-radius: var(--radius-sm, 10px); background: var(--bg); }
+.ref-qblock { display: flex; flex-direction: column; gap: 10px; }
+.ref-qblock h4 { margin: 0; font-size: 13.5px; font-weight: 700; color: var(--text-main); }
+.ref-field { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--text-main); }
+.ref-field input { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm, 10px); background: var(--surface); color: var(--text-main); font: inherit; font-size: 13.5px; font-weight: 400; }
+.ref-cands { display: flex; flex-direction: column; gap: 8px; }
+.ref-cand { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm, 10px); cursor: pointer; background: var(--surface); }
+.ref-cand.active { border-color: var(--accent); background: var(--accent-soft); }
+.ref-cand input { margin-top: 3px; accent-color: var(--accent); }
+.ref-cand > span { display: flex; flex-direction: column; gap: 2px; font-size: 13.5px; color: var(--text-main); }
