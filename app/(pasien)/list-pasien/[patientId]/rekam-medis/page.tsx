@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import OdontogramChart from '@/components/odontogram/OdontogramChart';
+import PatientClinicalSummary from '@/components/rekam-medis/PatientClinicalSummary';
 import { patientsApi, Patient, MedicalRecordEntry } from '@/lib/patients';
 import { patientConsentApi, PatientConsent } from '@/lib/consent';
 import { prescriptionsApi } from '@/lib/prescriptions';
@@ -17,6 +18,7 @@ import '../../../../styles/odontogram.css';
 type SectionId =
   | 'informed-consent'
   | 'physical-exam'
+  | 'clinical-records'
   | 'odontogram'
   | 'dental-exam'
   | 'supporting-exam'
@@ -26,6 +28,7 @@ type SectionId =
 const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
   { id: 'informed-consent', label: 'Informed Consent', icon: 'draw' },
   { id: 'physical-exam', label: 'Pemeriksaan Fisik', icon: 'stethoscope' },
+  { id: 'clinical-records', label: 'Kondisi & Observasi', icon: 'monitor_heart' },
   { id: 'odontogram', label: 'Odontogram', icon: 'dentistry' },
   { id: 'dental-exam', label: 'Pemeriksaan Gigi Lanjutan', icon: 'cleaning_services' },
   { id: 'supporting-exam', label: 'Pemeriksaan Penunjang', icon: 'image' },
@@ -335,6 +338,18 @@ export default function PatientRekamMedisPage() {
                             </table>
                           </div>
                         )}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSection === 'clinical-records' && (
+                    <div className="rm-section">
+                      <div className="rm-section-heading">
+                        <h2>Kondisi & Observasi</h2>
+                        <p>Daftar masalah pasien dan riwayat pengukuran tambahan.</p>
+                      </div>
+                      <div className="rm-section-body">
+                        <PatientClinicalSummary patientId={patientId} />
                       </div>
                     </div>
                   )}

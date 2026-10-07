@@ -17,6 +17,7 @@ import ChiefComplaintPicker, { type ChiefComplaintValue } from '@/components/rek
 import SsrmeButton from '@/components/satusehat/SsrmeButton';
 import type { SoapDiagnosis } from '@/lib/terminology';
 import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
+import ClinicalRecordsPanel from '@/components/rekam-medis/ClinicalRecordsPanel';
 import InformedConsentPanel from '@/components/rekam-medis/InformedConsentPanel';
 import OdontogramChart from '@/components/odontogram/OdontogramChart';
 import { UPPER_ROW, LOWER_ROW, PERMANENT_TEETH, getToothLayout } from '@/components/odontogram/odontogramData';
@@ -55,6 +56,7 @@ import '../../../../styles/odontogram.css';
 type SectionId =
   | 'informed-consent'
   | 'physical-exam'
+  | 'clinical-records'
   | 'odontogram'
   | 'dental-exam'
   | 'supporting-exam'
@@ -64,6 +66,7 @@ type SectionId =
 const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
   { id: 'informed-consent', label: 'Informed Consent', icon: 'draw' },
   { id: 'physical-exam', label: 'Pemeriksaan Fisik', icon: 'stethoscope' },
+  { id: 'clinical-records', label: 'Kondisi & Observasi', icon: 'monitor_heart' },
   { id: 'odontogram', label: 'Odontogram', icon: 'dentistry' },
   { id: 'dental-exam', label: 'Pemeriksaan Gigi Lanjutan', icon: 'cleaning_services' },
   { id: 'supporting-exam', label: 'Pemeriksaan Penunjang', icon: 'image' },
@@ -1442,6 +1445,22 @@ export default function RekamMedisPage() {
                         </button>
                       </div>
                     </form>
+                  )}
+
+                  {activeSection === 'clinical-records' && (
+                    <div className="rm-section">
+                      <div className="rm-section-heading">
+                        <h2>Kondisi & Observasi</h2>
+                        <p>Daftar masalah pasien dan pengukuran tambahan dengan kode baku SATUSEHAT</p>
+                      </div>
+                      <div className="rm-section-body">
+                        <ClinicalRecordsPanel
+                          encounterId={encounterId}
+                          heightCm={exam.height ? Number(exam.height) : null}
+                          weightKg={exam.weight ? Number(exam.weight) : null}
+                        />
+                      </div>
+                    </div>
                   )}
 
                   {activeSection === 'odontogram' && (
