@@ -377,9 +377,23 @@ export interface OnboardingBatchResult {
   skippedWithoutNik?: number;
 }
 
+export interface ConnectStep {
+  key: 'auth' | 'verify' | 'profile' | 'organizations' | 'locations' | 'practitioners';
+  label: string;
+  status: 'success' | 'failed' | 'skipped';
+  message?: string;
+}
+
+export interface ConnectResult {
+  connected: boolean;
+  steps: ConnectStep[];
+}
+
 export const onboardingApi = {
   status: () => apiClient.get<OnboardingStatus>('/satusehat/onboarding'),
   auth: () => apiClient.post<{ connected: boolean; tokenExpiresAt: string }>('/satusehat/onboarding/auth'),
+  /** Hubungkan sekali klik: autentikasi → organisasi → ruang poli → NIK nakes */
+  connect: () => apiClient.post<ConnectResult>('/satusehat/onboarding/connect'),
   saveProfile: (profile: FacilityProfile) => apiClient.put<FacilityProfile>('/satusehat/onboarding/profile', profile),
   verifyOrganization: () =>
     apiClient.post<{ id: string; name: string | null; active: boolean }>('/satusehat/onboarding/organization/verify'),
