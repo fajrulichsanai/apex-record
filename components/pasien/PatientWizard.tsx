@@ -2,6 +2,7 @@
 
 import FamilyHistoryEditor, { type FamilyRow } from '@/components/pasien/FamilyHistoryEditor';
 import MedicationHistoryEditor, { type MedicationRow } from '@/components/pasien/MedicationHistoryEditor';
+import SatusehatPatientSearch, { type SatusehatPatientPick } from '@/components/pasien/SatusehatPatientSearch';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import { Patient, PatientPayload, patientsApi } from '@/lib/patients';
@@ -469,6 +470,23 @@ export default function PatientWizard({
     return () => clearTimeout(timeout);
   }, [form.referrerSearch]);
 
+  // Isi form dari hasil pencarian SATUSEHAT; field yang kosong di SATUSEHAT
+  // tidak menimpa isian petugas.
+  const applySatusehat = (pick: SatusehatPatientPick) => {
+    setForm((prev) => ({
+      ...prev,
+      name: pick.name || prev.name,
+      gender: pick.gender ?? prev.gender,
+      birthDate: pick.birthDate || prev.birthDate,
+      nik: pick.nik || prev.nik,
+      nikIbu: pick.nikIbu || prev.nikIbu,
+      phone: pick.phone || prev.phone,
+      address: pick.address || prev.address,
+    }));
+    setFieldErrors((prev) => ({ ...prev, name: null, gender: null, birthDate: null, nik: null }));
+    toast.success(pick.nik ? 'Data SATUSEHAT diisi — lengkapi data lainnya' : 'Data SATUSEHAT diisi — isi NIK pasien');
+  };
+
   const update = <K extends keyof WizardForm>(key: K, value: WizardForm[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setFieldErrors((prev) => (prev[key as string] ? { ...prev, [key]: null } : prev));
@@ -626,6 +644,8 @@ export default function PatientWizard({
             </span>
             {currentStep.label}
           </div>
+
+          {currentStep.key === 'identitas' && mode === 'create' && <SatusehatPatientSearch onUse={applySatusehat} />}
 
           {currentStep.key === 'identitas' && (
             <div className="form-row">

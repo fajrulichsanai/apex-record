@@ -199,7 +199,32 @@ export interface PatientQuery {
   sortOrder?: 'ASC' | 'DESC';
 }
 
+export interface SatusehatPatientResult {
+  id: string;
+  name: string | null;
+  gender: 'male' | 'female' | string | null;
+  birthDate: string | null;
+  nikMasked: string | null;
+  address: string | null;
+  city: string | null;
+  phone: string | null;
+  deceased: boolean;
+  inClinic: { id: number; name: string; noRm: string } | null;
+}
+
+export interface SatusehatPatientQuery {
+  nik?: string;
+  name?: string;
+  birthDate?: string;
+  gender?: 'male' | 'female';
+  nikIbu?: string;
+  ihsId?: string;
+}
+
 export const patientsApi = {
+  /** Cari pasien di SATUSEHAT (MPI): NIK · nama+tgl lahir+JK · NIK ibu · ID SATUSEHAT */
+  searchSatusehat: (q: SatusehatPatientQuery) =>
+    apiClient.post<{ found: boolean; results: SatusehatPatientResult[] }>('/patients/search-satusehat', q),
   list: (query?: PatientQuery) =>
     apiClient.get<Patient[]>(
       '/patients' +
