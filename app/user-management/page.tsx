@@ -561,6 +561,23 @@ export default function UserManagementPage() {
                 </div>
               ))}
             </div>
+            {(inviteForm.role === 'dokter' || inviteForm.role === 'perawat') && (
+              <div className="modal-hint invite-nakes-hint">
+                Untuk dokter/perawat, sebaiknya tambahkan dari tab <strong>Tenaga Kesehatan</strong> — data NIK, SIP &amp;
+                SATUSEHAT-nya sekaligus diisi, lalu akun login dibuat di form yang sama.{' '}
+                <button
+                  type="button"
+                  className="invite-nakes-link"
+                  onClick={() => {
+                    setInviteModalOpen(false);
+                    switchMainTab('practitioner');
+                  }}
+                >
+                  Buka Tenaga Kesehatan
+                </button>
+              </div>
+            )}
+
 
             <div className="modal-footer">
               <button className="btn-outline" onClick={() => setInviteModalOpen(false)}>

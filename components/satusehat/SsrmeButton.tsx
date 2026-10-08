@@ -93,6 +93,26 @@ export default function SsrmeButton({ encounterId }: { encounterId: number }) {
 
           {busy && <p className="ssrme-muted">Memproses…</p>}
           {error && <p className="ssrme-error">{error}</p>}
+          {error && /belum tercatat praktik/i.test(error) && (
+            <div className="ssrme-guide">
+              <strong>Bukan karena tombol yang salah — ini syarat dari SATUSEHAT:</strong>
+              <ol>
+                <li>
+                  SIP dokter ini harus tercatat <b>aktif untuk klinik ini</b> di SISDMK Kemenkes (diinput oleh
+                  pengelola SDMK klinik / Dinkes). Tanpa itu SATUSEHAT menolak akses SSRME.
+                </li>
+                <li>
+                  NIK dokter di ApexRecord harus sama dengan di SISDMK — cek di Pengaturan → User Management →
+                  Tenaga Kesehatan → <b>Cocokkan dengan SATUSEHAT</b>.
+                </li>
+                <li>
+                  <b>Mode Sandbox:</b> dokter dummy SATUSEHAT tidak terdaftar di organisasi sandbox klinik Anda,
+                  jadi penolakan ini wajar. Uji SSRME di Production dengan dokter ber-SIP aktif, atau minta data uji
+                  SSRME ke tim SATUSEHAT.
+                </li>
+              </ol>
+            </div>
+          )}
 
           {record && (
             <div className="ssrme-ok">

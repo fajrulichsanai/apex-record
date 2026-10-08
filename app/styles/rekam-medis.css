@@ -802,3 +802,13 @@ button.rx-kfa:hover { filter: brightness(.95); text-decoration: underline; }
   .rx-field-drug, .rx-field-signa { grid-column: auto; }
 }
 .rm-subheading { margin: 4px 0 12px; font-size: 15px; font-weight: 700; color: var(--text-main); }
+
+/* Kunjungan dokter lain (riwayat pasien bersama) — hanya baca */
+.rm-readonly-note {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 14px; padding: 10px 14px;
+  border-radius: 10px; background: var(--info-soft, #DCEAFB); color: var(--info, #1D5FAE); font-size: 13px;
+}
+.rm-readonly-note .material-symbols-rounded { font-size: 18px; flex-shrink: 0; }
+
+.ssrme-guide { margin-top: 8px; padding: 10px 12px; border-radius: 10px; background: var(--info-soft, #DCEAFB); color: var(--text-main, #17160F); font-size: 12.5px; line-height: 1.5; }
+.ssrme-guide ol { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }

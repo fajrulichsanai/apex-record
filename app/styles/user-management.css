@@ -624,3 +624,6 @@
 :root[data-theme="dark"] .user-mgmt-page .badge-nonaktif { background: #38362F; }
 :root[data-theme="dark"] .user-mgmt-page .confirmation-icon-wrapper { background: #38362F; }
 :root[data-theme="dark"] .user-mgmt-page .confirmation-buttons .btn-danger:hover:not(:disabled) { background: #C1381F; }
+
+.user-mgmt-page .invite-nakes-hint { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--primary-light); color: var(--text-2); line-height: 1.5; }
+.user-mgmt-page .invite-nakes-link { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--accent); cursor: pointer; text-decoration: underline; }

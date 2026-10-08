@@ -10,6 +10,8 @@ import {
   FiPlus,
   FiSearch,
   FiTrash2,
+  FiUser,
+  FiRefreshCw,
   FiX,
 } from 'react-icons/fi';
 import {
@@ -118,6 +120,30 @@ const initials = (name: string) =>
     .join('')
     .toUpperCase();
 
+/** Profesi perawat/bidan → peran akun perawat; lainnya dokter. */
+const roleForProfession = (p?: string | null): 'dokter' | 'perawat' =>
+  p === 'perawat' || p === 'perawat_gigi' || p === 'bidan' ? 'perawat' : 'dokter';
+
+const PASSWORD_OK = /^(?=.*[A-Za-z])(?=.*\d).{8,72}$/;
+const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** Password acak 10 karakter (huruf + angka, tanpa karakter mirip). */
+function generatePassword() {
+  const letters = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ';
+  const digitsSet = '23456789';
+  const all = letters + digitsSet;
+  const rnd = (n: number) => crypto.getRandomValues(new Uint32Array(1))[0] % n;
+  const chars = [letters[rnd(letters.length)], digitsSet[rnd(digitsSet.length)]];
+  while (chars.length < 10) chars.push(all[rnd(all.length)]);
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = rnd(i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
+}
+
+const EMPTY_ACCOUNT = { enabled: true, email: '', password: '', role: '' as '' | 'dokter' | 'perawat', isActive: true };
+
 const formatDateTime = (v: string) =>
   new Date(v).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
@@ -142,6 +168,8 @@ export default function PractitionerPanel() {
   const [revisions, setRevisions] = useState<PractitionerRevision[] | null>(null);
   const [match, setMatch] = useState<SatusehatMatch | null>(null);
   const [matching, setMatching] = useState(false);
+  const [acct, setAcct] = useState(EMPTY_ACCOUNT);
+  const [acctSaving, setAcctSaving] = useState(false);
 
   useEscapeKey(() => setFormOpen(false), formOpen);
 
@@ -191,6 +219,7 @@ export default function PractitionerPanel() {
   function openCreate(prefill?: Partial<FormState>) {
     setEditing(null);
     setForm({ ...EMPTY_FORM, ...prefill });
+    setAcct(EMPTY_ACCOUNT);
     setRevisions(null);
     setMatch(null);
     setFormOpen(true);
@@ -199,6 +228,13 @@ export default function PractitionerPanel() {
   async function openEdit(p: Practitioner) {
     setEditing(p);
     setForm(toForm(p));
+    setAcct({
+      enabled: !p.account,
+      email: p.account?.email ?? p.email ?? '',
+      password: '',
+      role: '',
+      isActive: p.account?.isActive ?? true,
+    });
     setMatch(null);
     setRevisions(null);
     setFormOpen(true);
@@ -217,6 +253,10 @@ export default function PractitionerPanel() {
     if (!editing && form.nik.length !== 16) return showError('NIK wajib 16 digit');
     if (form.nik && form.nik.length !== 16) return showError('NIK harus 16 digit');
     if (!form.gender) return showError('Jenis kelamin wajib dipilih');
+    const wantAccount = !editing && acct.enabled;
+    const accountEmail = (acct.email || form.email).trim();
+    if (wantAccount && !EMAIL_OK.test(accountEmail)) return showError('Isi email login yang valid');
+    if (wantAccount && !PASSWORD_OK.test(acct.password)) return showError('Password minimal 8 karakter, berisi huruf dan angka');
     setSaving(true);
     try {
       const { nik, reason, gender, satusehatPractitionerId, ...rest } = form;
@@ -227,8 +267,25 @@ export default function PractitionerPanel() {
         delete body.isActive;
         // Field kosong tidak perlu dikirim saat tambah
         for (const k of Object.keys(body) as (keyof PractitionerInput)[]) if (body[k] === '') delete body[k];
-        await practitionersApi.create(body);
-        success('Tenaga kesehatan ditambahkan');
+        const created = await practitionersApi.create(body);
+        if (wantAccount) {
+          try {
+            await practitionersApi.createAccount(created.id, {
+              email: accountEmail,
+              password: acct.password,
+              role: acct.role || roleForProfession(form.profession),
+            });
+            success(`Nakes & akun login dibuat — login: ${accountEmail}`);
+          } catch (err) {
+            // Data nakes sudah tersimpan; buka mode revisi agar akun bisa dibuat ulang
+            showError(`Data nakes tersimpan, tetapi akun gagal dibuat: ${errText(err)}`);
+            await load();
+            await openEdit({ ...created, account: null });
+            return;
+          }
+        } else {
+          success('Tenaga kesehatan ditambahkan');
+        }
       } else {
         if (reason.trim()) body.reason = reason.trim();
         await practitionersApi.update(editing.id, body);
@@ -240,6 +297,59 @@ export default function PractitionerPanel() {
       showError(errText(err));
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function createAccountNow() {
+    if (!editing) return;
+    const email = acct.email.trim();
+    if (!EMAIL_OK.test(email)) return showError('Isi email login yang valid');
+    if (!PASSWORD_OK.test(acct.password)) return showError('Password minimal 8 karakter, berisi huruf dan angka');
+    setAcctSaving(true);
+    try {
+      const p = await practitionersApi.createAccount(editing.id, {
+        email,
+        password: acct.password,
+        role: acct.role || roleForProfession(form.profession || editing.profession),
+      });
+      setEditing(p);
+      setAcct((a) => ({ ...a, enabled: false, password: '' }));
+      success(`Akun login dibuat — login: ${email}`);
+      setRevisions(await practitionersApi.revisions(editing.id).catch(() => revisions));
+      void load();
+    } catch (err) {
+      showError(errText(err));
+    } finally {
+      setAcctSaving(false);
+    }
+  }
+
+  async function saveAccount() {
+    if (!editing?.account) return;
+    const body: { email?: string; password?: string; isActive?: boolean } = {};
+    const email = acct.email.trim();
+    if (email && email !== editing.account.email) {
+      if (!EMAIL_OK.test(email)) return showError('Format email tidak valid');
+      body.email = email;
+    }
+    if (acct.password) {
+      if (!PASSWORD_OK.test(acct.password)) return showError('Password minimal 8 karakter, berisi huruf dan angka');
+      body.password = acct.password;
+    }
+    if (acct.isActive !== editing.account.isActive) body.isActive = acct.isActive;
+    if (!Object.keys(body).length) return showError('Tidak ada perubahan akun');
+    setAcctSaving(true);
+    try {
+      const p = await practitionersApi.updateAccount(editing.id, body);
+      setEditing(p);
+      setAcct((a) => ({ ...a, password: '' }));
+      success(body.password ? 'Password direset — sesi lama dikeluarkan' : 'Akun diperbarui');
+      setRevisions(await practitionersApi.revisions(editing.id).catch(() => revisions));
+      void load();
+    } catch (err) {
+      showError(errText(err));
+    } finally {
+      setAcctSaving(false);
     }
   }
 
@@ -521,6 +631,14 @@ export default function PractitionerPanel() {
                       <span className="nakes-badge warn">Belum terhubung</span>
                     )}
                     {p.isActive === false && <span className="nakes-badge muted">Nonaktif</span>}
+                    {p.account ? (
+                      <span className={`nakes-badge ${p.account.isActive ? 'info' : 'muted'}`}>
+                        <FiUser /> {p.account.email}
+                        {!p.account.isActive && ' (nonaktif)'}
+                      </span>
+                    ) : (
+                      <span className="nakes-badge muted">Belum punya akun</span>
+                    )}
                   </div>
                   <div className="result-tags">
                     {p.profession && <span className="result-tag">{professionLabel(p.profession)}</span>}
@@ -650,6 +768,113 @@ export default function PractitionerPanel() {
                   Alamat
                   <input className="form-input" value={form.address} maxLength={255} onChange={(e) => set('address', e.target.value)} />
                 </label>
+              </fieldset>
+
+              <fieldset className="nakes-section">
+                <legend>Akun login ApexRecord</legend>
+                {editing?.account ? (
+                  <>
+                    <div className="nakes-acct span-2">
+                      <span className={`nakes-badge ${editing.account.isActive ? 'info' : 'muted'}`}>
+                        <FiUser /> {editing.account.role === 'perawat' ? 'Perawat' : 'Dokter'} · {editing.account.isActive ? 'Aktif' : 'Nonaktif'}
+                      </span>
+                      <small>
+                        {editing.account.lastLoginAt
+                          ? `Login terakhir ${formatDateTime(editing.account.lastLoginAt)}`
+                          : 'Belum pernah login'}
+                      </small>
+                    </div>
+                    <label className="nakes-field">
+                      Email login
+                      <input className="form-input" type="email" autoComplete="off" value={acct.email} onChange={(e) => setAcct((a) => ({ ...a, email: e.target.value }))} />
+                    </label>
+                    <label className="nakes-field">
+                      Reset password (opsional)
+                      <span className="nakes-pass">
+                        <input
+                          className="form-input"
+                          type="text"
+                          autoComplete="new-password"
+                          value={acct.password}
+                          placeholder="Kosongkan bila tidak diubah"
+                          onChange={(e) => setAcct((a) => ({ ...a, password: e.target.value }))}
+                        />
+                        <button type="button" className="btn-outline" onClick={() => setAcct((a) => ({ ...a, password: generatePassword() }))} title="Buat password acak">
+                          <FiRefreshCw />
+                        </button>
+                      </span>
+                    </label>
+                    <label className="nakes-check span-2">
+                      <input type="checkbox" checked={acct.isActive} onChange={(e) => setAcct((a) => ({ ...a, isActive: e.target.checked }))} />
+                      Akun aktif (bisa login)
+                    </label>
+                    <div className="nakes-acct-actions span-2">
+                      <small>Akun ini juga tampil di tab User & Akses. Reset password mengeluarkan semua sesi lamanya.</small>
+                      <button type="button" className="btn-outline" onClick={saveAccount} disabled={acctSaving}>
+                        {acctSaving ? 'Menyimpan...' : 'Simpan akun'}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {!editing && (
+                      <label className="nakes-check span-2">
+                        <input type="checkbox" checked={acct.enabled} onChange={(e) => setAcct((a) => ({ ...a, enabled: e.target.checked }))} />
+                        Buatkan akun login untuk nakes ini (dokter/perawat bisa masuk ke ApexRecord)
+                      </label>
+                    )}
+                    {(editing || acct.enabled) && (
+                      <>
+                        <label className="nakes-field">
+                          Email login *
+                          <input
+                            className="form-input"
+                            type="email"
+                            autoComplete="off"
+                            value={acct.email}
+                            placeholder={form.email || 'nama@klinik.id'}
+                            onChange={(e) => setAcct((a) => ({ ...a, email: e.target.value }))}
+                          />
+                        </label>
+                        <label className="nakes-field">
+                          Password *
+                          <span className="nakes-pass">
+                            <input
+                              className="form-input"
+                              type="text"
+                              autoComplete="new-password"
+                              value={acct.password}
+                              placeholder="Min. 8 karakter, huruf + angka"
+                              onChange={(e) => setAcct((a) => ({ ...a, password: e.target.value }))}
+                            />
+                            <button type="button" className="btn-outline" onClick={() => setAcct((a) => ({ ...a, password: generatePassword() }))} title="Buat password acak">
+                              <FiRefreshCw />
+                            </button>
+                          </span>
+                        </label>
+                        <label className="nakes-field">
+                          Peran akun
+                          <select className="form-input" value={acct.role} onChange={(e) => setAcct((a) => ({ ...a, role: e.target.value as typeof a.role }))}>
+                            <option value="">Otomatis dari profesi ({roleForProfession(form.profession) === 'perawat' ? 'Perawat' : 'Dokter'})</option>
+                            <option value="dokter">Dokter</option>
+                            <option value="perawat">Perawat</option>
+                          </select>
+                        </label>
+                        <small className="nakes-field-note">
+                          Dokter/perawat hanya melihat pasien yang pernah atau sedang ditanganinya. Catat password lalu bagikan ke yang bersangkutan.
+                        </small>
+                        {editing && (
+                          <div className="nakes-acct-actions span-2">
+                            <span />
+                            <button type="button" className="btn-outline" onClick={createAccountNow} disabled={acctSaving}>
+                              {acctSaving ? 'Membuat...' : 'Buat akun login'}
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
+                )}
               </fieldset>
 
               {editing && (

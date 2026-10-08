@@ -23,10 +23,20 @@ export interface Practitioner {
   specialization?: string | null;
   satusehatPractitionerId?: string | null;
   userId?: number | null;
+  /** Akun login ApexRecord yang tertaut (null = belum punya akun) */
+  account?: PractitionerAccount | null;
   isActive?: boolean;
   clinicId: number;
   createdAt: string;
   updatedAt?: string;
+}
+
+export interface PractitionerAccount {
+  userId: number;
+  email: string;
+  role: 'dokter' | 'perawat' | string;
+  isActive: boolean;
+  lastLoginAt: string | null;
 }
 
 /** Field yang bisa diisi saat tambah/revisi. '' = kosongkan. */
@@ -108,6 +118,10 @@ export const practitionersApi = {
   update: (id: number, body: PractitionerInput) => apiClient.put<Practitioner>(`${BASE}/${id}`, body),
   remove: (id: number) => apiClient.delete<{ message: string }>(`${BASE}/${id}`),
   revisions: (id: number) => apiClient.get<PractitionerRevision[]>(`${BASE}/${id}/revisions`),
+  createAccount: (id: number, body: { email: string; password: string; role?: 'dokter' | 'perawat' }) =>
+    apiClient.post<Practitioner>(`${BASE}/${id}/account`, body),
+  updateAccount: (id: number, body: { email?: string; password?: string; isActive?: boolean }) =>
+    apiClient.patch<Practitioner>(`${BASE}/${id}/account`, body),
   matchSatusehat: (id: number) => apiClient.post<SatusehatMatch>(`${BASE}/${id}/match-satusehat`),
   searchSatusehat: (q: { nik?: string; ihsId?: string; name?: string; gender?: string; birthDate?: string }) =>
     apiClient.post<{ found: boolean; results: SatusehatPractitioner[] }>(`${BASE}/search-satusehat`, q),

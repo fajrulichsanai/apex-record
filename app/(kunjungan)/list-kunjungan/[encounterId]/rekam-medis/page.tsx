@@ -941,12 +941,24 @@ export default function RekamMedisPage() {
                   <div className="rm-patient-name">{detail.patient?.name || '—'}</div>
                   <div className="rm-patient-meta">
                     No. RM {detail.patient?.noRm || '—'} ·{' '}
-                    {detail.practitioner?.name ? `dr. ${detail.practitioner.name}` : 'Dokter belum ditentukan'} ·{' '}
+                    {detail.practitioner?.name
+                      ? /^(dr|drg|ns|apt|bd)\.?\s/i.test(detail.practitioner.name)
+                        ? detail.practitioner.name
+                        : `dr. ${detail.practitioner.name}`
+                      : 'Dokter belum ditentukan'} ·{' '}
                     {statusLabel(detail.status)}
                   </div>
                 </div>
                 <SsrmeButton encounterId={encounterId} />
               </div>
+
+              {detail.canEdit === false && (
+                <div className="rm-readonly-note" role="note">
+                  <span aria-hidden="true" className="material-symbols-rounded">visibility</span>
+                  Mode lihat — kunjungan ini ditangani {detail.practitioner?.name ?? 'dokter lain'}. Anda bisa membaca
+                  riwayatnya, tetapi perubahan hanya oleh dokter penanggung jawab kunjungan ini.
+                </div>
+              )}
 
               <div className="rm-layout">
                 <nav className="rm-sidebar">

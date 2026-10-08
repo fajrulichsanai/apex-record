@@ -88,3 +88,14 @@
 
 :root[data-theme="dark"] .user-mgmt-page .nakes-badge.warn,
 :root[data-theme="dark"] .user-mgmt-page .nakes-match.diff { background: #3A2C10; }
+
+/* Akun login nakes */
+.user-mgmt-page .nakes-badge.info { background: var(--badge-admin); color: var(--badge-admin-text); }
+.user-mgmt-page .nakes-badge svg { width: 12px; height: 12px; }
+.user-mgmt-page .nakes-acct { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.user-mgmt-page .nakes-acct small, .user-mgmt-page .nakes-acct-actions small, .user-mgmt-page .nakes-field-note { font-size: 11.5px; color: var(--text-3); }
+.user-mgmt-page .nakes-field-note { align-self: end; }
+.user-mgmt-page .nakes-acct-actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.user-mgmt-page .nakes-pass { display: flex; gap: 6px; }
+.user-mgmt-page .nakes-pass .form-input { flex: 1; font-family: ui-monospace, monospace; }
+.user-mgmt-page .nakes-pass .btn-outline { padding: 0 12px; flex-shrink: 0; }

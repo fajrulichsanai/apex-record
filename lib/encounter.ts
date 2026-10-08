@@ -26,6 +26,8 @@ export interface EncounterListResponse {
 
 export interface EncounterDetail {
   id: number;
+  /** false = kunjungan dokter lain (riwayat pasien bersama) — hanya bisa dilihat */
+  canEdit?: boolean;
   clinicId: number;
   patientId: number;
   practitionerId: number;
