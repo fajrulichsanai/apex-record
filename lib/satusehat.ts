@@ -211,6 +211,37 @@ export const ssrmeApi = {
     apiClient.post<SsrmeRecordLink>(`/satusehat/ssrme/encounters/${encounterId}/open`),
 };
 
+/** KYC — Verifikasi Profil SATUSEHAT Mobile (Juknis KYC v6.4) */
+export interface KycAgent {
+  name: string | null;
+  hasNik: boolean;
+}
+
+export interface KycSession {
+  sessionId: string;
+  /** URL iFrame verifikasi — sensitif, jangan disimpan */
+  url: string;
+  agentName: string;
+  expiresAt: string;
+}
+
+export interface KycChallenge {
+  name: string;
+  ihsNumber: string | null;
+  challengeCode: string;
+  createdAt: string | null;
+  expiredAt: string | null;
+}
+
+export const kycApi = {
+  agent: () => apiClient.get<KycAgent>('/satusehat/kyc/agent'),
+  start: (body: { agentName?: string; agentNik?: string } = {}) =>
+    apiClient.post<KycSession>('/satusehat/kyc/url', body),
+  challenge: (body: { sessionId: string; patientId?: number; nik?: string; name?: string }) =>
+    apiClient.post<KycChallenge>('/satusehat/kyc/challenge-code', body),
+  end: (sessionId: string) => apiClient.delete<{ ended: boolean }>(`/satusehat/kyc/sessions/${sessionId}`),
+};
+
 /** Onboarding SATUSEHAT: Autentikasi → Profil → Organization → Location → Practitioner → Patient */
 export interface OnboardingItem {
   id: number;

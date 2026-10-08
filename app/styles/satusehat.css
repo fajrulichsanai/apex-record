@@ -173,3 +173,28 @@
 .ss-page .ss-list li:last-child { border-bottom: 0; padding-bottom: 0; }
 .ss-page .ss-list .err { display: block; font-size: 12px; color: var(--red, #DC2626); }
 .ss-page .err-cell { color: var(--red, #DC2626); font-size: 12.5px; max-width: 520px; }
+
+/* Verifikasi Profil (KYC) SATUSEHAT Mobile */
+.ss-page .kyc-start h2 { display: flex; align-items: center; gap: 8px; }
+.ss-page .kyc-steps { margin: 0 0 16px; padding-left: 20px; font-size: 13px; color: var(--text-sub); display: grid; gap: 4px; }
+.ss-page .kyc-agent { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; font-size: 13.5px; }
+.ss-page .kyc-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; align-items: start; }
+.ss-page .kyc-frame-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; font-size: 13px; color: var(--text-sub); }
+.ss-page .kyc-frame { width: 100%; height: 680px; border: 1px solid var(--border); border-radius: 10px; background: #fff; }
+.ss-page .kyc-search { position: relative; display: block; }
+.ss-page .kyc-search svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-sub); }
+.ss-page .kyc-search .ss-input { width: 100%; padding-left: 32px; }
+.ss-page .kyc-results { list-style: none; margin: -8px 0 0; padding: 4px; border: 1px solid var(--border); border-radius: 10px; display: grid; gap: 2px; }
+.ss-page .kyc-results button { width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 10px; border: 0; border-radius: 8px; background: none; cursor: pointer; font: inherit; font-size: 13px; text-align: left; color: var(--text-main); }
+.ss-page .kyc-results button:hover { background: var(--primary-lt); }
+.ss-page .kyc-results small, .ss-page .kyc-picked small { color: var(--text-sub); font-size: 12px; }
+.ss-page .kyc-picked { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--primary-lt); }
+.ss-page .kyc-picked > span { display: flex; flex-direction: column; gap: 2px; font-size: 13.5px; min-width: 0; }
+.ss-page .kyc-or { margin: 0; font-size: 12px; }
+.ss-page .kyc-code { margin-top: 16px; padding: 16px; border-radius: 12px; background: var(--primary-lt); display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; font-size: 13px; }
+.ss-page .kyc-code-value { font-size: 34px; font-weight: 700; letter-spacing: 6px; color: var(--primary-dk); font-family: ui-monospace, monospace; }
+.ss-page .kyc-code small { color: var(--text-sub); }
+@media (max-width: 960px) {
+  .ss-page .kyc-layout { grid-template-columns: 1fr; }
+  .ss-page .kyc-frame { height: 560px; }
+}
