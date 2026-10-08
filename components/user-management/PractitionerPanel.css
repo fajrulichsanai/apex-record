@@ -1,0 +1,90 @@
+/* Tenaga kesehatan — memakai token .user-mgmt-page (user-management.css) */
+.user-mgmt-page .nakes-dot-warn { background: var(--warning); }
+.user-mgmt-page .nakes .toolbar .btn-outline,
+.user-mgmt-page .nakes .toolbar .btn-primary { white-space: nowrap; }
+.user-mgmt-page .nakes-filters { margin-bottom: 16px; }
+.user-mgmt-page .nakes-muted { font-size: 13px; color: var(--text-3); margin: 8px 0; }
+.user-mgmt-page .nakes-empty { padding: 48px 16px; display: flex; flex-direction: column; align-items: center; text-align: center; color: var(--text-3); }
+
+.user-mgmt-page .nakes-search { margin-bottom: 18px; }
+.user-mgmt-page .nakes-search-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.user-mgmt-page .nakes-search-head .modal-close { flex-shrink: 0; }
+.user-mgmt-page .nakes-search .method-btn { font: inherit; }
+.user-mgmt-page .nakes-search-fields { display: flex; gap: 10px; flex-wrap: wrap; }
+.user-mgmt-page .nakes-search-fields .search-input { flex: 1; min-width: 160px; }
+.user-mgmt-page .nakes-results { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+.user-mgmt-page .nakes-result {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg);
+}
+.user-mgmt-page .nakes-result .result-info { min-width: 0; }
+
+.user-mgmt-page .nakes-list { display: flex; flex-direction: column; gap: 10px; }
+.user-mgmt-page .nakes-card {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text-1); font: inherit; text-align: left; cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.user-mgmt-page .nakes-card:hover { border-color: var(--accent); box-shadow: var(--shadow-sm); }
+.user-mgmt-page .nakes-card.inactive { opacity: .65; }
+.user-mgmt-page .nakes-avatar { background: var(--accent); }
+.user-mgmt-page .nakes-card-body { flex: 1; min-width: 0; }
+.user-mgmt-page .nakes-card-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.user-mgmt-page .nakes-edit { width: 16px; height: 16px; color: var(--text-3); flex-shrink: 0; }
+.user-mgmt-page .nakes-issues { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 12px; color: var(--warning); }
+.user-mgmt-page .nakes-issues svg { flex-shrink: 0; }
+
+.user-mgmt-page .nakes-badge {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 600; white-space: nowrap;
+}
+.user-mgmt-page .nakes-badge.ok { background: var(--primary-light); color: var(--success); }
+.user-mgmt-page .nakes-badge.warn { background: #FCEACB; color: var(--warning); }
+.user-mgmt-page .nakes-badge.muted { background: var(--bg); color: var(--text-3); border: 1px solid var(--border); }
+
+/* Modal tambah/revisi */
+.user-mgmt-page .modal.nakes-modal {
+  width: 680px; max-height: calc(100vh - 32px); display: flex; flex-direction: column; padding: 24px 24px 20px;
+}
+.user-mgmt-page .nakes-modal .modal-header { margin-bottom: 16px; }
+.user-mgmt-page .nakes-modal-body { overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-right: 4px; margin-right: -4px; }
+.user-mgmt-page .nakes-section {
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px 14px; margin: 0; min-width: 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+}
+.user-mgmt-page .nakes-section legend { padding: 0 6px; font-size: 12px; font-weight: 700; color: var(--text-2); text-transform: uppercase; letter-spacing: .03em; }
+.user-mgmt-page .nakes-section .span-2 { grid-column: 1 / -1; }
+.user-mgmt-page .nakes-field { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--text-2); min-width: 0; }
+.user-mgmt-page .nakes-field .form-input { width: 100%; min-width: 0; font-weight: 400; }
+.user-mgmt-page .nakes-field small { font-weight: 400; color: var(--text-3); font-size: 11.5px; }
+.user-mgmt-page .nakes-field small.nakes-warn { color: var(--warning); }
+.user-mgmt-page .nakes-check { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-1); }
+.user-mgmt-page .nakes-check input { accent-color: var(--accent); width: 16px; height: 16px; }
+.user-mgmt-page .nakes-ss { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.user-mgmt-page .nakes-match {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px; border-radius: 10px; font-size: 13px;
+}
+.user-mgmt-page .nakes-match.ok { background: var(--primary-light); color: var(--success); }
+.user-mgmt-page .nakes-match.diff { background: #FCEACB; color: var(--warning); }
+.user-mgmt-page .nakes-match.none { background: var(--bg); color: var(--text-2); }
+.user-mgmt-page .nakes-history-title { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--text-2); margin-bottom: 6px; }
+.user-mgmt-page .nakes-history ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; }
+.user-mgmt-page .nakes-history li { padding: 8px 10px; border-radius: 8px; background: var(--bg); font-size: 12.5px; }
+.user-mgmt-page .nakes-history-meta { color: var(--text-3); font-size: 11.5px; margin-bottom: 4px; }
+.user-mgmt-page .nakes-history-change { color: var(--text-1); overflow-wrap: anywhere; }
+.user-mgmt-page .nakes-history-change s { color: var(--text-3); }
+.user-mgmt-page .nakes-footer { margin-top: 16px; flex-wrap: wrap; }
+.user-mgmt-page .nakes-footer .nakes-delete { flex: 0 0 auto; color: var(--danger); border-color: var(--danger); margin-right: auto; }
+
+@media (max-width: 640px) {
+  .user-mgmt-page .nakes-section { grid-template-columns: 1fr; }
+  .user-mgmt-page .modal.nakes-modal { padding: 18px 16px 16px; }
+  .user-mgmt-page .nakes-result .btn-add-to-clinic,
+  .user-mgmt-page .nakes-result .btn-outline { width: 100%; justify-content: center; }
+  .user-mgmt-page .nakes-footer .nakes-delete { flex: 1 1 100%; justify-content: center; }
+}
+
+:root[data-theme="dark"] .user-mgmt-page .nakes-badge.warn,
+:root[data-theme="dark"] .user-mgmt-page .nakes-match.diff { background: #3A2C10; }

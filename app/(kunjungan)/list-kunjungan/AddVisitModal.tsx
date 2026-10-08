@@ -72,7 +72,7 @@ export default function AddVisitModal({ preselectReservationId, onClose, onCreat
         ]);
         if (!isMounted.current) return;
         setPatients(patientList);
-        setPractitioners(practitionerList);
+        setPractitioners(practitionerList.filter((p) => p.isActive !== false));
         const withPatient = reservationRes.data.filter((r) => !!r.patientId);
         setConfirmedReservations(withPatient);
 

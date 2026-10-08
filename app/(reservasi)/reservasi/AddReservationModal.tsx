@@ -65,7 +65,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
         ]);
         if (!isMounted.current) return;
         setPatients(patientList);
-        setPractitioners(practitionerList);
+        setPractitioners(practitionerList.filter((p) => p.isActive !== false));
       } catch (err) {
         if (!isMounted.current) return;
         const msg = err instanceof ApiError ? err.message : 'Gagal memuat data';

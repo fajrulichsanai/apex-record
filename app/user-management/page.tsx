@@ -11,6 +11,7 @@ import type { User, RoleOption } from '@/types/user';
 import type { Clinic } from '@/types/clinic';
 import SettingsTabs from '@/components/settings/SettingsTabs';
 import UserFeaturesModal from '@/components/features/UserFeaturesModal';
+import PractitionerPanel from '@/components/user-management/PractitionerPanel';
 import { pressable, useEscapeKey } from '@/lib/a11y';
 import '../styles/user-management.css';
 
@@ -25,7 +26,6 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 type MainTab = 'users' | 'practitioner';
-type SearchMethod = 'nik' | 'nama' | 'id';
 type UserFilter = 'semua' | 'pending' | 'aktif' | 'nonaktif';
 
 function statusOf(u: User): 'aktif' | 'nonaktif' | 'pending' {
@@ -63,10 +63,6 @@ export default function UserManagementPage() {
   /** User yang sedang diatur fiturnya (owner) */
   const [featuresUser, setFeaturesUser] = useState<User | null>(null);
 
-  const [searchMethod, setSearchMethod] = useState<SearchMethod>('nik');
-  const [searchInput, setSearchInput] = useState('');
-  const [searchNamaInput, setSearchNamaInput] = useState({ nama: '', ttl: '' });
-  const [showSearchResult, setShowSearchResult] = useState(false);
 
   const [inviteForm, setInviteForm] = useState({ email: '', name: '', role: '', clinicId: '' });
   const [inviteSubmitting, setInviteSubmitting] = useState(false);
@@ -312,7 +308,7 @@ export default function UserManagementPage() {
                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
               />
             </svg>
-            Cari Tenaga Kesehatan (SATUSEHAT)
+            Tenaga Kesehatan
           </button>
         </div>
 
@@ -488,134 +484,10 @@ export default function UserManagementPage() {
           </div>
         )}
 
-        {/* VIEW: PRACTITIONER / SATUSEHAT (not yet backed by API — out of scope for this change) */}
+        {/* VIEW: TENAGA KESEHATAN — data nakes klinik, cari SATUSEHAT, revisi */}
         {mainTab === 'practitioner' && (
           <div className="view-section visible">
-            <div className="satusehat-grid">
-              <div className="satusehat-panel">
-                <div className="satusehat-header">
-                  <div className="satusehat-logo">
-                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="satusehat-title">SATUSEHAT Search</div>
-                    <div className="satusehat-subtitle">Cari tenaga kesehatan nasional</div>
-                  </div>
-                </div>
-
-                <div className="method-section-label">Metode Pencarian</div>
-                <div className="search-methods">
-                  <div
-                    className={`method-btn ${searchMethod === 'nik' ? 'active' : ''}`}
-                    {...pressable(() => setSearchMethod('nik'))}
-                  >
-                    <div className="method-btn-label">NIK</div>
-                    <div className="method-btn-sub">16 digit KTP</div>
-                  </div>
-                  <div
-                    className={`method-btn ${searchMethod === 'nama' ? 'active' : ''}`}
-                    {...pressable(() => setSearchMethod('nama'))}
-                  >
-                    <div className="method-btn-label">Nama</div>
-                    <div className="method-btn-sub">Nama + TTL</div>
-                  </div>
-                  <div
-                    className={`method-btn ${searchMethod === 'id' ? 'active' : ''}`}
-                    {...pressable(() => setSearchMethod('id'))}
-                  >
-                    <div className="method-btn-label">ID</div>
-                    <div className="method-btn-sub">ID Practitioner</div>
-                  </div>
-                </div>
-
-                <div className="search-form">
-                  {searchMethod === 'nik' && (
-                    <input
-                      type="text"
-                      placeholder="Masukkan 16 digit NIK"
-                      value={searchInput}
-                      onChange={(e) => setSearchInput(e.target.value)}
-                      className="search-input"
-                      maxLength={16}
-                    />
-                  )}
-                  {searchMethod === 'nama' && (
-                    <>
-                      <input
-                        type="text"
-                        placeholder="Nama lengkap"
-                        value={searchNamaInput.nama}
-                        onChange={(e) => setSearchNamaInput({ ...searchNamaInput, nama: e.target.value })}
-                        className="search-input"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Tempat/Tanggal Lahir (TTL)"
-                        value={searchNamaInput.ttl}
-                        onChange={(e) => setSearchNamaInput({ ...searchNamaInput, ttl: e.target.value })}
-                        className="search-input"
-                      />
-                    </>
-                  )}
-                  {searchMethod === 'id' && (
-                    <input
-                      type="text"
-                      placeholder="Masukkan ID Practitioner"
-                      value={searchInput}
-                      onChange={(e) => setSearchInput(e.target.value)}
-                      className="search-input"
-                    />
-                  )}
-                  <button
-                    className="btn-primary btn-search-full"
-                    onClick={() => setShowSearchResult(true)}
-                    disabled={
-                      searchMethod === 'nik' && !searchInput ||
-                      searchMethod === 'id' && !searchInput ||
-                      searchMethod === 'nama' && (!searchNamaInput.nama || !searchNamaInput.ttl)
-                    }
-                  >
-                    Cari Practitioner
-                  </button>
-                </div>
-              </div>
-
-              <div className="search-result-panel">
-                {showSearchResult ? (
-                  <div style={{ width: '100%' }}>
-                    <div className="result-count">
-                      <span className="result-count-dot" />
-                      1 Hasil Ditemukan
-                    </div>
-                    <div className="search-result-card">
-                      <div className="result-avatar">DS</div>
-                      <div className="result-info">
-                        <div className="result-name">drg Daffa Safra</div>
-                        <div className="result-tags">
-                          <span className="result-tag">IHS: 13229303626</span>
-                          <span className="result-tag">NIK: 13070***</span>
-                          <span className="result-tag">Perempuan · 1990-06-12</span>
-                        </div>
-                      </div>
-                      <button className="btn-add-to-clinic">
-                        Tambah ke Klinik
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="empty-state">
-                    <p>Mulai Pencarian</p>
-                    <span>Pilih metode dan isi data di panel kiri</span>
-                  </div>
-                )}
-              </div>
-            </div>
+            <PractitionerPanel />
           </div>
         )}
 
