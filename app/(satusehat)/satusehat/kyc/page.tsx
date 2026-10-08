@@ -136,9 +136,13 @@ export default function SatusehatKycPage() {
             <FiShield /> Mulai verifikasi
           </h2>
           <ol className="kyc-steps">
-            <li>Pasien membuka aplikasi SATUSEHAT Mobile dan memilih Verifikasi Profil.</li>
-            <li>Petugas memulai sesi di sini, lalu mengikuti langkah pada layar verifikasi SATUSEHAT.</li>
-            <li>Bila diminta, buat kode verifikasi untuk NIK pasien dan bacakan ke pasien.</li>
+            <li>
+              Pasien membuka SATUSEHAT Mobile → <strong>Profile</strong> → <strong>Kode Identitas</strong> →{' '}
+              <strong>Kode Akses</strong> (6 digit). Verifikasi tidak bisa diwakilkan.
+            </li>
+            <li>Petugas memulai sesi di sini, lalu memasukkan kode akses pasien dan klik Verifikasi Kode.</li>
+            <li>Cocokkan Nama lengkap, NIK KTP, dan Wajah pasien; centang yang sesuai, lalu Kirim Validasi.</li>
+            <li>Pasien membuka ulang SATUSEHAT Mobile — akun bertanda centang biru, lalu buat PIN Resume Medis.</li>
           </ol>
           {agent === null ? (
             <p className="ss-muted">Memuat...</p>
@@ -203,7 +207,10 @@ export default function SatusehatKycPage() {
           </div>
 
           <div className="ss-card kyc-code-card">
-            <h2>Kode verifikasi pasien</h2>
+            <h2>Kode verifikasi (opsional)</h2>
+            <p className="ss-muted kyc-or">
+              Kirim kode verifikasi ke aplikasi SATUSEHAT Mobile pasien bila pasien tidak bisa membuka Kode Akses.
+            </p>
             <form className="ss-form" onSubmit={requestCode} aria-label="Kode verifikasi pasien">
               {picked ? (
                 <div className="kyc-picked">
