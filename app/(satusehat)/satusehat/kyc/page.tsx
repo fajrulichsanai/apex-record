@@ -198,12 +198,12 @@ export default function SatusehatKycPage() {
                 <FiExternalLink /> Buka di tab baru
               </a>
             </div>
-            <iframe
-              title="Verifikasi Profil SATUSEHAT"
-              src={session.url}
-              className="kyc-frame"
-              referrerPolicy="no-referrer"
-            />
+            {/* Asal (origin) klinik dikirim: layanan KYC bisa menolak iFrame tanpa referer */}
+            <iframe title="Verifikasi Profil SATUSEHAT" src={session.url} className="kyc-frame" />
+            <p className="kyc-frame-hint">
+              Layar di atas kosong / ikon halaman rusak? Klik <b>Buka di tab baru</b> — verifikasi tetap berjalan di
+              sesi yang sama.
+            </p>
           </div>
 
           <div className="ss-card kyc-code-card">
