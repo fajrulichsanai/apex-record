@@ -7,9 +7,7 @@ import {
   FiCloud,
   FiCopy,
   FiHome,
-  FiPlus,
   FiTag,
-  FiTrash2,
   FiUserPlus,
 } from 'react-icons/fi';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -17,6 +15,7 @@ import FeatureGuard from '@/components/auth/FeatureGuard';
 import { ApiError, apiClient } from '@/lib/api-client';
 import { clinicApi, type ClinicResponse } from '@/lib/clinic';
 import { tarifApi } from '@/lib/tarif';
+import TarifStep from './TarifStep';
 import { onboardingApi, type OnboardingStatus } from '@/lib/onboarding';
 import { useToast } from '@/lib/toast-context';
 import { useFeatures } from '@/lib/features-context';
@@ -84,21 +83,6 @@ function toClinicForm(clinic: ClinicResponse, profile?: FacilityProfile | null):
   };
 }
 
-interface TarifRow {
-  id: string;
-  name: string;
-  kategori: string;
-  hargaJual: string;
-}
-
-// Only a React key for the row — crypto.randomUUID() needs iOS 15.4+, so
-// older iPhones get a counter-based id instead.
-let tarifRowSeq = 0;
-function newTarifRow(): TarifRow {
-  const id = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `row-${Date.now()}-${++tarifRowSeq}`;
-  return { id, name: '', kategori: '', hargaJual: '' };
-}
-
 interface InvitedDoctor {
   name: string;
   email: string;
@@ -119,8 +103,6 @@ export default function OnboardingPage() {
   const [savingClinic, setSavingClinic] = useState(false);
 
   const [existingTarifCount, setExistingTarifCount] = useState(0);
-  const [tarifRows, setTarifRows] = useState<TarifRow[]>([newTarifRow()]);
-  const [savingTarif, setSavingTarif] = useState(false);
 
   const [doctorName, setDoctorName] = useState('');
   const [doctorEmail, setDoctorEmail] = useState('');
@@ -203,40 +185,10 @@ export default function OnboardingPage() {
     }
   }
 
-  function updateTarifRow(id: string, patch: Partial<TarifRow>) {
-    setTarifRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-  }
-
-  function removeTarifRow(id: string) {
-    setTarifRows((prev) => (prev.length > 1 ? prev.filter((r) => r.id !== id) : prev));
-  }
-
-  async function handleSaveTarif() {
-    const validRows = tarifRows.filter((r) => r.name.trim() && r.kategori.trim() && r.hargaJual.trim());
-    if (validRows.length === 0 && existingTarifCount === 0) {
-      showError('Tambahkan minimal 1 tarif (nama, kategori, dan harga jual wajib diisi)');
-      return;
-    }
-    try {
-      setSavingTarif(true);
-      for (const row of validRows) {
-        await tarifApi.create({
-          name: row.name,
-          kategori: row.kategori,
-          hargaJual: Number(row.hargaJual),
-        });
-      }
-      success(validRows.length > 0 ? `${validRows.length} tarif berhasil ditambahkan` : 'Tarif sudah lengkap');
-      setExistingTarifCount((prev) => prev + validRows.length);
-      setTarifRows([newTarifRow()]);
-      setStatus((prev) => (prev ? { ...prev, tarif: { complete: true, count: prev.tarif.count + validRows.length } } : prev));
-      setStep(3);
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Gagal menyimpan tarif';
-      showError(message);
-    } finally {
-      setSavingTarif(false);
-    }
+  function handleTarifSaved(added: number) {
+    setExistingTarifCount((prev) => prev + added);
+    setStatus((prev) => (prev ? { ...prev, tarif: { complete: true, count: prev.tarif.count + added } } : prev));
+    setStep(3);
   }
 
   async function handleInviteDoctor() {
@@ -374,54 +326,7 @@ export default function OnboardingPage() {
               )}
 
               {step === 2 && (
-                <div className="onboarding-step-body">
-                  <h2>Tarif Layanan</h2>
-                  <p className="onboarding-step-desc">
-                    Tambahkan minimal 1 layanan/tindakan yang klinik Anda tawarkan.
-                    {existingTarifCount > 0 && ` Saat ini sudah ada ${existingTarifCount} tarif.`}
-                  </p>
-                  <div className="onboarding-tarif-rows">
-                    {tarifRows.map((row) => (
-                      <div key={row.id} className="onboarding-tarif-row">
-                        <input
-                          placeholder="Nama tindakan (mis. Konsultasi Umum)"
-                          value={row.name}
-                          onChange={(e) => updateTarifRow(row.id, { name: e.target.value })}
-                        />
-                        <input
-                          placeholder="Kategori (mis. Konsultasi)"
-                          value={row.kategori}
-                          onChange={(e) => updateTarifRow(row.id, { kategori: e.target.value })}
-                        />
-                        <input
-                          type="number"
-                          placeholder="Harga jual"
-                          value={row.hargaJual}
-                          onChange={(e) => updateTarifRow(row.id, { hargaJual: e.target.value })}
-                        />
-                        <button aria-label="Hapus baris tarif"
-                          type="button"
-                          className="onboarding-row-remove"
-                          onClick={() => removeTarifRow(row.id)}
-                          disabled={tarifRows.length === 1}
-                        >
-                          <FiTrash2 />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <button type="button" className="onboarding-add-row" onClick={() => setTarifRows((prev) => [...prev, newTarifRow()])}>
-                    <FiPlus /> Tambah Baris
-                  </button>
-                  <div className="onboarding-actions">
-                    <button type="button" className="btn-outline" onClick={() => setStep(1)}>
-                      Kembali
-                    </button>
-                    <button type="button" className="btn-primary" onClick={handleSaveTarif} disabled={savingTarif}>
-                      {savingTarif ? 'Menyimpan...' : 'Simpan & Lanjut'}
-                    </button>
-                  </div>
-                </div>
+                <TarifStep existingCount={existingTarifCount} onBack={() => setStep(1)} onSaved={handleTarifSaved} />
               )}
 
               {step === 3 && (
