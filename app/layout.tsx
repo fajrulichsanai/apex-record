@@ -7,6 +7,7 @@ import { SubscriptionGateProvider } from "@/lib/subscription-gate-context";
 import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme-context";
 import ImpersonationBanner from "@/components/subscription/ImpersonationBanner";
 import DemoBanner from "@/components/demo/DemoBanner";
+import VisitorTracking from "@/components/layout/VisitorTracking";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -44,6 +45,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
+        <VisitorTracking />
         <ThemeProvider>
           <AuthProvider>
             <FeaturesProvider>
