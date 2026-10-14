@@ -74,23 +74,13 @@ export default function UserFeaturesModal({
           ) : !data ? (
             <p className="ft-empty">Memuat…</p>
           ) : (
-            <>
-              <FeatureToggleList
-                title="Fitur"
-                hint="Matikan untuk menyembunyikan menu & fitur dari user ini. Nyalakan untuk memberi akses di luar bawaan perannya."
-                items={data.standard}
-                busyKey={busyKey}
-                onChange={change}
-              />
-              <FeatureToggleList
-                title="Fitur khusus klinik"
-                hint="Fitur custom yang diaktifkan untuk klinik ini — hanya muncul untuk user yang dinyalakan."
-                items={data.custom}
-                busyKey={busyKey}
-                onChange={change}
-                emptyText="Belum ada fitur khusus untuk klinik ini."
-              />
-            </>
+            <FeatureToggleList
+              title="Fitur"
+              hint="Matikan untuk menyembunyikan menu & fitur dari user ini. Nyalakan untuk memberi akses di luar bawaan perannya."
+              items={data.standard}
+              busyKey={busyKey}
+              onChange={change}
+            />
           )}
         </div>
         <div className="ft-modal-footer">

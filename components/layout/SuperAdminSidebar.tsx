@@ -39,7 +39,7 @@ const NAV_ITEMS = [
   { label: 'Laporan', icon: <FiBarChart2 />, href: '/super-admin/reports' },
   { label: 'Log Aktivitas', icon: <FiShield />, href: '/super-admin/audit-log' },
   { label: 'Permintaan Data', icon: <FiDatabase />, href: '/super-admin/data-requests' },
-  { label: 'Fitur Custom', icon: <FiSliders />, href: '/super-admin/features' },
+  { label: 'Pengaturan Platform', icon: <FiSliders />, href: '/super-admin/pengaturan' },
   { label: 'SATUSEHAT Klinik', icon: <FiCloud />, href: '/super-admin/satusehat', section: 'SATUSEHAT' },
   { label: 'Master Sarana (MSI)', icon: <FiMapPin />, href: '/super-admin/satusehat/sarana' },
   { label: 'Master Wilayah', icon: <FiMap />, href: '/super-admin/satusehat/wilayah' },

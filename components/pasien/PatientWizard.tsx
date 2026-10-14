@@ -9,6 +9,7 @@ import { Patient, PatientPayload, patientsApi } from '@/lib/patients';
 import { masterDataApi, WilayahItem } from '@/lib/master-data';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
+import { useFeatures } from '@/lib/features-context';
 
 type UiGender = 'laki-laki' | 'perempuan';
 
@@ -297,6 +298,7 @@ export default function PatientWizard({
   onCancel,
 }: PatientWizardProps) {
   const toast = useToast();
+  const { can } = useFeatures();
   const [form, setForm] = useState<WizardForm>(EMPTY_FORM);
   const [stepIndex, setStepIndex] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
@@ -645,7 +647,9 @@ export default function PatientWizard({
             {currentStep.label}
           </div>
 
-          {currentStep.key === 'identitas' && mode === 'create' && <SatusehatPatientSearch onUse={applySatusehat} />}
+          {currentStep.key === 'identitas' && mode === 'create' && can('satusehat') && (
+            <SatusehatPatientSearch onUse={applySatusehat} />
+          )}
 
           {currentStep.key === 'identitas' && (
             <div className="form-row">

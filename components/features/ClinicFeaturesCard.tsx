@@ -6,7 +6,7 @@ import FeatureToggleList from '@/components/features/FeatureToggleList';
 import { featuresApi, type ClinicFeatures } from '@/lib/features';
 import { useToast } from '@/lib/toast-context';
 
-/** Super admin: fitur yang tersedia untuk satu klinik (termasuk fitur custom). */
+/** Super admin: fitur yang tersedia untuk satu klinik. */
 export default function ClinicFeaturesCard({ clinicId }: { clinicId: number }) {
   const { showToast } = useToast();
   const [data, setData] = useState<ClinicFeatures | null>(null);
@@ -48,18 +48,13 @@ export default function ClinicFeaturesCard({ clinicId }: { clinicId: number }) {
         <p className="ft-empty">Memuat…</p>
       ) : (
         <>
+          {!data.satusehatGlobalEnabled && (
+            <p className="ft-note">
+              SATUSEHAT sedang dimatikan untuk semua klinik di <Link href="/super-admin/pengaturan">Pengaturan Platform</Link>.
+              Saklar SATUSEHAT di bawah baru berlaku setelah saklar global dinyalakan.
+            </p>
+          )}
           <FeatureToggleList title="Fitur standar" items={data.standard} busyKey={busyKey} onChange={change} />
-          <FeatureToggleList
-            title="Fitur custom"
-            hint="Nyalakan untuk klinik ini; owner lalu memilih user mana yang mendapatkannya."
-            items={data.custom}
-            busyKey={busyKey}
-            onChange={change}
-            emptyText="Belum ada fitur custom."
-          />
-          <p style={{ fontSize: 12.5, margin: '10px 0 0' }}>
-            <Link href="/super-admin/features">Kelola daftar fitur custom →</Link>
-          </p>
         </>
       )}
     </div>

@@ -25,6 +25,7 @@ import {
   type SatusehatPractitioner,
 } from '@/lib/practitioners';
 import { useToast } from '@/lib/toast-context';
+import { useFeatures } from '@/lib/features-context';
 import { useEscapeKey } from '@/lib/a11y';
 import './PractitionerPanel.css';
 
@@ -149,6 +150,7 @@ const formatDateTime = (v: string) =>
 
 export default function PractitionerPanel() {
   const { success, error: showError } = useToast();
+  const satusehatOn = useFeatures().can('satusehat');
   const [list, setList] = useState<Practitioner[] | null>(null);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('semua');
@@ -452,9 +454,11 @@ export default function PractitionerPanel() {
             aria-label="Cari tenaga kesehatan"
           />
         </div>
-        <button type="button" className="btn-outline" onClick={() => setSearchOpen((v) => !v)}>
-          <FiSearch /> Cari di SATUSEHAT
-        </button>
+        {satusehatOn && (
+          <button type="button" className="btn-outline" onClick={() => setSearchOpen((v) => !v)}>
+            <FiSearch /> Cari di SATUSEHAT
+          </button>
+        )}
         <button type="button" className="btn-primary" onClick={() => openCreate()}>
           <FiPlus /> Tambah Nakes
         </button>
@@ -890,9 +894,11 @@ export default function PractitionerPanel() {
                         <span className="nakes-badge warn">Belum terhubung SATUSEHAT</span>
                       )}
                     </div>
-                    <button type="button" className="btn-outline" onClick={runMatch} disabled={matching || !editing.hasNik}>
-                      <FiLink /> {matching ? 'Mencocokkan...' : 'Cocokkan dengan SATUSEHAT'}
-                    </button>
+                    {satusehatOn && (
+                      <button type="button" className="btn-outline" onClick={runMatch} disabled={matching || !editing.hasNik}>
+                        <FiLink /> {matching ? 'Mencocokkan...' : 'Cocokkan dengan SATUSEHAT'}
+                      </button>
+                    )}
                   </div>
                   {match && (
                     <div className={`nakes-match span-2 ${match.found ? (match.nameMatches ? 'ok' : 'diff') : 'none'}`}>

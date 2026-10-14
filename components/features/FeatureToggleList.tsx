@@ -36,7 +36,6 @@ export default function FeatureToggleList({
             <li key={f.key} className={f.enabled ? 'on' : 'off'}>
               <div className="ft-info">
                 <span className="ft-label">{f.label}</span>
-                {f.description && <span className="ft-desc">{f.description}</span>}
                 <span className={`ft-state ${f.isDefault ? 'default' : 'custom'}`}>
                   {f.isDefault ? 'Bawaan' : 'Diatur'}
                   {f.roleDefault !== undefined && !f.isDefault && ` · bawaan role: ${f.roleDefault ? 'nyala' : 'mati'}`}

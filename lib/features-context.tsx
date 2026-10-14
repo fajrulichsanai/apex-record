@@ -9,9 +9,7 @@ import { isDemoMode } from './demo/demo-mode';
 interface FeaturesState {
   /** Fitur efektif dari server; null selama belum dimuat (pakai bawaan role) */
   features: Set<string> | null;
-  custom: { key: string; name: string }[];
-  /** Boleh mengakses fitur standar (FeatureKey) atau fitur custom ("custom:…")? */
-  can: (key: FeatureKey | `custom:${string}`) => boolean;
+  can: (key: FeatureKey) => boolean;
   reload: () => Promise<void>;
 }
 
@@ -24,23 +22,19 @@ const FeaturesContext = createContext<FeaturesState | undefined>(undefined);
 export function FeaturesProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [features, setFeatures] = useState<Set<string> | null>(null);
-  const [custom, setCustom] = useState<{ key: string; name: string }[]>([]);
   const userKey = user ? `${user.id}:${user.role}:${user.clinicId ?? ''}` : '';
 
   const reload = useCallback(async () => {
     if (!userKey || isDemoMode()) {
       setFeatures(null);
-      setCustom([]);
       return;
     }
     try {
       const res = await featuresApi.me();
       setFeatures(new Set(res.features));
-      setCustom(res.custom);
     } catch {
       // Server belum mendukung / gagal: tetap pakai bawaan role
       setFeatures(null);
-      setCustom([]);
     }
   }, [userKey]);
 
@@ -50,14 +44,17 @@ export function FeaturesProvider({ children }: { children: ReactNode }) {
 
   const role = user?.role;
   const can = useCallback(
-    (key: FeatureKey | `custom:${string}`) => {
+    (key: FeatureKey) => {
       if (features) return features.has(key);
-      return key.startsWith('custom:') ? false : canAccessFeature(role, key as FeatureKey);
+      // SATUSEHAT juga bergantung pada saklar platform yang hanya diketahui
+      // server — jangan tampilkan sebelum server mengonfirmasi (kecuali demo)
+      if (key === 'satusehat' && !isDemoMode()) return false;
+      return canAccessFeature(role, key);
     },
     [features, role],
   );
 
-  const value = useMemo(() => ({ features, custom, can, reload }), [features, custom, can, reload]);
+  const value = useMemo(() => ({ features, can, reload }), [features, can, reload]);
   return <FeaturesContext.Provider value={value}>{children}</FeaturesContext.Provider>;
 }
 
