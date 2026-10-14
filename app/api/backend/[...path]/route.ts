@@ -22,7 +22,8 @@ const TOKEN_ISSUING = new Set(['auth/login', 'auth/refresh']);
 
 // Request headers worth forwarding. Everything else (cookies in particular)
 // stays on this side of the proxy.
-const FORWARD_REQUEST_HEADERS = ['content-type', 'accept', 'accept-language', 'user-agent'];
+// x-device-token: penanda perangkat absensi (lihat lib/attendance.ts)
+const FORWARD_REQUEST_HEADERS = ['content-type', 'accept', 'accept-language', 'user-agent', 'x-device-token'];
 const FORWARD_RESPONSE_HEADERS = [
   'content-type',
   'content-disposition',

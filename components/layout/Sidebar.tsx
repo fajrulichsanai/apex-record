@@ -28,7 +28,9 @@ import {
   FiList,
   FiCheckSquare,
   FiPackage,
-  FiShield } from 'react-icons/fi';
+  FiShield,
+  FiClock,
+  FiUserCheck } from 'react-icons/fi';
 import './sidebar.css';
 import { useFeatures } from '@/lib/features-context';
 
@@ -115,6 +117,20 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter', feature: 'share-fee-dokter' },
         { label: 'Share Fee Saya', icon: <FiDollarSign />, href: '/share-fee-saya', feature: 'share-fee-saya' },
         { label: 'Gudang & Stok', icon: <FiBox />, href: '/gudang', feature: 'gudang' },
+      ],
+    },
+    {
+      title: 'Absensi',
+      groupId: 'absensi',
+      icon: <FiClock />,
+      items: [
+        // Pegawai absen; owner tidak absen, hanya melihat kehadiran
+        ...(user?.role === 'admin' || user?.role === 'dokter' || user?.role === 'perawat'
+          ? [{ label: 'Absen Saya', soloLabel: 'Absensi', icon: <FiClock />, href: '/absensi', feature: 'absensi' as FeatureKey }]
+          : []),
+        ...(user?.role === 'owner' || user?.role === 'admin'
+          ? [{ label: 'Kehadiran Pegawai', icon: <FiUserCheck />, href: '/kehadiran', feature: 'absensi' as FeatureKey }]
+          : []),
       ],
     },
     {

@@ -28,7 +28,8 @@ export type FeatureKey =
   | 'data-privasi'
   | 'konten'
   | 'satusehat'
-  | 'imunisasi';
+  | 'imunisasi'
+  | 'absensi';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',
@@ -55,6 +56,7 @@ const FULL_ACCESS: FeatureKey[] = [
   'api',
   'konten',
   'satusehat',
+  'absensi',
 ];
 
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
@@ -83,10 +85,11 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'konten',
     'tampilan',
     'satusehat',
+    'absensi',
   ],
-  dokter: ['pasien', 'reservasi', 'kunjungan', 'farmasi', 'informed-consent', 'share-fee-saya', 'tampilan'],
+  dokter: ['pasien', 'reservasi', 'kunjungan', 'farmasi', 'informed-consent', 'share-fee-saya', 'tampilan', 'absensi'],
   // Perawat: akses sama persis dengan dokter
-  perawat: ['pasien', 'reservasi', 'kunjungan', 'farmasi', 'informed-consent', 'share-fee-saya', 'tampilan'],
+  perawat: ['pasien', 'reservasi', 'kunjungan', 'farmasi', 'informed-consent', 'share-fee-saya', 'tampilan', 'absensi'],
   pending: ['tampilan'],
 };
 

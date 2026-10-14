@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth-context';
 import { notificationApi, type AppNotification, type NotificationType } from '@/lib/notifications';
 import { formatCurrency } from '@/lib/format';
 import { pressable } from '@/lib/a11y';
+import AttendanceChip from '@/components/attendance/AttendanceChip';
 import './navbar.css';
 
 interface NavbarProps {
@@ -161,6 +162,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         </div>
       </div>
       <div className="topbar-right">
+        <AttendanceChip />
         <div className="notif-wrap" ref={notifRef}>
           <button
             className="icon-btn"
