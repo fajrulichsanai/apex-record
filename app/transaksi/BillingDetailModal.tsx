@@ -10,6 +10,8 @@ import { useToast } from '@/lib/toast-context';
 import { waLink } from '@/lib/utils/whatsapp';
 import PaymentModal, { PAYMENT_METHOD_LABEL } from './PaymentModal';
 import { useEscapeKey } from '@/lib/a11y';
+import { useAuth } from '@/lib/auth-context';
+import { canSeeHargaModal } from '@/lib/permissions';
 import './BillingDetailModal.css';
 
 interface BillingDetailModalProps {
@@ -27,6 +29,25 @@ interface EditItemRow {
   quantity: number;
   discount: number;
   discountType: DiscountType;
+  hargaPokok: number;
+  biayaLab: number;
+}
+
+/** Margin per tindakan: (harga jual - diskon item - modal - lab) x qty. */
+function itemProfit(i: {
+  unitPrice: number;
+  quantity: number;
+  discount: number;
+  discountType: DiscountType;
+  hargaPokok?: number | null;
+  biayaLab?: number | null;
+}) {
+  const price = Number(i.unitPrice || 0);
+  const disc = i.discountType === 'percent' ? (price * Number(i.discount || 0)) / 100 : Number(i.discount || 0);
+  const modal = Number(i.hargaPokok || 0);
+  const lab = Number(i.biayaLab || 0);
+  const perUnit = price - disc - modal - lab;
+  return { price, disc, modal, lab, perUnit, total: perUnit * Number(i.quantity || 0) };
 }
 
 function formatRupiah(value: number) {
@@ -62,6 +83,8 @@ let rowKeySeq = 0;
 
 export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdated }: BillingDetailModalProps) {
   const { success, error: showError } = useToast();
+  const { user } = useAuth();
+  const showModal = canSeeHargaModal(user?.role);
   const isMounted = useRef(true);
   const [detail, setDetail] = useState<BillingDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -120,6 +143,8 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
         quantity: i.quantity,
         discount: i.discount,
         discountType: i.discountType,
+        hargaPokok: Number(i.hargaPokok ?? tarifs.find((t) => t.id === i.tarifId)?.hargaPokok ?? 0),
+        biayaLab: Number(i.biayaLab ?? tarifs.find((t) => t.id === i.tarifId)?.biayaLab ?? 0),
       })),
     );
     setTotalDiscount(Number(detail.totalDiscount || 0));
@@ -138,6 +163,8 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
       tarifId: tarif ? tarif.id : '',
       name: tarif ? tarif.name : '',
       unitPrice: tarif ? Math.max(0, tarif.hargaJual) : 0,
+      hargaPokok: tarif ? Number(tarif.hargaPokok || 0) : 0,
+      biayaLab: tarif ? Number(tarif.biayaLab || 0) : 0,
     });
   }
 
@@ -283,8 +310,11 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
               {editing ? (
                 <>
                   <div className="billing-item-rows">
-                    {items.map((row) => (
-                      <div key={row.key} className="billing-item-row">
+                    {items.map((row) => {
+                      const calc = itemProfit(row);
+                      return (
+                      <div key={row.key} className="billing-item-block">
+                      <div className="billing-item-row">
                         <CustomSelect
                           value={String(row.tarifId)}
                           onChange={(value) => handleTarifSelect(row.key, value)}
@@ -311,12 +341,37 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                           <span aria-hidden="true" className="material-symbols-rounded">close</span>
                         </button>
                       </div>
-                    ))}
+                      {row.tarifId !== '' && (
+                        <div className="billing-item-calc">
+                          <span>
+                            Harga jual {formatRupiah(calc.price)}
+                            {calc.disc > 0 && <> − diskon {formatRupiah(calc.disc)}</>}
+                          </span>
+                          {showModal && (
+                            <>
+                              <span>Modal {formatRupiah(calc.modal)}</span>
+                              <span>Lab {formatRupiah(calc.lab)}</span>
+                              <span className={calc.perUnit < 0 ? 'neg' : undefined}>
+                                Margin {formatRupiah(calc.perUnit)} × {row.quantity} ={' '}
+                                <strong>{formatRupiah(calc.total)}</strong>
+                              </span>
+                            </>
+                          )}
+                          {!showModal && (
+                            <span>
+                              × {row.quantity} = <strong>{formatRupiah((calc.price - calc.disc) * row.quantity)}</strong>
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      </div>
+                      );
+                    })}
                   </div>
                   <button
                     type="button"
                     className="btn-outline billing-add-item-btn"
-                    onClick={() => setItems((prev) => [...prev, { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal' }])}
+                    onClick={() => setItems((prev) => [...prev, { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal', hargaPokok: 0, biayaLab: 0 }])}
                   >
                     <span aria-hidden="true" className="material-symbols-rounded">add</span>
                     Tambah Tindakan
@@ -360,6 +415,15 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                       <span>Total Bayar</span>
                       <span>{formatRupiah(editGrandTotal)}</span>
                     </div>
+                    {showModal && (
+                      <div className="billing-summary-row">
+                        <span>Perkiraan margin (sebelum diskon/biaya tagihan)</span>
+                        <span>{formatRupiah(items.reduce((s, r) => s + itemProfit(r).total, 0))}</span>
+                      </div>
+                    )}
+                    <div className="billing-summary-note">
+                      Perubahan tersimpan di log aktivitas (sebelum &amp; sesudah). Stok bahan disesuaikan otomatis.
+                    </div>
                   </div>
                 </>
               ) : (
@@ -392,6 +456,56 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                       ))}
                     </tbody>
                   </table>
+
+                  {showModal && (
+                    <>
+                      <div className="billing-modal-section-title">Rincian Margin per Tindakan</div>
+                      <div className="billing-modal-table-wrap">
+                        <table className="billing-modal-table">
+                          <thead>
+                            <tr>
+                              <th>Tindakan</th>
+                              <th>Harga jual</th>
+                              <th>Modal</th>
+                              <th>Lab</th>
+                              <th>Margin/unit</th>
+                              <th>Qty</th>
+                              <th>Total margin</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {detail.items.map((i) => {
+                              const c = itemProfit(i);
+                              return (
+                                <tr key={i.id}>
+                                  <td>{i.name}</td>
+                                  <td>
+                                    {formatRupiah(c.price - c.disc)}
+                                    {c.disc > 0 && <div className="billing-modal-muted">diskon {formatRupiah(c.disc)}</div>}
+                                  </td>
+                                  <td>{formatRupiah(c.modal)}</td>
+                                  <td>{formatRupiah(c.lab)}</td>
+                                  <td className={c.perUnit < 0 ? 'neg' : undefined}>{formatRupiah(c.perUnit)}</td>
+                                  <td>× {i.quantity}</td>
+                                  <td className={c.total < 0 ? 'neg' : undefined}>
+                                    <strong>{formatRupiah(c.total)}</strong>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                          <tfoot>
+                            <tr>
+                              <td colSpan={6}>Total margin tindakan</td>
+                              <td>
+                                <strong>{formatRupiah(detail.items.reduce((s, i) => s + itemProfit(i).total, 0))}</strong>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </>
+                  )}
 
                   <div className="billing-summary-box">
                     <div className="billing-summary-row">

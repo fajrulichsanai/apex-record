@@ -20,7 +20,7 @@
 .tbf-item { border: 1px solid var(--tbf-border); border-radius: 12px; padding: 12px; background: var(--tbf-bg); display: flex; flex-direction: column; gap: 10px; }
 .tbf-item-head { display: flex; justify-content: space-between; align-items: center; }
 .tbf-item-no { font-size: 12px; font-weight: 700; color: var(--tbf-muted); text-transform: uppercase; letter-spacing: .03em; }
-.tbf-prices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; align-items: end; }
+.tbf-prices { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-items: end; }
 .tbf-adv { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .tbf-margin { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border-radius: 10px; background: var(--tbf-accent-soft); color: var(--tbf-accent); min-width: 0; }
 .tbf-margin span { font-size: 11.5px; font-weight: 600; opacity: .8; }

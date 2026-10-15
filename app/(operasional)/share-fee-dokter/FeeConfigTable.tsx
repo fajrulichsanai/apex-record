@@ -117,6 +117,7 @@ export default function FeeConfigTable({ onChanged }: FeeConfigTableProps) {
           <tr>
             <th>Tindakan</th>
             <th>Harga Jual</th>
+            <th>Biaya Lab</th>
             <th>Tipe Fee</th>
             <th>Nilai Fee</th>
             <th>Aktif</th>
@@ -131,6 +132,9 @@ export default function FeeConfigTable({ onChanged }: FeeConfigTableProps) {
                 <div className="tarif-kategori">{row.tarif.kategori}</div>
               </td>
               <td>Rp {(row.tarif.hargaJual || 0).toLocaleString('id-ID')}</td>
+              <td title="Dipotong dari dasar fee persentase">
+                {Number(row.tarif.biayaLab || 0) > 0 ? `Rp ${Number(row.tarif.biayaLab).toLocaleString('id-ID')}` : '-'}
+              </td>
               <td style={{ minWidth: 160 }}>
                 <CustomSelect
                   value={row.feeType}

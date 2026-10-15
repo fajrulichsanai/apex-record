@@ -36,6 +36,10 @@ export interface BillingItem {
   discount: number;
   discountType: DiscountType;
   subtotal: number;
+  /** Snapshot modal (bahan) per unit saat transaksi dibuat. */
+  hargaPokok?: number | null;
+  /** Snapshot biaya lab per unit saat transaksi dibuat. */
+  biayaLab?: number | null;
 }
 
 export interface Payment {

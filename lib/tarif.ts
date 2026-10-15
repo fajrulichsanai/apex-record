@@ -9,6 +9,8 @@ export interface Tarif {
   deskripsi?: string;
   hargaPokok: number;
   hargaJual: number;
+  /** Biaya lab per tindakan — dipotong dari dasar share fee dokter. */
+  biayaLab: number;
   diskonMaksimal: number;
   isActive: boolean;
   createdAt: string;
@@ -22,6 +24,7 @@ export interface CreateTarifPayload {
   deskripsi?: string;
   hargaPokok?: number;
   hargaJual: number;
+  biayaLab?: number;
   diskonMaksimal?: number;
 }
 
@@ -32,6 +35,7 @@ export interface UpdateTarifPayload {
   deskripsi?: string;
   hargaPokok?: number;
   hargaJual?: number;
+  biayaLab?: number;
   diskonMaksimal?: number;
   isActive?: boolean;
 }
@@ -61,3 +65,7 @@ export const tarifApi = {
   delete: (id: number) =>
     apiClient.delete<{ success: boolean }>(`/settings/tarifs/${id}`),
 };
+
+/** Margin bersih per tindakan: harga jual - modal (bahan) - biaya lab. */
+export const tarifMargin = (t: { hargaJual?: number; hargaPokok?: number; biayaLab?: number }) =>
+  Number(t.hargaJual || 0) - Number(t.hargaPokok || 0) - Number(t.biayaLab || 0);

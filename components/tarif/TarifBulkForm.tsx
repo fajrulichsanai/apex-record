@@ -28,6 +28,7 @@ interface Row {
   deskripsi: string;
   hargaPokok: string;
   hargaJual: string;
+  biayaLab: string;
   diskonMaksimal: string;
   kodeIcd9: string;
 }
@@ -46,6 +47,7 @@ const newRow = (name = ''): Row => ({
   deskripsi: '',
   hargaPokok: '',
   hargaJual: '',
+  biayaLab: '',
   diskonMaksimal: '',
   kodeIcd9: '',
 });
@@ -55,7 +57,7 @@ const digitsOnly = (v: string) => v.replace(/\D/g, '');
 
 /**
  * Input tarif per rumpun: Kategori bidang → tindakan (nama, deskripsi, modal,
- * jual, margin otomatis; diskon maksimal & ICD-9-CM opsional) → tambah tindakan
+ * biaya lab, jual, margin otomatis = jual - modal - lab; diskon maksimal & ICD-9-CM opsional) → tambah tindakan
  * lain di rumpun yang sama. Dipakai di onboarding & halaman Tambah Tarif.
  */
 export default function TarifBulkForm({
@@ -121,8 +123,12 @@ export default function TarifBulkForm({
       if (allowEmptySubmit) return onSaved(0);
       return showError('Isi minimal 1 tindakan beserta harga jualnya');
     }
-    const rugi = items.filter(({ r }) => parseCurrency(r.hargaPokok) > parseCurrency(r.hargaJual));
-    if (rugi.length) warning(`${rugi.length} tindakan harga jualnya di bawah modal — periksa lagi bila tidak disengaja`);
+    const rugi = items.filter(
+      ({ r }) => parseCurrency(r.hargaPokok) + parseCurrency(r.biayaLab) > parseCurrency(r.hargaJual),
+    );
+    if (rugi.length) {
+      warning(`${rugi.length} tindakan harga jualnya di bawah modal + biaya lab — periksa lagi bila tidak disengaja`);
+    }
 
     setSaving(true);
     let added = 0;
@@ -134,6 +140,7 @@ export default function TarifBulkForm({
           ...(r.deskripsi.trim() ? { deskripsi: r.deskripsi.trim() } : {}),
           hargaPokok: parseCurrency(r.hargaPokok),
           hargaJual: parseCurrency(r.hargaJual),
+          biayaLab: parseCurrency(r.biayaLab),
           diskonMaksimal: parseCurrency(r.diskonMaksimal),
           ...(r.kodeIcd9.trim() ? { kodeIcd9: r.kodeIcd9.trim() } : {}),
         });
@@ -200,7 +207,8 @@ export default function TarifBulkForm({
                 {g.rows.map((r, ri) => {
                   const modal = parseCurrency(r.hargaPokok);
                   const jual = parseCurrency(r.hargaJual);
-                  const margin = jual - modal;
+                  const lab = parseCurrency(r.biayaLab);
+                  const margin = jual - modal - lab;
                   return (
                     <div key={r.key} className="tbf-item">
                       <div className="tbf-item-head">
@@ -244,6 +252,15 @@ export default function TarifBulkForm({
                           />
                         </label>
                         <label className="tbf-field">
+                          <span>Biaya lab</span>
+                          <input
+                            inputMode="numeric"
+                            placeholder="Rp 0"
+                            value={formatCurrencyInput(r.biayaLab)}
+                            onChange={(e) => patchRow(g.key, r.key, { biayaLab: digitsOnly(e.target.value) })}
+                          />
+                        </label>
+                        <label className="tbf-field">
                           <span>5. Harga jual *</span>
                           <input
                             inputMode="numeric"
@@ -255,7 +272,7 @@ export default function TarifBulkForm({
                         <div className={`tbf-margin ${jual && margin < 0 ? 'neg' : ''}`} aria-label="Margin">
                           <span>Margin</span>
                           <strong>{jual ? rp(margin) : '—'}</strong>
-                          {jual > 0 && modal > 0 && <small>{Math.round((margin / jual) * 100)}% dari harga jual</small>}
+                          {jual > 0 && modal + lab > 0 && <small>{Math.round((margin / jual) * 100)}% dari harga jual</small>}
                         </div>
                       </div>
                       {showAdvanced && (

@@ -25,6 +25,12 @@ export interface DoctorMonthlyShareBreakdownItem {
   count: number;
   feeType: FeeType;
   feeValue: number;
+  /** Total harga jual (harga satuan x qty) sebelum dipotong lab */
+  totalHarga?: number;
+  /** Biaya lab yang dipotong dari dasar fee */
+  totalBiayaLab?: number;
+  /** Dasar fee persentase = totalHarga - totalBiayaLab */
+  dasarFee?: number;
   totalShare: number;
 }
 
@@ -33,6 +39,7 @@ export interface DoctorMonthlyShareReport {
   practitionerName: string;
   breakdown: DoctorMonthlyShareBreakdownItem[];
   totalTindakan: number;
+  totalBiayaLab?: number;
   totalShareFee: number;
 }
 
