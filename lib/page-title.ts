@@ -29,6 +29,7 @@ const TITLES: [string, string][] = [
   ['/farmasi', 'Farmasi'],
   ['/transaksi', 'Transaksi'],
   ['/tarif', 'Tarif & Tindakan'],
+  ['/gudang/opname', 'Stock Opname'],
   ['/gudang', 'Gudang'],
   ['/laporan-keuangan-pro', 'Laporan Keuangan'],
   ['/laporan-keuangan', 'Laporan Keuangan'],

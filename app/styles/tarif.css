@@ -1021,3 +1021,9 @@
 
 .tarif-page .tarif-bulk-panel { padding: 20px; }
 @media (max-width: 640px) { .tarif-page .tarif-bulk-panel { padding: 12px; } }
+
+/* Saran modal dari resep bahan (BOM) */
+.tarif-page .bom-cost-hint {
+  display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 10px 12px; border-radius: var(--radius-md); background: var(--accent-soft); color: var(--accent-ink); font-size: 13px;
+}

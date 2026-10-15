@@ -134,6 +134,16 @@ export const gudangApi = {
   getDashboard: () =>
     apiClient.get<GudangDashboard>('/gudang/dashboard'),
 
+  listOpname: () => apiClient.get<StockOpnameSummary[]>('/gudang/opname'),
+
+  getOpname: (id: number) => apiClient.get<StockOpnameDetail>(`/gudang/opname/${id}`),
+
+  createOpname: (payload: {
+    tanggal: string;
+    note?: string;
+    items: { barangId: number; stokFisik: number; catatan?: string }[];
+  }) => apiClient.post<StockOpnameDetail>('/gudang/opname', payload),
+
   listBom: (tarifId: number) =>
     apiClient.get<TindakanBom[]>(`/gudang/bom?tarifId=${tarifId}`),
 
@@ -146,3 +156,33 @@ export const gudangApi = {
   deleteBom: (id: number) =>
     apiClient.delete<{ success: boolean }>(`/gudang/bom/${id}`),
 };
+
+export interface StockOpnameSummary {
+  id: number;
+  tanggal: string;
+  note: string | null;
+  totalSelisihNilai: number;
+  createdByName: string | null;
+  createdAt: string;
+  itemCount: number;
+  selisihCount: number;
+}
+
+export interface StockOpnameDetail {
+  id: number;
+  tanggal: string;
+  note: string | null;
+  totalSelisihNilai: number;
+  createdByName: string | null;
+  createdAt: string;
+  items: {
+    id: number;
+    barangId: number;
+    name: string;
+    stokSistem: number;
+    stokFisik: number;
+    selisih: number;
+    hargaBeli: number;
+    catatan: string | null;
+  }[];
+}

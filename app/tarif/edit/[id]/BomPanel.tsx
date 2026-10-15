@@ -9,9 +9,18 @@ import { useToast } from '@/lib/toast-context';
 
 interface BomPanelProps {
   tarifId: number;
+  /** Modal bahan dari resep (Σ qty pakai × harga beli, bahan wajib) — dipanggil setiap BOM berubah. */
+  onCostChange?: (cost: number) => void;
 }
 
-export default function BomPanel({ tarifId }: BomPanelProps) {
+/** Biaya bahan wajib per satu tindakan. */
+export function bomCost(list: TindakanBom[]): number {
+  return list
+    .filter((b) => b.wajib)
+    .reduce((s, b) => s + Number(b.qtyPakai || 0) * Number(b.barang?.hargaBeli || 0), 0);
+}
+
+export default function BomPanel({ tarifId, onCostChange }: BomPanelProps) {
   const { success, error } = useToast();
   const [bomList, setBomList] = useState<TindakanBom[]>([]);
   const [barangList, setBarangList] = useState<Barang[]>([]);
@@ -42,6 +51,10 @@ export default function BomPanel({ tarifId }: BomPanelProps) {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    onCostChange?.(Math.round(bomCost(bomList)));
+  }, [bomList, onCostChange]);
 
   const usedBarangIds = new Set(bomList.map((b) => b.barangId));
   const availableBarang = barangList.filter((b) => !usedBarangIds.has(b.id));
@@ -103,6 +116,7 @@ export default function BomPanel({ tarifId }: BomPanelProps) {
                   <tr>
                     <th>Bahan</th>
                     <th>Qty Pakai</th>
+                    <th>Biaya</th>
                     <th>Wajib</th>
                     <th></th>
                   </tr>
@@ -112,6 +126,7 @@ export default function BomPanel({ tarifId }: BomPanelProps) {
                     <tr key={bom.id}>
                       <td className="gudang-name">{bom.barang?.name}</td>
                       <td>{bom.qtyPakai} {bom.barang?.satuanPakai}</td>
+                      <td>Rp {Math.round(Number(bom.qtyPakai || 0) * Number(bom.barang?.hargaBeli || 0)).toLocaleString('id-ID')}</td>
                       <td>
                         <span className={`status-badge ${bom.wajib ? 'active' : 'inactive'}`}>
                           {bom.wajib ? 'Wajib' : 'Opsional'}

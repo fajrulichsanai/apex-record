@@ -32,6 +32,7 @@ export default function EditTarifPage() {
   const [biayaLab, setBiayaLab] = useState('');
   const [diskonMaksimal, setDiskonMaksimal] = useState('');
   const [kodeIcd9, setKodeIcd9] = useState('');
+  const [bomModal, setBomModal] = useState(0);
   const [deskripsi, setDeskripsi] = useState('');
   const [isActive, setIsActive] = useState(true);
 
@@ -176,6 +177,16 @@ export default function EditTarifPage() {
                       required
                     />
                   </div>
+                  {bomModal > 0 && bomModal !== (parseCurrency(hargaPokok) || 0) && (
+                    <div className="form-field full bom-cost-hint">
+                      <span>
+                        Modal dari resep bahan (BOM) di bawah: <strong>Rp {bomModal.toLocaleString('id-ID')}</strong>
+                      </span>
+                      <button type="button" className="btn-outline" onClick={() => setHargaPokok(String(bomModal))}>
+                        Pakai sebagai harga modal
+                      </button>
+                    </div>
+                  )}
                   <div className="form-field">
                     <label>Biaya Lab</label>
                     <input
@@ -242,7 +253,7 @@ export default function EditTarifPage() {
           )}
         </div>
 
-        {!loading && !loadError && tarif && <BomPanel tarifId={tarif.id} />}
+        {!loading && !loadError && tarif && <BomPanel tarifId={tarif.id} onCostChange={setBomModal} />}
       </main>
       </FeatureGuard>
     </DashboardLayout>
