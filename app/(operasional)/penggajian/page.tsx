@@ -154,24 +154,18 @@ function MonthlyTab() {
       </div>
 
       {view && (
-        <div className="stat-grid">
-          <div className="stat-card total">
-            <div className="stat-info">
-              <div className="stat-value">{rp(view.totals.total)}</div>
-              <div className="stat-label">Total ditransfer</div>
-            </div>
+        <div className="payroll-stats">
+          <div className="payroll-stat main">
+            <span>Total ditransfer</span>
+            <strong>{rp(view.totals.total)}</strong>
           </div>
-          <div className="stat-card rata">
-            <div className="stat-info">
-              <div className="stat-value">{rp(view.totals.baseSalary + view.totals.bonus - view.totals.deduction)}</div>
-              <div className="stat-label">Gaji pokok + bonus − potongan</div>
-            </div>
+          <div className="payroll-stat">
+            <span>Gaji pokok + bonus − potongan</span>
+            <strong>{rp(view.totals.baseSalary + view.totals.bonus - view.totals.deduction)}</strong>
           </div>
-          <div className="stat-card fixed">
-            <div className="stat-info">
-              <div className="stat-value">{rp(view.totals.shareFee)}</div>
-              <div className="stat-label">Share fee dokter (sudah dipotong lab)</div>
-            </div>
+          <div className="payroll-stat">
+            <span>Share fee dokter (sudah dipotong lab)</span>
+            <strong>{rp(view.totals.shareFee)}</strong>
           </div>
         </div>
       )}

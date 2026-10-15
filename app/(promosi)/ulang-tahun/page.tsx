@@ -222,7 +222,7 @@ export default function UlangTahunPage() {
                     shown.map((p) => (
                       <tr key={p.id} className={p.isToday ? 'ut-today' : undefined}>
                         <td>
-                          <Link href={`/list-pasien/${p.id}`} className="ut-name">
+                          <Link href={`/list-pasien/${p.id}/rekam-medis`} className="ut-name">
                             {p.name}
                           </Link>
                           <div className="ut-sub">{p.noRm}</div>

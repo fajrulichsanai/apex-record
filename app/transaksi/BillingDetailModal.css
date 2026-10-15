@@ -339,3 +339,5 @@
 }
 .billing-modal-muted { font-size: 11px; color: var(--text-muted); }
 .billing-summary-note { font-size: 11.5px; color: var(--text-muted); }
+.billing-modal-table-wrap .billing-modal-table td:not(:first-child),
+.billing-modal-table-wrap .billing-modal-table th:not(:first-child) { white-space: nowrap; }
