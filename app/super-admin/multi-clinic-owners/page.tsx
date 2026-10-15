@@ -5,9 +5,8 @@ import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
 import CustomSelect from '@/components/form/CustomSelect';
 import { multiClinicApi, type BranchLink, type LinkStatus, type MultiClinicOwner } from '@/lib/multi-clinic';
 import { apiClient, ApiError } from '@/lib/api-client';
-import { useEscapeKey } from '@/lib/a11y';
 import StorageAdjustCard from '@/components/storage/StorageAdjustCard';
-import { PageHeader, SkeletonBlock } from '@/components/super-admin/ui';
+import { Modal, PageHeader, SkeletonBlock } from '@/components/super-admin/ui';
 import InviteUserModal from '@/components/super-admin/InviteUserModal';
 import type { Clinic } from '@/types/clinic';
 import '../../styles/super-admin.css';
@@ -44,7 +43,6 @@ export default function MultiClinicOwnersPage() {
   const [busyOwnerId, setBusyOwnerId] = useState<number | null>(null);
   const [unlinking, setUnlinking] = useState<{ owner: MultiClinicOwner; link: BranchLink } | null>(null);
   const [creatingOwner, setCreatingOwner] = useState(false);
-  useEscapeKey(() => setUnlinking(null), !!unlinking);
 
   const load = useCallback(async () => {
     try {
@@ -271,41 +269,38 @@ export default function MultiClinicOwnersPage() {
         )}
 
         {unlinking && (
-          <div className="mk-overlay" role="presentation" onClick={() => setUnlinking(null)}>
-            <div
-              className="mk-dialog"
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="mk-unlink-title"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <h2 id="mk-unlink-title">
-                {unlinking.link.status === 'approved'
-                  ? `Putuskan ${unlinking.link.clinicName ?? 'klinik'}?`
-                  : unlinking.link.status === 'pending'
-                    ? 'Batalkan permintaan?'
-                    : 'Hapus riwayat permintaan?'}
-              </h2>
-              <p className="mk-hint">
-                {unlinking.link.status === 'approved'
-                  ? `Klinik hilang dari dashboard ${unlinking.owner.name}. Data dan akun klinik tidak terhapus, dan langganannya tetap aktif sampai akhir periode yang sudah dibayar.`
-                  : 'Klinik bisa diajukan lagi kapan saja.'}
-              </p>
-              <div className="mk-actions">
-                <button type="button" className="mk-btn" onClick={() => setUnlinking(null)}>
+          <Modal
+            title={
+              unlinking.link.status === 'approved'
+                ? `Putuskan ${unlinking.link.clinicName ?? 'klinik'}?`
+                : unlinking.link.status === 'pending'
+                  ? 'Batalkan permintaan?'
+                  : 'Hapus riwayat permintaan?'
+            }
+            onClose={() => setUnlinking(null)}
+            busy={busyOwnerId === unlinking.owner.id}
+            footer={
+              <>
+                <button type="button" className="btn-outline" onClick={() => setUnlinking(null)}>
                   Batal
                 </button>
                 <button
                   type="button"
-                  className="mk-btn danger"
+                  className="btn-danger"
                   disabled={busyOwnerId === unlinking.owner.id}
                   onClick={confirmUnlink}
                 >
                   {unlinking.link.status === 'approved' ? 'Ya, putuskan' : 'Ya, lanjutkan'}
                 </button>
-              </div>
-            </div>
-          </div>
+              </>
+            }
+          >
+            <p className="text-sub">
+              {unlinking.link.status === 'approved'
+                ? `Klinik hilang dari dashboard ${unlinking.owner.name}. Data dan akun klinik tidak terhapus, dan langganannya tetap aktif sampai akhir periode yang sudah dibayar.`
+                : 'Klinik bisa diajukan lagi kapan saja.'}
+            </p>
+          </Modal>
         )}
       </div>
     </SuperAdminLayout>

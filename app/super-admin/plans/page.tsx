@@ -8,10 +8,9 @@ import type { SubscriptionBillingCycle, SubscriptionPlan, SubscriptionPlanTier }
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency, parseCurrency } from '@/lib/format';
-import { useEscapeKey } from '@/lib/a11y';
 import '../../styles/super-admin.css';
 import { formatGb } from '@/lib/storage';
-import { PageHeader } from '@/components/super-admin/ui';
+import { Modal, PageHeader } from '@/components/super-admin/ui';
 import { formatPromoDate, promoSavingPct } from '@/components/subscription/pricing';
 
 interface PlanForm {
@@ -68,7 +67,6 @@ export default function SuperAdminPlansPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  useEscapeKey(() => setModalOpen(false), modalOpen);
   const [form, setForm] = useState<PlanForm>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const { success, error: showError } = useToast();
@@ -277,13 +275,19 @@ export default function SuperAdminPlansPage() {
       </div>
 
       {modalOpen && (
-        <div className="sa-modal-overlay" onClick={() => setModalOpen(false)}>
-          <div className="sa-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="sa-modal-header">
-              <h2>{form.id ? 'Ubah Paket' : 'Tambah Paket'}</h2>
-              <button type="button" className="sa-modal-close" onClick={() => setModalOpen(false)}>&times;</button>
-            </div>
-            <div className="sa-modal-body">
+        <Modal
+          title={form.id ? 'Ubah Paket' : 'Tambah Paket'}
+          onClose={() => setModalOpen(false)}
+          busy={submitting}
+          footer={
+            <>
+              <button type="button" className="btn-outline" onClick={() => setModalOpen(false)}>Batal</button>
+              <button type="button" className="btn-primary" onClick={handleSubmit} disabled={submitting}>
+                {submitting ? 'Menyimpan...' : 'Simpan'}
+              </button>
+            </>
+          }
+        >
               <div className="sa-field">
                 <label>Nama Paket</label>
                 <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Contoh: Bulanan" />
@@ -383,15 +387,8 @@ export default function SuperAdminPlansPage() {
                   placeholder={`Kosong = bawaan ${formatGb((form.tier && DEFAULT_STORAGE_GB[form.tier]) || 1)} (0.1 = 100 MB)`}
                 />
               </div>
-            </div>
-            <div className="sa-modal-footer">
-              <button type="button" className="btn-outline" onClick={() => setModalOpen(false)}>Batal</button>
-              <button type="button" className="btn-primary" onClick={handleSubmit} disabled={submitting}>
-                {submitting ? 'Menyimpan...' : 'Simpan'}
-              </button>
-            </div>
-          </div>
-        </div>
+            
+        </Modal>
       )}
     </SuperAdminLayout>
   );
