@@ -29,7 +29,9 @@ export type FeatureKey =
   | 'konten'
   | 'satusehat'
   | 'imunisasi'
-  | 'absensi';
+  | 'absensi'
+  | 'payroll'
+  | 'ulang-tahun';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',
@@ -57,6 +59,8 @@ const FULL_ACCESS: FeatureKey[] = [
   'konten',
   'satusehat',
   'absensi',
+  'payroll',
+  'ulang-tahun',
 ];
 
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
@@ -83,6 +87,7 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'info-klinik',
     'tarif',
     'referral',
+    'ulang-tahun',
     'langganan',
     'konten',
     'tampilan',
