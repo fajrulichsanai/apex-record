@@ -292,7 +292,26 @@ export const patientsApi = {
 
   getReferralSummary: () =>
     apiClient.get<ReferralSummaryResponse>('/patients/referral-summary'),
+
+  birthdays: (range: 'today' | 'week' | 'month', month?: number) =>
+    apiClient.get<BirthdayPatient[]>(
+      `/patients/birthdays?range=${range}${month ? `&month=${month}` : ''}`,
+    ),
 };
+
+export interface BirthdayPatient {
+  id: number;
+  noRm: string;
+  name: string;
+  gender: string | null;
+  phone: string | null;
+  birthDate: string;
+  /** Usia yang dirayakan */
+  turning: number;
+  isToday: boolean;
+  consentMarketing: boolean;
+  lastVisit: string | null;
+}
 
 /** Riwayat penyakit keluarga (dikirim ke SATUSEHAT sebagai FamilyMemberHistory) */
 export type FamilyRelationship =

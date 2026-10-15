@@ -30,7 +30,8 @@ import {
   FiPackage,
   FiShield,
   FiClock,
-  FiUserCheck } from 'react-icons/fi';
+  FiUserCheck,
+  FiGift } from 'react-icons/fi';
 import './sidebar.css';
 import { useFeatures } from '@/lib/features-context';
 import BranchBanner from '@/components/multi-clinic/BranchBanner';
@@ -143,7 +144,15 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       items: [
         { label: 'Kunjungan', soloLabel: 'Laporan Kunjungan', icon: <FiActivity />, href: '/laporan-kunjungan', feature: 'laporan-kunjungan' },
         { label: 'Keuangan', soloLabel: 'Laporan Keuangan', icon: <FiTrendingUp />, href: '/laporan-keuangan', feature: 'laporan-keuangan' },
+      ],
+    },
+    {
+      title: 'Promosi',
+      groupId: 'promosi',
+      icon: <FiGift />,
+      items: [
         { label: 'Referral', icon: <FiUsers />, href: '/referral', feature: 'referral' },
+        { label: 'Ulang Tahun', icon: <FiGift />, href: '/ulang-tahun', feature: 'ulang-tahun' },
       ],
     },
     {
