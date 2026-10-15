@@ -100,10 +100,19 @@ export interface Payment {
   createdAt: string;
 }
 
+export type SatusehatStatus = 'aktif' | 'dimatikan' | 'belum_siap';
+
 export interface ClinicSubscriptionSummary {
   clinicId: number;
   clinicName: string;
   subscription: ClinicSubscription | null;
+  createdAt?: string;
+  owner?: { id: number; name: string; email: string } | null;
+  activeUsers?: number;
+  satusehatStatus?: SatusehatStatus;
+  multiClinicOwner?: { id: number; name: string } | null;
+  dataDeleteAfter?: string | null;
+  dataPurgedAt?: string | null;
 }
 
 export interface OwnerCode {
@@ -113,11 +122,16 @@ export interface OwnerCode {
   usedBy: number | null;
   usedAt: string | null;
   createdAt: string;
+  usedByName?: string | null;
+  usedByEmail?: string | null;
+  clinicId?: number | null;
+  clinicName?: string | null;
 }
 
 export interface SuperAdminReportSummary {
   totalClinics: number;
   activeClinics: number;
+  newClinicsThisMonth?: number;
   expiredClinics: number;
   pendingConfirmations: number;
   mrr: number;
@@ -125,4 +139,31 @@ export interface SuperAdminReportSummary {
   revenueByPeriod: { period: string; revenue: number }[];
   newClinicsByPeriod: { period: string; count: number }[];
   planDistribution: { planId: number; planName: string; count: number }[];
+}
+
+export interface SuperAdminQueue {
+  pendingPayments: number;
+  openDataRequests: number;
+  overdueDataRequests: number;
+  satusehatNotReady: number;
+  expiringSoon: { clinicId: number; clinicName: string; endDate: string; tier: string | null; daysLeft: number }[];
+  dataDeletions: { clinicId: number; clinicName: string; deleteAfter: string; daysLeft: number }[];
+}
+
+export interface Receipt {
+  number: string;
+  status: string;
+  paymentId: number;
+  confirmedAt: string | null;
+  createdAt: string;
+  planName: string | null;
+  quantity: number;
+  months: number;
+  amount: number;
+  promoDiscount: number;
+  durationDiscount: number;
+  extraStorageGb: number;
+  storageAmount: number;
+  billedTo: { name: string; email: string | null } | null;
+  clinics: { id: number; name: string }[];
 }

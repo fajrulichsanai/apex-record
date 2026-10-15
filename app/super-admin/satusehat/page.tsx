@@ -167,7 +167,7 @@ export default function SuperAdminSatusehatPage() {
                   return (
                     <tr key={r.id}>
                       <td>
-                        <Link href={`/super-admin/satusehat/clinics/${r.id}`} className="ss-link">
+                        <Link href={`/super-admin/clinics/${r.id}?tab=satusehat`} className="ss-link">
                           {r.name}
                         </Link>
                         <span className="sub">

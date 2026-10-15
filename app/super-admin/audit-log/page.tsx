@@ -1,6 +1,8 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { PageHeader, Pager, TableState } from '@/components/super-admin/ui';
 import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
 import CustomSelect from '@/components/form/CustomSelect';
 import AuditLogDetailModal from '@/app/(settings)/audit-log/AuditLogDetailModal';
@@ -69,7 +71,9 @@ function SuperAdminAuditLogPageInner() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [actionType, setActionType] = useState('');
-  const [clinicId, setClinicId] = useState('');
+  const searchParams = useSearchParams();
+  // Bisa dibuka dari detail klinik (PRD KP-02): /super-admin/audit-log?clinicId=…
+  const [clinicId, setClinicId] = useState(searchParams.get('clinicId') ?? '');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -117,15 +121,7 @@ function SuperAdminAuditLogPageInner() {
   return (
     <SuperAdminLayout>
       <div className="sa-page audit-log-page">
-        <div className="page-header">
-          <div className="page-title-block">
-            <div className="page-title">
-              <h1>Log Aktivitas</h1>
-              <span className="badge-count">{meta.total}</span>
-            </div>
-            <p className="page-subtitle">Riwayat aktivitas seluruh klinik pada platform.</p>
-          </div>
-        </div>
+        <PageHeader title="Log Aktivitas" count={meta.total} subtitle="Riwayat aktivitas seluruh klinik pada platform." />
 
         <div className="filter-bar">
           <input
@@ -163,11 +159,8 @@ function SuperAdminAuditLogPageInner() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan={7} className="empty-row">Memuat...</td></tr>
-              ) : entries.length === 0 ? (
-                <tr><td colSpan={7} className="empty-row">Tidak ada log aktivitas untuk filter ini.</td></tr>
-              ) : (
+              <TableState loading={loading} empty={entries.length === 0} colSpan={7} message="Tidak ada log aktivitas untuk filter ini." />
+              {!loading && (
                 entries.map((entry) => (
                   <tr key={entry.id} className={entry.actionType === 'DELETE' ? 'row-critical' : ''}>
                     <td className="col-time">{formatTimestamp(entry.createdAt)}</td>
@@ -198,13 +191,7 @@ function SuperAdminAuditLogPageInner() {
           </table>
         </div>
 
-        {meta.totalPages > 1 && (
-          <div className="pagination">
-            <button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Sebelumnya</button>
-            <span>Halaman {meta.page} dari {meta.totalPages}</span>
-            <button type="button" disabled={page >= meta.totalPages} onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}>Berikutnya</button>
-          </div>
-        )}
+        <Pager page={meta.page} totalPages={meta.totalPages} total={meta.total} onChange={setPage} />
       </div>
 
       {selectedId !== null && <AuditLogDetailModal id={selectedId} onClose={() => setSelectedId(null)} />}

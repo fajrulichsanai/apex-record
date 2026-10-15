@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import MultiClinicLayout from '@/components/layout/MultiClinicLayout';
 import { multiClinicApi, type BranchBillingMode, type OwnedClinic } from '@/lib/multi-clinic';
@@ -268,10 +269,17 @@ export default function MultiClinicLanggananPage() {
                       <td>{formatDate(p.createdAt)}</td>
                       <td>{p.plan?.name || '-'}</td>
                       <td>{paymentDetail(p)}</td>
-                      <td>Rp {formatCurrency(p.amount)}</td>
+                      <td>
+                        Rp {formatCurrency(p.amount)}
+                        {p.status === 'confirmed' && (
+                          <Link href={`/kuitansi/${p.id}`} target="_blank" className="receipt-link">
+                            Kuitansi
+                          </Link>
+                        )}
+                      </td>
                       <td>
                         <span className={`tag ${p.status === 'confirmed' ? 'tag-confirmed' : p.status === 'rejected' ? 'tag-rejected' : 'tag-pending'}`}>
-                          {p.status === 'confirmed' ? 'Dikonfirmasi' : p.status === 'rejected' ? 'Ditolak' : 'Menunggu'}
+                          {p.status === 'confirmed' ? 'Lunas, dikonfirmasi' : p.status === 'rejected' ? 'Ditolak' : 'Menunggu'}
                         </span>
                       </td>
                       <td>

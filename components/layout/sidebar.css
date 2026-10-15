@@ -416,3 +416,5 @@
   justify-content: center;
 }
 .sidebar.collapsed .nav-badge { display: none; }
+.nav-item .nav-badge-alert { background: #E5484D; }
+.sidebar.collapsed .nav-section + .nav-section { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 6px; }

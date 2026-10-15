@@ -64,7 +64,7 @@ const sections: LegalSection[] = [
       <>
         <ul>
           <li>
-            Klinik baru mendapat masa uji coba gratis selama 15 hari, atau sesuai yang tercantum saat pendaftaran. Tidak
+            Klinik baru mendapat masa uji coba gratis selama 14 hari, atau sesuai yang tercantum saat pendaftaran. Tidak
             ada penagihan otomatis setelah uji coba berakhir.
           </li>
           <li>

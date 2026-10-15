@@ -210,10 +210,10 @@ const FAQS = [
   },
   {
     q: 'Kalau berhenti berlangganan, data klinik saya bagaimana?',
-    a: 'Data tetap milik klinik. Setelah langganan berakhir, data masih bisa dilihat. Pemilik klinik bisa meminta salinan seluruh data atau menutup akun kapan saja dari menu Pengaturan → Data & Privasi, dan kami tanggapi paling lambat 3 x 24 jam.',
+    a: 'Data tetap milik klinik. Pemilik klinik bisa mengunduh semua data (Excel dan berkas foto) kapan saja dari menu Pengaturan → Data & Privasi. Setelah langganan berakhir, data masih bisa dilihat dan diunduh selama 15 hari, lalu dihapus permanen — kecuali Anda berlangganan lagi sebelum itu.',
   },
   {
-    q: 'Apa yang terjadi setelah masa uji coba 15 hari berakhir?',
+    q: 'Apa yang terjadi setelah masa uji coba 14 hari berakhir?',
     a: 'Anda bisa melanjutkan dengan memilih salah satu paket berlangganan. Tidak ada penagihan otomatis diam-diam — Anda yang memutuskan kapan melanjutkan.',
   },
 ];
@@ -272,13 +272,13 @@ export default function LandingPage() {
               </p>
               <div className="hero-ctas">
                 <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-grad">
-                  Mulai Uji Coba 15 Hari
+                  Mulai Uji Coba 14 Hari
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </a>
                 <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">Lihat Demo Aplikasi</a>
               </div>
               <div className="trust-row">
-                <span className="trust-item"><CheckIcon />15 hari gratis, tanpa kartu kredit</span>
+                <span className="trust-item"><CheckIcon />14 hari gratis, tanpa kartu kredit</span>
                 <span className="trust-item"><CheckIcon />Setup aktif &lt; 10 menit</span>
                 <span className="trust-item"><CheckIcon />Mulai dari Rp150rb/bulan</span>
               </div>

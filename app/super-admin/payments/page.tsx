@@ -1,34 +1,36 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
-import CustomSelect from '@/components/form/CustomSelect';
+import { Modal, Notice, PageHeader, Pager, StatusBadge, TableState, Tabs, formatDateTime } from '@/components/super-admin/ui';
+import { paymentDetail } from '@/components/subscription/pricing';
 import { paymentApi } from '@/lib/subscription';
-import type { Payment } from '@/types/subscription';
+import type { Payment, PaymentStatus } from '@/types/subscription';
 import { ApiError, openProtectedFile } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency } from '@/lib/format';
-import { useEscapeKey } from '@/lib/a11y';
 import '../../styles/super-admin.css';
 
-const STATUS_OPTIONS = [
-  { value: 'pending', label: 'Menunggu Konfirmasi' },
-  { value: 'confirmed', label: 'Dikonfirmasi' },
-  { value: 'rejected', label: 'Ditolak' },
+const TABS: { key: PaymentStatus; label: string }[] = [
+  { key: 'pending', label: 'Menunggu' },
+  { key: 'confirmed', label: 'Dikonfirmasi' },
+  { key: 'rejected', label: 'Ditolak' },
 ];
 
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+function payer(p: Payment) {
+  return p.ownerId ? `${p.ownerName || `Owner #${p.ownerId}`} (Multi-Klinik)` : p.clinicName || `Klinik #${p.clinicId}`;
 }
 
+/** Antrian klaim "sudah bayar" (PRD KU-01): tab Menunggu · Dikonfirmasi · Ditolak. */
 export default function SuperAdminPaymentsPage() {
   const [rows, setRows] = useState<Payment[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState('pending');
+  const [status, setStatus] = useState<PaymentStatus>('pending');
+  const [pendingCount, setPendingCount] = useState<number | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [reviewing, setReviewing] = useState<{ payment: Payment; action: 'confirm' | 'reject' } | null>(null);
-  useEscapeKey(() => setReviewing(null), reviewing !== null);
   const [reviewNotes, setReviewNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { success, error: showError } = useToast();
@@ -36,9 +38,10 @@ export default function SuperAdminPaymentsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await paymentApi.listQueue({ status: status as 'pending' | 'confirmed' | 'rejected', page, limit: 20 });
+      const res = await paymentApi.listQueue({ status, page, limit: 20 });
       setRows(res.data);
       setMeta(res.meta);
+      if (status === 'pending') setPendingCount(res.meta.total);
     } catch (err) {
       showError(err instanceof ApiError ? err.message : 'Gagal memuat antrian pembayaran');
     } finally {
@@ -47,8 +50,16 @@ export default function SuperAdminPaymentsPage() {
   }, [status, page, showError]);
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
+
+  useEffect(() => {
+    if (status === 'pending') return;
+    paymentApi
+      .listQueue({ status: 'pending', page: 1, limit: 1 })
+      .then((r) => setPendingCount(r.meta.total))
+      .catch(() => undefined);
+  }, [status]);
 
   const submitReview = async () => {
     if (!reviewing) return;
@@ -56,14 +67,14 @@ export default function SuperAdminPaymentsPage() {
     try {
       if (reviewing.action === 'confirm') {
         await paymentApi.confirm(reviewing.payment.id, { notes: reviewNotes || undefined });
-        success('Pembayaran dikonfirmasi, langganan klinik diperpanjang');
+        success('Pembayaran dikonfirmasi, langganan diperpanjang, kuitansi dikirim ke email owner');
       } else {
         await paymentApi.reject(reviewing.payment.id, { notes: reviewNotes || undefined });
         success('Klaim pembayaran ditolak');
       }
       setReviewing(null);
       setReviewNotes('');
-      load();
+      void load();
     } catch (err) {
       showError(err instanceof ApiError ? err.message : 'Gagal memproses pembayaran');
     } finally {
@@ -71,36 +82,31 @@ export default function SuperAdminPaymentsPage() {
     }
   };
 
-  const tagClass = (s: string) => (s === 'confirmed' ? 'tag-confirmed' : s === 'rejected' ? 'tag-rejected' : 'tag-pending');
-  const tagLabel = (s: string) => (s === 'confirmed' ? 'Dikonfirmasi' : s === 'rejected' ? 'Ditolak' : 'Menunggu');
-
   return (
     <SuperAdminLayout>
       <div className="sa-page">
-        <div className="page-header">
-          <div className="page-title-block">
-            <div className="page-title">
-              <h1>Konfirmasi Pembayaran</h1>
-              <span className="badge-count">{meta.total}</span>
-            </div>
-            <p className="page-subtitle">Verifikasi klaim &quot;sudah bayar&quot; dari klinik, lalu konfirmasi untuk memperpanjang langganan.</p>
-          </div>
-        </div>
+        <PageHeader
+          title="Konfirmasi Pembayaran"
+          subtitle="Periksa bukti transfer, lalu konfirmasi untuk memperpanjang langganan. Kuitansi dibuat otomatis."
+        />
 
-        <div className="filter-bar">
-          <div className="filter-select">
-            <CustomSelect value={status} onChange={(v) => { setStatus(v); setPage(1); }} options={STATUS_OPTIONS} placeholder="Status" />
-          </div>
-        </div>
+        <Tabs
+          active={status}
+          onChange={(k) => {
+            setStatus(k as PaymentStatus);
+            setPage(1);
+          }}
+          tabs={TABS.map((t) => (t.key === 'pending' ? { ...t, count: pendingCount } : t))}
+        />
 
         <div className="table-wrap">
           <table className="sa-table">
             <thead>
               <tr>
                 <th>Waktu</th>
-                <th>Klinik</th>
+                <th>Pembayar</th>
                 <th>Paket</th>
-                <th>Kuantitas</th>
+                <th>Rincian</th>
                 <th>Jumlah</th>
                 <th>Status</th>
                 <th>Bukti</th>
@@ -108,30 +114,32 @@ export default function SuperAdminPaymentsPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan={8} className="empty-row">Memuat...</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={8} className="empty-row">Tidak ada klaim pembayaran untuk filter ini.</td></tr>
-              ) : (
+              <TableState
+                loading={loading}
+                empty={rows.length === 0}
+                colSpan={8}
+                message={status === 'pending' ? 'Tidak ada pembayaran yang menunggu.' : 'Belum ada data.'}
+              />
+              {!loading &&
                 rows.map((row) => (
                   <tr key={row.id}>
                     <td className="col-time">{formatDateTime(row.createdAt)}</td>
-                    <td style={{ fontWeight: 600 }}>
-                      {row.ownerId
-                        ? `${row.ownerName || `Owner #${row.ownerId}`} (Multi-Klinik)`
-                        : row.clinicName || `Klinik #${row.clinicId}`}
+                    <td className="cell-strong">
+                      {row.clinicId ? <Link href={`/super-admin/clinics/${row.clinicId}?tab=langganan`}>{payer(row)}</Link> : payer(row)}
                     </td>
                     <td>{row.plan?.name || '-'}</td>
-                    <td>{row.quantity > 1 ? `${row.quantity} klinik` : '-'}</td>
-                    <td>Rp {formatCurrency(row.amount)}</td>
+                    <td>{paymentDetail(row)}</td>
+                    <td className="cell-nowrap">Rp {formatCurrency(row.amount)}</td>
                     <td>
-                      <span className={`tag ${tagClass(row.status)}`}>{tagLabel(row.status)}</span>
+                      <StatusBadge tone={row.status === 'confirmed' ? 'ok' : row.status === 'rejected' ? 'bad' : 'warn'}>
+                        {row.status === 'confirmed' ? 'Lunas, dikonfirmasi' : row.status === 'rejected' ? 'Ditolak' : 'Menunggu'}
+                      </StatusBadge>
                     </td>
                     <td>
                       {row.proofUrl ? (
                         <button
                           type="button"
-                          style={{ background: 'none', border: 'none', padding: 0, color: 'var(--primary, #2563eb)', textDecoration: 'underline', cursor: 'pointer' }}
+                          className="sa-link"
                           onClick={() => openProtectedFile(row.proofUrl!).catch(() => showError('Gagal memuat bukti pembayaran'))}
                         >
                           Lihat
@@ -140,7 +148,7 @@ export default function SuperAdminPaymentsPage() {
                         '-'
                       )}
                     </td>
-                    <td style={{ display: 'flex', gap: 8 }}>
+                    <td className="cell-actions">
                       {row.status === 'pending' && (
                         <>
                           <button type="button" className="btn-primary btn-sm" onClick={() => setReviewing({ payment: row, action: 'confirm' })}>
@@ -151,54 +159,31 @@ export default function SuperAdminPaymentsPage() {
                           </button>
                         </>
                       )}
+                      {row.status === 'confirmed' && (
+                        <Link href={`/kuitansi/${row.id}`} target="_blank" className="btn-outline btn-sm">
+                          Kuitansi
+                        </Link>
+                      )}
                     </td>
                   </tr>
-                ))
-              )}
+                ))}
             </tbody>
           </table>
         </div>
 
-        {meta.totalPages > 1 && (
-          <div className="pagination">
-            <button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Sebelumnya</button>
-            <span>Halaman {meta.page} dari {meta.totalPages}</span>
-            <button type="button" disabled={page >= meta.totalPages} onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}>Berikutnya</button>
-          </div>
-        )}
+        <Pager page={meta.page} totalPages={meta.totalPages} total={meta.total} onChange={setPage} />
       </div>
 
       {reviewing && (
-        <div className="sa-modal-overlay" onClick={() => setReviewing(null)}>
-          <div className="sa-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="sa-modal-header">
-              <h2>{reviewing.action === 'confirm' ? 'Konfirmasi Pembayaran' : 'Tolak Pembayaran'}</h2>
-              <button type="button" className="sa-modal-close" onClick={() => setReviewing(null)}>&times;</button>
-            </div>
-            <div className="sa-modal-body">
-              <p style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>
-                {reviewing.payment.ownerId
-                  ? `${reviewing.payment.ownerName || `Owner #${reviewing.payment.ownerId}`} (Multi-Klinik)`
-                  : reviewing.payment.clinicName || `Klinik #${reviewing.payment.clinicId}`}
-                {' '}&middot; {reviewing.payment.plan?.name} &middot; Rp {formatCurrency(reviewing.payment.amount)}
-              </p>
-              {reviewing.action === 'confirm' && !reviewing.payment.ownerId && (
-                <p style={{ fontSize: 13, color: 'var(--text-sub)' }}>
-                  Konfirmasi akan memperpanjang langganan klinik ini sesuai durasi paket.
-                </p>
-              )}
-              {reviewing.action === 'confirm' && reviewing.payment.ownerId && (
-                <p style={{ fontSize: 13, color: '#B8791A', background: 'rgba(245,166,35,.12)', padding: '10px 12px', borderRadius: 8 }}>
-                  Pembayaran Multi Klinik ini mencakup <strong>{reviewing.payment.quantity} klinik</strong> yang terhubung ke akun ini. Konfirmasi akan memperpanjang langganan semua {reviewing.payment.quantity} klinik tersebut sekaligus.
-                </p>
-              )}
-              <div className="sa-field">
-                <label>Catatan (opsional)</label>
-                <textarea rows={3} value={reviewNotes} onChange={(e) => setReviewNotes(e.target.value)} placeholder="Contoh: transfer BCA a.n. ..." />
-              </div>
-            </div>
-            <div className="sa-modal-footer">
-              <button type="button" className="btn-outline" onClick={() => setReviewing(null)}>Batal</button>
+        <Modal
+          title={reviewing.action === 'confirm' ? 'Konfirmasi pembayaran' : 'Tolak pembayaran'}
+          onClose={() => setReviewing(null)}
+          busy={submitting}
+          footer={
+            <>
+              <button type="button" className="btn-outline" onClick={() => setReviewing(null)} disabled={submitting}>
+                Batal
+              </button>
               <button
                 type="button"
                 className={reviewing.action === 'confirm' ? 'btn-primary' : 'btn-danger'}
@@ -207,9 +192,36 @@ export default function SuperAdminPaymentsPage() {
               >
                 {submitting ? 'Memproses...' : reviewing.action === 'confirm' ? 'Konfirmasi' : 'Tolak'}
               </button>
-            </div>
+            </>
+          }
+        >
+          <p className="text-sub">
+            {payer(reviewing.payment)} &middot; {reviewing.payment.plan?.name} &middot; {paymentDetail(reviewing.payment)} &middot; Rp{' '}
+            {formatCurrency(reviewing.payment.amount)}
+          </p>
+          {reviewing.action === 'confirm' &&
+            (reviewing.payment.ownerId ? (
+              <Notice tone="warn">
+                Pembayaran Multi Klinik ini mencakup <strong>{reviewing.payment.quantity} klinik</strong>. Konfirmasi
+                memperpanjang langganan semua klinik tersebut sekaligus.
+              </Notice>
+            ) : (
+              <p className="text-sub">
+                Konfirmasi memperpanjang langganan klinik ini {reviewing.payment.months ?? 1} bulan dan mengirim kuitansi ke
+                email owner.
+              </p>
+            ))}
+          <div className="sa-field">
+            <label htmlFor="review-notes">Catatan (opsional)</label>
+            <textarea
+              id="review-notes"
+              rows={3}
+              value={reviewNotes}
+              onChange={(e) => setReviewNotes(e.target.value)}
+              placeholder="Contoh: transfer BCA a.n. ..."
+            />
           </div>
-        </div>
+        </Modal>
       )}
     </SuperAdminLayout>
   );

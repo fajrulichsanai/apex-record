@@ -29,6 +29,8 @@ export interface UserFeatures {
 
 export interface PlatformSettings {
   satusehatEnabled: boolean;
+  /** Hapus otomatis data klinik yang masa unduh 15 harinya sudah lewat. */
+  autoPurgeEnabled?: boolean;
 }
 
 /** Status SATUSEHAT sebuah klinik: aktif hanya bila global DAN klinik menyala */
@@ -57,4 +59,6 @@ export const featuresApi = {
   platformSettings: () => apiClient.get<PlatformSettings>('/super-admin/platform-settings'),
   setPlatformSatusehat: (enabled: boolean) =>
     apiClient.put<PlatformSettings>('/super-admin/platform-settings/satusehat', { enabled }),
+  setPlatformAutoPurge: (enabled: boolean) =>
+    apiClient.put<PlatformSettings>('/super-admin/platform-settings/auto-purge', { enabled }),
 };

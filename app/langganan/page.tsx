@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
@@ -15,6 +16,7 @@ import SettingsTabs from '@/components/settings/SettingsTabs';
 import './langganan.css';
 import StorageUsageCard from '@/components/storage/StorageUsageCard';
 import type { StorageQuota } from '@/lib/storage';
+import { clinicDataApi, type RetentionStatus } from '@/lib/super-admin';
 import {
   DurationPicker,
   PlanPrice,
@@ -118,6 +120,14 @@ function LanggananPageInner() {
       .catch(() => setBranchBilling(null));
   }, []);
   const selfPayingBranch = branchBilling === 'self';
+  // Langganan berhenti: tanggal data dihapus (lihat Data & Privasi).
+  const [retention, setRetention] = useState<RetentionStatus | null>(null);
+  useEffect(() => {
+    clinicDataApi
+      .retention()
+      .then(setRetention)
+      .catch(() => setRetention(null));
+  }, []);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -235,6 +245,14 @@ function LanggananPageInner() {
             )}
           </div>
         </div>
+
+        {retention?.deleteAfter && !retention.purgedAt && (
+          <div className="alert-danger" role="alert">
+            Langganan sudah berakhir. Data klinik bisa diunduh sampai{' '}
+            <strong>{formatDate(retention.deleteAfter)}</strong>, lalu dihapus permanen.{' '}
+            <Link href="/data-privasi">Unduh semua data</Link> atau perpanjang di bawah agar data tetap tersimpan.
+          </div>
+        )}
 
         <StorageUsageCard canPurchase={canBuyStorage} onChange={setStorage} />
 
@@ -380,10 +398,17 @@ function LanggananPageInner() {
                       <td>{formatDate(p.createdAt)}</td>
                       <td>{p.plan?.name || '-'}</td>
                       <td>{paymentDetail(p)}</td>
-                      <td>Rp {formatCurrency(p.amount)}</td>
+                      <td>
+                        Rp {formatCurrency(p.amount)}
+                        {p.status === 'confirmed' && (
+                          <Link href={`/kuitansi/${p.id}`} target="_blank" className="receipt-link">
+                            Kuitansi
+                          </Link>
+                        )}
+                      </td>
                       <td>
                         <span className={`tag ${p.status === 'confirmed' ? 'tag-confirmed' : p.status === 'rejected' ? 'tag-rejected' : 'tag-pending'}`}>
-                          {p.status === 'confirmed' ? 'Dikonfirmasi' : p.status === 'rejected' ? 'Ditolak' : 'Menunggu'}
+                          {p.status === 'confirmed' ? 'Lunas, dikonfirmasi' : p.status === 'rejected' ? 'Ditolak' : 'Menunggu'}
                         </span>
                       </td>
                       <td>

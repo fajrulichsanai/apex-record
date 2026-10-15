@@ -118,3 +118,25 @@
 @media (max-width: 640px) {
   .dp-options { grid-template-columns: 1fr; }
 }
+.data-privasi-page .dp-retention {
+  background: rgba(229, 72, 77, 0.08);
+  border: 1px solid rgba(229, 72, 77, 0.35);
+  color: var(--text-dark, #1A2340);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.data-privasi-page .dp-link {
+  display: block;
+  margin-top: 10px;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  color: var(--accent, #367D2F);
+  text-decoration: underline;
+  cursor: pointer;
+}

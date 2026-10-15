@@ -1,9 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
 import CustomSelect from '@/components/form/CustomSelect';
+import { PageHeader, Pager, StatusBadge, TableState, Tabs, Notice, formatDate } from '@/components/super-admin/ui';
+import OwnerCodesPanel, { GenerateCodesModal } from '@/components/super-admin/OwnerCodesPanel';
+import { SATUSEHAT_STATUS, clinicStatus } from '@/components/super-admin/clinic-status';
 import { clinicSubscriptionApi } from '@/lib/subscription';
 import type { ClinicSubscriptionSummary } from '@/types/subscription';
 import { ApiError } from '@/lib/api-client';
@@ -11,26 +15,46 @@ import { formatBytes, storageApi, type ClinicStorageRow } from '@/lib/storage';
 import '../../styles/super-admin.css';
 
 const STATUS_OPTIONS = [
-  { value: '', label: 'Semua Status' },
+  { value: '', label: 'Semua status' },
   { value: 'active', label: 'Aktif' },
   { value: 'expired', label: 'Kadaluarsa' },
 ];
 
-function formatDate(value?: string) {
-  if (!value) return '-';
-  return new Date(value).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+export default function SuperAdminClinicsPage() {
+  return (
+    <SuperAdminLayout>
+      <Suspense>
+        <ClinicsInner />
+      </Suspense>
+    </SuperAdminLayout>
+  );
 }
 
-export default function SuperAdminClinicsPage() {
+function ClinicsInner() {
+  const params = useSearchParams();
+  const router = useRouter();
+  const tab = params.get('tab') === 'kode' ? 'kode' : 'klinik';
   const [rows, setRows] = useState<ClinicSubscriptionSummary[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('');
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState(params.get('status') ?? '');
   const [page, setPage] = useState(1);
-  // Pemakaian storage per klinik (PRD Super Admin) — supplementary column.
+  const [generating, setGenerating] = useState(false);
+  const [codesReload, setCodesReload] = useState(0);
+  // Pemakaian storage per klinik — kolom pelengkap.
   const [storage, setStorage] = useState<Map<number, ClinicStorageRow>>(new Map());
+
+  // Pencarian otomatis saat mengetik (PRD KL-02).
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setQuery(search.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [search]);
 
   useEffect(() => {
     storageApi
@@ -44,7 +68,7 @@ export default function SuperAdminClinicsPage() {
     setError(null);
     try {
       const res = await clinicSubscriptionApi.listAll({
-        search: search || undefined,
+        search: query || undefined,
         status: (status || undefined) as 'active' | 'expired' | undefined,
         page,
         limit: 20,
@@ -56,110 +80,146 @@ export default function SuperAdminClinicsPage() {
     } finally {
       setLoading(false);
     }
-  }, [search, status, page]);
+  }, [query, status, page]);
 
   useEffect(() => {
-    load();
-  }, [load]);
+    if (tab === 'klinik') void load();
+  }, [load, tab]);
 
   return (
-    <SuperAdminLayout>
-      <div className="sa-page">
-        <div className="page-header">
-          <div className="page-title-block">
-            <div className="page-title">
-              <h1>Klinik</h1>
-              <span className="badge-count">{meta.total}</span>
-            </div>
-            <p className="page-subtitle">Seluruh klinik terdaftar dan status langganannya.</p>
-          </div>
-        </div>
-
-        <div className="filter-bar">
-          <input
-            type="text"
-            className="search-input"
-            placeholder="Cari nama klinik..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && setPage(1)}
-          />
-          <div className="filter-select">
-            <CustomSelect value={status} onChange={(v) => { setStatus(v); setPage(1); }} options={STATUS_OPTIONS} placeholder="Semua Status" />
-          </div>
-          <button type="button" className="btn-primary" onClick={() => setPage(1)}>
-            Terapkan
+    <div className="sa-page">
+      <PageHeader
+        title="Klinik"
+        count={tab === 'klinik' ? meta.total : undefined}
+        subtitle="Seluruh klinik terdaftar. Buka satu klinik untuk mengurus langganan, pengguna, fitur, SATUSEHAT, dan migrasi pasien."
+        actions={
+          <button type="button" className="btn-primary" onClick={() => setGenerating(true)}>
+            + Buat kode registrasi
           </button>
-        </div>
+        }
+      />
 
-        {error && <div className="alert-error">{error}</div>}
+      {params.get('pilih') === 'migrasi' && (
+        <Notice tone="info">Migrasi data pasien kini ada di detail klinik. Pilih klinik, lalu buka tab Migrasi Pasien.</Notice>
+      )}
 
-        <div className="table-wrap">
-          <table className="sa-table">
-            <thead>
-              <tr>
-                <th>Klinik</th>
-                <th>Paket</th>
-                <th>Status</th>
-                <th>Berakhir</th>
-                <th>Storage</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr><td colSpan={6} className="empty-row">Memuat...</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={6} className="empty-row">Tidak ada klinik untuk filter ini.</td></tr>
-              ) : (
-                rows.map((row) => (
-                  <tr key={row.clinicId}>
-                    <td style={{ fontWeight: 600 }}>{row.clinicName}</td>
-                    <td>{row.subscription?.plan?.name || '-'}</td>
-                    <td>
-                      {row.subscription?.status === 'active' ? (
-                        <span className="tag tag-active">Aktif</span>
-                      ) : (
-                        <span className="tag tag-expired">{row.subscription ? 'Kadaluarsa' : 'Belum Berlangganan'}</span>
-                      )}
-                    </td>
-                    <td>{formatDate(row.subscription?.endDate)}</td>
-                    <td>
-                      {(() => {
-                        const st = storage.get(row.clinicId);
-                        if (!st) return '-';
-                        return (
-                          <span title={st.scope === 'multiklinik' ? `Jatah bersama multiklinik, terpakai ${formatBytes(st.poolUsedBytes)}` : undefined}>
-                            {formatBytes(st.usedBytes)} / {formatBytes(st.limitBytes)}
-                            {st.scope === 'multiklinik' && <small style={{ display: 'block', opacity: 0.7 }}>bersama multiklinik</small>}
-                          </span>
-                        );
-                      })()}
-                    </td>
-                    <td>
-                      <Link href={`/super-admin/clinics/${row.clinicId}`} className="btn-outline btn-sm">
-                        Detail
-                      </Link>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+      <Tabs
+        active={tab}
+        hrefFor={(k) => (k === 'kode' ? '/super-admin/clinics?tab=kode' : '/super-admin/clinics')}
+        tabs={[
+          { key: 'klinik', label: 'Daftar klinik' },
+          { key: 'kode', label: 'Kode registrasi' },
+        ]}
+      />
 
-        {meta.totalPages > 1 && (
-          <div className="pagination">
-            <button type="button" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-              Sebelumnya
-            </button>
-            <span>Halaman {meta.page} dari {meta.totalPages}</span>
-            <button type="button" disabled={page >= meta.totalPages} onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}>
-              Berikutnya
-            </button>
+      {tab === 'kode' ? (
+        <OwnerCodesPanel reloadKey={codesReload} />
+      ) : (
+        <>
+          <div className="filter-bar">
+            <input
+              type="search"
+              className="search-input"
+              placeholder="Cari nama klinik..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              aria-label="Cari nama klinik"
+            />
+            <div className="filter-select">
+              <CustomSelect
+                value={status}
+                onChange={(v) => {
+                  setStatus(v);
+                  setPage(1);
+                  router.replace(v ? `/super-admin/clinics?status=${v}` : '/super-admin/clinics');
+                }}
+                options={STATUS_OPTIONS}
+                placeholder="Semua status"
+              />
+            </div>
           </div>
-        )}
-      </div>
-    </SuperAdminLayout>
+
+          {error && <div className="alert-error">{error}</div>}
+
+          <div className="table-wrap">
+            <table className="sa-table">
+              <thead>
+                <tr>
+                  <th>Klinik</th>
+                  <th>Owner</th>
+                  <th>Paket</th>
+                  <th>Status</th>
+                  <th>Berakhir</th>
+                  <th>Akun</th>
+                  <th>SATUSEHAT</th>
+                  <th>Storage</th>
+                  <th>Daftar</th>
+                </tr>
+              </thead>
+              <tbody>
+                <TableState loading={loading} empty={rows.length === 0} colSpan={9} message="Tidak ada klinik untuk filter ini." />
+                {!loading &&
+                  rows.map((row) => {
+                    const st = clinicStatus(row.subscription, row);
+                    const ss = row.satusehatStatus ? SATUSEHAT_STATUS[row.satusehatStatus] : null;
+                    const usage = storage.get(row.clinicId);
+                    return (
+                      <tr key={row.clinicId}>
+                        <td className="cell-strong">
+                          <Link href={`/super-admin/clinics/${row.clinicId}`}>{row.clinicName}</Link>
+                          {row.multiClinicOwner && <span className="cell-sub">Multi-klinik: {row.multiClinicOwner.name}</span>}
+                        </td>
+                        <td>
+                          {row.owner ? (
+                            <>
+                              {row.owner.name}
+                              <span className="cell-sub">{row.owner.email}</span>
+                            </>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td>{row.subscription?.plan?.name || '-'}</td>
+                        <td>
+                          <StatusBadge tone={st.tone} title={st.hint}>
+                            {st.label}
+                          </StatusBadge>
+                          {st.hint && <span className="cell-sub">{st.hint}</span>}
+                        </td>
+                        <td className="cell-nowrap">{formatDate(row.subscription?.endDate)}</td>
+                        <td>{row.activeUsers ?? '-'}</td>
+                        <td>{ss ? <StatusBadge tone={ss.tone}>{ss.label}</StatusBadge> : '-'}</td>
+                        <td className="cell-nowrap">
+                          {usage ? (
+                            <>
+                              {formatBytes(usage.usedBytes)} / {formatBytes(usage.limitBytes)}
+                              {usage.scope === 'multiklinik' && <span className="cell-sub">bersama multiklinik</span>}
+                            </>
+                          ) : (
+                            '-'
+                          )}
+                        </td>
+                        <td className="cell-nowrap">{formatDate(row.createdAt)}</td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
+          </div>
+
+          <Pager page={meta.page} totalPages={meta.totalPages} total={meta.total} onChange={setPage} />
+        </>
+      )}
+
+      {generating && (
+        <GenerateCodesModal
+          onClose={() => setGenerating(false)}
+          onCreated={() => {
+            setCodesReload((n) => n + 1);
+            if (tab !== 'kode') router.push('/super-admin/clinics?tab=kode');
+          }}
+        />
+      )}
+    </div>
   );
 }

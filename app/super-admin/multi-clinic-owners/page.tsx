@@ -7,6 +7,8 @@ import { multiClinicApi, type BranchLink, type LinkStatus, type MultiClinicOwner
 import { apiClient, ApiError } from '@/lib/api-client';
 import { useEscapeKey } from '@/lib/a11y';
 import StorageAdjustCard from '@/components/storage/StorageAdjustCard';
+import { PageHeader, SkeletonBlock } from '@/components/super-admin/ui';
+import InviteUserModal from '@/components/super-admin/InviteUserModal';
 import type { Clinic } from '@/types/clinic';
 import '../../styles/super-admin.css';
 import '../../styles/multi-klinik.css';
@@ -41,6 +43,7 @@ export default function MultiClinicOwnersPage() {
   const [mode, setMode] = useState<Record<number, Mode>>({});
   const [busyOwnerId, setBusyOwnerId] = useState<number | null>(null);
   const [unlinking, setUnlinking] = useState<{ owner: MultiClinicOwner; link: BranchLink } | null>(null);
+  const [creatingOwner, setCreatingOwner] = useState(false);
   useEscapeKey(() => setUnlinking(null), !!unlinking);
 
   const load = useCallback(async () => {
@@ -121,28 +124,26 @@ export default function MultiClinicOwnersPage() {
   return (
     <SuperAdminLayout>
       <div className="sa-page mk-scope">
-        <div className="page-header">
-          <div className="page-title-block">
-            <div className="page-title">
-              <h1>Multi-Klinik Owner</h1>
-            </div>
-            <p className="page-subtitle">
-              Buat akunnya dulu di User Management dengan role &quot;Multi-Klinik Owner&quot;. Klinik yang sudah ada
-              dihubungkan lewat persetujuan owner kliniknya; klinik baru yang dibuat untuk owner ini bisa dihubungkan
-              langsung. Satu klinik hanya boleh punya satu owner multiklinik.
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title="Multi-Klinik Owner"
+          count={owners.length}
+          subtitle="Klinik yang sudah ada dihubungkan lewat persetujuan owner kliniknya; klinik baru yang dibuat untuk owner ini bisa dihubungkan langsung. Satu klinik hanya boleh punya satu owner multiklinik."
+          actions={
+            <button type="button" className="btn-primary" onClick={() => setCreatingOwner(true)}>
+              + Buat akun owner
+            </button>
+          }
+        />
 
         {error && <div className="mk-alert bad">{error}</div>}
         {notice && !error && <div className="mk-alert info">{notice}</div>}
 
         {loading ? (
-          <p>Memuat...</p>
+          <SkeletonBlock lines={4} />
         ) : owners.length === 0 ? (
           <div className="mk-alert">Belum ada akun dengan role Multi-Klinik Owner.</div>
         ) : (
-          <div className="mk-page" style={{ maxWidth: 'none' }}>
+          <div className="mk-page mk-page-wide">
             {owners.map((owner) => {
               const links = owner.links ?? owner.clinics.map((c) => ({
                 id: c.id,
@@ -219,12 +220,12 @@ export default function MultiClinicOwnersPage() {
                   )}
 
                   <details>
-                    <summary className="mk-muted" style={{ cursor: 'pointer' }}>Storage bersama</summary>
+                    <summary className="mk-muted mk-summary">Storage bersama</summary>
                     <StorageAdjustCard ownerId={owner.id} compact />
                   </details>
 
-                  <div className="mk-filters" style={{ alignItems: 'center' }}>
-                    <div style={{ minWidth: 220, flex: '1 1 220px', maxWidth: 360 }}>
+                  <div className="mk-filters mk-filters-center">
+                    <div className="mk-select-cell">
                       <CustomSelect
                         value={selected[owner.id] || ''}
                         onChange={(value) => setSelected((s) => ({ ...s, [owner.id]: value }))}
@@ -232,7 +233,7 @@ export default function MultiClinicOwnersPage() {
                         placeholder={available.length ? 'Pilih klinik…' : 'Semua klinik sudah terhubung'}
                       />
                     </div>
-                    <label className="mk-field" style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <label className="mk-field mk-field-inline">
                       <input
                         type="radio"
                         name={`mode-${owner.id}`}
@@ -241,7 +242,7 @@ export default function MultiClinicOwnersPage() {
                       />
                       Ajukan ke owner klinik
                     </label>
-                    <label className="mk-field" style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <label className="mk-field mk-field-inline">
                       <input
                         type="radio"
                         name={`mode-${owner.id}`}
@@ -263,6 +264,10 @@ export default function MultiClinicOwnersPage() {
               );
             })}
           </div>
+        )}
+
+        {creatingOwner && (
+          <InviteUserModal fixedRole="multi_clinic_owner" onClose={() => setCreatingOwner(false)} onCreated={() => void load()} />
         )}
 
         {unlinking && (

@@ -36,6 +36,7 @@ const ROUTES_WITHOUT_BRANCH = [
   '/kebijakan-refund',
   '/syarat-ketentuan',
   '/super-admin',
+  '/kuitansi',
 ];
 
 export function routeNeedsBranch(pathname: string): boolean {

@@ -234,3 +234,141 @@
 @media (max-width: 640px) {
   .sa-page .stat-grid { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── Komponen bersama (components/super-admin/ui.tsx) ── */
+.sa-page .sa-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.sa-page .sa-breadcrumb { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12.5px; color: var(--text-sub); margin-bottom: 6px; }
+.sa-page .sa-breadcrumb a { color: var(--primary); text-decoration: none; }
+.sa-page .sa-breadcrumb a:hover { text-decoration: underline; }
+.sa-page .sa-breadcrumb-sep { margin-left: 6px; color: var(--text-muted); }
+
+.sa-page .tag-ok      { background: rgba(45,203,138,.12); color: #12875A; }
+.sa-page .tag-bad     { background: rgba(255,77,79,.14); color: #C52A2C; }
+.sa-page .tag-warn    { background: rgba(245,166,35,.16); color: #8A5A00; }
+.sa-page .tag-info    { background: rgba(79,126,248,.12); color: #2D5BD0; }
+
+.sa-page .sa-notice,
+.sa-modal .sa-notice { font-size: 13px; padding: 10px 12px; border-radius: 8px; line-height: 1.5; }
+.sa-notice-info    { background: rgba(79,126,248,.08); color: #2D4A8A; }
+.sa-notice-warn    { background: rgba(245,166,35,.12); color: #7A5200; }
+.sa-notice-bad     { background: rgba(255,77,79,.08); color: #B42318; }
+.sa-notice-ok      { background: rgba(45,203,138,.10); color: #116B47; }
+.sa-notice-neutral { background: var(--bg, #F5F6FA); color: var(--text-sub, #6B7A99); }
+
+.sa-page .sa-link,
+.sa-modal .sa-link {
+  background: none; border: none; padding: 0; font: inherit; color: var(--primary);
+  text-decoration: underline; cursor: pointer;
+}
+.sa-page .cell-strong { font-weight: 600; }
+.sa-page .cell-sub { display: block; font-size: 12px; color: var(--text-muted); margin-top: 2px; font-weight: 400; }
+.sa-page .cell-wrap { max-width: 280px; white-space: normal; }
+.sa-page .cell-nowrap { white-space: nowrap; }
+.sa-page .cell-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.sa-page .text-sub,
+.sa-modal .text-sub { font-size: 13.5px; color: var(--text-sub); }
+.sa-page .text-muted { font-size: 12.5px; color: var(--text-muted); }
+.sa-page .sa-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.sa-page .sa-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+.sa-page .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.sa-page .card-head h3 { margin-bottom: 0; }
+.sa-page .sa-kv { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; font-size: 13.5px; }
+.sa-page .sa-kv dt { color: var(--text-sub); }
+.sa-page .sa-kv dd { margin: 0; color: var(--text-main); }
+.sa-page .stat-card-link { text-decoration: none; transition: border-color .15s ease; }
+.sa-page .stat-card-link:hover { border-color: var(--primary); }
+
+.sa-modal-wide { max-width: 640px; }
+.sa-modal .sa-field select { border: 1.5px solid var(--border, #E8ECF4); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; background: #fff; }
+
+/* Tab */
+.sa-page .sa-tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid var(--border); }
+.sa-page .sa-tab {
+  display: inline-flex; align-items: center; gap: 6px; padding: 10px 14px; margin-bottom: -1px;
+  border: none; border-bottom: 2px solid transparent; background: none; cursor: pointer;
+  font-size: 13.5px; font-weight: 600; color: var(--text-sub); text-decoration: none; white-space: nowrap;
+}
+.sa-page .sa-tab:hover { color: var(--text-main); }
+.sa-page .sa-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+.sa-page .sa-tab-count { background: var(--red); color: #fff; font-size: 11px; border-radius: 999px; padding: 0 6px; min-width: 18px; text-align: center; }
+
+/* Kerangka memuat */
+.sa-page .sa-skeleton,
+.sa-skeleton-block .sa-skeleton {
+  display: block; height: 12px; border-radius: 6px;
+  background: linear-gradient(90deg, #EEF1F7 25%, #F6F8FC 50%, #EEF1F7 75%);
+  background-size: 200% 100%; animation: sa-shimmer 1.2s infinite;
+}
+.sa-skeleton-block { display: flex; flex-direction: column; gap: 10px; }
+.sa-skeleton-block .sa-skeleton:nth-child(2n) { width: 70%; }
+@keyframes sa-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .sa-page .sa-skeleton, .sa-skeleton-block .sa-skeleton { animation: none; } }
+
+/* Dashboard: Perlu tindakan */
+.sa-page .attention-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.sa-page .attention-list li { border-bottom: 1px solid var(--border); }
+.sa-page .attention-list li:last-child { border-bottom: none; }
+.sa-page .attention-list a,
+.sa-page .attention-list .attention-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 4px; color: var(--text-main); text-decoration: none; font-size: 13.5px;
+}
+.sa-page .attention-list a:hover { background: var(--bg); }
+.sa-page .attention-empty { font-size: 13.5px; color: var(--text-sub); padding: 8px 4px; }
+
+/* Kuitansi */
+.receipt { max-width: 720px; margin: 0 auto; background: #fff; color: #1A2340; border: 1px solid #E8ECF4; border-radius: 16px; padding: 32px; font-size: 14px; }
+.receipt-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; border-bottom: 2px solid #1A2340; padding-bottom: 16px; margin-bottom: 20px; }
+.receipt-head h1 { font-size: 22px; margin: 0 0 4px; }
+.receipt-paid { display: inline-block; border: 2px solid #12875A; color: #12875A; font-weight: 800; padding: 6px 12px; border-radius: 8px; transform: rotate(-4deg); }
+.receipt table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+.receipt td { padding: 8px 4px; border-bottom: 1px solid #E8ECF4; }
+.receipt td:last-child { text-align: right; white-space: nowrap; }
+.receipt tr.total td { font-weight: 800; font-size: 16px; border-bottom: none; border-top: 2px solid #1A2340; }
+.receipt-actions { display: flex; gap: 10px; justify-content: flex-end; max-width: 720px; margin: 0 auto 16px; }
+@media print {
+  .receipt-actions, .sidebar, .navbar, .impersonation-banner { display: none !important; }
+  .receipt { border: none; padding: 0; }
+}
+
+@media (max-width: 900px) {
+  .sa-page .sa-grid-2 { grid-template-columns: 1fr; }
+  .sa-page .table-wrap { padding: 8px 10px; }
+  .sa-page .sa-table th, .sa-page .sa-table td { padding: 12px 12px; }
+}
+.sa-page .code-mono,
+.sa-modal .code-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 600; letter-spacing: .5px; }
+.sa-modal .code-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+.sa-modal .code-list li { display: flex; align-items: center; justify-content: space-between; border: 1.5px solid #E8ECF4; border-radius: 8px; padding: 8px 12px; }
+.sa-page .filter-bar .sa-tabs { border-bottom: none; }
+.sa-page .card-text { margin-bottom: 14px; }
+.sa-page .ss-embedded { padding: 0; gap: 16px; }
+.sa-page .ss-embedded > .ss-actions { justify-content: flex-end; }
+.sa-page .card-actions { margin-top: 14px; }
+.sa-page .table-plain { border: none; padding: 0; border-radius: 0; }
+.sa-page a.btn-outline { text-decoration: none; }
+
+/* Halaman SATUSEHAT di panel Super Admin: gaya kartu, tabel, dan label
+   status sama dengan halaman Super Admin lain (PRD SS-01). */
+.sa-page.ss-in-admin .ss-card,
+.sa-page .ss-embedded .ss-card { border-radius: var(--radius-lg); padding: 20px; }
+.sa-page.ss-in-admin .ss-card h2,
+.sa-page .ss-embedded .ss-card h2 { font-size: 15px; font-weight: 700; }
+.sa-page.ss-in-admin .ss-table th,
+.sa-page .ss-embedded .ss-table th {
+  font-size: 12.5px; text-transform: uppercase; letter-spacing: .3px; padding: 14px 16px;
+}
+.sa-page.ss-in-admin .ss-table td,
+.sa-page .ss-embedded .ss-table td { padding: 14px 16px; font-size: 13.5px; }
+.sa-page.ss-in-admin .ss-badge,
+.sa-page .ss-embedded .ss-badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+.sa-page .mk-page-wide { max-width: none; }
+.sa-page .mk-summary { cursor: pointer; }
+.sa-page .mk-filters-center { align-items: center; }
+.sa-page .mk-select-cell { min-width: 220px; flex: 1 1 220px; max-width: 360px; }
+.sa-page .mk-field-inline { flex-direction: row; align-items: center; gap: 6px; }
+.receipt-screen { min-height: 100vh; background: #F5F6FA; padding: 24px 16px; font-family: inherit; }
+.receipt-from { text-align: right; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.receipt-note { font-size: 12px; color: #6B7A99; margin-top: 16px; }
+.receipt-btn { background: #1A2340; color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 600; cursor: pointer; }
+@media print { .receipt-screen { background: #fff; padding: 0; } }

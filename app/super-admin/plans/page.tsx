@@ -11,6 +11,7 @@ import { formatCurrency, parseCurrency } from '@/lib/format';
 import { useEscapeKey } from '@/lib/a11y';
 import '../../styles/super-admin.css';
 import { formatGb } from '@/lib/storage';
+import { PageHeader } from '@/components/super-admin/ui';
 import { formatPromoDate, promoSavingPct } from '@/components/subscription/pricing';
 
 interface PlanForm {
@@ -168,21 +169,16 @@ export default function SuperAdminPlansPage() {
   return (
     <SuperAdminLayout>
       <div className="sa-page">
-        <div className="page-header">
-          <div className="page-title-block">
-            <div className="page-title">
-              <h1>Paket Langganan</h1>
-              <span className="badge-count">{plans.length}</span>
-            </div>
-            <p className="page-subtitle">
-              Kelola paket Free Trial, Starter, Pro, dan Multi Klinik. Harga diisi per bulan; klinik memilih lama
-              langganan 1/3/6/12 bulan dengan diskon dari Pengaturan Platform.
-            </p>
-          </div>
-          <button type="button" className="btn-primary" onClick={openCreate}>
-            + Tambah Paket
-          </button>
-        </div>
+        <PageHeader
+          title="Paket Langganan"
+          count={plans.length}
+          subtitle="Kelola paket Free Trial, Starter, Pro, dan Multi Klinik. Harga diisi per bulan; klinik memilih lama langganan 1/3/6/12 bulan dengan diskon dari Pengaturan Platform."
+          actions={
+            <button type="button" className="btn-primary" onClick={openCreate}>
+              + Tambah Paket
+            </button>
+          }
+        />
 
         <div className="table-wrap">
           <table className="sa-table">
@@ -207,13 +203,13 @@ export default function SuperAdminPlansPage() {
               ) : (
                 plans.map((plan) => (
                   <tr key={plan.id}>
-                    <td style={{ fontWeight: 600 }}>{plan.name}</td>
+                    <td className="cell-strong">{plan.name}</td>
                     <td>{tierLabel(plan.tier)} · {cycleLabel(plan.billingCycle)}</td>
                     <td>{plan.durationDays} hari</td>
                     <td>
                       {plan.promoActive ? (
                         <>
-                          <s style={{ color: 'var(--text-sub)' }}>Rp {formatCurrency(plan.price)}</s>
+                          <s className="text-muted">Rp {formatCurrency(plan.price)}</s>
                           <br />
                           <strong>Rp {formatCurrency(Number(plan.effectivePrice))}</strong>
                           <br />
@@ -227,7 +223,7 @@ export default function SuperAdminPlansPage() {
                           {plan.promoPrice != null && plan.promoUntil && (
                             <>
                               <br />
-                              <small style={{ color: 'var(--text-sub)' }}>promo berakhir {formatPromoDate(plan.promoUntil)}</small>
+                              <small className="text-muted">promo berakhir {formatPromoDate(plan.promoUntil)}</small>
                             </>
                           )}
                         </>
@@ -251,7 +247,7 @@ export default function SuperAdminPlansPage() {
                         {plan.isActive ? 'Aktif' : 'Nonaktif'}
                       </span>
                     </td>
-                    <td style={{ display: 'flex', gap: 8 }}>
+                    <td className="cell-actions">
                       <button type="button" className="btn-outline btn-sm" onClick={() => openEdit(plan)}>
                         Ubah
                       </button>

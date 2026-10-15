@@ -6,6 +6,7 @@ import { featuresApi, type PlatformSettings } from '@/lib/features';
 import { useToast } from '@/lib/toast-context';
 import '../../styles/super-admin.css';
 import '@/components/features/features.css';
+import { PageHeader } from '@/components/super-admin/ui';
 import DurationDiscountsCard from '@/components/subscription/DurationDiscountsCard';
 
 /** Super admin: saklar tingkat platform (berlaku untuk semua klinik). */
@@ -44,17 +45,28 @@ export default function PengaturanPlatformPage() {
     }
   }
 
+  async function toggleAutoPurge() {
+    if (!settings) return;
+    const next = !settings.autoPurgeEnabled;
+    const message = next
+      ? 'Nyalakan hapus otomatis? Data klinik yang masa unduhnya sudah lewat akan dihapus permanen setiap malam.'
+      : 'Matikan hapus otomatis? Data hanya dihapus saat Anda menekan "Hapus sekarang".';
+    if (!window.confirm(message)) return;
+    setBusy(true);
+    try {
+      setSettings(await featuresApi.setPlatformAutoPurge(next));
+      showToast(next ? 'Hapus otomatis dinyalakan' : 'Hapus otomatis dimatikan', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Gagal menyimpan', 'error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <SuperAdminLayout>
       <div className="sa-page">
-        <div className="page-header">
-          <div className="page-title-block">
-            <div className="page-title">
-              <h1>Pengaturan Platform</h1>
-            </div>
-            <p className="page-subtitle">Saklar dan harga yang berlaku untuk seluruh klinik di ApexRecord.</p>
-          </div>
-        </div>
+        <PageHeader title="Pengaturan Platform" subtitle="Saklar dan harga yang berlaku untuk seluruh klinik di ApexRecord." />
 
         {error && <div className="alert-error">{error}</div>}
 
@@ -83,6 +95,38 @@ export default function PengaturanPlatformPage() {
                 className={`ft-switch ${settings.satusehatEnabled ? 'on' : ''}`}
                 disabled={busy}
                 onClick={toggleSatusehat}
+              >
+                <span />
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="card">
+          <h3>Data klinik yang berhenti berlangganan</h3>
+          {!settings ? (
+            !error && <p className="ft-empty">Memuat…</p>
+          ) : (
+            <div className="ft-setting">
+              <div className="ft-setting-info">
+                <span className="ft-setting-title">Hapus otomatis setelah masa unduh 15 hari</span>
+                <span className="ft-setting-desc">
+                  Klinik yang langganannya berakhir bisa mengunduh semua datanya selama 15 hari dan diberi tahu lewat email
+                  (saat berhenti, H-7, H-1). Saat menyala, data dihapus otomatis sehari setelahnya. Saat mati, Anda
+                  menghapusnya sendiri di menu Penghapusan Data.
+                </span>
+                <span className={`ft-setting-state ${settings.autoPurgeEnabled ? 'on' : 'off'}`}>
+                  {settings.autoPurgeEnabled ? 'Nyala' : 'Mati'}
+                </span>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={!!settings.autoPurgeEnabled}
+                aria-label={`Hapus otomatis: ${settings.autoPurgeEnabled ? 'nyala' : 'mati'}`}
+                className={`ft-switch ${settings.autoPurgeEnabled ? 'on' : ''}`}
+                disabled={busy}
+                onClick={toggleAutoPurge}
               >
                 <span />
               </button>

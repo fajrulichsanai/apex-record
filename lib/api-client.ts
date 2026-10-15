@@ -37,6 +37,34 @@ export async function fetchProtectedFileUrl(path: string): Promise<string> {
 }
 
 /**
+ * Downloads a backend-hosted authenticated file (e.g. the clinic data ZIP)
+ * under the name the backend gives in Content-Disposition.
+ */
+export async function downloadProtectedFile(path: string, fallbackName: string): Promise<void> {
+  const res = await fetch(apiFileUrl(path));
+  if (!res.ok) {
+    let message = 'Gagal mengunduh file';
+    try {
+      const body = (await res.json()) as { error?: { message?: string }; message?: string };
+      message = body.error?.message || body.message || message;
+    } catch {
+      // not JSON
+    }
+    throw new ApiError(message, res.status);
+  }
+  const name =
+    /filename="?([^";]+)"?/i.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? fallbackName;
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+/**
  * Opens a backend-hosted authenticated file in a new tab. Opens the tab
  * synchronously (before the fetch) so browsers don't treat it as a blocked
  * popup, then navigates it to the fetched blob once ready.

@@ -1,17 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { FiArrowLeft, FiRefreshCw } from 'react-icons/fi';
-import { AdminSatusehatShell, formatDateTime } from '@/components/satusehat/SatusehatShell';
+import { FiRefreshCw } from 'react-icons/fi';
+import { formatDateTime } from '@/components/satusehat/SatusehatShell';
 import { FACILITY_TYPE_LABELS, satusehatAdminApi, type AdminClinicDetail } from '@/lib/satusehat';
 import { useToast } from '@/lib/toast-context';
+import '@/app/styles/satusehat.css';
 
-/** Super admin: detail kondisi SATUSEHAT satu klinik. */
-export default function SuperAdminSatusehatClinicPage() {
-  const params = useParams<{ id: string }>();
-  const id = Number(params.id);
+/** Tab SATUSEHAT di detail klinik Super Admin (PRD KL-04): kondisi integrasi satu klinik. */
+export default function SatusehatClinicPanel({ clinicId }: { clinicId: number }) {
+  const id = clinicId;
   const { showToast } = useToast();
   const [data, setData] = useState<AdminClinicDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -40,20 +38,12 @@ export default function SuperAdminSatusehatClinicPage() {
     : '';
 
   return (
-    <AdminSatusehatShell
-      title={data ? `SATUSEHAT · ${data.clinic.name}` : 'SATUSEHAT Klinik'}
-      subtitle="Detail integrasi SATUSEHAT klinik ini"
-      actions={
-        <>
-          <Link href="/super-admin/satusehat" className="ss-btn">
-            <FiArrowLeft /> Semua klinik
-          </Link>
-          <button type="button" className="ss-btn" onClick={load} disabled={loading}>
-            <FiRefreshCw /> Muat ulang
-          </button>
-        </>
-      }
-    >
+    <div className="ss-page ss-embedded">
+      <div className="ss-actions">
+        <button type="button" className="ss-btn" onClick={load} disabled={loading}>
+          <FiRefreshCw /> Muat ulang
+        </button>
+      </div>
       {loading && !data ? (
         <div className="ss-card ss-empty">Memuat...</div>
       ) : data && s ? (
@@ -212,6 +202,6 @@ export default function SuperAdminSatusehatClinicPage() {
           </div>
         </>
       ) : null}
-    </AdminSatusehatShell>
+    </div>
   );
 }

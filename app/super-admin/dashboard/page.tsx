@@ -3,93 +3,120 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
+import { PageHeader, SkeletonBlock, StatCard, StatusBadge, formatDate } from '@/components/super-admin/ui';
 import { superAdminReportApi } from '@/lib/subscription';
-import type { SuperAdminReportSummary } from '@/types/subscription';
+import { superAdminApi } from '@/lib/super-admin';
+import type { SuperAdminQueue, SuperAdminReportSummary } from '@/types/subscription';
 import { ApiError } from '@/lib/api-client';
 import { formatCurrency } from '@/lib/format';
 import '../../styles/super-admin.css';
 
+function daysLabel(days: number) {
+  if (days <= 0) return 'hari ini';
+  if (days === 1) return 'besok';
+  return `${days} hari lagi`;
+}
+
+/** Antrian dulu (PRD DB-01..03): blok "Perlu tindakan", lalu 4 angka. */
 export default function SuperAdminDashboardPage() {
   const [summary, setSummary] = useState<SuperAdminReportSummary | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [queue, setQueue] = useState<SuperAdminQueue | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        setSummary(await superAdminReportApi.summary());
-      } catch (err) {
-        setError(err instanceof ApiError ? err.message : 'Gagal memuat ringkasan');
-      } finally {
-        setLoading(false);
-      }
-    })();
+    Promise.all([superAdminReportApi.summary(), superAdminApi.queue()])
+      .then(([s, q]) => {
+        setSummary(s);
+        setQueue(q);
+      })
+      .catch((err) => setError(err instanceof ApiError ? err.message : 'Gagal memuat ringkasan'));
   }, []);
+
+  const items = queue
+    ? [
+        queue.pendingPayments > 0 && {
+          key: 'payments',
+          href: '/super-admin/payments',
+          label: `${queue.pendingPayments} pembayaran menunggu konfirmasi`,
+          tone: 'warn' as const,
+          tag: 'Keuangan',
+        },
+        queue.openDataRequests > 0 && {
+          key: 'requests',
+          href: '/super-admin/data-requests',
+          label:
+            `${queue.openDataRequests} permintaan data terbuka` +
+            (queue.overdueDataRequests > 0 ? ` · ${queue.overdueDataRequests} lewat batas 3 × 24 jam` : ''),
+          tone: queue.overdueDataRequests > 0 ? ('bad' as const) : ('warn' as const),
+          tag: 'UU PDP',
+        },
+        queue.satusehatNotReady > 0 && {
+          key: 'satusehat',
+          href: '/super-admin/satusehat',
+          label: `${queue.satusehatNotReady} klinik SATUSEHAT belum siap`,
+          tone: 'info' as const,
+          tag: 'SATUSEHAT',
+        },
+        ...queue.expiringSoon.map((e) => ({
+          key: `exp-${e.clinicId}`,
+          href: `/super-admin/clinics/${e.clinicId}?tab=langganan`,
+          label: `${e.clinicName}: langganan${e.tier === 'trial' ? ' (masa coba)' : ''} habis ${daysLabel(e.daysLeft)} (${formatDate(e.endDate)})`,
+          tone: 'warn' as const,
+          tag: 'Habis ≤ 7 hari',
+        })),
+        ...queue.dataDeletions.map((d) => ({
+          key: `del-${d.clinicId}`,
+          href: '/super-admin/penghapusan-data',
+          label: `${d.clinicName}: data dihapus ${d.daysLeft < 0 ? 'menunggu tindakan (masa unduh lewat)' : `setelah ${formatDate(d.deleteAfter)} (${daysLabel(d.daysLeft)})`}`,
+          tone: d.daysLeft <= 7 ? ('bad' as const) : ('neutral' as const),
+          tag: 'Penghapusan data',
+        })),
+      ].filter(Boolean)
+    : [];
 
   return (
     <SuperAdminLayout>
       <div className="sa-page">
-        <div className="page-header">
-          <div className="page-title-block">
-            <div className="page-title">
-              <h1>Dashboard Super Admin</h1>
-            </div>
-            <p className="page-subtitle">Ringkasan seluruh klinik dan langganan pada platform.</p>
-          </div>
-        </div>
+        <PageHeader title="Dashboard" subtitle="Pekerjaan yang menunggu dan kondisi platform hari ini." />
 
         {error && <div className="alert-error">{error}</div>}
 
-        {loading ? (
-          <p>Memuat...</p>
-        ) : summary ? (
-          <>
-            <div className="stat-grid">
-              <div className="stat-card">
-                <div className="stat-card-label">Total Klinik</div>
-                <div className="stat-card-value">{summary.totalClinics}</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-label">Klinik Aktif</div>
-                <div className="stat-card-value">{summary.activeClinics}</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-label">Klinik Kadaluarsa</div>
-                <div className="stat-card-value">{summary.expiredClinics}</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-label">Menunggu Konfirmasi</div>
-                <div className="stat-card-value">{summary.pendingConfirmations}</div>
-                {summary.pendingConfirmations > 0 && (
-                  <div className="stat-card-sub">
-                    <Link href="/super-admin/payments">Lihat antrian &rarr;</Link>
-                  </div>
-                )}
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-label">MRR (30 hari terakhir)</div>
-                <div className="stat-card-value">Rp {formatCurrency(summary.mrr)}</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-label">Total Pendapatan</div>
-                <div className="stat-card-value">Rp {formatCurrency(summary.totalRevenue)}</div>
-              </div>
-            </div>
+        <div className="card">
+          <h3>Perlu tindakan</h3>
+          {!queue ? (
+            !error && <SkeletonBlock lines={3} />
+          ) : items.length === 0 ? (
+            <p className="attention-empty">Tidak ada yang menunggu. Semua beres.</p>
+          ) : (
+            <ul className="attention-list">
+              {items.map((item) =>
+                item ? (
+                  <li key={item.key}>
+                    <Link href={item.href}>
+                      <span>{item.label}</span>
+                      <StatusBadge tone={item.tone}>{item.tag}</StatusBadge>
+                    </Link>
+                  </li>
+                ) : null,
+              )}
+            </ul>
+          )}
+        </div>
 
-            <div className="card">
-              <h3>Navigasi Cepat</h3>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <Link href="/super-admin/clinics" className="btn-outline">Kelola Klinik</Link>
-                <Link href="/super-admin/plans" className="btn-outline">Paket Langganan</Link>
-                <Link href="/super-admin/payments" className="btn-outline">Konfirmasi Pembayaran</Link>
-                <Link href="/super-admin/reports" className="btn-outline">Laporan</Link>
-                <Link href="/super-admin/audit-log" className="btn-outline">Log Aktivitas</Link>
-              </div>
-            </div>
-          </>
-        ) : null}
+        {summary ? (
+          <div className="stat-grid">
+            <StatCard label="Klinik aktif" value={summary.activeClinics} href="/super-admin/clinics?status=active" />
+            <StatCard label="Klinik kadaluarsa" value={summary.expiredClinics} href="/super-admin/clinics?status=expired" />
+            <StatCard
+              label="MRR (30 hari terakhir)"
+              value={`Rp ${formatCurrency(summary.mrr)}`}
+              sub={<Link href="/super-admin/reports">Pendapatan &amp; tren di Laporan &rarr;</Link>}
+            />
+            <StatCard label="Klinik baru bulan ini" value={summary.newClinicsThisMonth ?? 0} />
+          </div>
+        ) : (
+          !error && <SkeletonBlock lines={2} />
+        )}
       </div>
     </SuperAdminLayout>
   );
