@@ -3,6 +3,8 @@ import type {
   ClinicSubscription,
   ClinicSubscriptionSummary,
   DurationDiscounts,
+  InEffectSubscription,
+  UpgradeQuote,
   OwnerCode,
   Payment,
   PriceQuote,
@@ -17,6 +19,8 @@ export interface CreatePaymentPayload {
   quantity?: number;
   /** Lama langganan (1, 3, 6, 12 bulan). */
   months?: number;
+  /** 'upgrade' = naik paket, bayar selisih sisa hari. */
+  kind?: 'new' | 'upgrade';
   notes?: string;
 }
 
@@ -58,6 +62,7 @@ export const subscriptionPlanApi = {
 
 export const clinicSubscriptionApi = {
   getCurrent: () => apiClient.get<ClinicSubscription | null>('/clinic-subscriptions/current'),
+  inEffect: () => apiClient.get<InEffectSubscription>('/clinic-subscriptions/in-effect'),
   listAll: (query?: ClinicListQuery) =>
     apiClient.get<{ data: ClinicSubscriptionSummary[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(
       `/clinic-subscriptions?${toQueryString(query || {})}`,
@@ -77,10 +82,13 @@ export const paymentApi = {
     form.append('planId', String(payload.planId));
     if (payload.quantity) form.append('quantity', String(payload.quantity));
     if (payload.months) form.append('months', String(payload.months));
+    if (payload.kind) form.append('kind', payload.kind);
     if (payload.notes) form.append('notes', payload.notes);
     form.append('proof', proof);
     return apiClient.postForm<Payment>('/subscription-payments', form);
   },
+  upgradeQuote: (planId: number) =>
+    apiClient.get<UpgradeQuote>(`/subscription-payments/upgrade-quote?${toQueryString({ planId })}`),
   quote: (query: { planId: number; months?: number; quantity?: number }) =>
     apiClient.get<PriceQuote>(`/subscription-payments/quote?${toQueryString(query)}`),
   listMine: (query?: PaymentListQuery) =>

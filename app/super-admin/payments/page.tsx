@@ -200,7 +200,12 @@ export default function SuperAdminPaymentsPage() {
             {formatCurrency(reviewing.payment.amount)}
           </p>
           {reviewing.action === 'confirm' &&
-            (reviewing.payment.ownerId ? (
+            (reviewing.payment.kind === 'upgrade' ? (
+              <Notice tone="info">
+                Naik paket: konfirmasi mengganti paket klinik ini ke {reviewing.payment.plan?.name} mulai hari ini sampai akhir
+                masa aktifnya. Masa aktif tidak bertambah.
+              </Notice>
+            ) : reviewing.payment.ownerId ? (
               <Notice tone="warn">
                 Pembayaran Multi Klinik ini mencakup <strong>{reviewing.payment.quantity} klinik</strong>. Konfirmasi
                 memperpanjang langganan semua klinik tersebut sekaligus.

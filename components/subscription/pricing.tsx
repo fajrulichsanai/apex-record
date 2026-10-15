@@ -63,8 +63,8 @@ export function useDurationDiscounts() {
  * Rincian harga dari server untuk pilihan saat ini; `key` berubah setiap
  * kali paket, lama langganan, jumlah klinik, atau storage berubah.
  */
-export function useQuote(fetcher: (() => Promise<PriceQuote>) | null, key: string) {
-  const [quote, setQuote] = useState<PriceQuote | null>(null);
+export function useQuote<T = PriceQuote>(fetcher: (() => Promise<T>) | null, key: string) {
+  const [quote, setQuote] = useState<T | null>(null);
   const [failed, setFailed] = useState(false);
   useEffect(() => {
     if (!fetcher) return;
@@ -172,7 +172,7 @@ export function QuoteBreakdown({ quote, unitLabel = 'klinik' }: { quote: PriceQu
     <div className="price-breakdown">
       <div className="breakdown-row">
         <span>
-          {quote.quantity > 1 || quote.ownerFee > 0 ? `${quote.quantity} ${unitLabel} × ` : ''}
+          {quote.quantity > 1 || (quote.listOwnerFee ?? quote.ownerFee) > 0 ? `${quote.quantity} ${unitLabel} × ` : ''}
           Rp {formatCurrency(quote.listUnitPrice)} × {monthsLabel}
           {quote.promoActive ? ' (harga normal)' : ''}
         </span>
@@ -181,13 +181,16 @@ export function QuoteBreakdown({ quote, unitLabel = 'klinik' }: { quote: PriceQu
       {quote.ownerFee > 0 && (
         <div className="breakdown-row">
           <span>Biaya admin owner × {monthsLabel}</span>
-          <span>Rp {formatCurrency(quote.ownerFee * quote.months)}</span>
+          <span>Rp {formatCurrency((quote.listOwnerFee ?? quote.ownerFee) * quote.months)}</span>
         </div>
       )}
       {quote.promoDiscount > 0 && (
         <div className="breakdown-row discount">
           <span>
             Potongan promo (Rp {formatCurrency(quote.unitPrice)}/bulan
+            {quote.listOwnerFee && quote.ownerFee < quote.listOwnerFee
+              ? ` + admin owner Rp ${formatCurrency(quote.ownerFee)}`
+              : ''}
             {quote.promoUntil ? ` s.d. ${formatPromoDate(quote.promoUntil)}` : ''})
           </span>
           <span>− Rp {formatCurrency(quote.promoDiscount)}</span>
@@ -221,6 +224,7 @@ export function QuoteBreakdown({ quote, unitLabel = 'klinik' }: { quote: PriceQu
 /** Ringkas: jumlah klinik, lama langganan, dan total potongan satu pembayaran. */
 export function paymentDetail(p: Payment) {
   const parts: string[] = [];
+  if (p.kind === 'upgrade') return 'Naik paket (selisih sisa hari)';
   if (p.quantity > 1) parts.push(`${p.quantity} klinik`);
   if ((p.months ?? 1) > 1) parts.push(`${p.months} bulan`);
   const saved = Number(p.promoDiscount ?? 0) + Number(p.durationDiscount ?? 0);

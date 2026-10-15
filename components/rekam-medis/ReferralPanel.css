@@ -20,3 +20,4 @@
 .ref-cand.active { border-color: var(--accent); background: var(--accent-soft); }
 .ref-cand input { margin-top: 3px; accent-color: var(--accent); }
 .ref-cand > span { display: flex; flex-direction: column; gap: 2px; font-size: 13.5px; color: var(--text-main); }
+.ref-note { margin: 0; font-size: 13px; color: var(--text-muted); }

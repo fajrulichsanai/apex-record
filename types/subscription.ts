@@ -27,6 +27,10 @@ export interface SubscriptionPlan {
   promoActive?: boolean;
   /** Dihitung server: harga per bulan yang berlaku hari ini. */
   effectivePrice?: number;
+  /** Biaya admin owner Multi Klinik selama promo. */
+  promoOwnerFee?: number | null;
+  /** Dihitung server: biaya admin owner per bulan yang berlaku hari ini. */
+  effectiveOwnerFee?: number;
 }
 
 /** Lama langganan yang bisa dipilih (bulan). */
@@ -48,6 +52,7 @@ export interface PriceQuote {
   promoActive: boolean;
   promoUntil: string | null;
   ownerFee: number;
+  listOwnerFee?: number;
   listSubtotal: number;
   promoDiscount: number;
   durationDiscountPct: number;
@@ -87,6 +92,7 @@ export interface Payment {
   quantity: number;
   amount: number;
   months?: number;
+  kind?: 'new' | 'upgrade';
   promoDiscount?: number;
   durationDiscount?: number;
   extraStorageGb?: number;
@@ -153,6 +159,7 @@ export interface SuperAdminQueue {
 export interface Receipt {
   number: string;
   status: string;
+  kind?: 'new' | 'upgrade';
   paymentId: number;
   confirmedAt: string | null;
   createdAt: string;
@@ -166,4 +173,23 @@ export interface Receipt {
   storageAmount: number;
   billedTo: { name: string; email: string | null } | null;
   clinics: { id: number; name: string }[];
+}
+
+export interface UpgradeQuote {
+  allowed: boolean;
+  reason: string | null;
+  fromPlanId: number | null;
+  fromPlanName: string | null;
+  toPlanId: number;
+  toPlanName: string;
+  from: string;
+  until: string | null;
+  remainingDays: number;
+  monthlyDifference: number;
+  amount: number;
+}
+
+export interface InEffectSubscription {
+  subscription: ClinicSubscription | null;
+  paidUntil: string | null;
 }

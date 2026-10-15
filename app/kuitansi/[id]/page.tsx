@@ -36,6 +36,7 @@ export default function KuitansiPage() {
   if (error) return <p className="receipt">{error}</p>;
   if (!receipt) return <p className="receipt">Memuat kuitansi...</p>;
 
+  const upgrade = receipt.kind === 'upgrade';
   const months = receipt.months > 1 ? ` × ${receipt.months} bulan` : '';
   const qty = receipt.quantity > 1 ? ` × ${receipt.quantity} klinik` : '';
   const planTotal = receipt.amount + receipt.promoDiscount + receipt.durationDiscount - receipt.storageAmount;
@@ -43,8 +44,19 @@ export default function KuitansiPage() {
   return (
     <main className="receipt-screen">
       <div className="receipt-actions">
-        <button type="button" className="receipt-btn" onClick={() => window.print()}>
-          Cetak / Simpan PDF
+        <button
+          type="button"
+          className="receipt-btn"
+          onClick={() =>
+            receiptApi
+              .downloadPdf(Number(id), user?.role === 'multi_clinic_owner')
+              .catch((err) => setError(err instanceof ApiError ? err.message : 'Gagal mengunduh PDF'))
+          }
+        >
+          Unduh PDF
+        </button>
+        <button type="button" className="receipt-btn receipt-btn-outline" onClick={() => window.print()}>
+          Cetak
         </button>
       </div>
       <article className="receipt">
@@ -70,9 +82,15 @@ export default function KuitansiPage() {
           <tbody>
             <tr>
               <td>
-                {receipt.planName ?? 'Langganan'}
-                {qty}
-                {months}
+                {upgrade ? (
+                  <>Naik paket ke {receipt.planName} (selisih sisa masa aktif)</>
+                ) : (
+                  <>
+                    {receipt.planName ?? 'Langganan'}
+                    {qty}
+                    {months}
+                  </>
+                )}
               </td>
               <td>{rp(planTotal)}</td>
             </tr>
@@ -103,7 +121,7 @@ export default function KuitansiPage() {
 
         {receipt.clinics.length > 0 && (
           <p>
-            Langganan diperpanjang untuk: {receipt.clinics.map((c) => c.name).join(', ')}.
+            {upgrade ? 'Paket dinaikkan untuk' : 'Langganan diperpanjang untuk'}: {receipt.clinics.map((c) => c.name).join(', ')}.
           </p>
         )}
         <p className="receipt-note">

@@ -51,4 +51,10 @@ export const clinicDataApi = {
 export const receiptApi = {
   forClinic: (paymentId: number) => apiClient.get<Receipt>(`/subscription-payments/${paymentId}/receipt`),
   forOwner: (paymentId: number) => apiClient.get<Receipt>(`/multi-clinic/payments/${paymentId}/receipt`),
+  /** Kuitansi PDF (sama dengan lampiran email). */
+  downloadPdf: (paymentId: number, asOwner: boolean) =>
+    downloadProtectedFile(
+      asOwner ? `/multi-clinic/payments/${paymentId}/receipt.pdf` : `/subscription-payments/${paymentId}/receipt.pdf`,
+      `kuitansi-${paymentId}.pdf`,
+    ),
 };

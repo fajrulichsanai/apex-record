@@ -376,3 +376,5 @@
   font-size: 13.5px;
   color: var(--text-main);
 }
+.langganan-page .tier-current { display: inline-block; align-self: flex-start; margin-bottom: 6px; font-size: 11px; font-weight: 700; color: var(--green); background: var(--green-soft); padding: 2px 8px; border-radius: 999px; }
+.langganan-page .tier-alt-btn { margin-top: 6px; background: none; border: none; color: var(--text-sub); font-size: 12.5px; text-decoration: underline; cursor: pointer; }

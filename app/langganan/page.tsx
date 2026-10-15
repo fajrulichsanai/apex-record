@@ -6,8 +6,8 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import { useAuth } from '@/lib/auth-context';
 import { isFeatureViewOnly } from '@/lib/permissions';
-import { paymentApi, subscriptionPlanApi } from '@/lib/subscription';
-import type { Payment, SubscriptionPlan, SubscriptionPlanTier } from '@/types/subscription';
+import { clinicSubscriptionApi, paymentApi, subscriptionPlanApi } from '@/lib/subscription';
+import type { InEffectSubscription, Payment, SubscriptionPlan, SubscriptionPlanTier, UpgradeQuote } from '@/types/subscription';
 import { apiClient, ApiError, openProtectedFile } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency } from '@/lib/format';
@@ -26,6 +26,26 @@ import {
   useDurationDiscounts,
   useQuote,
 } from '@/components/subscription/pricing';
+
+/** Masa coba 14 hari: 7 hari pertama batas Starter, lalu otomatis batas Pro. */
+function trialInfo(startDate: string) {
+  const start = new Date(`${startDate.slice(0, 10)}T00:00:00`);
+  const proFrom = new Date(start);
+  proFrom.setDate(proFrom.getDate() + 7);
+  const today = new Date(new Date().toDateString());
+  return today < proFrom
+    ? `Minggu pertama memakai batas Starter (5 akun); mulai ${formatDate(proFrom.toISOString())} otomatis naik ke batas Pro (25 akun).`
+    : 'Minggu kedua: batas akun sudah naik ke Pro (25 akun).';
+}
+
+/** Urutan paket untuk naik/turun paket (Multi Klinik lewat akun owner). */
+const TIER_RANK: Record<string, number> = { trial: 0, basic: 1, pro: 2 };
+
+function nextDay(date: string) {
+  const d = new Date(`${date.slice(0, 10)}T00:00:00`);
+  d.setDate(d.getDate() + 1);
+  return d.toISOString();
+}
 
 function formatDate(value?: string) {
   if (!value) return '-';
@@ -177,8 +197,30 @@ function LanggananPageInner() {
   // Multi-Klinik Owner inside one of their branches (shared pool).
   const canBuyStorage = user?.role === 'owner' && (branchBilling === null || !!branch);
 
-  const selectTier = (tier: SubscriptionPlanTier) => {
+  // Naik/turun paket: paket yang berlaku hari ini dan akhir masa aktif.
+  const [inEffect, setInEffect] = useState<InEffectSubscription | null>(null);
+  useEffect(() => {
+    clinicSubscriptionApi
+      .inEffect()
+      .then(setInEffect)
+      .catch(() => setInEffect(null));
+  }, [subscription?.id]);
+  const currentTier = inEffect?.subscription?.plan?.tier ?? null;
+  const paidTier = currentTier && TIER_RANK[currentTier] !== undefined && currentTier !== 'trial' ? currentTier : null;
+  const changeOf = (tier: SubscriptionPlanTier): 'renew' | 'upgrade' | 'downgrade' | null => {
+    if (!paidTier || TIER_RANK[tier] === undefined) return null;
+    if (tier === paidTier) return 'renew';
+    return TIER_RANK[tier] > TIER_RANK[paidTier] ? 'upgrade' : 'downgrade';
+  };
+  const [upgrading, setUpgrading] = useState(false);
+  const { quote: upgradeQuote, failed: upgradeFailed } = useQuote<UpgradeQuote>(
+    upgrading && selectedPlan ? () => paymentApi.upgradeQuote(selectedPlan.id) : null,
+    `upgrade:${upgrading}:${selectedPlan?.id}`,
+  );
+
+  const selectTier = (tier: SubscriptionPlanTier, upgrade = false) => {
     setSelectedTier(tier);
+    setUpgrading(upgrade);
     setQuantity(1);
   };
 
@@ -187,11 +229,18 @@ function LanggananPageInner() {
     setSubmitting(true);
     try {
       await paymentApi.create(
-        { planId: selectedPlan.id, months, quantity: selectedTier === 'multi_klinik' ? effectiveQuantity : undefined },
+        upgrading
+          ? { planId: selectedPlan.id, kind: 'upgrade' }
+          : { planId: selectedPlan.id, months, quantity: selectedTier === 'multi_klinik' ? effectiveQuantity : undefined },
         proofFile || undefined,
       );
-      success('Klaim pembayaran terkirim. Menunggu konfirmasi Super Admin.');
+      success(
+        upgrading
+          ? 'Klaim naik paket terkirim. Paket baru berlaku setelah dikonfirmasi Super Admin.'
+          : 'Klaim pembayaran terkirim. Menunggu konfirmasi Super Admin.',
+      );
       setSelectedTier(null);
+      setUpgrading(false);
       setQuantity(1);
       setProofFile(null);
       loadHistory();
@@ -234,7 +283,10 @@ function LanggananPageInner() {
                   {urgent && <span className="status-days-left"> · {daysUntilExpiry} hari lagi</span>}
                 </p>
                 {isActive && subscription.plan?.tier === 'trial' && (
-                  <p className="status-period">Upgrade kapan saja sebelum trial berakhir agar data klinik tidak terkunci.</p>
+                  <p className="status-period">
+                    {trialInfo(subscription.startDate)} Storage masa coba maks. 100 MB. Upgrade kapan saja sebelum masa coba
+                    berakhir agar data klinik tidak terkunci.
+                  </p>
                 )}
               </>
             ) : (
@@ -272,7 +324,9 @@ function LanggananPageInner() {
           <div className="card pricing-card">
             <div className="pricing-header">
               <h3>Pilih Paket</h3>
-              <DurationPicker months={months} onChange={setMonths} discounts={discounts} disabled={submitting} />
+              {!upgrading && (
+                <DurationPicker months={months} onChange={setMonths} discounts={discounts} disabled={submitting} />
+              )}
             </div>
 
             {loading ? (
@@ -288,12 +342,18 @@ function LanggananPageInner() {
                       <div className="tier-icon">{meta.icon}</div>
                       <div className="tier-name">{meta.label}</div>
                       <div className="tier-tagline">{meta.tagline}</div>
+                      {changeOf(meta.tier) === 'renew' && <div className="tier-current">Paket Anda sekarang</div>}
                       <PlanPrice plan={plan} months={months} discountPct={discounts[months] ?? 0} perClinic={meta.perClinic} />
                       {meta.perClinic && selfPayingBranch && (
                         <div className="tier-owner-fee">Harga cabang multiklinik, tanpa biaya admin owner</div>
                       )}
                       {meta.perClinic && !selfPayingBranch && Number(plan.ownerFee) > 0 && (
-                        <div className="tier-owner-fee">+ Rp {formatCurrency(Number(plan.ownerFee))} admin owner per bulan</div>
+                        <div className="tier-owner-fee">
+                          + Rp {formatCurrency(Number(plan.effectiveOwnerFee ?? plan.ownerFee))} admin owner per bulan
+                          {plan.promoActive && Number(plan.effectiveOwnerFee) < Number(plan.ownerFee) && (
+                            <> (normal <s>Rp {formatCurrency(Number(plan.ownerFee))}</s>)</>
+                          )}
+                        </div>
                       )}
                       <ul className="tier-features">
                         {meta.features.map((f) => (
@@ -303,9 +363,24 @@ function LanggananPageInner() {
                           </li>
                         ))}
                       </ul>
-                      <button type="button" className="btn-primary tier-select-btn" onClick={() => selectTier(meta.tier)}>
-                        Pilih Paket
-                      </button>
+                      {changeOf(meta.tier) === 'upgrade' ? (
+                        <>
+                          <button type="button" className="btn-primary tier-select-btn" onClick={() => selectTier(meta.tier, true)}>
+                            Naik ke {meta.label} sekarang
+                          </button>
+                          <button type="button" className="btn-link tier-alt-btn" onClick={() => selectTier(meta.tier)}>
+                            atau mulai periode berikutnya
+                          </button>
+                        </>
+                      ) : (
+                        <button type="button" className="btn-primary tier-select-btn" onClick={() => selectTier(meta.tier)}>
+                          {changeOf(meta.tier) === 'renew'
+                            ? 'Perpanjang'
+                            : changeOf(meta.tier) === 'downgrade'
+                              ? `Turun ke ${meta.label}`
+                              : 'Pilih Paket'}
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -314,8 +389,24 @@ function LanggananPageInner() {
               <div className="checkout-step">
                 <div className="checkout-summary">
                   <div className="checkout-plan-name">
-                    {TIERS.find((t) => t.tier === selectedTier)?.label} · {months === 12 ? '1 tahun' : `${months} bulan`}
+                    {upgrading
+                      ? `Naik ke ${TIERS.find((t) => t.tier === selectedTier)?.label}`
+                      : `${TIERS.find((t) => t.tier === selectedTier)?.label} · ${months === 12 ? '1 tahun' : `${months} bulan`}`}
                   </div>
+
+                  {!upgrading && selectedTier && changeOf(selectedTier) === 'downgrade' && inEffect?.paidUntil && (
+                    <div className="alert-info">
+                      Turun paket berlaku mulai periode berikutnya ({formatDate(nextDay(inEffect.paidUntil))}). Sampai{' '}
+                      {formatDate(inEffect.paidUntil)} klinik tetap memakai paket{' '}
+                      {inEffect.subscription?.plan?.name}. Klaim ditolak bila akun aktif atau storage melebihi batas paket
+                      tujuan.
+                    </div>
+                  )}
+                  {!upgrading && selectedTier && changeOf(selectedTier) === 'upgrade' && inEffect?.paidUntil && (
+                    <div className="alert-info">
+                      Paket ini mulai berlaku {formatDate(nextDay(inEffect.paidUntil))}, setelah masa aktif sekarang.
+                    </div>
+                  )}
 
                   {selectedTier === 'multi_klinik' && !selfPayingBranch && (
                     <div className="quantity-field">
@@ -332,7 +423,37 @@ function LanggananPageInner() {
                     </div>
                   )}
 
-                  {quote ? (
+                  {upgrading ? (
+                    upgradeQuote ? (
+                      upgradeQuote.allowed ? (
+                        <div className="price-breakdown">
+                          <div className="breakdown-row">
+                            <span>
+                              Selisih {upgradeQuote.fromPlanName} → {upgradeQuote.toPlanName}
+                            </span>
+                            <span>Rp {formatCurrency(upgradeQuote.monthlyDifference)} / bulan</span>
+                          </div>
+                          <div className="breakdown-row">
+                            <span>
+                              Sisa masa aktif {upgradeQuote.remainingDays} hari (s.d. {formatDate(upgradeQuote.until ?? undefined)})
+                            </span>
+                            <span>× {upgradeQuote.remainingDays}/30</span>
+                          </div>
+                          <div className="breakdown-row total">
+                            <span>Total Tagihan</span>
+                            <span>Rp {formatCurrency(upgradeQuote.amount)}</span>
+                          </div>
+                          <p className="breakdown-saved">
+                            {upgradeQuote.toPlanName} langsung berlaku setelah dikonfirmasi; masa aktif tidak berubah.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="alert-info">{upgradeQuote.reason}</div>
+                      )
+                    ) : (
+                      <p className="pricing-loading">{upgradeFailed ? 'Gagal menghitung selisih. Coba lagi.' : 'Menghitung selisih...'}</p>
+                    )
+                  ) : quote ? (
                     <QuoteBreakdown quote={quote} />
                   ) : (
                     <p className="pricing-loading">{quoteFailed ? 'Gagal menghitung tagihan. Coba lagi.' : 'Menghitung tagihan...'}</p>
@@ -366,7 +487,12 @@ function LanggananPageInner() {
                   <button type="button" className="btn-outline" onClick={() => setSelectedTier(null)} disabled={submitting}>
                     Ganti Paket
                   </button>
-                  <button type="button" className="btn-primary" onClick={handleClaimPaid} disabled={submitting || !quote}>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={handleClaimPaid}
+                    disabled={submitting || (upgrading ? !upgradeQuote?.allowed : !quote)}
+                  >
                     {submitting ? 'Mengirim...' : 'Saya Sudah Bayar'}
                   </button>
                 </div>

@@ -22,6 +22,8 @@ interface AccountQuota {
   tier: string | null;
   planName: string | null;
   activeBranches?: number;
+  trialStage?: 'starter' | 'pro';
+  trialProFrom?: string;
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -392,6 +394,10 @@ export default function UserManagementPage() {
               <div className="alert-info" role="status" style={{ margin: '0 0 12px' }}>
                 {quota.scope === 'multiklinik'
                   ? `Jatah akun bersama multiklinik sudah penuh (${quota.used}/${quota.limit}). Nonaktifkan akun yang tidak dipakai atau hubungi owner multiklinik.`
+                  : quota.tier === 'trial'
+                    ? quota.trialStage === 'starter'
+                      ? `Masa coba minggu pertama dibatasi ${quota.limit} akun seperti Starter. Mulai ${quota.trialProFrom} batasnya otomatis naik menjadi 25 akun seperti Pro, atau berlangganan sekarang.`
+                      : `Batas akun masa coba sudah penuh (${quota.used}/${quota.limit}). Berlangganan paket Pro untuk tetap memakai sampai 25 akun.`
                   : quota.tier === 'basic' || !quota.tier
                     ? `Batas akun paket ${quota.planName ?? 'Starter'} sudah penuh (${quota.used}/${quota.limit}). Naik ke paket Pro di menu Langganan untuk sampai 25 akun, atau nonaktifkan akun yang tidak dipakai.`
                     : `Batas akun paket ${quota.planName ?? ''} sudah penuh (${quota.used}/${quota.limit}). Nonaktifkan akun yang tidak dipakai.`}

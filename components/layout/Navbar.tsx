@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { pageTitleFor } from '@/lib/page-title';
 import { useAuth } from '@/lib/auth-context';
 import { notificationApi, type AppNotification, type NotificationType } from '@/lib/notifications';
 import { formatCurrency } from '@/lib/format';
@@ -73,6 +74,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function Navbar({ onMenuClick }: NavbarProps) {
+  const pathname = usePathname();
   const router = useRouter();
   const { user, account, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -160,7 +162,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         </button>
         <div>
           <div className="topbar-title">ApexRecord</div>
-          <div className="topbar-subtitle">Dashboard</div>
+          <div className="topbar-subtitle">{pageTitleFor(pathname)}</div>
         </div>
       </div>
       <div className="topbar-right">

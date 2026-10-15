@@ -214,7 +214,7 @@ const FAQS = [
   },
   {
     q: 'Apa yang terjadi setelah masa uji coba 14 hari berakhir?',
-    a: 'Anda bisa melanjutkan dengan memilih salah satu paket berlangganan. Tidak ada penagihan otomatis diam-diam — Anda yang memutuskan kapan melanjutkan.',
+    a: 'Selama 14 hari, minggu pertama Anda memakai batas paket Starter dan minggu kedua otomatis naik ke batas Pro, dengan storage 100 MB. Setelah itu Anda bisa melanjutkan dengan memilih salah satu paket. Tidak ada penagihan otomatis diam-diam — Anda yang memutuskan kapan melanjutkan.',
   },
 ];
 

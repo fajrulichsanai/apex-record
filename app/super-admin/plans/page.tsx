@@ -27,9 +27,10 @@ interface PlanForm {
   maxUsers: string;
   promoPrice: string;
   promoUntil: string;
+  promoOwnerFee: string;
 }
 
-const EMPTY_FORM: PlanForm = { name: '', durationDays: '', price: '', isActive: true, tier: '', billingCycle: '', ownerFee: '', storageGb: '', maxUsers: '', promoPrice: '', promoUntil: '' };
+const EMPTY_FORM: PlanForm = { name: '', durationDays: '', price: '', isActive: true, tier: '', billingCycle: '', ownerFee: '', storageGb: '', maxUsers: '', promoPrice: '', promoUntil: '', promoOwnerFee: '' };
 
 // Bawaan bila paket tidak mengisi jatah storage (cerminan StorageQuotaService).
 const DEFAULT_STORAGE_GB: Record<string, number> = { trial: 0.1, basic: 1, pro: 5, multi_klinik: 5 };
@@ -106,6 +107,7 @@ export default function SuperAdminPlansPage() {
       maxUsers: plan.maxUsers != null ? String(plan.maxUsers) : '',
       promoPrice: plan.promoPrice != null ? String(Number(plan.promoPrice)) : '',
       promoUntil: plan.promoUntil ? plan.promoUntil.slice(0, 10) : '',
+      promoOwnerFee: plan.promoOwnerFee != null ? String(Number(plan.promoOwnerFee)) : '',
     });
     setModalOpen(true);
   };
@@ -139,6 +141,7 @@ export default function SuperAdminPlansPage() {
         // Kosongkan harga promo untuk menghapus promo.
         promoPrice: hasPromo ? Number(form.promoPrice) : null,
         promoUntil: hasPromo ? form.promoUntil : null,
+        promoOwnerFee: hasPromo && form.tier === 'multi_klinik' && form.promoOwnerFee !== '' ? Number(form.promoOwnerFee) : null,
       };
       if (form.id) {
         await subscriptionPlanApi.update(form.id, payload);
@@ -229,7 +232,15 @@ export default function SuperAdminPlansPage() {
                         </>
                       )}
                     </td>
-                    <td>{plan.ownerFee ? `Rp ${formatCurrency(plan.ownerFee)}` : '-'}</td>
+                    <td>
+                      {plan.ownerFee ? `Rp ${formatCurrency(plan.ownerFee)}` : '-'}
+                      {plan.promoActive && plan.promoOwnerFee != null && (
+                        <>
+                          <br />
+                          <small className="text-muted">promo Rp {formatCurrency(Number(plan.promoOwnerFee))}</small>
+                        </>
+                      )}
+                    </td>
                     <td>
                       {plan.storageGb != null
                         ? formatGb(Number(plan.storageGb))
@@ -302,6 +313,20 @@ export default function SuperAdminPlansPage() {
                   placeholder="Kosong = tanpa promo"
                 />
               </div>
+              {form.promoPrice !== '' && form.tier === 'multi_klinik' && (
+                <div className="sa-field">
+                  <label>Biaya admin owner saat promo (Rp, opsional)</label>
+                  <input
+                    type="text"
+                    value={form.promoOwnerFee ? formatCurrency(form.promoOwnerFee) : ''}
+                    onChange={(e) => {
+                      const v = e.target.value.trim() === '' ? '' : String(parseCurrency(e.target.value));
+                      setForm({ ...form, promoOwnerFee: v });
+                    }}
+                    placeholder="Kosong = biaya admin normal"
+                  />
+                </div>
+              )}
               {form.promoPrice !== '' && (
                 <div className="sa-field">
                   <label>Promo berlaku s.d. (inklusif)</label>

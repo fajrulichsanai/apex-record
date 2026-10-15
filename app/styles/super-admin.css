@@ -372,3 +372,48 @@
 .receipt-note { font-size: 12px; color: #6B7A99; margin-top: 16px; }
 .receipt-btn { background: #1A2340; color: #fff; border: none; border-radius: 10px; padding: 10px 16px; font-weight: 600; cursor: pointer; }
 @media print { .receipt-screen { background: #fff; padding: 0; } }
+.receipt-btn-outline { background: #fff; color: #1A2340; border: 1.5px solid #1A2340; }
+
+/* ---------- DARK MODE (palet sama dengan panel klinik) ---------- */
+:root[data-theme="dark"] .sa-page,
+:root[data-theme="dark"] .sa-modal-overlay {
+  --primary: #5B9BE0;
+  --primary-dk: #7AB0EA;
+  --green: #4FA345;
+  --orange: #E8A930;
+  --red: #E5573C;
+  --bg: #17160F;
+  --surface: #242320;
+  --text-main: #F3F1EA;
+  --text-sub: #B8B5A9;
+  --text-muted: #A09D8B;
+  --border: #38362F;
+}
+:root[data-theme="dark"] .sa-page { color: var(--text-main); }
+:root[data-theme="dark"] .sa-modal { background: var(--surface); color: var(--text-main); }
+:root[data-theme="dark"] .sa-modal-header,
+:root[data-theme="dark"] .sa-modal-footer { border-color: var(--border); }
+:root[data-theme="dark"] .sa-modal-header h2 { color: var(--text-main); }
+:root[data-theme="dark"] .sa-modal-close { color: var(--text-sub); }
+:root[data-theme="dark"] .sa-field input,
+:root[data-theme="dark"] .sa-field textarea,
+:root[data-theme="dark"] .sa-modal .sa-field select,
+:root[data-theme="dark"] .sa-page .search-input,
+:root[data-theme="dark"] .sa-page .date-input { background: var(--bg); color: var(--text-main); border-color: var(--border); }
+:root[data-theme="dark"] .sa-page .btn-danger,
+:root[data-theme="dark"] .sa-modal-overlay .btn-danger { background: transparent; }
+:root[data-theme="dark"] .sa-page .pagination button { background: var(--surface); color: var(--text-main); border-color: var(--border); }
+:root[data-theme="dark"] .sa-page .tag-ok { color: #7ED957; background: rgba(79,163,69,.18); }
+:root[data-theme="dark"] .sa-page .tag-bad { color: #FF8A80; background: rgba(229,87,60,.18); }
+:root[data-theme="dark"] .sa-page .tag-warn { color: #F2C46D; background: rgba(232,169,48,.18); }
+:root[data-theme="dark"] .sa-page .tag-info { color: #9CC4F0; background: rgba(91,155,224,.18); }
+:root[data-theme="dark"] .sa-notice-info { background: rgba(91,155,224,.14); color: #CFE1F7; }
+:root[data-theme="dark"] .sa-notice-warn { background: rgba(232,169,48,.14); color: #F2D9A6; }
+:root[data-theme="dark"] .sa-notice-bad { background: rgba(229,87,60,.14); color: #F7C1B6; }
+:root[data-theme="dark"] .sa-notice-ok { background: rgba(79,163,69,.14); color: #CBE8C4; }
+:root[data-theme="dark"] .sa-page .sa-skeleton,
+:root[data-theme="dark"] .sa-skeleton-block .sa-skeleton {
+  background: linear-gradient(90deg, #2E2D29 25%, #3A3934 50%, #2E2D29 75%);
+  background-size: 200% 100%;
+}
+:root[data-theme="dark"] .sa-modal .code-list li { border-color: var(--border); }
