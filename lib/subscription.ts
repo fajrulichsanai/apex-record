@@ -2,8 +2,10 @@ import { apiClient, toQueryString } from './api-client';
 import type {
   ClinicSubscription,
   ClinicSubscriptionSummary,
+  DurationDiscounts,
   OwnerCode,
   Payment,
+  PriceQuote,
   SubscriptionPlan,
   SuperAdminReportSummary,
 } from '@/types/subscription';
@@ -13,6 +15,8 @@ export interface CreatePaymentPayload {
   // Jumlah klinik yang dicover — hanya relevan untuk paket Multi Klinik.
   // Amount dihitung di server dari plan.price * quantity + plan.ownerFee.
   quantity?: number;
+  /** Lama langganan (1, 3, 6, 12 bulan). */
+  months?: number;
   notes?: string;
 }
 
@@ -47,6 +51,9 @@ export const subscriptionPlanApi = {
   update: (id: number, payload: Partial<Omit<SubscriptionPlan, 'id'>>) =>
     apiClient.patch<SubscriptionPlan>(`/subscription-plans/${id}`, payload),
   remove: (id: number) => apiClient.delete<void>(`/subscription-plans/${id}`),
+  durationDiscounts: () => apiClient.get<DurationDiscounts>('/subscription-plans/duration-discounts'),
+  setDurationDiscounts: (value: DurationDiscounts) =>
+    apiClient.put<DurationDiscounts>('/subscription-plans/duration-discounts', value),
 };
 
 export const clinicSubscriptionApi = {
@@ -69,10 +76,13 @@ export const paymentApi = {
     const form = new FormData();
     form.append('planId', String(payload.planId));
     if (payload.quantity) form.append('quantity', String(payload.quantity));
+    if (payload.months) form.append('months', String(payload.months));
     if (payload.notes) form.append('notes', payload.notes);
     form.append('proof', proof);
     return apiClient.postForm<Payment>('/subscription-payments', form);
   },
+  quote: (query: { planId: number; months?: number; quantity?: number }) =>
+    apiClient.get<PriceQuote>(`/subscription-payments/quote?${toQueryString(query)}`),
   listMine: (query?: PaymentListQuery) =>
     apiClient.get<{ data: Payment[]; meta: { total: number; page: number; limit: number; totalPages: number } }>(
       `/subscription-payments/mine?${toQueryString(query || {})}`,

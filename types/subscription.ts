@@ -19,6 +19,42 @@ export interface SubscriptionPlan {
   storageGb?: number | null;
   /** Batas akun aktif; null = bawaan tier (Starter 5, Pro 25, Multi Klinik 25 per cabang). */
   maxUsers?: number | null;
+  /** Harga promo per bulan (per klinik untuk Multi Klinik); `price` = harga normal. */
+  promoPrice?: number | null;
+  /** Promo berlaku s.d. tanggal ini (YYYY-MM-DD, inklusif). */
+  promoUntil?: string | null;
+  /** Dihitung server: promo berlaku hari ini. */
+  promoActive?: boolean;
+  /** Dihitung server: harga per bulan yang berlaku hari ini. */
+  effectivePrice?: number;
+}
+
+/** Lama langganan yang bisa dipilih (bulan). */
+export const DURATION_OPTIONS = [1, 3, 6, 12] as const;
+export type DurationMonths = (typeof DURATION_OPTIONS)[number];
+
+/** Diskon lama langganan dalam persen, per jumlah bulan. */
+export type DurationDiscounts = Record<number, number>;
+
+/** Rincian harga dari server (GET .../quote), sama dengan yang ditagihkan saat klaim. */
+export interface PriceQuote {
+  planId: number;
+  planName: string;
+  clinicCount?: number;
+  months: number;
+  quantity: number;
+  listUnitPrice: number;
+  unitPrice: number;
+  promoActive: boolean;
+  promoUntil: string | null;
+  ownerFee: number;
+  listSubtotal: number;
+  promoDiscount: number;
+  durationDiscountPct: number;
+  durationDiscount: number;
+  extraStorageGb: number;
+  storageAmount: number;
+  total: number;
 }
 
 export interface ClinicSubscription {
@@ -50,6 +86,11 @@ export interface Payment {
   plan?: SubscriptionPlan;
   quantity: number;
   amount: number;
+  months?: number;
+  promoDiscount?: number;
+  durationDiscount?: number;
+  extraStorageGb?: number;
+  storageAmount?: number;
   status: PaymentStatus;
   confirmedBy: number | null;
   confirmedByName?: string | null;

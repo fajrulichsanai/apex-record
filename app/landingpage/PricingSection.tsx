@@ -40,25 +40,91 @@ function MultiIcon() {
   );
 }
 
-type Cycle = 'bulanan' | 'tahunan';
-
 function formatRp(n: number) {
   return `Rp ${Math.round(n).toLocaleString('id-ID')}`;
 }
 
-/** Harga tahunan = 10x harga bulanan ("hemat 2 bulan"), dibulatkan ke ribuan terdekat untuk tampilan. */
-function monthlyEquivalent(monthly: number) {
-  return Math.round(((monthly * 10) / 12) / 1000) * 1000;
-}
-
-const STARTER_MONTHLY = 99000;
-const PRO_MONTHLY = 149000;
+/**
+ * Harga normal per bulan, dan harga promo s.d. PROMO_UNTIL (inklusif).
+ * Halaman ini publik (tanpa login), jadi angkanya mengikuti paket default
+ * di backend; setelah 31 Des 2026 harga promo otomatis hilang.
+ */
+const STARTER_MONTHLY = 199000;
+const STARTER_PROMO = 99000;
+const PRO_MONTHLY = 299000;
+const PRO_PROMO = 149000;
+const PROMO_UNTIL = '2026-12-31';
+const PROMO_UNTIL_LABEL = '31 Des 2026';
 const MULTI_PER_CLINIC_MONTHLY = 149000;
 const MULTI_ADMIN_FEE = 99000;
 
+/** Diskon lama langganan bawaan (sama dengan bawaan backend). */
+const DURATIONS: { months: number; label: string; discount: number }[] = [
+  { months: 1, label: '1 bulan', discount: 0 },
+  { months: 3, label: '3 bulan', discount: 5 },
+  { months: 6, label: '6 bulan', discount: 10 },
+  { months: 12, label: '1 tahun', discount: 17 },
+];
+
+function todayIso() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function PriceBlock({
+  normal,
+  promo,
+  promoActive,
+  months,
+  discount,
+  unit = '/ bulan',
+  perClinic,
+  extra,
+}: {
+  normal: number;
+  promo?: number;
+  promoActive: boolean;
+  months: number;
+  discount: number;
+  unit?: string;
+  perClinic?: boolean;
+  extra?: string;
+}) {
+  const monthly = promoActive && promo ? promo : normal;
+  const total = Math.round(monthly * months * (1 - discount / 100));
+  const saving = promo ? Math.round(((normal - promo) / normal) * 100) : 0;
+  return (
+    <>
+      {promoActive && promo ? (
+        <div className="price-old">
+          <s>{formatRp(normal)}</s>
+          <span className="price-promo">Promo s.d. {PROMO_UNTIL_LABEL} · hemat {saving}%</span>
+        </div>
+      ) : null}
+      <div className="price-amt">
+        <span className="n">{formatRp(monthly)}</span>
+        <span className="u">{unit}</span>
+      </div>
+      <div className="price-sub">
+        {months === 1
+          ? `Ditagih tiap bulan${perClinic ? ', per klinik' : ''}`
+          : `${formatRp(total)}${perClinic ? ' / klinik' : ''} untuk ${months === 12 ? '1 tahun' : `${months} bulan`}${discount > 0 ? ` · hemat ${discount}% lagi` : ''}`}
+        {extra && (
+          <>
+            <br />
+            {extra}
+          </>
+        )}
+      </div>
+    </>
+  );
+}
+
 export default function PricingSection() {
-  const [cycle, setCycle] = useState<Cycle>('bulanan');
-  const isAnnual = cycle === 'tahunan';
+  const [months, setMonths] = useState(1);
+  const duration = DURATIONS.find((d) => d.months === months) ?? DURATIONS[0];
+  const promoActive = todayIso() <= PROMO_UNTIL;
+  const isAnnual = months === 12;
 
   return (
     <section id="harga">
@@ -70,15 +136,21 @@ export default function PricingSection() {
         </div>
 
         <div className="pricing-toggle-row">
-          <div className="pricing-toggle">
-            <button type="button" className={!isAnnual ? 'active' : ''} onClick={() => setCycle('bulanan')}>
-              Bulanan
-            </button>
-            <button type="button" className={isAnnual ? 'active' : ''} onClick={() => setCycle('tahunan')}>
-              Tahunan
-            </button>
+          <div className="pricing-toggle" role="radiogroup" aria-label="Lama langganan">
+            {DURATIONS.map((d) => (
+              <button
+                key={d.months}
+                type="button"
+                role="radio"
+                aria-checked={months === d.months}
+                className={months === d.months ? 'active' : ''}
+                onClick={() => setMonths(d.months)}
+              >
+                {d.label}
+                {d.discount > 0 && <span className="pricing-off">−{d.discount}%</span>}
+              </button>
+            ))}
           </div>
-          <span className="pricing-save-badge">Hemat 2 Bulan</span>
         </div>
 
         {isAnnual && (
@@ -94,13 +166,13 @@ export default function PricingSection() {
             <div className="price-icon"><StarterIcon /></div>
             <div className="price-name">Starter</div>
             <div className="price-sub-desc">Untuk klinik yang baru memulai</div>
-            <div className="price-amt">
-              <span className="n">{formatRp(isAnnual ? monthlyEquivalent(STARTER_MONTHLY) : STARTER_MONTHLY)}</span>
-              <span className="u">/ bulan</span>
-            </div>
-            <div className="price-sub">
-              {isAnnual ? `${formatRp(STARTER_MONTHLY * 10)} ditagih per tahun` : 'Ditagih tiap bulan'}
-            </div>
+            <PriceBlock
+              normal={STARTER_MONTHLY}
+              promo={STARTER_PROMO}
+              promoActive={promoActive}
+              months={months}
+              discount={duration.discount}
+            />
             <ul className="price-list">
               <li><CheckIcon />Manajemen pasien &amp; kunjungan</li>
               <li><CheckIcon />Transaksi &amp; tarif layanan</li>
@@ -119,13 +191,13 @@ export default function PricingSection() {
             <div className="price-icon"><ProIcon /></div>
             <div className="price-name">Pro</div>
             <div className="price-sub-desc">Untuk klinik yang terus berkembang</div>
-            <div className="price-amt">
-              <span className="n">{formatRp(isAnnual ? monthlyEquivalent(PRO_MONTHLY) : PRO_MONTHLY)}</span>
-              <span className="u">/ bulan</span>
-            </div>
-            <div className="price-sub">
-              {isAnnual ? `${formatRp(PRO_MONTHLY * 10)} ditagih per tahun` : 'Ditagih tiap bulan'}
-            </div>
+            <PriceBlock
+              normal={PRO_MONTHLY}
+              promo={PRO_PROMO}
+              promoActive={promoActive}
+              months={months}
+              discount={duration.discount}
+            />
             <ul className="price-list">
               <li><CheckIcon />Semua fitur Starter</li>
               <li><CheckIcon />User management multi-role</li>
@@ -142,17 +214,15 @@ export default function PricingSection() {
             <div className="price-icon"><MultiIcon /></div>
             <div className="price-name">Multi Klinik</div>
             <div className="price-sub-desc">Untuk jaringan atau grup klinik</div>
-            <div className="price-amt">
-              <span className="n">{formatRp(isAnnual ? monthlyEquivalent(MULTI_PER_CLINIC_MONTHLY) : MULTI_PER_CLINIC_MONTHLY)}</span>
-              <span className="u">/ klinik / bulan</span>
-            </div>
-            <div className="price-sub">
-              {isAnnual
-                ? `${formatRp(MULTI_PER_CLINIC_MONTHLY * 10)} / klinik ditagih per tahun`
-                : 'Ditagih tiap bulan, per klinik'}
-              <br />
-              + {formatRp(MULTI_ADMIN_FEE)} admin owner (sekali per periode)
-            </div>
+            <PriceBlock
+              normal={MULTI_PER_CLINIC_MONTHLY}
+              promoActive={false}
+              months={months}
+              discount={duration.discount}
+              unit="/ klinik / bulan"
+              perClinic
+              extra={`+ ${formatRp(MULTI_ADMIN_FEE)} admin owner per bulan`}
+            />
             <ul className="price-list">
               <li><CheckIcon />Semua fitur Pro di tiap klinik</li>
               <li><CheckIcon />Harga per klinik tambahan</li>

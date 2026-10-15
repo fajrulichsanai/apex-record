@@ -1,6 +1,6 @@
 import { apiClient, toQueryString } from './api-client';
 import type { ClinicResponse, UpdateClinicPayload } from './clinic';
-import type { Payment } from '@/types/subscription';
+import type { Payment, PriceQuote } from '@/types/subscription';
 
 export type BranchBillingMode = 'owner' | 'self' | 'stopped';
 export type LinkStatus = 'pending' | 'approved' | 'rejected' | 'expired';
@@ -146,12 +146,16 @@ export const multiClinicApi = {
    * semua klinik yang sedang terhubung ke akun ini (quantity dihitung di
    * server dari jumlah klinik tersebut, bukan dari input).
    */
-  claimPayment: (payload: { planId: number; notes?: string }, proof?: File) => {
+  quotePayment: (query: { planId: number; months?: number }) =>
+    apiClient.get<PriceQuote>(`/multi-clinic/payments/quote?${toQueryString(query)}`),
+
+  claimPayment: (payload: { planId: number; months?: number; notes?: string }, proof?: File) => {
     if (!proof) {
       return apiClient.post<Payment>('/multi-clinic/payments/claim', payload);
     }
     const form = new FormData();
     form.append('planId', String(payload.planId));
+    if (payload.months) form.append('months', String(payload.months));
     if (payload.notes) form.append('notes', payload.notes);
     form.append('proof', proof);
     return apiClient.postForm<Payment>('/multi-clinic/payments/claim', form);

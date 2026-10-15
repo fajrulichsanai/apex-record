@@ -11,6 +11,7 @@ import { formatCurrency, parseCurrency } from '@/lib/format';
 import { useEscapeKey } from '@/lib/a11y';
 import '../../styles/super-admin.css';
 import { formatGb } from '@/lib/storage';
+import { formatPromoDate, promoSavingPct } from '@/components/subscription/pricing';
 
 interface PlanForm {
   id?: number;
@@ -23,9 +24,11 @@ interface PlanForm {
   ownerFee: string;
   storageGb: string;
   maxUsers: string;
+  promoPrice: string;
+  promoUntil: string;
 }
 
-const EMPTY_FORM: PlanForm = { name: '', durationDays: '', price: '', isActive: true, tier: '', billingCycle: '', ownerFee: '', storageGb: '', maxUsers: '' };
+const EMPTY_FORM: PlanForm = { name: '', durationDays: '', price: '', isActive: true, tier: '', billingCycle: '', ownerFee: '', storageGb: '', maxUsers: '', promoPrice: '', promoUntil: '' };
 
 // Bawaan bila paket tidak mengisi jatah storage (cerminan StorageQuotaService).
 const DEFAULT_STORAGE_GB: Record<string, number> = { trial: 0.1, basic: 1, pro: 5, multi_klinik: 5 };
@@ -100,6 +103,8 @@ export default function SuperAdminPlansPage() {
       ownerFee: plan.ownerFee ? String(plan.ownerFee) : '',
       storageGb: plan.storageGb != null ? String(plan.storageGb) : '',
       maxUsers: plan.maxUsers != null ? String(plan.maxUsers) : '',
+      promoPrice: plan.promoPrice != null ? String(Number(plan.promoPrice)) : '',
+      promoUntil: plan.promoUntil ? plan.promoUntil.slice(0, 10) : '',
     });
     setModalOpen(true);
   };
@@ -107,6 +112,15 @@ export default function SuperAdminPlansPage() {
   const handleSubmit = async () => {
     if (!form.name || !form.durationDays || !form.price) {
       showError('Lengkapi semua field');
+      return;
+    }
+    const hasPromo = form.promoPrice !== '' && Number(form.promoPrice) > 0;
+    if (hasPromo && !form.promoUntil) {
+      showError('Isi tanggal akhir promo');
+      return;
+    }
+    if (hasPromo && Number(form.promoPrice) >= Number(form.price)) {
+      showError('Harga promo harus lebih murah dari harga normal');
       return;
     }
     setSubmitting(true);
@@ -121,6 +135,9 @@ export default function SuperAdminPlansPage() {
         ownerFee: form.ownerFee ? parseCurrency(form.ownerFee) : undefined,
         storageGb: form.storageGb !== '' ? Number(form.storageGb) : undefined,
         maxUsers: form.maxUsers !== '' ? Number(form.maxUsers) : undefined,
+        // Kosongkan harga promo untuk menghapus promo.
+        promoPrice: hasPromo ? Number(form.promoPrice) : null,
+        promoUntil: hasPromo ? form.promoUntil : null,
       };
       if (form.id) {
         await subscriptionPlanApi.update(form.id, payload);
@@ -157,7 +174,10 @@ export default function SuperAdminPlansPage() {
               <h1>Paket Langganan</h1>
               <span className="badge-count">{plans.length}</span>
             </div>
-            <p className="page-subtitle">Kelola paket Free Trial, Starter, Pro, dan Multi Klinik untuk siklus bulanan &amp; tahunan.</p>
+            <p className="page-subtitle">
+              Kelola paket Free Trial, Starter, Pro, dan Multi Klinik. Harga diisi per bulan; klinik memilih lama
+              langganan 1/3/6/12 bulan dengan diskon dari Pengaturan Platform.
+            </p>
           </div>
           <button type="button" className="btn-primary" onClick={openCreate}>
             + Tambah Paket
@@ -190,7 +210,29 @@ export default function SuperAdminPlansPage() {
                     <td style={{ fontWeight: 600 }}>{plan.name}</td>
                     <td>{tierLabel(plan.tier)} · {cycleLabel(plan.billingCycle)}</td>
                     <td>{plan.durationDays} hari</td>
-                    <td>Rp {formatCurrency(plan.price)}</td>
+                    <td>
+                      {plan.promoActive ? (
+                        <>
+                          <s style={{ color: 'var(--text-sub)' }}>Rp {formatCurrency(plan.price)}</s>
+                          <br />
+                          <strong>Rp {formatCurrency(Number(plan.effectivePrice))}</strong>
+                          <br />
+                          <small>
+                            promo s.d. {formatPromoDate(plan.promoUntil!)} · hemat {promoSavingPct(plan)}%
+                          </small>
+                        </>
+                      ) : (
+                        <>
+                          Rp {formatCurrency(plan.price)}
+                          {plan.promoPrice != null && plan.promoUntil && (
+                            <>
+                              <br />
+                              <small style={{ color: 'var(--text-sub)' }}>promo berakhir {formatPromoDate(plan.promoUntil)}</small>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </td>
                     <td>{plan.ownerFee ? `Rp ${formatCurrency(plan.ownerFee)}` : '-'}</td>
                     <td>
                       {plan.storageGb != null
@@ -244,14 +286,32 @@ export default function SuperAdminPlansPage() {
                 <input type="number" value={form.durationDays} onChange={(e) => setForm({ ...form, durationDays: e.target.value })} placeholder="30" />
               </div>
               <div className="sa-field">
-                <label>Harga (Rp) {form.tier === 'multi_klinik' ? '— per klinik' : ''}</label>
+                <label>Harga normal (Rp){form.tier === 'multi_klinik' ? ' — per klinik' : ''}</label>
                 <input
                   type="text"
                   value={formatCurrency(form.price)}
                   onChange={(e) => setForm({ ...form, price: String(parseCurrency(e.target.value)) })}
-                  placeholder="150.000"
+                  placeholder="199.000"
                 />
               </div>
+              <div className="sa-field">
+                <label>Harga promo (Rp, opsional) — tampil dengan harga normal dicoret</label>
+                <input
+                  type="text"
+                  value={form.promoPrice ? formatCurrency(form.promoPrice) : ''}
+                  onChange={(e) => {
+                    const v = parseCurrency(e.target.value);
+                    setForm({ ...form, promoPrice: v ? String(v) : '' });
+                  }}
+                  placeholder="Kosong = tanpa promo"
+                />
+              </div>
+              {form.promoPrice !== '' && (
+                <div className="sa-field">
+                  <label>Promo berlaku s.d. (inklusif)</label>
+                  <input type="date" value={form.promoUntil} onChange={(e) => setForm({ ...form, promoUntil: e.target.value })} />
+                </div>
+              )}
               <div className="sa-field">
                 <label>Tier</label>
                 <CustomSelect

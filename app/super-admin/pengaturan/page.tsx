@@ -6,6 +6,7 @@ import { featuresApi, type PlatformSettings } from '@/lib/features';
 import { useToast } from '@/lib/toast-context';
 import '../../styles/super-admin.css';
 import '@/components/features/features.css';
+import DurationDiscountsCard from '@/components/subscription/DurationDiscountsCard';
 
 /** Super admin: saklar tingkat platform (berlaku untuk semua klinik). */
 export default function PengaturanPlatformPage() {
@@ -51,7 +52,7 @@ export default function PengaturanPlatformPage() {
             <div className="page-title">
               <h1>Pengaturan Platform</h1>
             </div>
-            <p className="page-subtitle">Saklar yang berlaku untuk seluruh klinik di ApexRecord.</p>
+            <p className="page-subtitle">Saklar dan harga yang berlaku untuk seluruh klinik di ApexRecord.</p>
           </div>
         </div>
 
@@ -88,6 +89,8 @@ export default function PengaturanPlatformPage() {
             </div>
           )}
         </div>
+
+        <DurationDiscountsCard />
       </div>
     </SuperAdminLayout>
   );
