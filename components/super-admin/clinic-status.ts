@@ -42,6 +42,14 @@ export function clinicStatus(
   };
 }
 
+/** Hari tanpa login sebelum klinik ditandai "Tidak aktif" (PRD UP-07). */
+export const INACTIVE_DAYS = 14;
+
+export function isInactive(lastLoginAt?: string | null): boolean {
+  if (!lastLoginAt) return true;
+  return Date.now() - new Date(lastLoginAt).getTime() > INACTIVE_DAYS * 86_400_000;
+}
+
 export const SATUSEHAT_STATUS: Record<SatusehatStatus, { label: string; tone: Tone }> = {
   aktif: { label: 'Aktif', tone: 'ok' },
   dimatikan: { label: 'Dimatikan klinik', tone: 'neutral' },

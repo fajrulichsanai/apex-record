@@ -58,3 +58,39 @@ export const receiptApi = {
       `kuitansi-${paymentId}.pdf`,
     ),
 };
+
+export interface AdminNote {
+  id: number;
+  body: string;
+  followUpOn: string | null;
+  doneAt: string | null;
+  createdByName: string | null;
+  createdAt: string;
+}
+
+export interface ClinicNotes {
+  pic: { name: string | null; phone: string | null };
+  notes: AdminNote[];
+}
+
+/** Catatan internal Super Admin per klinik (PIC, WhatsApp, tindak lanjut). */
+export const clinicNotesApi = {
+  get: (clinicId: number) => apiClient.get<ClinicNotes>(`/super-admin/clinics/${clinicId}/notes`),
+  setPic: (clinicId: number, pic: { name: string; phone: string }) =>
+    apiClient.put<ClinicNotes>(`/super-admin/clinics/${clinicId}/pic`, pic),
+  add: (clinicId: number, body: string, followUpOn?: string) =>
+    apiClient.post<ClinicNotes>(`/super-admin/clinics/${clinicId}/notes`, { body, followUpOn: followUpOn || undefined }),
+  setDone: (clinicId: number, noteId: number, done: boolean) =>
+    apiClient.patch<ClinicNotes>(`/super-admin/clinics/${clinicId}/notes/${noteId}`, { done }),
+  remove: (clinicId: number, noteId: number) =>
+    apiClient.delete<ClinicNotes>(`/super-admin/clinics/${clinicId}/notes/${noteId}`),
+};
+
+/** Ekspor CSV (PRD UP-08). */
+export const csvExportApi = {
+  clinics: () => downloadProtectedFile('/super-admin/export/clinics.csv', 'klinik.csv'),
+  payments: (status?: string) =>
+    downloadProtectedFile(`/super-admin/export/payments.csv?${toQueryString({ status })}`, 'pembayaran.csv'),
+  auditLog: (q: { clinicId?: number; dateFrom?: string; dateTo?: string }) =>
+    downloadProtectedFile(`/super-admin/export/audit-log.csv?${toQueryString(q)}`, 'log-aktivitas.csv'),
+};

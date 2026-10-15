@@ -3,6 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PageHeader, Pager, TableState } from '@/components/super-admin/ui';
+import { csvExportApi } from '@/lib/super-admin';
 import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
 import CustomSelect from '@/components/form/CustomSelect';
 import AuditLogDetailModal from '@/app/(settings)/audit-log/AuditLogDetailModal';
@@ -121,7 +122,28 @@ function SuperAdminAuditLogPageInner() {
   return (
     <SuperAdminLayout>
       <div className="sa-page audit-log-page">
-        <PageHeader title="Log Aktivitas" count={meta.total} subtitle="Riwayat aktivitas seluruh klinik pada platform." />
+        <PageHeader
+          title="Log Aktivitas"
+          count={meta.total}
+          subtitle="Riwayat aktivitas seluruh klinik pada platform."
+          actions={
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={() =>
+                csvExportApi
+                  .auditLog({
+                    clinicId: clinicId ? Number(clinicId) : undefined,
+                    dateFrom: dateFrom || undefined,
+                    dateTo: dateTo || undefined,
+                  })
+                  .catch(() => setError('Gagal mengekspor CSV'))
+              }
+            >
+              Ekspor CSV
+            </button>
+          }
+        />
 
         <div className="filter-bar">
           <input

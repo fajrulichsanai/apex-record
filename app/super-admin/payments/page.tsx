@@ -6,6 +6,7 @@ import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
 import { Modal, Notice, PageHeader, Pager, StatusBadge, TableState, Tabs, formatDateTime } from '@/components/super-admin/ui';
 import { paymentDetail } from '@/components/subscription/pricing';
 import { paymentApi } from '@/lib/subscription';
+import { csvExportApi } from '@/lib/super-admin';
 import type { Payment, PaymentStatus } from '@/types/subscription';
 import { ApiError, openProtectedFile } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
@@ -86,6 +87,15 @@ export default function SuperAdminPaymentsPage() {
     <SuperAdminLayout>
       <div className="sa-page">
         <PageHeader
+          actions={
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={() => csvExportApi.payments(status).catch(() => showError('Gagal mengekspor CSV'))}
+            >
+              Ekspor CSV
+            </button>
+          }
           title="Konfirmasi Pembayaran"
           subtitle="Periksa bukti transfer, lalu konfirmasi untuk memperpanjang langganan. Kuitansi dibuat otomatis."
         />

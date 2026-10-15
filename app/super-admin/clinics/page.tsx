@@ -7,7 +7,8 @@ import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
 import CustomSelect from '@/components/form/CustomSelect';
 import { PageHeader, Pager, StatusBadge, TableState, Tabs, Notice, formatDate } from '@/components/super-admin/ui';
 import OwnerCodesPanel, { GenerateCodesModal } from '@/components/super-admin/OwnerCodesPanel';
-import { SATUSEHAT_STATUS, clinicStatus } from '@/components/super-admin/clinic-status';
+import { INACTIVE_DAYS, SATUSEHAT_STATUS, clinicStatus, isInactive } from '@/components/super-admin/clinic-status';
+import { csvExportApi } from '@/lib/super-admin';
 import { clinicSubscriptionApi } from '@/lib/subscription';
 import type { ClinicSubscriptionSummary } from '@/types/subscription';
 import { ApiError } from '@/lib/api-client';
@@ -93,9 +94,18 @@ function ClinicsInner() {
         count={tab === 'klinik' ? meta.total : undefined}
         subtitle="Seluruh klinik terdaftar. Buka satu klinik untuk mengurus langganan, pengguna, fitur, SATUSEHAT, dan migrasi pasien."
         actions={
-          <button type="button" className="btn-primary" onClick={() => setGenerating(true)}>
-            + Buat kode registrasi
-          </button>
+          <>
+            <button
+              type="button"
+              className="btn-outline"
+              onClick={() => csvExportApi.clinics().catch(() => setError('Gagal mengekspor CSV'))}
+            >
+              Ekspor CSV
+            </button>
+            <button type="button" className="btn-primary" onClick={() => setGenerating(true)}>
+              + Buat kode registrasi
+            </button>
+          </>
         }
       />
 
@@ -151,13 +161,14 @@ function ClinicsInner() {
                   <th>Status</th>
                   <th>Berakhir</th>
                   <th>Akun</th>
+                  <th>Aktivitas</th>
                   <th>SATUSEHAT</th>
                   <th>Storage</th>
                   <th>Daftar</th>
                 </tr>
               </thead>
               <tbody>
-                <TableState loading={loading} empty={rows.length === 0} colSpan={9} message="Tidak ada klinik untuk filter ini." />
+                <TableState loading={loading} empty={rows.length === 0} colSpan={10} message="Tidak ada klinik untuk filter ini." />
                 {!loading &&
                   rows.map((row) => {
                     const st = clinicStatus(row.subscription, row);
@@ -188,6 +199,17 @@ function ClinicsInner() {
                         </td>
                         <td className="cell-nowrap">{formatDate(row.subscription?.endDate)}</td>
                         <td>{row.activeUsers ?? '-'}</td>
+                        <td className="cell-nowrap">
+                          {!row.dataPurgedAt && isInactive(row.lastLoginAt) && (
+                            <StatusBadge tone="warn" title={`Tidak ada login ${INACTIVE_DAYS} hari terakhir`}>
+                              Tidak aktif
+                            </StatusBadge>
+                          )}
+                          <span className="cell-sub">
+                            {row.lastLoginAt ? `Login ${formatDate(row.lastLoginAt)}` : 'Belum pernah login'}
+                          </span>
+                          <span className="cell-sub">{row.visits30 ?? 0} kunjungan / 30 hari</span>
+                        </td>
                         <td>{ss ? <StatusBadge tone={ss.tone}>{ss.label}</StatusBadge> : '-'}</td>
                         <td className="cell-nowrap">
                           {usage ? (

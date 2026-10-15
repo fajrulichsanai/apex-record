@@ -64,6 +64,13 @@ export default function SuperAdminDashboardPage() {
           tone: 'warn' as const,
           tag: 'Habis ≤ 7 hari',
         })),
+        ...(queue.followUps ?? []).map((f) => ({
+          key: `fu-${f.id}`,
+          href: `/super-admin/clinics/${f.clinicId}`,
+          label: `${f.clinicName}: ${f.body.length > 80 ? `${f.body.slice(0, 80)}…` : f.body}`,
+          tone: 'info' as const,
+          tag: `Tindak lanjut ${formatDate(f.followUpOn)}`,
+        })),
         ...queue.dataDeletions.map((d) => ({
           key: `del-${d.clinicId}`,
           href: '/super-admin/penghapusan-data',

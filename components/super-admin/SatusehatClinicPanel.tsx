@@ -7,6 +7,77 @@ import { FACILITY_TYPE_LABELS, satusehatAdminApi, type AdminClinicDetail } from 
 import { useToast } from '@/lib/toast-context';
 import '@/app/styles/satusehat.css';
 
+interface CheckItem {
+  label: string;
+  ok: boolean;
+  hint: string;
+}
+
+/**
+ * Checklist kesiapan SATUSEHAT satu klinik (PRD UP-09): urutan yang sama
+ * dengan alur Persiapan di sisi klinik, dibaca dari detail integrasinya.
+ */
+function readiness(data: AdminClinicDetail): CheckItem[] {
+  const p = data.profile;
+  const practitioners = data.summary.resources.find((r) => r.resourceType === 'Practitioner');
+  const activeLocations = data.locations.filter((l) => l.active);
+  return [
+    {
+      label: 'Kredensial SATUSEHAT diatur',
+      ok: !!data.credentialSource,
+      hint: 'Isi Client ID, Client Secret, dan Organization ID di menu SATUSEHAT › Konfigurasi klinik.',
+    },
+    {
+      label: 'Organization ID terverifikasi',
+      ok: !!data.verifiedName,
+      hint: 'Uji koneksi di menu Konfigurasi agar nama fasyankes dari SATUSEHAT tampil.',
+    },
+    {
+      label: 'Profil fasyankes lengkap',
+      ok: !!(p?.facilityType && p.line && p.provinceCode && p.cityCode && p.districtCode && p.villageCode),
+      hint: 'Lengkapi jenis fasyankes dan alamat sampai kelurahan di Onboarding SATUSEHAT.',
+    },
+    {
+      label: 'Location (ruangan) terdaftar',
+      ok: activeLocations.some((l) => !!l.satusehatId),
+      hint: 'Daftarkan minimal satu ruangan aktif ke SATUSEHAT di Onboarding.',
+    },
+    {
+      label: 'Semua tenaga kesehatan terhubung',
+      ok: !!practitioners && practitioners.total > 0 && practitioners.synced >= practitioners.total,
+      hint: 'Cari NIK tiap nakes di SATUSEHAT (Pengaturan › Tenaga Kesehatan).',
+    },
+    {
+      label: 'Tidak ada pengiriman gagal 30 hari terakhir',
+      ok: data.recentFailures.length === 0,
+      hint: 'Periksa daftar Kegagalan terbaru di bawah dan kirim ulang dari sisi klinik.',
+    },
+  ];
+}
+
+function ReadinessChecklist({ data }: { data: AdminClinicDetail }) {
+  const items = readiness(data);
+  const done = items.filter((i) => i.ok).length;
+  return (
+    <div className="ss-card ss-checklist">
+      <h2>
+        Kesiapan SATUSEHAT · {done}/{items.length}
+      </h2>
+      <ul>
+        {items.map((i) => (
+          <li key={i.label} className={i.ok ? 'ok' : 'todo'}>
+            <span aria-hidden>{i.ok ? '✔' : '○'}</span>
+            <div>
+              <strong>{i.label}</strong>
+              {!i.ok && <small>{i.hint}</small>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /** Tab SATUSEHAT di detail klinik Super Admin (PRD KL-04): kondisi integrasi satu klinik. */
 export default function SatusehatClinicPanel({ clinicId }: { clinicId: number }) {
   const id = clinicId;
@@ -44,6 +115,8 @@ export default function SatusehatClinicPanel({ clinicId }: { clinicId: number })
           <FiRefreshCw /> Muat ulang
         </button>
       </div>
+      {data && s && <ReadinessChecklist data={data} />}
+
       {loading && !data ? (
         <div className="ss-card ss-empty">Memuat...</div>
       ) : data && s ? (

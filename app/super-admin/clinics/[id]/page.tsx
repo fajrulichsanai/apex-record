@@ -17,6 +17,7 @@ import {
   formatDateTime,
 } from '@/components/super-admin/ui';
 import { SATUSEHAT_STATUS, clinicStatus } from '@/components/super-admin/clinic-status';
+import ClinicNotesCard from '@/components/super-admin/ClinicNotesCard';
 import InviteUserModal, { ROLE_LABEL } from '@/components/super-admin/InviteUserModal';
 import LoginAsModal from '@/components/super-admin/LoginAsModal';
 import SatusehatClinicPanel from '@/components/super-admin/SatusehatClinicPanel';
@@ -231,6 +232,10 @@ function ClinicDetail() {
                   </dd>
                   <dt>Terdaftar</dt>
                   <dd>{formatDate(row?.createdAt)}</dd>
+                  <dt>Aktivitas</dt>
+                  <dd>
+                    Login terakhir {formatDateTime(row?.lastLoginAt)} · {row?.visits30 ?? 0} kunjungan 30 hari
+                  </dd>
                 </dl>
                 <div className="sa-row card-actions">
                   {owner && (
@@ -296,6 +301,8 @@ function ClinicDetail() {
                 </p>
               )}
             </div>
+
+            <ClinicNotesCard clinicId={clinicId} />
 
             {!purged && <StorageAdjustCard clinicId={clinicId} />}
           </>

@@ -119,6 +119,8 @@ export interface ClinicSubscriptionSummary {
   multiClinicOwner?: { id: number; name: string } | null;
   dataDeleteAfter?: string | null;
   dataPurgedAt?: string | null;
+  lastLoginAt?: string | null;
+  visits30?: number;
 }
 
 export interface OwnerCode {
@@ -154,6 +156,7 @@ export interface SuperAdminQueue {
   satusehatNotReady: number;
   expiringSoon: { clinicId: number; clinicName: string; endDate: string; tier: string | null; daysLeft: number }[];
   dataDeletions: { clinicId: number; clinicName: string; deleteAfter: string; daysLeft: number }[];
+  followUps?: { id: number; clinicId: number; clinicName: string; body: string; followUpOn: string }[];
 }
 
 export interface Receipt {
