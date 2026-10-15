@@ -33,7 +33,7 @@ export default function DiscountRankingTable({ data }: DiscountRankingTableProps
             </thead>
             <tbody>
               {data.map((t) => (
-                <tr key={t.tarifId}>
+                <tr key={`${t.tarifId}-${t.namaTindakan}`}>
                   <td>{t.namaTindakan}</td>
                   <td>{t.frekuensi}</td>
                   <td>{formatRupiah(t.totalDiskon)}</td>

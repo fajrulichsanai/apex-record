@@ -90,17 +90,24 @@ export interface FinancialReportResponse {
   byDay: { date: string; revenue: number; collected: number }[];
   byPaymentMethod: { method: PaymentMethod; amount: number }[];
   byDoctor: { practitionerName: string; revenue: number; doctorFeeShare: number }[];
+  /** Pendapatan bersih - modal (HPP: bahan + lab) - pengeluaran (beban) = laba bersih */
   ringkasan: {
     pendapatanTotal: number;
     modal: number;
+    labaKotor?: number;
     labaBersih: number;
     pengeluaran: number;
     marginPersen: number;
   };
+  /** Laba rugi lengkap (satu definisi dengan PDF). Missing on older backends. */
+  labaRugi?: LabaRugi;
   tindakanTerlaris: {
-    tarifId: number;
+    tarifId: number | null;
     namaTindakan: string;
     modal: number;
+    biayaLab?: number;
+    shareFee?: number;
+    pendapatan?: number;
     hargaJual: number;
     frekuensi: number;
     totalDiskon: number;
@@ -150,15 +157,7 @@ export interface FinancialReportProResponse extends FinancialReportResponse {
     newPatients: number;
   }[];
   byDoctorProfit: { practitionerName: string; revenue: number; doctorFeeShare: number; labaBersih: number }[];
-  discountRanking: {
-    tarifId: number;
-    namaTindakan: string;
-    modal: number;
-    hargaJual: number;
-    frekuensi: number;
-    totalDiskon: number;
-    labaBersih: number;
-  }[];
+  discountRanking: FinancialReportResponse['tindakanTerlaris'];
   visitHeatmap: { dayOfWeek: number; hour: number; count: number }[];
   stockReport: {
     totalInventoryValue: number;
@@ -280,3 +279,34 @@ export const reportsApi = {
     URL.revokeObjectURL(url);
   },
 };
+
+export interface LabaRugiLine {
+  kategori: string;
+  label: string;
+  total: number;
+}
+
+export interface LabaRugi {
+  pendapatan: {
+    tindakanBruto: number;
+    diskonTindakan: number;
+    diskonTagihan: number;
+    biayaTambahan: number;
+    bersih: number;
+    jumlahTagihan: number;
+  };
+  hpp: { modalBahan: number; biayaLab: number; total: number };
+  labaKotor: number;
+  beban: {
+    shareFeeDokter: number;
+    gaji: number;
+    operasional: LabaRugiLine[];
+    totalOperasional: number;
+    total: number;
+  };
+  labaBersih: number;
+  marginPersen: number;
+  belanja: { rincian: LabaRugiLine[]; total: number };
+  kas: { masuk: number; keluar: number; selisih: number; piutang: number; refund: number };
+  dokter: { practitionerId: number; nama: string; tindakan: number; pendapatan: number; biayaLab: number; shareFee: number }[];
+}

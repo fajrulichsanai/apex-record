@@ -6,7 +6,7 @@ import { FinancialReportResponse } from '@/lib/reports';
 type SortKey = 'frekuensi' | 'labaBersih';
 
 function formatRupiah(value: number) {
-  return `Rp ${value.toLocaleString('id-ID')}`;
+  return `Rp ${Math.round(value).toLocaleString('id-ID')}`;
 }
 
 interface TindakanTerlarisTableProps {
@@ -52,21 +52,25 @@ export default function TindakanTerlarisTable({ tindakan }: TindakanTerlarisTabl
             <thead>
               <tr>
                 <th>Tindakan</th>
-                <th>Modal</th>
                 <th>Harga Jual</th>
                 <th>Frekuensi</th>
                 <th>Total Diskon</th>
+                <th>Modal</th>
+                <th>Biaya Lab</th>
+                <th>Share Fee</th>
                 <th>Laba Bersih</th>
               </tr>
             </thead>
             <tbody>
               {sorted.map((t) => (
-                <tr key={t.tarifId}>
+                <tr key={`${t.tarifId}-${t.namaTindakan}`}>
                   <td>{t.namaTindakan}</td>
-                  <td>{formatRupiah(t.modal)}</td>
                   <td>{formatRupiah(t.hargaJual)}</td>
                   <td>{t.frekuensi}</td>
                   <td>{formatRupiah(t.totalDiskon)}</td>
+                  <td>{formatRupiah(t.modal)}</td>
+                  <td>{formatRupiah(t.biayaLab ?? 0)}</td>
+                  <td>{formatRupiah(t.shareFee ?? 0)}</td>
                   <td>{formatRupiah(t.labaBersih)}</td>
                 </tr>
               ))}

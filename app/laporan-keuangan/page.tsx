@@ -36,6 +36,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import StatCard from '@/components/laporan/StatCard';
 import TindakanTerlarisTable from '@/components/laporan/TindakanTerlarisTable';
+import ProfitLossStatement from '@/components/laporan/ProfitLossStatement';
 import PaymentDiscountStats from '@/components/laporan/PaymentDiscountStats';
 import VisitDetailTable from '@/components/laporan/VisitDetailTable';
 
@@ -520,7 +521,7 @@ export default function LaporanKeuanganPage() {
             variant="expense"
             icon={<FiCreditCard />}
             value={loading ? '...' : formatRupiah(report?.ringkasan.pengeluaran ?? 0)}
-            label="Pengeluaran Operasional"
+            label="Beban (share fee, gaji, operasional)"
           />
           <StatCard
             variant="margin"
@@ -541,6 +542,8 @@ export default function LaporanKeuanganPage() {
             label="Rata-rata Pendapatan / Hari"
           />
         </div>
+
+        {report?.labaRugi && <ProfitLossStatement data={report.labaRugi} />}
 
         <div className="chart-grid">
           <div className="panel chart-panel wide">
