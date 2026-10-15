@@ -216,6 +216,14 @@ const FAQS = [
     q: 'Apa yang terjadi setelah masa uji coba 14 hari berakhir?',
     a: 'Selama 14 hari, minggu pertama Anda memakai batas paket Starter dan minggu kedua otomatis naik ke batas Pro, dengan storage 100 MB. Setelah itu Anda bisa melanjutkan dengan memilih salah satu paket. Tidak ada penagihan otomatis diam-diam — Anda yang memutuskan kapan melanjutkan.',
   },
+  {
+    q: 'Apa beda paket Starter dan Pro?',
+    a: 'Fiturnya sama persis — semua fitur aplikasi ada di kedua paket. Bedanya di kapasitas: Starter untuk 5 akun pengguna, storage 1 GB, dan API 1.000 request/hari; Pro untuk 25 akun, storage 5 GB, API 10.000 request/hari, plus dukungan prioritas. Anda bisa naik paket kapan saja dengan membayar selisih untuk sisa hari langganan.',
+  },
+  {
+    q: 'Kami punya beberapa cabang klinik. Bagaimana caranya?',
+    a: 'Pilih paket Multi Klinik: semua cabang dikelola dari satu akun owner dengan dashboard dan laporan gabungan, plus Manajer Cabang untuk tiap klinik. Harga dan penagihannya disesuaikan dengan jumlah cabang — hubungi tim ApexRecord lewat WhatsApp, kami akan memandu aktivasinya.',
+  },
 ];
 
 export default function LandingPage() {
