@@ -7,6 +7,7 @@ import { notificationApi, type AppNotification, type NotificationType } from '@/
 import { formatCurrency } from '@/lib/format';
 import { pressable } from '@/lib/a11y';
 import AttendanceChip from '@/components/attendance/AttendanceChip';
+import BranchSwitcher from '@/components/multi-clinic/BranchSwitcher';
 import './navbar.css';
 
 interface NavbarProps {
@@ -72,7 +73,7 @@ function timeAgo(iso: string): string {
 
 export default function Navbar({ onMenuClick }: NavbarProps) {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, account, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -162,6 +163,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         </div>
       </div>
       <div className="topbar-right">
+        <BranchSwitcher />
         <AttendanceChip />
         <div className="notif-wrap" ref={notifRef}>
           <button
@@ -231,7 +233,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           <div className="avatar">{initials}</div>
           <span className="user-name">
             {user?.name || 'User'}
-            {user?.role && <small style={{ display: 'block', opacity: 0.6, fontSize: '11px' }}>{ROLE_LABEL[user.role] || user.role}</small>}
+            {account?.role && <small style={{ display: 'block', opacity: 0.6, fontSize: '11px' }}>{ROLE_LABEL[account.role] || account.role}</small>}
           </span>
           <span className="chip-chevron">
             <svg viewBox="0 0 24 24" fill="none">

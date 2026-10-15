@@ -33,6 +33,8 @@ import {
   FiUserCheck } from 'react-icons/fi';
 import './sidebar.css';
 import { useFeatures } from '@/lib/features-context';
+import BranchBanner from '@/components/multi-clinic/BranchBanner';
+import ApprovalNavItem from '@/components/multi-clinic/ApprovalNavItem';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -203,6 +205,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </button>
         </div>
 
+        <BranchBanner />
+
         <nav className="nav">
           {canViewDashboard && (
             <Link
@@ -248,6 +252,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               />
             )
           )}
+
+          <ApprovalNavItem pathname={pathname} onClick={handleNavItemClick} />
 
           <Link
             href="/pengaturan"

@@ -1,24 +1,48 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
 import CustomSelect from '@/components/form/CustomSelect';
-import { multiClinicApi, type MultiClinicOwner } from '@/lib/multi-clinic';
+import { multiClinicApi, type BranchLink, type LinkStatus, type MultiClinicOwner } from '@/lib/multi-clinic';
 import { apiClient, ApiError } from '@/lib/api-client';
+import { useEscapeKey } from '@/lib/a11y';
 import type { Clinic } from '@/types/clinic';
 import '../../styles/super-admin.css';
+import '../../styles/multi-klinik.css';
+
+const STATUS: Record<LinkStatus, { label: string; tone: string }> = {
+  approved: { label: 'Terhubung', tone: 'ok' },
+  pending: { label: 'Menunggu persetujuan', tone: 'warn' },
+  rejected: { label: 'Ditolak', tone: 'bad' },
+  expired: { label: 'Kedaluwarsa', tone: '' },
+};
+
+const BILLING: Record<string, string> = {
+  owner: 'ditanggung owner',
+  self: 'bayar sendiri',
+  stopped: 'berhenti',
+};
+
+function formatDate(value: string | null) {
+  if (!value) return '—';
+  return new Date(value).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+type Mode = 'request' | 'direct';
 
 export default function MultiClinicOwnersPage() {
   const [owners, setOwners] = useState<MultiClinicOwner[]>([]);
   const [clinics, setClinics] = useState<Clinic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedClinicId, setSelectedClinicId] = useState<Record<number, string>>({});
+  const [notice, setNotice] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Record<number, string>>({});
+  const [mode, setMode] = useState<Record<number, Mode>>({});
   const [busyOwnerId, setBusyOwnerId] = useState<number | null>(null);
+  const [unlinking, setUnlinking] = useState<{ owner: MultiClinicOwner; link: BranchLink } | null>(null);
+  useEscapeKey(() => setUnlinking(null), !!unlinking);
 
-  const load = async () => {
-    setLoading(true);
-    setError(null);
+  const load = useCallback(async () => {
     try {
       const [ownersData, clinicsData] = await Promise.all([
         multiClinicApi.listOwners(),
@@ -26,39 +50,68 @@ export default function MultiClinicOwnersPage() {
       ]);
       setOwners(ownersData);
       setClinics(clinicsData);
+      setError(null);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'Gagal memuat data');
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    load();
   }, []);
 
-  const handleLink = async (ownerId: number) => {
-    const clinicId = selectedClinicId[ownerId];
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  // One clinic, one multiklinik owner (PRD PS-04): a clinic already linked or
+  // pending anywhere can't be offered again.
+  const takenClinicIds = useMemo(() => {
+    const taken = new Set<number>();
+    for (const o of owners) {
+      for (const l of o.links ?? []) {
+        if (l.status === 'approved' || l.status === 'pending') taken.add(l.clinicId);
+      }
+    }
+    return taken;
+  }, [owners]);
+
+  const handleLink = async (owner: MultiClinicOwner) => {
+    const clinicId = Number(selected[owner.id]);
     if (!clinicId) return;
-    setBusyOwnerId(ownerId);
+    const direct = (mode[owner.id] ?? 'request') === 'direct';
+    setBusyOwnerId(owner.id);
+    setError(null);
     try {
-      await multiClinicApi.linkClinic(ownerId, Number(clinicId));
-      setSelectedClinicId((s) => ({ ...s, [ownerId]: '' }));
+      await multiClinicApi.linkClinic(owner.id, clinicId, direct);
+      const clinicName = clinics.find((c) => c.id === clinicId)?.name ?? 'Klinik';
+      setNotice(
+        direct
+          ? `${clinicName} langsung terhubung ke ${owner.name}.`
+          : `Permintaan terkirim. ${clinicName} akan terhubung setelah owner kliniknya menyetujui (maks. 90 hari).`,
+      );
+      setSelected((s) => ({ ...s, [owner.id]: '' }));
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Gagal menghubungkan klinik');
+      setError(err instanceof ApiError ? err.message : 'Gagal mengajukan hubungan');
     } finally {
       setBusyOwnerId(null);
     }
   };
 
-  const handleUnlink = async (ownerId: number, clinicId: number) => {
-    setBusyOwnerId(ownerId);
+  const confirmUnlink = async () => {
+    if (!unlinking) return;
+    const { owner, link } = unlinking;
+    setBusyOwnerId(owner.id);
     try {
-      await multiClinicApi.unlinkClinic(ownerId, clinicId);
+      await multiClinicApi.unlinkClinic(owner.id, link.clinicId);
+      setNotice(
+        link.status === 'approved'
+          ? `${link.clinicName ?? 'Klinik'} diputus dari ${owner.name}. Langganannya tetap aktif sampai akhir periode.`
+          : `${link.status === 'pending' ? 'Permintaan dibatalkan' : 'Riwayat dihapus'}: ${link.clinicName ?? 'klinik'}.`,
+      );
+      setUnlinking(null);
       await load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Gagal memutuskan klinik');
+      setError(err instanceof ApiError ? err.message : 'Gagal memutus hubungan');
     } finally {
       setBusyOwnerId(null);
     }
@@ -66,111 +119,181 @@ export default function MultiClinicOwnersPage() {
 
   return (
     <SuperAdminLayout>
-      <div className="sa-page">
+      <div className="sa-page mk-scope">
         <div className="page-header">
           <div className="page-title-block">
             <div className="page-title">
               <h1>Multi-Klinik Owner</h1>
             </div>
             <p className="page-subtitle">
-              Hubungkan klinik ke akun Multi-Klinik Owner. Buat akunnya dulu di menu User Management dengan role &quot;Multi-Klinik Owner&quot;.
+              Buat akunnya dulu di User Management dengan role &quot;Multi-Klinik Owner&quot;. Klinik yang sudah ada
+              dihubungkan lewat persetujuan owner kliniknya; klinik baru yang dibuat untuk owner ini bisa dihubungkan
+              langsung. Satu klinik hanya boleh punya satu owner multiklinik.
             </p>
           </div>
         </div>
 
-        {error && <div className="alert-error">{error}</div>}
+        {error && <div className="mk-alert bad">{error}</div>}
+        {notice && !error && <div className="mk-alert info">{notice}</div>}
 
         {loading ? (
           <p>Memuat...</p>
         ) : owners.length === 0 ? (
-          <div className="alert-error" style={{ background: '#F5F6FA', color: '#6B7A99', border: '1px solid #E8ECF4' }}>
-            Belum ada akun dengan role Multi-Klinik Owner.
-          </div>
+          <div className="mk-alert">Belum ada akun dengan role Multi-Klinik Owner.</div>
         ) : (
-          <div className="table-wrap">
-            <table className="sa-table">
-              <thead>
-                <tr>
-                  <th>Owner</th>
-                  <th>Klinik yang Dimiliki</th>
-                  <th>Hubungkan Klinik Baru</th>
-                </tr>
-              </thead>
-              <tbody>
-                {owners.map((owner) => {
-                  const linkedIds = new Set(owner.clinics.map((c) => c.id));
-                  const availableClinics = clinics.filter((c) => !linkedIds.has(c.id));
-                  return (
-                    <tr key={owner.id}>
-                      <td>
-                        <div style={{ fontWeight: 600 }}>{owner.name}</div>
-                        <div style={{ fontSize: 12.5, color: 'var(--text-sub)' }}>{owner.email}</div>
-                      </td>
-                      <td>
-                        {owner.clinics.length === 0 ? (
-                          <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>Belum ada klinik</span>
-                        ) : (
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                            {owner.clinics.map((c) => (
-                              <span
-                                key={c.id}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 6,
-                                  background: 'rgba(79,126,248,.1)',
-                                  color: 'var(--primary)',
-                                  borderRadius: 20,
-                                  padding: '4px 10px',
-                                  fontSize: 12.5,
-                                  fontWeight: 600,
-                                }}
-                              >
-                                {c.name}
+          <div className="mk-page" style={{ maxWidth: 'none' }}>
+            {owners.map((owner) => {
+              const links = owner.links ?? owner.clinics.map((c) => ({
+                id: c.id,
+                clinicId: c.id,
+                clinicName: c.name,
+                status: 'approved' as const,
+                billingMode: 'owner' as const,
+                requestedAt: null,
+                respondedAt: null,
+                expiresAt: null,
+              }));
+              const available = clinics.filter((c) => !takenClinicIds.has(c.id));
+              const ownerMode = mode[owner.id] ?? 'request';
+              return (
+                <div key={owner.id} className="mk-card">
+                  <div className="mk-card-head">
+                    <div>
+                      <h2>{owner.name}</h2>
+                      <span className="mk-muted">
+                        {owner.email}
+                        {!owner.isActive && ' · nonaktif'}
+                      </span>
+                    </div>
+                    <span className="mk-pill">
+                      {links.filter((l) => l.status === 'approved').length} cabang terhubung
+                    </span>
+                  </div>
+
+                  {links.length === 0 ? (
+                    <p className="mk-hint">Belum ada klinik.</p>
+                  ) : (
+                    <div className="mk-table-wrap">
+                      <table className="mk-table">
+                        <thead>
+                          <tr>
+                            <th>Klinik</th>
+                            <th>Status</th>
+                            <th>Tanggal</th>
+                            <th />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {links.map((l) => (
+                            <tr key={l.id}>
+                              <td className="name">
+                                {l.clinicName ?? `Klinik #${l.clinicId}`}
+                                {l.status === 'approved' && <small>{BILLING[l.billingMode] ?? l.billingMode}</small>}
+                              </td>
+                              <td>
+                                <span className={`mk-pill ${STATUS[l.status].tone}`}>{STATUS[l.status].label}</span>
+                              </td>
+                              <td className="mk-muted">
+                                {l.status === 'pending'
+                                  ? `Diajukan ${formatDate(l.requestedAt)} · kedaluwarsa ${formatDate(l.expiresAt)}`
+                                  : l.respondedAt
+                                    ? `Dijawab ${formatDate(l.respondedAt)}`
+                                    : formatDate(l.requestedAt)}
+                              </td>
+                              <td className="r">
                                 <button
                                   type="button"
-                                  onClick={() => handleUnlink(owner.id, c.id)}
+                                  className="mk-btn sm danger"
                                   disabled={busyOwnerId === owner.id}
-                                  style={{
-                                    border: 'none',
-                                    background: 'none',
-                                    color: 'inherit',
-                                    cursor: 'pointer',
-                                    fontWeight: 700,
-                                    padding: 0,
-                                  }}
-                                  aria-label={`Putuskan ${c.name}`}
+                                  onClick={() => setUnlinking({ owner, link: l })}
                                 >
-                                  ×
+                                  {l.status === 'approved' ? 'Putuskan' : l.status === 'pending' ? 'Batalkan' : 'Hapus'}
                                 </button>
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: 8, minWidth: 220 }}>
-                          <CustomSelect
-                            value={selectedClinicId[owner.id] || ''}
-                            onChange={(value) => setSelectedClinicId((s) => ({ ...s, [owner.id]: value }))}
-                            options={availableClinics.map((c) => ({ value: c.id.toString(), label: c.name }))}
-                            placeholder="Pilih klinik..."
-                          />
-                          <button
-                            type="button"
-                            className="btn-primary btn-sm"
-                            disabled={!selectedClinicId[owner.id] || busyOwnerId === owner.id}
-                            onClick={() => handleLink(owner.id)}
-                          >
-                            Hubungkan
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  <div className="mk-filters" style={{ alignItems: 'center' }}>
+                    <div style={{ minWidth: 220, flex: '1 1 220px', maxWidth: 360 }}>
+                      <CustomSelect
+                        value={selected[owner.id] || ''}
+                        onChange={(value) => setSelected((s) => ({ ...s, [owner.id]: value }))}
+                        options={available.map((c) => ({ value: c.id.toString(), label: c.name }))}
+                        placeholder={available.length ? 'Pilih klinik…' : 'Semua klinik sudah terhubung'}
+                      />
+                    </div>
+                    <label className="mk-field" style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <input
+                        type="radio"
+                        name={`mode-${owner.id}`}
+                        checked={ownerMode === 'request'}
+                        onChange={() => setMode((m) => ({ ...m, [owner.id]: 'request' }))}
+                      />
+                      Ajukan ke owner klinik
+                    </label>
+                    <label className="mk-field" style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                      <input
+                        type="radio"
+                        name={`mode-${owner.id}`}
+                        checked={ownerMode === 'direct'}
+                        onChange={() => setMode((m) => ({ ...m, [owner.id]: 'direct' }))}
+                      />
+                      Hubungkan langsung (klinik baru milik owner ini)
+                    </label>
+                    <button
+                      type="button"
+                      className="mk-btn primary"
+                      disabled={!selected[owner.id] || busyOwnerId === owner.id}
+                      onClick={() => handleLink(owner)}
+                    >
+                      {ownerMode === 'direct' ? 'Hubungkan' : 'Ajukan hubungan'}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {unlinking && (
+          <div className="mk-overlay" role="presentation" onClick={() => setUnlinking(null)}>
+            <div
+              className="mk-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="mk-unlink-title"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 id="mk-unlink-title">
+                {unlinking.link.status === 'approved'
+                  ? `Putuskan ${unlinking.link.clinicName ?? 'klinik'}?`
+                  : unlinking.link.status === 'pending'
+                    ? 'Batalkan permintaan?'
+                    : 'Hapus riwayat permintaan?'}
+              </h2>
+              <p className="mk-hint">
+                {unlinking.link.status === 'approved'
+                  ? `Klinik hilang dari dashboard ${unlinking.owner.name}. Data dan akun klinik tidak terhapus, dan langganannya tetap aktif sampai akhir periode yang sudah dibayar.`
+                  : 'Klinik bisa diajukan lagi kapan saja.'}
+              </p>
+              <div className="mk-actions">
+                <button type="button" className="mk-btn" onClick={() => setUnlinking(null)}>
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  className="mk-btn danger"
+                  disabled={busyOwnerId === unlinking.owner.id}
+                  onClick={confirmUnlink}
+                >
+                  {unlinking.link.status === 'approved' ? 'Ya, putuskan' : 'Ya, lanjutkan'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

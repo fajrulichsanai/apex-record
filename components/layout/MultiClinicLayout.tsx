@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/lib/auth-context';
 import Navbar from './Navbar';
 import MultiClinicSidebar from './MultiClinicSidebar';
 import MultiClinicGuard from '@/components/auth/MultiClinicGuard';
@@ -13,6 +14,13 @@ interface MultiClinicLayoutProps {
 
 export default function MultiClinicLayout({ children }: MultiClinicLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { branch, exitBranch } = useAuth();
+
+  // These pages are "Semua cabang": arriving here from inside a branch leaves
+  // it, so no request from this page is sent on the branch's behalf.
+  useEffect(() => {
+    if (branch) exitBranch(window.location.pathname + window.location.search);
+  }, [branch, exitBranch]);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const closeSidebar = () => setSidebarOpen(false);

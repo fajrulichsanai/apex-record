@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { BRANCH_COOKIE } from '@/lib/branch';
 import {
   BACKEND_URL,
   IMPERSONATOR_COOKIE,
@@ -66,6 +67,14 @@ async function proxy(req: NextRequest, ctx: RouteContext) {
 
   const sessionToken = req.cookies.get(SESSION_COOKIE)?.value;
   if (sessionToken) headers.set('authorization', `Bearer ${sessionToken}`);
+
+  // Multi-Klinik Owner inside a branch: the backend acts on that branch
+  // (after checking it belongs to this account). Never for the owner's own
+  // account/branch-list routes, which must run as the owner themselves.
+  const branchId = req.cookies.get(BRANCH_COOKIE)?.value;
+  if (branchId && /^\d+$/.test(branchId) && !/^(auth|multi-clinic)(\/|$)/.test(path)) {
+    headers.set('x-clinic-id', branchId);
+  }
 
   let upstream: Response;
   try {

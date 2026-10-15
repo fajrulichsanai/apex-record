@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { defaultRouteForRole } from '@/lib/permissions';
 import type { UserRole } from '@/types/user';
+import { BRANCH_COOKIE, routeNeedsBranch } from '@/lib/branch';
 
 // `role` is a plain, non-httpOnly cookie mirroring the logged-in user's role
 // (set in lib/auth-context.tsx). It is NOT a security boundary — it's only
@@ -28,6 +29,20 @@ export function middleware(request: NextRequest) {
       url.pathname = role ? defaultRouteForRole(role as UserRole) : '/';
       return NextResponse.redirect(url);
     }
+  }
+
+  // A Multi-Klinik Owner opens clinic pages only inside a chosen branch;
+  // without one they'd only meet "Pilih cabang dulu" errors.
+  const role = request.cookies.get('role')?.value;
+  if (
+    role === 'multi_clinic_owner' &&
+    !request.cookies.get(BRANCH_COOKIE)?.value &&
+    routeNeedsBranch(pathname)
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/multi-klinik/dashboard';
+    url.search = '';
+    return NextResponse.redirect(url);
   }
 
   return NextResponse.next();
