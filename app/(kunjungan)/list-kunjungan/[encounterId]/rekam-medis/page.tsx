@@ -13,6 +13,7 @@ import CustomSelect from '@/components/form/CustomSelect';
 import VoiceDictationButton from '@/components/form/VoiceDictationButton';
 import SoapNoteView from '@/components/rekam-medis/SoapNoteView';
 import DiagnosisPicker from '@/components/rekam-medis/DiagnosisPicker';
+import SoapTemplatePicker from '@/components/rekam-medis/SoapTemplatePicker';
 import ChiefComplaintPicker, { type ChiefComplaintValue } from '@/components/rekam-medis/ChiefComplaintPicker';
 import SsrmeButton from '@/components/satusehat/SsrmeButton';
 import type { SoapDiagnosis } from '@/lib/terminology';
@@ -1909,6 +1910,19 @@ export default function RekamMedisPage() {
                       </div>
 
                       <div className="rm-section-body">
+                        <SoapTemplatePicker
+                          disabled={submitting}
+                          values={{ subjective, objective, assessment, treatment, plan, diagnoses }}
+                          onApply={(v) => {
+                            setSubjective(v.subjective);
+                            setObjective(v.objective);
+                            setAssessment(v.assessment);
+                            setTreatment(v.treatment);
+                            setPlan(v.plan);
+                            setDiagnoses(v.diagnoses);
+                          }}
+                        />
+
                         <div className="visit-form-field">
                           <label>
                             <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '15px' }}>
