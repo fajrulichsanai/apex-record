@@ -1,4 +1,4 @@
-import { apiClient } from './api-client';
+import { apiClient, toQueryString } from './api-client';
 
 export type ApiGender = 'male' | 'female';
 export type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed';
@@ -190,9 +190,20 @@ export interface ReferralSummaryResponse {
   byReferrer: { referrerPatientId: number; referrerName: string; referralCount: number }[];
 }
 
+export type PatientCategory = 'bayi' | 'umum';
+
+export interface PatientStats {
+  total: number;
+  male: number;
+  female: number;
+  baby: number;
+}
+
 export interface PatientQuery {
   search?: string;
   gender?: ApiGender;
+  /** bayi = registered with the mother's NIK (no own NIK); umum = everyone else. */
+  kategori?: PatientCategory;
   page?: number;
   limit?: number;
   sortBy?: string;
@@ -237,6 +248,13 @@ export const patientsApi = {
             ).toString()
           : '')
     ),
+
+  /** One page plus `meta.total`, for the infinite-scrolling patient list. */
+  listPage: (query: PatientQuery) => apiClient.getPage<Patient>(`/patients?${toQueryString(query)}`),
+
+  /** Counts for the patient-list stat cards (server-side, so not capped by paging). */
+  stats: (search?: string) =>
+    apiClient.get<PatientStats>(`/patients/stats${search?.trim() ? `?${toQueryString({ search: search.trim() })}` : ''}`),
 
   // Backend caps `limit` at 100 per page, so a plain list() only returns the
   // first 10 (default) patients. This paginates through every page to fetch

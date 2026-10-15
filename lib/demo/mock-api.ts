@@ -101,6 +101,13 @@ function range(query: Query) {
 
 // ---------- entity views ----------
 
+function demoPatientSearch(q: Query) {
+  const search = (q.get('search') || '').trim().toLowerCase();
+  return demoPatients.filter(
+    (p) => !search || p.name.toLowerCase().includes(search) || p.noRm.toLowerCase().includes(search),
+  );
+}
+
 function patientView(id: number) {
   const p = patientById.get(id)!;
   return {
@@ -679,16 +686,29 @@ const routes: [RegExp, Handler][] = [
     if (!patientById.has(Number(m[1]))) throw new ApiError('Pasien tidak ditemukan', 404);
     return patientView(Number(m[1]));
   }],
+  [/^\/patients\/stats$/, (_m, q) => {
+    const rows = demoPatientSearch(q);
+    // Demo patients all have their own NIK, so none count as bayi.
+    return {
+      success: true,
+      data: {
+        total: rows.length,
+        male: rows.filter((p) => p.gender === 'male').length,
+        female: rows.filter((p) => p.gender === 'female').length,
+        baby: 0,
+      },
+    };
+  }],
   [/^\/patients$/, (_m, q) => {
-    const search = (q.get('search') || '').toLowerCase();
     const gender = q.get('gender');
-    const rows = demoPatients
-      .filter((p) => (!search || p.name.toLowerCase().includes(search) || p.noRm.toLowerCase().includes(search)) && (!gender || p.gender === gender))
+    const rows = demoPatientSearch(q)
+      .filter((p) => (!gender || p.gender === gender) && q.get('kategori') !== 'bayi')
       .slice()
       .reverse()
       .map((p) => patientView(p.id));
-    // The real endpoint's list is unwrapped to a bare array by apiClient.
-    return paginate(rows, q, 10).data;
+    // Same envelope as the real endpoint; apiClient unwraps it to a bare
+    // array unless the caller asked for the page meta.
+    return { success: true, ...paginate(rows, q, 10) };
   }],
 
   // encounters

@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
-import { patientsApi, Patient, Encounter, ApiGender, TimelineItem } from '@/lib/patients';
+import { patientsApi, Patient, Encounter, PatientQuery, PatientStats, TimelineItem } from '@/lib/patients';
 import { ApiError } from '@/lib/api-client';
 import { pressable, useEscapeKey } from '@/lib/a11y';
 import '../../styles/list-pasien.css';
@@ -17,10 +17,20 @@ function apiGenderToUi(patient: Patient): UiGender {
   return patient.gender === 'male' ? 'laki-laki' : 'perempuan';
 }
 
-function genderFilterToApi(filter: FilterValue): ApiGender | undefined {
-  if (filter === 'laki-laki') return 'male';
-  if (filter === 'perempuan') return 'female';
-  return undefined;
+// Must mirror apiGenderToUi: laki-laki/perempuan exclude babies, who get
+// their own tab. The server applies the same rule (kategori=bayi|umum).
+function filterToQuery(filter: FilterValue): PatientQuery {
+  if (filter === 'laki-laki') return { gender: 'male', kategori: 'umum' };
+  if (filter === 'perempuan') return { gender: 'female', kategori: 'umum' };
+  if (filter === 'bayi') return { kategori: 'bayi' };
+  return {};
+}
+
+const PAGE_SIZE = 20;
+const SEARCH_DEBOUNCE_MS = 300;
+
+function formatCount(n: number | undefined) {
+  return n === undefined ? '—' : n.toLocaleString('id-ID');
 }
 
 function genderTagClass(gender: UiGender) {
@@ -101,11 +111,23 @@ function ListPasienContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const [stats, setStats] = useState<PatientStats | null>(null);
+  const [statsVersion, setStatsVersion] = useState(0);
   const [currentFilter, setCurrentFilter] = useState<FilterValue>('semua');
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPatientId, setSelectedPatientId] = useState<number | null>(null);
+  // The selected patient is kept as an object (not looked up in `patients`)
+  // so the detail panel survives filtering/searching and can show a patient
+  // opened via ?patientId that is not on the loaded pages.
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const selectedPatientId = selectedPatient?.id ?? null;
   const [showDetailOnMobile, setShowDetailOnMobile] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   useEscapeKey(() => setShowDeleteConfirm(false), showDeleteConfirm);
@@ -121,34 +143,139 @@ function ListPasienContent() {
   const [timelineLoading, setTimelineLoading] = useState(false);
 
   const detailPanelRef = useRef<HTMLDivElement>(null);
-
-  const loadPatients = useCallback(async () => {
-    setLoading(true);
-    setLoadError(null);
-    try {
-      const data = await patientsApi.list({
-        search: searchQuery || undefined,
-        gender: genderFilterToApi(currentFilter),
-        limit: 100,
-      });
-      setPatients(data);
-      const queryPatientId = Number(searchParams.get('patientId'));
-      const preselected = queryPatientId && data.some((p) => p.id === queryPatientId)
-        ? queryPatientId
-        : null;
-      setSelectedPatientId((prev) => preselected ?? prev ?? data[0]?.id ?? null);
-    } catch (err) {
-      setLoadError(err instanceof ApiError ? err.message : 'Gagal memuat data pasien');
-    } finally {
-      setLoading(false);
-    }
-  }, [searchQuery, currentFilter, searchParams]);
+  const listRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  // Bumped on every new search/filter so responses for an older query are
+  // dropped instead of overwriting (or being appended to) the current list.
+  const querySeq = useRef(0);
+  const loadingMoreRef = useRef(false);
 
   useEffect(() => {
-    loadPatients();
-  }, [loadPatients]);
+    const id = window.setTimeout(() => setSearchQuery(searchInput.trim()), SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(id);
+  }, [searchInput]);
 
-  const selectedPatient = patients.find((p) => p.id === selectedPatientId) ?? null;
+  const buildQuery = useCallback(
+    (pageNum: number): PatientQuery => ({
+      ...filterToQuery(currentFilter),
+      search: searchQuery || undefined,
+      page: pageNum,
+      limit: PAGE_SIZE,
+    }),
+    [currentFilter, searchQuery],
+  );
+
+  const loadFirstPage = useCallback(async () => {
+    const seq = ++querySeq.current;
+    loadingMoreRef.current = false;
+    setLoading(true);
+    setLoadError(null);
+    setLoadMoreError(null);
+    setLoadingMore(false);
+    try {
+      const res = await patientsApi.listPage(buildQuery(1));
+      if (seq !== querySeq.current) return;
+      setPatients(res.data);
+      setTotal(res.meta.total);
+      setPage(1);
+      setHasMore(res.meta.page < res.meta.totalPages);
+      setSelectedPatient((prev) => prev ?? res.data[0] ?? null);
+      listRef.current?.scrollTo({ top: 0 });
+    } catch (err) {
+      if (seq !== querySeq.current) return;
+      setPatients([]);
+      setTotal(0);
+      setHasMore(false);
+      setLoadError(err instanceof ApiError ? err.message : 'Gagal memuat data pasien');
+    } finally {
+      if (seq === querySeq.current) setLoading(false);
+    }
+  }, [buildQuery]);
+
+  useEffect(() => {
+    void loadFirstPage();
+  }, [loadFirstPage]);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMoreRef.current || loading || !hasMore) return;
+    const seq = querySeq.current;
+    loadingMoreRef.current = true;
+    setLoadingMore(true);
+    setLoadMoreError(null);
+    try {
+      const res = await patientsApi.listPage(buildQuery(page + 1));
+      if (seq !== querySeq.current) return;
+      // A patient added meanwhile shifts the offsets by one, so the next page
+      // can repeat the last row of the previous one — skip what we already have.
+      setPatients((prev) => {
+        const seen = new Set(prev.map((p) => p.id));
+        return [...prev, ...res.data.filter((p) => !seen.has(p.id))];
+      });
+      setTotal(res.meta.total);
+      setPage(res.meta.page);
+      setHasMore(res.meta.page < res.meta.totalPages && res.data.length > 0);
+    } catch (err) {
+      if (seq !== querySeq.current) return;
+      setLoadMoreError(err instanceof ApiError ? err.message : 'Gagal memuat pasien berikutnya');
+    } finally {
+      if (seq === querySeq.current) {
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
+      }
+    }
+  }, [buildQuery, hasMore, loading, page]);
+
+  // Infinite scroll: load the next page as the end of the list comes into
+  // view. Re-created after every page, so a list still shorter than the panel
+  // keeps loading until it fills it. Stops on error until the user retries.
+  useEffect(() => {
+    const target = sentinelRef.current;
+    if (!target || !hasMore || loading || loadMoreError || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) void loadMore();
+      },
+      { root: listRef.current, rootMargin: '0px 0px 240px 0px' },
+    );
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [hasMore, loading, loadMoreError, loadMore]);
+
+  // Counts come from the server so they cover every patient, not just the
+  // pages loaded so far. They follow the search box like the list does.
+  useEffect(() => {
+    let active = true;
+    patientsApi
+      .stats(searchQuery)
+      .then((data) => {
+        if (active) setStats(data);
+      })
+      .catch(() => {
+        if (active) setStats(null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [searchQuery, statsVersion]);
+
+  // ?patientId=… (links from kunjungan, reservasi, etc.) opens that patient
+  // even when it is far down the list.
+  const linkedPatientId = Number(searchParams.get('patientId')) || null;
+  useEffect(() => {
+    if (!linkedPatientId) return;
+    let active = true;
+    patientsApi
+      .get(linkedPatientId)
+      .then((p) => {
+        if (active) setSelectedPatient(p);
+      })
+      .catch(() => {
+        /* not found / no access — keep the default selection */
+      });
+    return () => {
+      active = false;
+    };
+  }, [linkedPatientId]);
 
   useEffect(() => {
     if (!selectedPatient) return;
@@ -190,13 +317,8 @@ function ListPasienContent() {
     };
   }, [selectedPatient, detailTab]);
 
-  const totalCount = patients.length;
-  const maleCount = patients.filter((p) => apiGenderToUi(p) === 'laki-laki').length;
-  const femaleCount = patients.filter((p) => apiGenderToUi(p) === 'perempuan').length;
-  const babyCount = patients.filter((p) => apiGenderToUi(p) === 'bayi').length;
-
-  const handleSelectPatient = (id: number) => {
-    setSelectedPatientId(id);
+  const handleSelectPatient = (patient: Patient) => {
+    setSelectedPatient(patient);
     setShowDetailOnMobile(true);
     setDetailTab('ringkasan');
   };
@@ -226,8 +348,11 @@ function ListPasienContent() {
     setDeleteError(null);
     try {
       await patientsApi.remove(selectedPatient.id);
+      const wasListed = patients.some((p) => p.id === selectedPatient.id);
       setPatients((prev) => prev.filter((p) => p.id !== selectedPatient.id));
-      setSelectedPatientId(null);
+      if (wasListed) setTotal((t) => Math.max(0, t - 1));
+      setStatsVersion((v) => v + 1);
+      setSelectedPatient(null);
       setShowDeleteConfirm(false);
     } catch (err) {
       setDeleteError(err instanceof ApiError ? err.message : 'Gagal menghapus data pasien');
@@ -245,7 +370,7 @@ function ListPasienContent() {
           <div className="page-title-block">
             <div className="page-title">
               <h1>Daftar Pasien</h1>
-              <span className="badge-count">{totalCount}</span>
+              <span className="badge-count">{formatCount(stats?.total)}</span>
             </div>
             <p className="page-subtitle">Kelola seluruh data pasien klinik Anda</p>
           </div>
@@ -269,7 +394,7 @@ function ListPasienContent() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{totalCount}</div>
+              <div className="stat-value">{formatCount(stats?.total)}</div>
               <div className="stat-label">Total Pasien</div>
             </div>
           </div>
@@ -283,7 +408,7 @@ function ListPasienContent() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{maleCount}</div>
+              <div className="stat-value">{formatCount(stats?.male)}</div>
               <div className="stat-label">Laki-laki</div>
             </div>
           </div>
@@ -297,7 +422,7 @@ function ListPasienContent() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{femaleCount}</div>
+              <div className="stat-value">{formatCount(stats?.female)}</div>
               <div className="stat-label">Perempuan</div>
             </div>
           </div>
@@ -311,7 +436,7 @@ function ListPasienContent() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{babyCount}</div>
+              <div className="stat-value">{formatCount(stats?.baby)}</div>
               <div className="stat-label">Bayi</div>
             </div>
           </div>
@@ -327,8 +452,9 @@ function ListPasienContent() {
                 <input
                   type="text"
                   placeholder="Cari nama, No. RM, NIK…"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  aria-label="Cari pasien"
                 />
               </div>
               <div className="filter-tabs">
@@ -360,9 +486,16 @@ function ListPasienContent() {
             </div>
 
             <div className="panel-sort">
-              <span className="sort-label">
-                {loading ? 'Memuat…' : `${patients.length} Pasien ditemukan`}
+              <span className="sort-label" aria-live="polite">
+                {loading
+                  ? 'Memuat…'
+                  : `${total.toLocaleString('id-ID')} pasien ditemukan`}
               </span>
+              {!loading && total > patients.length && (
+                <span className="sort-label">
+                  Menampilkan {patients.length.toLocaleString('id-ID')}
+                </span>
+              )}
             </div>
 
             {loadError && (
@@ -373,16 +506,31 @@ function ListPasienContent() {
               </div>
             )}
 
-            <div className="patient-list">
-              {patients
-                .filter((p) => currentFilter === 'semua' || apiGenderToUi(p) === currentFilter)
-                .map((patient) => {
+            <div
+              ref={listRef}
+              className={`patient-list ${loading && patients.length > 0 ? 'is-refreshing' : ''}`}
+              aria-busy={loading || loadingMore}
+            >
+              {!loading && !loadError && patients.length === 0 && (
+                <div className="list-empty">
+                  <span aria-hidden="true" className="material-symbols-rounded">person_off</span>
+                  <div className="empty-title">
+                    {searchQuery ? 'Pasien tidak ditemukan' : 'Belum ada pasien'}
+                  </div>
+                  <div className="empty-sub">
+                    {searchQuery
+                      ? 'Coba kata kunci lain: nama, No. RM, atau NIK lengkap.'
+                      : 'Pasien yang didaftarkan akan muncul di sini.'}
+                  </div>
+                </div>
+              )}
+              {patients.map((patient) => {
                   const uiGender = apiGenderToUi(patient);
                   return (
                     <div
                       key={patient.id}
                       className={`patient-item ${patient.id === selectedPatientId ? 'selected' : ''}`}
-                      {...pressable(() => handleSelectPatient(patient.id))}
+                      {...pressable(() => handleSelectPatient(patient))}
                     >
                       <div className={`patient-avatar ${genderTagClass(uiGender)}`}>
                         {initialsFromName(patient.name)}
@@ -409,6 +557,33 @@ function ListPasienContent() {
                     </div>
                   );
                 })}
+              {patients.length > 0 && (
+                <div ref={sentinelRef} className="list-footer">
+                  {loadingMore ? (
+                    <span className="list-footer-note">
+                      <span aria-hidden="true" className="list-spinner" />
+                      Memuat pasien berikutnya…
+                    </span>
+                  ) : loadMoreError ? (
+                    <>
+                      <span className="list-footer-note error">{loadMoreError}</span>
+                      <button type="button" className="list-more-btn" onClick={() => void loadMore()}>
+                        Coba lagi
+                      </button>
+                    </>
+                  ) : hasMore ? (
+                    <button type="button" className="list-more-btn" onClick={() => void loadMore()}>
+                      Muat lebih banyak
+                    </button>
+                  ) : (
+                    patients.length > PAGE_SIZE && (
+                      <span className="list-footer-note">
+                        Semua {total.toLocaleString('id-ID')} pasien sudah ditampilkan
+                      </span>
+                    )
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
