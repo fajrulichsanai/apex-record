@@ -74,7 +74,7 @@ export default function MultiClinicLanggananPage() {
   const unitTotal = plan ? Number(plan.price) * clinicCount : 0;
   // Storage tambahan jatah bersama ikut tagihan gabungan (PRD Super Admin BL-06).
   const [pool, setPool] = useState<StorageQuota | null>(null);
-  const extraGb = pool?.extraGb ?? 0;
+  const extraGb = pool?.billableExtraGb ?? 0;
   const storageCost = pool ? storageAddonCost(extraGb, pool.pricePerGb, cycle) : 0;
   const totalPrice = unitTotal + ownerFee + storageCost;
 

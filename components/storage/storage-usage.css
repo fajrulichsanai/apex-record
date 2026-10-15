@@ -35,3 +35,11 @@
 .storage-adjust-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
 .storage-adjust-row input { height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-dark); font: inherit; min-width: 0; }
 .storage-adjust-row .storage-field:first-child input { width: 120px; }
+.storage-bonus { color: var(--text-dark); }
+.storage-mode { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; font-weight: 600; color: var(--text-dark); }
+.storage-mode label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.storage-mode input { accent-color: var(--accent); }
+.storage-adjust-row select { height: 36px; padding: 0 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-dark); font: inherit; }
+.storage-bonus-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.storage-bonus-list li { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; font-size: 13px; color: var(--text-dark); }
+.storage-bonus-list small { color: var(--text-muted); }

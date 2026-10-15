@@ -154,7 +154,7 @@ function LanggananPageInner() {
   // Storage tambahan ikut tagihan yang sama (PRD Super Admin BL-06). A
   // multiklinik branch's shared add-ons are billed to the owner instead.
   const [storage, setStorage] = useState<StorageQuota | null>(null);
-  const billableExtraGb = storage?.scope === 'clinic' ? storage.extraGb : 0;
+  const billableExtraGb = storage?.scope === 'clinic' ? storage.billableExtraGb : 0;
   const storageCost = storage ? storageAddonCost(billableExtraGb, storage.pricePerGb, cycle) : 0;
   const totalPrice = unitTotal + ownerFee + storageCost;
   // Whoever pays for the storage may buy more: the clinic's owner, or the

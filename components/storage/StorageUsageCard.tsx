@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { ApiError } from '@/lib/api-client';
 import { useEscapeKey } from '@/lib/a11y';
 import { formatCurrency } from '@/lib/format';
-import { formatBytes, storageApi, storageLevel, type StorageQuota } from '@/lib/storage';
+import { GB, formatBytes, formatDateId, formatGb, storageApi, storageLevel, type StorageQuota } from '@/lib/storage';
 import './storage-usage.css';
 
 interface StorageUsageCardProps {
@@ -94,10 +94,13 @@ export default function StorageUsageCard({ source = 'clinic', canPurchase = fals
       </div>
       <p className="storage-note">
         {quota.scope === 'multiklinik'
-          ? `${quota.includedGb} GB dari ${quota.activeBranches ?? 0} cabang aktif`
-          : `${quota.includedGb} GB dari paket`}
+          ? `${formatGb(quota.includedGb)} dari ${quota.activeBranches ?? 0} cabang aktif`
+          : `${formatGb(quota.includedGb)} dari paket`}
         {quota.extraGb > 0 &&
-          ` + ${quota.extraGb} GB tambahan (Rp ${formatCurrency(quota.extraGb * quota.pricePerGb)}/bulan)`}
+          ` + ${quota.extraGb} GB tambahan` +
+            (quota.billableExtraGb > 0
+              ? ` (ditagih ${quota.billableExtraGb} GB · Rp ${formatCurrency(quota.billableExtraGb * quota.pricePerGb)}/bulan)`
+              : ' (gratis)')}
         .{' '}
         {quota.scope === 'multiklinik' && source === 'clinic'
           ? `Dipakai bersama semua cabang; klinik ini memakai ${formatBytes(quota.clinicUsedBytes)}.`
@@ -108,6 +111,14 @@ export default function StorageUsageCard({ source = 'clinic', canPurchase = fals
             ? ' Hampir penuh.'
             : ''}
       </p>
+      {(quota.bonuses ?? []).map((b) => (
+        <p key={b.id} className="storage-note storage-bonus">
+          🎁 Bonus {b.gb} GB gratis{' '}
+          {b.freeUntil
+            ? `s.d. ${formatDateId(b.freeUntil)}, setelah itu ikut tagihan Rp ${formatCurrency(b.gb * quota.pricePerGb)}/bulan.`
+            : 'tanpa batas waktu.'}
+        </p>
+      ))}
       {notice && <p className="storage-note storage-ok">{notice}</p>}
       {canPurchase ? (
         <div>
@@ -162,7 +173,7 @@ export default function StorageUsageCard({ source = 'clinic', canPurchase = fals
             </label>
             <div className="storage-summary">
               <span>Jatah baru</span>
-              <strong>{formatBytes(quota.limitBytes + gb * 1024 ** 3)}</strong>
+              <strong>{formatBytes(quota.limitBytes + gb * GB)}</strong>
               <span>Tambahan biaya</span>
               <strong>Rp {formatCurrency(monthly)} / bulan</strong>
             </div>

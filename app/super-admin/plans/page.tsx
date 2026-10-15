@@ -10,6 +10,7 @@ import { useToast } from '@/lib/toast-context';
 import { formatCurrency, parseCurrency } from '@/lib/format';
 import { useEscapeKey } from '@/lib/a11y';
 import '../../styles/super-admin.css';
+import { formatGb } from '@/lib/storage';
 
 interface PlanForm {
   id?: number;
@@ -27,8 +28,8 @@ interface PlanForm {
 const EMPTY_FORM: PlanForm = { name: '', durationDays: '', price: '', isActive: true, tier: '', billingCycle: '', ownerFee: '', storageGb: '', maxUsers: '' };
 
 // Bawaan bila paket tidak mengisi jatah storage (cerminan StorageQuotaService).
-const DEFAULT_STORAGE_GB: Record<string, number> = { trial: 5, basic: 1, pro: 5, multi_klinik: 5 };
-const DEFAULT_MAX_USERS: Record<string, number> = { trial: 25, basic: 5, pro: 25, multi_klinik: 25 };
+const DEFAULT_STORAGE_GB: Record<string, number> = { trial: 0.1, basic: 1, pro: 5, multi_klinik: 5 };
+const DEFAULT_MAX_USERS: Record<string, number> = { trial: 5, basic: 5, pro: 25, multi_klinik: 25 };
 
 const TIER_OPTIONS = [
   { value: '', label: '— Tanpa tier (legacy) —' },
@@ -193,10 +194,8 @@ export default function SuperAdminPlansPage() {
                     <td>{plan.ownerFee ? `Rp ${formatCurrency(plan.ownerFee)}` : '-'}</td>
                     <td>
                       {plan.storageGb != null
-                        ? `${plan.storageGb} GB`
-                        : plan.tier && DEFAULT_STORAGE_GB[plan.tier]
-                          ? `${DEFAULT_STORAGE_GB[plan.tier]} GB (bawaan)`
-                          : '1 GB (bawaan)'}
+                        ? formatGb(Number(plan.storageGb))
+                        : `${formatGb((plan.tier && DEFAULT_STORAGE_GB[plan.tier]) || 1)} (bawaan)`}
                       {plan.tier === 'multi_klinik' && ' / cabang'}
                     </td>
                     <td>
@@ -292,14 +291,15 @@ export default function SuperAdminPlansPage() {
                 />
               </div>
               <div className="sa-field">
-                <label>Jatah storage (GB){form.tier === 'multi_klinik' ? ' per cabang, dipakai bersama' : ''}</label>
+                <label>Jatah storage (GB, boleh desimal){form.tier === 'multi_klinik' ? ' per cabang, dipakai bersama' : ''}</label>
                 <input
                   type="number"
                   min={0}
-                  inputMode="numeric"
+                  inputMode="decimal"
                   value={form.storageGb}
-                  onChange={(e) => setForm({ ...form, storageGb: e.target.value.replace(/[^0-9]/g, '') })}
-                  placeholder={`Kosong = bawaan ${form.tier && DEFAULT_STORAGE_GB[form.tier] ? DEFAULT_STORAGE_GB[form.tier] : 1} GB`}
+                  step={0.1}
+                  onChange={(e) => setForm({ ...form, storageGb: e.target.value.replace(/[^0-9.]/g, '') })}
+                  placeholder={`Kosong = bawaan ${formatGb((form.tier && DEFAULT_STORAGE_GB[form.tier]) || 1)} (0.1 = 100 MB)`}
                 />
               </div>
             </div>

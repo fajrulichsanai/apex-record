@@ -13,6 +13,20 @@ export interface StorageQuota {
   extraGb: number;
   /** Harga storage tambahan per GB per bulan. */
   pricePerGb: number;
+  /** Bagian storage tambahan yang ditagih saat ini (bonus yang masih gratis tidak). */
+  billableExtraGb: number;
+  /** Bonus Super Admin yang masih gratis; freeUntil null = selamanya. */
+  bonuses: { id: number; gb: number; freeUntil: string | null }[];
+}
+
+export interface StorageAddonRow {
+  id: number;
+  gb: number;
+  source: 'purchase' | 'admin';
+  note: string | null;
+  isFree: boolean;
+  freeUntil: string | null;
+  createdAt: string;
 }
 
 export interface ClinicStorageRow {
@@ -34,8 +48,22 @@ export const storageApi = {
   clinics: () => apiClient.get<ClinicStorageRow[]>('/storage/clinics'),
   owner: (ownerId: number) => apiClient.get<StorageQuota>(`/storage/owners/${ownerId}`),
   /** Super Admin: tambah (gb > 0) atau kurangi (gb < 0) storage tambahan. */
-  adjust: (payload: { clinicId?: number; ownerId?: number; gb: number; note?: string }) =>
-    apiClient.post<StorageQuota>('/storage/addons/adjust', payload),
+  adjust: (payload: {
+    clinicId?: number;
+    ownerId?: number;
+    gb: number;
+    note?: string;
+    /** Bonus gratis; freeMonths null = selamanya. */
+    free?: boolean;
+    freeMonths?: number | null;
+  }) => apiClient.post<StorageQuota>('/storage/addons/adjust', payload),
+  /** Super Admin: riwayat storage tambahan & bonus. */
+  addons: (target: { clinicId?: number; ownerId?: number }) =>
+    apiClient.get<StorageAddonRow[]>(`/storage/addons?${new URLSearchParams(
+      Object.entries(target).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]),
+    ).toString()}`),
+  /** Super Admin: cabut bonus. */
+  revokeBonus: (id: number) => apiClient.delete(`/storage/addons/${id}`),
 };
 
 /** Tahunan = 10× bulanan, sama seperti harga paket. */
@@ -43,12 +71,23 @@ export function storageAddonCost(extraGb: number, pricePerGb: number, cycle: 'mo
   return Math.max(0, extraGb) * pricePerGb * (cycle === 'yearly' ? 10 : 1);
 }
 
-const GB = 1024 ** 3;
+/** Satuan desimal (1 GB = 1000 MB), sama dengan backend. */
+export const GB = 1000 ** 3;
+const MB = 1000 ** 2;
+
+export function formatDateId(iso: string): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/** "100 MB" untuk 0,1 GB, "5 GB" untuk 5. */
+export function formatGb(gb: number): string {
+  return formatBytes(Math.round(gb * GB));
+}
 
 export function formatBytes(bytes: number): string {
   if (bytes >= GB) return `${(bytes / GB).toLocaleString('id-ID', { maximumFractionDigits: 2 })} GB`;
-  if (bytes >= 1024 ** 2) return `${(bytes / 1024 ** 2).toLocaleString('id-ID', { maximumFractionDigits: 1 })} MB`;
-  if (bytes > 0) return `${Math.max(1, Math.round(bytes / 1024)).toLocaleString('id-ID')} KB`;
+  if (bytes >= MB) return `${(bytes / MB).toLocaleString('id-ID', { maximumFractionDigits: 1 })} MB`;
+  if (bytes > 0) return `${Math.max(1, Math.round(bytes / 1000)).toLocaleString('id-ID')} KB`;
   return '0 MB';
 }
 
