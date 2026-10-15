@@ -19,7 +19,8 @@ import {
  */
 
 // Endpoints whose JSON response carries `data.accessToken`.
-const TOKEN_ISSUING = new Set(['auth/login', 'auth/refresh']);
+// change-password ends every other session and hands this one a fresh token.
+const TOKEN_ISSUING = new Set(['auth/login', 'auth/refresh', 'auth/change-password']);
 
 // Request headers worth forwarding. Everything else (cookies in particular)
 // stays on this side of the proxy.

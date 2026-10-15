@@ -7,12 +7,13 @@ import { useAuth } from '@/lib/auth-context';
 import { isFeatureViewOnly } from '@/lib/permissions';
 import { paymentApi, subscriptionPlanApi } from '@/lib/subscription';
 import type { Payment, SubscriptionBillingCycle, SubscriptionPlan, SubscriptionPlanTier } from '@/types/subscription';
-import { ApiError, openProtectedFile } from '@/lib/api-client';
+import { apiClient, ApiError, openProtectedFile } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency } from '@/lib/format';
 import { useSubscriptionGate } from '@/lib/subscription-gate-context';
 import SettingsTabs from '@/components/settings/SettingsTabs';
 import './langganan.css';
+import StorageUsageCard from '@/components/storage/StorageUsageCard';
 
 function formatDate(value?: string) {
   if (!value) return '-';
@@ -98,6 +99,16 @@ function LanggananPageInner() {
   const [quantity, setQuantity] = useState(1);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Cabang multiklinik: siapa yang membayar (PRD Multi-Klinik MK-06).
+  const [branchBilling, setBranchBilling] = useState<'owner' | 'self' | 'stopped' | null>(null);
+
+  useEffect(() => {
+    apiClient
+      .get<{ billingMode: 'owner' | 'self' | 'stopped' } | null>('/clinic-links/current')
+      .then((link) => setBranchBilling(link && typeof link === 'object' && 'billingMode' in link ? link.billingMode : null))
+      .catch(() => setBranchBilling(null));
+  }, []);
+  const selfPayingBranch = branchBilling === 'self';
 
   const loadHistory = useCallback(async () => {
     try {
@@ -134,8 +145,10 @@ function LanggananPageInner() {
   }, [plans]);
 
   const selectedPlan = selectedTier ? plansByTier.get(selectedTier)?.[cycle] : null;
-  const effectiveQuantity = selectedTier === 'multi_klinik' ? Math.max(1, quantity) : 1;
-  const ownerFee = Number(selectedPlan?.ownerFee || 0);
+  // A self-paying branch pays for itself only, without the owner fee
+  // (the backend prices it the same way).
+  const effectiveQuantity = selectedTier === 'multi_klinik' && !selfPayingBranch ? Math.max(1, quantity) : 1;
+  const ownerFee = selfPayingBranch ? 0 : Number(selectedPlan?.ownerFee || 0);
   const unitTotal = selectedPlan ? Number(selectedPlan.price) * effectiveQuantity : 0;
   const totalPrice = unitTotal + ownerFee;
 
@@ -208,6 +221,14 @@ function LanggananPageInner() {
           </div>
         </div>
 
+        <StorageUsageCard />
+
+        {branchBilling === 'owner' && (
+          <div className="alert-info">
+            Langganan klinik ini ditanggung owner multiklinik dan diperpanjang dari akunnya. Anda tidak perlu membayar dari sini.
+          </div>
+        )}
+
         {!canSubmit && (
           <div className="alert-info">
             Hanya Owner klinik yang dapat mengajukan pembayaran langganan. Hubungi Owner untuk memperpanjang.
@@ -262,7 +283,10 @@ function LanggananPageInner() {
                           {CYCLE_LABEL[cycle] === 'Bulanan' ? 'bulan' : 'tahun'}
                         </span>
                       </div>
-                      {meta.perClinic && Number(plan.ownerFee) > 0 && (
+                      {meta.perClinic && selfPayingBranch && (
+                        <div className="tier-owner-fee">Harga cabang multiklinik, tanpa biaya admin owner</div>
+                      )}
+                      {meta.perClinic && !selfPayingBranch && Number(plan.ownerFee) > 0 && (
                         <div className="tier-owner-fee">+ Rp {formatCurrency(Number(plan.ownerFee))} admin owner (sekali per periode)</div>
                       )}
                       {cycle === 'yearly' && savings > 0 && (
@@ -290,7 +314,7 @@ function LanggananPageInner() {
                     {TIERS.find((t) => t.tier === selectedTier)?.label} · {CYCLE_LABEL[cycle]}
                   </div>
 
-                  {selectedTier === 'multi_klinik' && (
+                  {selectedTier === 'multi_klinik' && !selfPayingBranch && (
                     <div className="quantity-field">
                       <label>Jumlah Klinik</label>
                       <div className="stepper">

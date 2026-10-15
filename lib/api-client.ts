@@ -148,6 +148,13 @@ async function request<T>(path: string, options: RequestInit = {}, keepEnvelope 
     if (code === 'SUBSCRIPTION_EXPIRED') {
       onSubscriptionExpired?.();
     }
+    if (
+      code === 'PASSWORD_CHANGE_REQUIRED' &&
+      typeof window !== 'undefined' &&
+      window.location.pathname !== '/ganti-password'
+    ) {
+      window.location.assign('/ganti-password');
+    }
     if (res.status === 401 && hasSession()) {
       // Only a *previously logged-in* session going 401 (token now invalid/
       // expired) should force a logout — a request made with no token at all

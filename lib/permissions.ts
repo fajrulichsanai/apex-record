@@ -67,6 +67,8 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
   multi_clinic_owner: ['tampilan'],
   // Data requests (UU PDP) are the clinic owner's to make.
   owner: [...FULL_ACCESS, 'onboarding', 'data-privasi'],
+  // Manajer Cabang mengurus cabangnya dengan hak owner (PRD Multi-Klinik MC-01).
+  manajer_cabang: [...FULL_ACCESS, 'onboarding', 'data-privasi'],
   admin: [
     'pasien',
     'reservasi',

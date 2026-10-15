@@ -7,6 +7,7 @@ import { multiClinicApi, type BranchBillingMode, type MultiClinicDashboard } fro
 import { ApiError } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
 import { formatCurrency } from '@/lib/format';
+import { formatBytes, storageLevel } from '@/lib/storage';
 import '../../styles/multi-klinik.css';
 
 const BILLING_LABEL: Record<BranchBillingMode, string> = {
@@ -160,6 +161,28 @@ export default function MultiClinicDashboardPage() {
                   <span className="s">25 akun × {quota.activeBranches} cabang aktif</span>
                 </div>
               )}
+              {quota && !clinicId && quota.storageLimitBytes !== undefined && (() => {
+                const used = quota.storageUsedBytes ?? 0;
+                const limit = quota.storageLimitBytes ?? 0;
+                const { ratio, tone } = storageLevel(used, limit);
+                return (
+                  <div className="mk-stat">
+                    <span className="l">Storage (bersama)</span>
+                    <span className="v">{formatBytes(used)}</span>
+                    <div
+                      className={`mk-meter ${tone}`}
+                      role="meter"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.min(100, Math.round(ratio * 100))}
+                      aria-label="Storage terpakai"
+                    >
+                      <span style={{ width: `${Math.min(100, Math.round(ratio * 100))}%` }} />
+                    </div>
+                    <span className="s">dari {formatBytes(limit)} · 5 GB × {quota.activeBranches} cabang</span>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="mk-table-wrap">

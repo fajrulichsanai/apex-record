@@ -86,6 +86,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
+  // Password sementara: nothing else works until it is replaced (the API
+  // refuses with PASSWORD_CHANGE_REQUIRED), so go straight to the form.
+  useEffect(() => {
+    if (
+      user?.mustChangePassword &&
+      !sessionStorage.getItem('impersonator_user') &&
+      window.location.pathname !== '/ganti-password' &&
+      window.location.pathname !== '/'
+    ) {
+      window.location.assign('/ganti-password');
+    }
+  }, [user]);
+
   const login = (newUser: User) => {
     localStorage.setItem('user', JSON.stringify(newUser));
     setRoleCookie(newUser.role);
@@ -171,10 +184,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const activeBranch = user?.role === 'multi_clinic_owner' ? branch : null;
   // Memoised so effects depending on `user` don't re-run on every render.
-  const effectiveUser = useMemo<User | null>(
-    () => (user && activeBranch ? { ...user, role: 'owner', clinicId: activeBranch.id } : user),
-    [user, activeBranch],
-  );
+  // A Manajer Cabang works with the owner's rights (the backend does the
+  // same), so every role check in the app treats them as `owner`.
+  const effectiveUser = useMemo<User | null>(() => {
+    if (user && activeBranch) return { ...user, role: 'owner', clinicId: activeBranch.id };
+    if (user?.role === 'manajer_cabang') return { ...user, role: 'owner' };
+    return user;
+  }, [user, activeBranch]);
 
   return (
     <AuthContext.Provider

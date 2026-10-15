@@ -127,7 +127,8 @@ const LoginPage = () => {
     success('Selamat datang! Anda akan diarahkan...');
     setTimeout(() => {
       login(data.user);
-      router.push(defaultRouteForRole(data.user?.role));
+      // Akun dengan password sementara wajib menggantinya dulu.
+      router.push(data.user?.mustChangePassword ? '/ganti-password' : defaultRouteForRole(data.user?.role));
     }, 1500);
   };
 

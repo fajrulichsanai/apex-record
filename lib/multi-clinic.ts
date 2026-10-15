@@ -88,6 +88,8 @@ export interface MultiClinicDashboard {
     accountsLimit: number;
     activeBranches: number;
     storageGbLimit: number;
+    storageUsedBytes?: number;
+    storageLimitBytes?: number;
   };
 }
 

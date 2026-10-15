@@ -7,6 +7,7 @@ import CustomSelect from '@/components/form/CustomSelect';
 import { clinicSubscriptionApi } from '@/lib/subscription';
 import type { ClinicSubscriptionSummary } from '@/types/subscription';
 import { ApiError } from '@/lib/api-client';
+import { formatBytes, storageApi, type ClinicStorageRow } from '@/lib/storage';
 import '../../styles/super-admin.css';
 
 const STATUS_OPTIONS = [
@@ -28,6 +29,15 @@ export default function SuperAdminClinicsPage() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+  // Pemakaian storage per klinik (PRD Super Admin) — supplementary column.
+  const [storage, setStorage] = useState<Map<number, ClinicStorageRow>>(new Map());
+
+  useEffect(() => {
+    storageApi
+      .clinics()
+      .then((list) => setStorage(new Map(list.map((r) => [r.clinicId, r]))))
+      .catch(() => setStorage(new Map()));
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -92,14 +102,15 @@ export default function SuperAdminClinicsPage() {
                 <th>Paket</th>
                 <th>Status</th>
                 <th>Berakhir</th>
+                <th>Storage</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={5} className="empty-row">Memuat...</td></tr>
+                <tr><td colSpan={6} className="empty-row">Memuat...</td></tr>
               ) : rows.length === 0 ? (
-                <tr><td colSpan={5} className="empty-row">Tidak ada klinik untuk filter ini.</td></tr>
+                <tr><td colSpan={6} className="empty-row">Tidak ada klinik untuk filter ini.</td></tr>
               ) : (
                 rows.map((row) => (
                   <tr key={row.clinicId}>
@@ -113,6 +124,18 @@ export default function SuperAdminClinicsPage() {
                       )}
                     </td>
                     <td>{formatDate(row.subscription?.endDate)}</td>
+                    <td>
+                      {(() => {
+                        const st = storage.get(row.clinicId);
+                        if (!st) return '-';
+                        return (
+                          <span title={st.scope === 'multiklinik' ? `Jatah bersama multiklinik, terpakai ${formatBytes(st.poolUsedBytes)}` : undefined}>
+                            {formatBytes(st.usedBytes)} / {formatBytes(st.limitBytes)}
+                            {st.scope === 'multiklinik' && <small style={{ display: 'block', opacity: 0.7 }}>bersama multiklinik</small>}
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td>
                       <Link href={`/super-admin/clinics/${row.clinicId}`} className="btn-outline btn-sm">
                         Detail

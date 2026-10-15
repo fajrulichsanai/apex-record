@@ -19,6 +19,7 @@ const ROLE_LABEL: Record<string, string> = {
   super_admin: 'Super Admin',
   multi_clinic_owner: 'Multi-Klinik Owner',
   owner: 'Owner',
+  manajer_cabang: 'Manajer Cabang',
   admin: 'Admin',
   dokter: 'Dokter',
   perawat: 'Perawat',
@@ -162,8 +163,16 @@ export default function UserManagementPage() {
       if (isSuperAdmin && inviteForm.clinicId) {
         payload.clinicId = Number(inviteForm.clinicId);
       }
-      const created = await apiClient.post<{ temporaryPassword: string; email: string }>('/users/invite', payload);
-      success(`Email: ${created.email}\nPassword sementara: ${created.temporaryPassword}`);
+      const created = await apiClient.post<{ temporaryPassword: string; email: string; emailSent?: boolean }>(
+        '/users/invite',
+        payload,
+      );
+      success(
+        `Email: ${created.email}\nPassword sementara: ${created.temporaryPassword}\n` +
+          (created.emailSent
+            ? 'Password sementara juga sudah dikirim ke email tersebut. Pengguna wajib menggantinya saat login pertama.'
+            : 'Email gagal terkirim — bagikan password ini langsung. Pengguna wajib menggantinya saat login pertama.'),
+      );
       setInviteForm({ email: '', name: '', role: roleOptions[0]?.value || '', clinicId: '' });
       setInviteModalOpen(false);
       await loadUsers();
@@ -376,7 +385,7 @@ export default function UserManagementPage() {
                 const isSelf = u.id === currentUser?.id;
                 return (
                   <div className="user-card" key={u.id} style={{ position: 'relative' }}>
-                    <div className={`user-avatar ${u.role === 'admin' ? 'avatar-admin' : 'avatar-doc'}`}>
+                    <div className={`user-avatar ${u.role === 'admin' || u.role === 'manajer_cabang' ? 'avatar-admin' : 'avatar-doc'}`}>
                       {initials}
                       <span
                         className={`status-dot status-${status === 'aktif' ? 'active' : status === 'nonaktif' ? 'inactive' : 'pending'}`}
@@ -411,7 +420,7 @@ export default function UserManagementPage() {
                       </div>
                     </div>
                     <div className="user-badges">
-                      <span className={`badge ${u.role === 'admin' ? 'badge-admin' : 'badge-dokter'}`}>
+                      <span className={`badge ${u.role === 'admin' || u.role === 'manajer_cabang' ? 'badge-admin' : 'badge-dokter'}`}>
                         {ROLE_LABEL[u.role] || u.role}
                       </span>
                       <span className={`badge badge-${status}`}>

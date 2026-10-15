@@ -20,9 +20,13 @@ interface PlanForm {
   tier: '' | SubscriptionPlanTier;
   billingCycle: '' | SubscriptionBillingCycle;
   ownerFee: string;
+  storageGb: string;
 }
 
-const EMPTY_FORM: PlanForm = { name: '', durationDays: '', price: '', isActive: true, tier: '', billingCycle: '', ownerFee: '' };
+const EMPTY_FORM: PlanForm = { name: '', durationDays: '', price: '', isActive: true, tier: '', billingCycle: '', ownerFee: '', storageGb: '' };
+
+// Bawaan bila paket tidak mengisi jatah storage (cerminan StorageQuotaService).
+const DEFAULT_STORAGE_GB: Record<string, number> = { trial: 1, basic: 1, pro: 5, multi_klinik: 5 };
 
 const TIER_OPTIONS = [
   { value: '', label: '— Tanpa tier (legacy) —' },
@@ -91,6 +95,7 @@ export default function SuperAdminPlansPage() {
       tier: plan.tier || '',
       billingCycle: plan.billingCycle || '',
       ownerFee: plan.ownerFee ? String(plan.ownerFee) : '',
+      storageGb: plan.storageGb != null ? String(plan.storageGb) : '',
     });
     setModalOpen(true);
   };
@@ -110,6 +115,7 @@ export default function SuperAdminPlansPage() {
         tier: form.tier || undefined,
         billingCycle: form.billingCycle || undefined,
         ownerFee: form.ownerFee ? parseCurrency(form.ownerFee) : undefined,
+        storageGb: form.storageGb !== '' ? Number(form.storageGb) : undefined,
       };
       if (form.id) {
         await subscriptionPlanApi.update(form.id, payload);
@@ -162,15 +168,16 @@ export default function SuperAdminPlansPage() {
                 <th>Durasi</th>
                 <th>Harga</th>
                 <th>Fee Owner</th>
+                <th>Storage</th>
                 <th>Status</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="empty-row">Memuat...</td></tr>
+                <tr><td colSpan={8} className="empty-row">Memuat...</td></tr>
               ) : plans.length === 0 ? (
-                <tr><td colSpan={7} className="empty-row">Belum ada paket langganan.</td></tr>
+                <tr><td colSpan={8} className="empty-row">Belum ada paket langganan.</td></tr>
               ) : (
                 plans.map((plan) => (
                   <tr key={plan.id}>
@@ -179,6 +186,14 @@ export default function SuperAdminPlansPage() {
                     <td>{plan.durationDays} hari</td>
                     <td>Rp {formatCurrency(plan.price)}</td>
                     <td>{plan.ownerFee ? `Rp ${formatCurrency(plan.ownerFee)}` : '-'}</td>
+                    <td>
+                      {plan.storageGb != null
+                        ? `${plan.storageGb} GB`
+                        : plan.tier && DEFAULT_STORAGE_GB[plan.tier]
+                          ? `${DEFAULT_STORAGE_GB[plan.tier]} GB (bawaan)`
+                          : '1 GB (bawaan)'}
+                      {plan.tier === 'multi_klinik' && ' / cabang'}
+                    </td>
                     <td>
                       <span className={`tag ${plan.isActive ? 'tag-active' : 'tag-neutral'}`}>
                         {plan.isActive ? 'Aktif' : 'Nonaktif'}
@@ -254,6 +269,17 @@ export default function SuperAdminPlansPage() {
                   />
                 </div>
               )}
+              <div className="sa-field">
+                <label>Jatah storage (GB){form.tier === 'multi_klinik' ? ' per cabang, dipakai bersama' : ''}</label>
+                <input
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={form.storageGb}
+                  onChange={(e) => setForm({ ...form, storageGb: e.target.value.replace(/[^0-9]/g, '') })}
+                  placeholder={`Kosong = bawaan ${form.tier && DEFAULT_STORAGE_GB[form.tier] ? DEFAULT_STORAGE_GB[form.tier] : 1} GB`}
+                />
+              </div>
             </div>
             <div className="sa-modal-footer">
               <button type="button" className="btn-outline" onClick={() => setModalOpen(false)}>Batal</button>

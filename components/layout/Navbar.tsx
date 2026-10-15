@@ -18,6 +18,7 @@ const ROLE_LABEL: Record<string, string> = {
   super_admin: 'Super Admin',
   multi_clinic_owner: 'Multi-Klinik Owner',
   owner: 'Owner',
+  manajer_cabang: 'Manajer Cabang',
   admin: 'Admin',
   dokter: 'Dokter',
   perawat: 'Perawat',
@@ -260,6 +261,12 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                 zIndex: 50,
               }}
             >
+              <div
+                {...pressable(() => router.push('/ganti-password'))}
+                style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
+              >
+                Ganti password
+              </div>
               <div
                 {...pressable(handleLogout)}
                 style={{ padding: '10px 14px', cursor: 'pointer', color: 'var(--red, #dc2626)' }}

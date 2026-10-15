@@ -23,6 +23,7 @@ const STORAGE_KEY = 'active_branch';
 const ROUTES_WITHOUT_BRANCH = [
   '/multi-klinik',
   '/tampilan',
+  '/ganti-password',
   '/landingpage',
   '/forgot-password',
   '/reset-password',

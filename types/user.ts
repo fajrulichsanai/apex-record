@@ -1,4 +1,12 @@
-export type UserRole = 'super_admin' | 'multi_clinic_owner' | 'owner' | 'admin' | 'dokter' | 'perawat' | 'pending';
+export type UserRole =
+  | 'super_admin'
+  | 'multi_clinic_owner'
+  | 'owner'
+  | 'manajer_cabang'
+  | 'admin'
+  | 'dokter'
+  | 'perawat'
+  | 'pending';
 
 export interface User {
   id: number;
@@ -10,6 +18,8 @@ export interface User {
   emailVerifiedAt?: string | null;
   lastLoginAt?: string | null;
   createdAt: string;
+  /** Password sementara yang wajib diganti sebelum memakai aplikasi. */
+  mustChangePassword?: boolean;
 }
 
 export interface RoleOption {
