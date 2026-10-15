@@ -14,6 +14,7 @@ import { useSubscriptionGate } from '@/lib/subscription-gate-context';
 import SettingsTabs from '@/components/settings/SettingsTabs';
 import './langganan.css';
 import StorageUsageCard from '@/components/storage/StorageUsageCard';
+import { storageAddonCost, type StorageQuota } from '@/lib/storage';
 
 function formatDate(value?: string) {
   if (!value) return '-';
@@ -86,7 +87,7 @@ export default function LanggananPage() {
 }
 
 function LanggananPageInner() {
-  const { user } = useAuth();
+  const { user, branch } = useAuth();
   const { subscription, daysUntilExpiry, refresh } = useSubscriptionGate();
   const { success, error: showError } = useToast();
   const canSubmit = !isFeatureViewOnly(user?.role, 'langganan');
@@ -150,7 +151,15 @@ function LanggananPageInner() {
   const effectiveQuantity = selectedTier === 'multi_klinik' && !selfPayingBranch ? Math.max(1, quantity) : 1;
   const ownerFee = selfPayingBranch ? 0 : Number(selectedPlan?.ownerFee || 0);
   const unitTotal = selectedPlan ? Number(selectedPlan.price) * effectiveQuantity : 0;
-  const totalPrice = unitTotal + ownerFee;
+  // Storage tambahan ikut tagihan yang sama (PRD Super Admin BL-06). A
+  // multiklinik branch's shared add-ons are billed to the owner instead.
+  const [storage, setStorage] = useState<StorageQuota | null>(null);
+  const billableExtraGb = storage?.scope === 'clinic' ? storage.extraGb : 0;
+  const storageCost = storage ? storageAddonCost(billableExtraGb, storage.pricePerGb, cycle) : 0;
+  const totalPrice = unitTotal + ownerFee + storageCost;
+  // Whoever pays for the storage may buy more: the clinic's owner, or the
+  // Multi-Klinik Owner inside one of their branches (shared pool).
+  const canBuyStorage = user?.role === 'owner' && (branchBilling === null || !!branch);
 
   const selectTier = (tier: SubscriptionPlanTier) => {
     setSelectedTier(tier);
@@ -221,7 +230,7 @@ function LanggananPageInner() {
           </div>
         </div>
 
-        <StorageUsageCard />
+        <StorageUsageCard canPurchase={canBuyStorage} onChange={setStorage} />
 
         {branchBilling === 'owner' && (
           <div className="alert-info">
@@ -342,6 +351,15 @@ function LanggananPageInner() {
                       <div className="breakdown-row">
                         <span>Biaya admin owner</span>
                         <span>Rp {formatCurrency(ownerFee)}</span>
+                      </div>
+                    )}
+                    {billableExtraGb > 0 && (
+                      <div className="breakdown-row">
+                        <span>
+                          Storage tambahan {billableExtraGb} GB &times; Rp {formatCurrency(storage!.pricePerGb)}
+                          {cycle === 'yearly' ? ' × 10 bulan' : ''}
+                        </span>
+                        <span>Rp {formatCurrency(storageCost)}</span>
                       </div>
                     )}
                     <div className="breakdown-row total">

@@ -6,6 +6,7 @@ import CustomSelect from '@/components/form/CustomSelect';
 import { multiClinicApi, type BranchLink, type LinkStatus, type MultiClinicOwner } from '@/lib/multi-clinic';
 import { apiClient, ApiError } from '@/lib/api-client';
 import { useEscapeKey } from '@/lib/a11y';
+import StorageAdjustCard from '@/components/storage/StorageAdjustCard';
 import type { Clinic } from '@/types/clinic';
 import '../../styles/super-admin.css';
 import '../../styles/multi-klinik.css';
@@ -216,6 +217,11 @@ export default function MultiClinicOwnersPage() {
                       </table>
                     </div>
                   )}
+
+                  <details>
+                    <summary className="mk-muted" style={{ cursor: 'pointer' }}>Storage bersama</summary>
+                    <StorageAdjustCard ownerId={owner.id} compact />
+                  </details>
 
                   <div className="mk-filters" style={{ alignItems: 'center' }}>
                     <div style={{ minWidth: 220, flex: '1 1 220px', maxWidth: 360 }}>

@@ -17,6 +17,7 @@ import { useEscapeKey } from '@/lib/a11y';
 import ClinicFeaturesCard from '@/components/features/ClinicFeaturesCard';
 import UserFeaturesModal from '@/components/features/UserFeaturesModal';
 import '../../../styles/super-admin.css';
+import StorageAdjustCard from '@/components/storage/StorageAdjustCard';
 
 const ROLE_LABEL: Record<string, string> = {
   owner: 'Owner',
@@ -205,6 +206,8 @@ export default function SuperAdminClinicDetailPage() {
             </table>
           </div>
         </div>
+
+        <StorageAdjustCard clinicId={clinicId} />
 
         <ClinicFeaturesCard clinicId={clinicId} />
 

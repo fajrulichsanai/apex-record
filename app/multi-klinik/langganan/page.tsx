@@ -9,6 +9,8 @@ import { ApiError, apiFileUrl } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency } from '@/lib/format';
 import '@/app/langganan/langganan.css';
+import StorageUsageCard from '@/components/storage/StorageUsageCard';
+import { storageAddonCost, type StorageQuota } from '@/lib/storage';
 import '../../styles/multi-klinik.css';
 
 function formatDate(value?: string) {
@@ -70,7 +72,11 @@ export default function MultiClinicLanggananPage() {
   const clinicCount = billedClinics.length;
   const ownerFee = Number(plan?.ownerFee || 0);
   const unitTotal = plan ? Number(plan.price) * clinicCount : 0;
-  const totalPrice = unitTotal + ownerFee;
+  // Storage tambahan jatah bersama ikut tagihan gabungan (PRD Super Admin BL-06).
+  const [pool, setPool] = useState<StorageQuota | null>(null);
+  const extraGb = pool?.extraGb ?? 0;
+  const storageCost = pool ? storageAddonCost(extraGb, pool.pricePerGb, cycle) : 0;
+  const totalPrice = unitTotal + ownerFee + storageCost;
 
   const changeMode = async (clinic: OwnedClinic, mode: BranchBillingMode) => {
     setSavingMode(clinic.id);
@@ -109,6 +115,8 @@ export default function MultiClinicLanggananPage() {
             <p className="page-subtitle">Bayar sekali untuk memperpanjang semua cabang yang Anda tanggung. Atur cara bayar tiap cabang di bawah.</p>
           </div>
         </div>
+
+        {!loading && clinics.length > 0 && <StorageUsageCard source="pool" canPurchase onChange={setPool} />}
 
         {!loading && clinics.length > 0 && (
           <div className="mk-scope">
@@ -204,6 +212,15 @@ export default function MultiClinicLanggananPage() {
                     <div className="breakdown-row">
                       <span>Biaya admin owner</span>
                       <span>Rp {formatCurrency(ownerFee)}</span>
+                    </div>
+                  )}
+                  {extraGb > 0 && (
+                    <div className="breakdown-row">
+                      <span>
+                        Storage tambahan {extraGb} GB &times; Rp {formatCurrency(pool!.pricePerGb)}
+                        {cycle === 'yearly' ? ' × 10 bulan' : ''}
+                      </span>
+                      <span>Rp {formatCurrency(storageCost)}</span>
                     </div>
                   )}
                   <div className="breakdown-row total">

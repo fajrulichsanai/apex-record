@@ -21,12 +21,14 @@ interface PlanForm {
   billingCycle: '' | SubscriptionBillingCycle;
   ownerFee: string;
   storageGb: string;
+  maxUsers: string;
 }
 
-const EMPTY_FORM: PlanForm = { name: '', durationDays: '', price: '', isActive: true, tier: '', billingCycle: '', ownerFee: '', storageGb: '' };
+const EMPTY_FORM: PlanForm = { name: '', durationDays: '', price: '', isActive: true, tier: '', billingCycle: '', ownerFee: '', storageGb: '', maxUsers: '' };
 
 // Bawaan bila paket tidak mengisi jatah storage (cerminan StorageQuotaService).
-const DEFAULT_STORAGE_GB: Record<string, number> = { trial: 1, basic: 1, pro: 5, multi_klinik: 5 };
+const DEFAULT_STORAGE_GB: Record<string, number> = { trial: 5, basic: 1, pro: 5, multi_klinik: 5 };
+const DEFAULT_MAX_USERS: Record<string, number> = { trial: 25, basic: 5, pro: 25, multi_klinik: 25 };
 
 const TIER_OPTIONS = [
   { value: '', label: '— Tanpa tier (legacy) —' },
@@ -96,6 +98,7 @@ export default function SuperAdminPlansPage() {
       billingCycle: plan.billingCycle || '',
       ownerFee: plan.ownerFee ? String(plan.ownerFee) : '',
       storageGb: plan.storageGb != null ? String(plan.storageGb) : '',
+      maxUsers: plan.maxUsers != null ? String(plan.maxUsers) : '',
     });
     setModalOpen(true);
   };
@@ -116,6 +119,7 @@ export default function SuperAdminPlansPage() {
         billingCycle: form.billingCycle || undefined,
         ownerFee: form.ownerFee ? parseCurrency(form.ownerFee) : undefined,
         storageGb: form.storageGb !== '' ? Number(form.storageGb) : undefined,
+        maxUsers: form.maxUsers !== '' ? Number(form.maxUsers) : undefined,
       };
       if (form.id) {
         await subscriptionPlanApi.update(form.id, payload);
@@ -169,15 +173,16 @@ export default function SuperAdminPlansPage() {
                 <th>Harga</th>
                 <th>Fee Owner</th>
                 <th>Storage</th>
+                <th>Akun</th>
                 <th>Status</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={8} className="empty-row">Memuat...</td></tr>
+                <tr><td colSpan={9} className="empty-row">Memuat...</td></tr>
               ) : plans.length === 0 ? (
-                <tr><td colSpan={8} className="empty-row">Belum ada paket langganan.</td></tr>
+                <tr><td colSpan={9} className="empty-row">Belum ada paket langganan.</td></tr>
               ) : (
                 plans.map((plan) => (
                   <tr key={plan.id}>
@@ -192,6 +197,12 @@ export default function SuperAdminPlansPage() {
                         : plan.tier && DEFAULT_STORAGE_GB[plan.tier]
                           ? `${DEFAULT_STORAGE_GB[plan.tier]} GB (bawaan)`
                           : '1 GB (bawaan)'}
+                      {plan.tier === 'multi_klinik' && ' / cabang'}
+                    </td>
+                    <td>
+                      {plan.maxUsers != null
+                        ? `${plan.maxUsers} akun`
+                        : `${(plan.tier && DEFAULT_MAX_USERS[plan.tier]) || 5} akun (bawaan)`}
                       {plan.tier === 'multi_klinik' && ' / cabang'}
                     </td>
                     <td>
@@ -269,6 +280,17 @@ export default function SuperAdminPlansPage() {
                   />
                 </div>
               )}
+              <div className="sa-field">
+                <label>Batas akun aktif{form.tier === 'multi_klinik' ? ' per cabang, dihitung bersama' : ''}</label>
+                <input
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={form.maxUsers}
+                  onChange={(e) => setForm({ ...form, maxUsers: e.target.value.replace(/[^0-9]/g, '') })}
+                  placeholder={`Kosong = bawaan ${(form.tier && DEFAULT_MAX_USERS[form.tier]) || 5} akun`}
+                />
+              </div>
               <div className="sa-field">
                 <label>Jatah storage (GB){form.tier === 'multi_klinik' ? ' per cabang, dipakai bersama' : ''}</label>
                 <input

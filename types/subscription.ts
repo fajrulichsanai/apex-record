@@ -17,6 +17,8 @@ export interface SubscriptionPlan {
   ownerFee?: number | null;
   /** Jatah storage (GB); null = bawaan tier (Starter 1, Pro 5, Multi Klinik 5 per cabang). */
   storageGb?: number | null;
+  /** Batas akun aktif; null = bawaan tier (Starter 5, Pro 25, Multi Klinik 25 per cabang). */
+  maxUsers?: number | null;
 }
 
 export interface ClinicSubscription {
