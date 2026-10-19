@@ -31,7 +31,8 @@ import {
   FiShield,
   FiClock,
   FiUserCheck,
-  FiGift } from 'react-icons/fi';
+  FiGift,
+  FiFolder } from 'react-icons/fi';
 import './sidebar.css';
 import { useFeatures } from '@/lib/features-context';
 import BranchBanner from '@/components/multi-clinic/BranchBanner';
@@ -159,7 +160,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       title: 'Konten',
       groupId: 'konten',
       icon: <FiImage />,
-      items: [{ label: 'Konten', icon: <FiImage />, href: '/konten', feature: 'konten' }],
+      items: [
+        { label: 'Konten', icon: <FiImage />, href: '/konten', feature: 'konten' },
+        // Folder & slot foto klinis (behel, dsb.) yang jadi bahan Konten —
+        // hanya yang berwenang mengatur templatenya, bukan dokter/perawat.
+        ...(user?.role === 'owner' || user?.role === 'admin' || user?.role === 'manajer_cabang'
+          ? [{ label: 'Folder Foto Klinis', icon: <FiFolder />, href: '/folder-foto-klinis', feature: 'konten' as FeatureKey }]
+          : []),
+      ],
     },
     {
       title: 'SATUSEHAT',
