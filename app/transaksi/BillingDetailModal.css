@@ -341,3 +341,31 @@
 .billing-summary-note { font-size: 11.5px; color: var(--text-muted); }
 .billing-modal-table-wrap .billing-modal-table td:not(:first-child),
 .billing-modal-table-wrap .billing-modal-table th:not(:first-child) { white-space: nowrap; }
+
+.billing-payment-edit-input {
+  width: 110px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 5px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+}
+.billing-payment-edit-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.billing-payment-edit-actions { display: flex; gap: 4px; }
+
+.billing-payment-edit-btn {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+}
+.billing-payment-edit-btn .material-symbols-rounded { font-size: 17px; }
+.billing-payment-edit-btn:hover:not(:disabled) { color: var(--accent); background: var(--accent-soft); }
+.billing-payment-edit-btn:disabled { opacity: 0.5; cursor: not-allowed; }

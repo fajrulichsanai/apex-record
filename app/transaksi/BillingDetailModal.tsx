@@ -100,6 +100,9 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [editingPaymentId, setEditingPaymentId] = useState<number | null>(null);
+  const [editAmountText, setEditAmountText] = useState('');
+  const [savingPayment, setSavingPayment] = useState(false);
 
   useEffect(() => {
     isMounted.current = true;
@@ -207,6 +210,29 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
       showError(err instanceof ApiError ? err.message : 'Gagal memperbarui invoice');
     } finally {
       if (isMounted.current) setSaving(false);
+    }
+  }
+
+  function startEditPayment(paymentId: number, currentAmount: number) {
+    setEditingPaymentId(paymentId);
+    setEditAmountText(String(Math.round(currentAmount)));
+  }
+
+  async function handleSavePayment(paymentId: number) {
+    const amount = Math.round(Number(editAmountText.replace(/\D/g, '')) || 0);
+    setSavingPayment(true);
+    try {
+      await billingApi.updatePayment(billingId, paymentId, { amount });
+      if (!isMounted.current) return;
+      setEditingPaymentId(null);
+      success('Pembayaran berhasil diperbaiki');
+      await loadDetail();
+      onUpdated();
+    } catch (err) {
+      if (!isMounted.current) return;
+      showError(err instanceof ApiError ? err.message : 'Gagal memperbaiki pembayaran');
+    } finally {
+      if (isMounted.current) setSavingPayment(false);
     }
   }
 
@@ -555,6 +581,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                             <th>Metode</th>
                             <th>Jumlah</th>
                             <th>Tanggal</th>
+                            {canEdit && <th />}
                           </tr>
                         </thead>
                         <tbody>
@@ -562,8 +589,58 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                             <tr key={p.id}>
                               <td>{p.receiptNumber}</td>
                               <td>{PAYMENT_METHOD_LABEL[p.method] ?? p.method}</td>
-                              <td>{formatRupiah(p.amount)}</td>
+                              <td>
+                                {editingPaymentId === p.id ? (
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    className="billing-payment-edit-input"
+                                    value={editAmountText}
+                                    onChange={(e) => setEditAmountText(e.target.value)}
+                                    disabled={savingPayment}
+                                    autoFocus
+                                  />
+                                ) : (
+                                  formatRupiah(p.amount)
+                                )}
+                              </td>
                               <td>{formatDateTime(p.paidAt)}</td>
+                              {canEdit && (
+                                <td>
+                                  {editingPaymentId === p.id ? (
+                                    <div className="billing-payment-edit-actions">
+                                      <button
+                                        type="button"
+                                        className="billing-payment-edit-btn"
+                                        aria-label="Simpan"
+                                        onClick={() => handleSavePayment(p.id)}
+                                        disabled={savingPayment}
+                                      >
+                                        <span aria-hidden="true" className="material-symbols-rounded">check</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="billing-payment-edit-btn"
+                                        aria-label="Batal"
+                                        onClick={() => setEditingPaymentId(null)}
+                                        disabled={savingPayment}
+                                      >
+                                        <span aria-hidden="true" className="material-symbols-rounded">close</span>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className="billing-payment-edit-btn"
+                                      aria-label="Perbaiki jumlah pembayaran"
+                                      title="Perbaiki jumlah pembayaran"
+                                      onClick={() => startEditPayment(p.id, p.amount)}
+                                    >
+                                      <span aria-hidden="true" className="material-symbols-rounded">edit</span>
+                                    </button>
+                                  )}
+                                </td>
+                              )}
                             </tr>
                           ))}
                         </tbody>

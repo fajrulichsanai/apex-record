@@ -67,6 +67,19 @@ function formatDate(dateStr?: string | null) {
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+/** Folder photos split by the date they were taken, newest first — so progress over time reads in order instead of all jumbled together. */
+function groupPhotosByDate<T extends { takenAt: string }>(photos: T[]): { dateKey: string; photos: T[] }[] {
+  const byDate = new Map<string, T[]>();
+  for (const photo of photos) {
+    const key = photo.takenAt?.slice(0, 10) || 'tanpa-tanggal';
+    if (!byDate.has(key)) byDate.set(key, []);
+    byDate.get(key)!.push(photo);
+  }
+  return Array.from(byDate.entries())
+    .sort(([a], [b]) => (a < b ? 1 : a > b ? -1 : 0))
+    .map(([dateKey, photos]) => ({ dateKey, photos }));
+}
+
 export default function PatientRekamMedisPage() {
   const params = useParams();
   const router = useRouter();
@@ -472,23 +485,30 @@ export default function PatientRekamMedisPage() {
                           <div className="rm-loading">Belum ada foto klinis tercatat.</div>
                         ) : (
                           gallery.folders.map(({ group, photos }) => (
-                            <div key={group?.id ?? 'lepas'} className="rm-exam-group">
-                              <div className="rm-exam-group-date">{group?.name ?? 'Foto bebas (di luar folder)'}</div>
-                              <div className="rm-exam-gallery">
-                                {photos.map((img) => (
-                                  <a
-                                    key={img.id}
-                                    href={galleryUrls[img.id] || '#'}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="rm-exam-thumb"
-                                  >
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img src={galleryUrls[img.id]} alt={img.template?.name || 'Foto klinis'} />
-                                    <span>{img.template?.name || 'Foto klinis'}</span>
-                                  </a>
-                                ))}
-                              </div>
+                            <div key={group?.id ?? 'lepas'} className="rm-folder-group">
+                              <h3 className="rm-folder-title">{group?.name ?? 'Foto bebas (di luar folder)'}</h3>
+                              {groupPhotosByDate(photos).map(({ dateKey, photos: datedPhotos }) => (
+                                <div key={dateKey} className="rm-exam-group">
+                                  <div className="rm-exam-group-date">
+                                    {dateKey === 'tanpa-tanggal' ? 'Tanpa tanggal' : formatDate(dateKey)}
+                                  </div>
+                                  <div className="rm-exam-gallery">
+                                    {datedPhotos.map((img) => (
+                                      <a
+                                        key={img.id}
+                                        href={galleryUrls[img.id] || '#'}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="rm-exam-thumb"
+                                      >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={galleryUrls[img.id]} alt={img.template?.name || 'Foto klinis'} />
+                                        <span>{img.template?.name || 'Foto klinis'}</span>
+                                      </a>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           ))
                         )}

@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { Bricolage_Grotesque, Instrument_Serif, JetBrains_Mono } from 'next/font/google';
-import { FiArrowLeft, FiDownload, FiPlus, FiRotateCcw, FiRotateCw, FiUpload } from 'react-icons/fi';
+import { FiArrowLeft, FiDownload, FiFolder, FiPlus, FiRotateCcw, FiRotateCw, FiUpload } from 'react-icons/fi';
 import { MdFlip } from 'react-icons/md';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
-import { ApiError } from '@/lib/api-client';
+import { ApiError, fetchProtectedFileUrl } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { clinicApi } from '@/lib/clinic';
+import ClinicalPhotoPickerModal from '@/components/konten/ClinicalPhotoPickerModal';
 import {
   CONTENT_STATUS_LABEL,
   contentsApi,
@@ -20,10 +21,12 @@ import {
   type ContentLayout,
   type ContentPayload,
   type ContentPhotoFrame,
+  type ContentPhotoSource,
   type ContentSettings,
   type ContentStatus,
   type ContentTemplatePayload,
   type ContentTemplateRecord,
+  type PickerPhoto,
 } from '@/lib/contents';
 import {
   DEFAULT_FRAME,
@@ -205,6 +208,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   const [brand, setBrand] = useState<BrandFields>({ brandName: '', brandSub: '', contactLine: '' });
   const [photos, setPhotos] = useState<Record<StorySlot, Photo | null>>({ before: null, after: null });
   const [frames, setFrames] = useState<Record<StorySlot, ContentPhotoFrame>>({ before: DEFAULT_FRAME, after: DEFAULT_FRAME });
+  const [pickerSlot, setPickerSlot] = useState<StorySlot | null>(null);
   const [logo, setLogo] = useState<HTMLImageElement | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -405,6 +409,29 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     } catch (err) {
       setPhotos((prev) => (prev[slot]?.img === img ? { ...prev, [slot]: null } : prev));
       error(err instanceof ApiError ? err.message : 'Gagal mengunggah foto');
+    }
+  };
+
+  /** Picking a photo already in the patient's folder/Pemeriksaan Penunjang: preview it immediately from its own authenticated URL, then copy it into this story's storage in the background. */
+  const pickFromLibrary = async (slot: StorySlot, photo: PickerPhoto, sourceType: ContentPhotoSource) => {
+    setPickerSlot(null);
+    let img: HTMLImageElement;
+    try {
+      const objectUrl = await fetchProtectedFileUrl(photo.fileUrl);
+      img = await loadImage(objectUrl);
+    } catch {
+      error('Foto ini tidak bisa dimuat.');
+      return;
+    }
+    setPhotos((prev) => ({ ...prev, [slot]: { url: null, img } }));
+    setFrames((prev) => ({ ...prev, [slot]: DEFAULT_FRAME }));
+    setDirty(true);
+    try {
+      const { url } = await contentsApi.importPhoto(sourceType, photo.id);
+      setPhotos((prev) => (prev[slot]?.img === img ? { ...prev, [slot]: { url, img } } : prev));
+    } catch (err) {
+      setPhotos((prev) => (prev[slot]?.img === img ? { ...prev, [slot]: null } : prev));
+      error(err instanceof ApiError ? err.message : 'Gagal mengambil foto dari rekam medis');
     }
   };
 
@@ -819,6 +846,10 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                               <FiUpload aria-hidden="true" />
                               {photos[slot] ? (photos[slot]?.url ? 'Ganti foto' : 'Mengunggah…') : 'Pilih foto'}
                             </button>
+                            <button type="button" className="kt-btn" onClick={() => setPickerSlot(slot)}>
+                              <FiFolder aria-hidden="true" />
+                              Dari Rekam Medis
+                            </button>
                             <input
                               ref={fileInputs[slot]}
                               type="file"
@@ -1186,6 +1217,13 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
           )}
         </main>
       </FeatureGuard>
+
+      {pickerSlot && (
+        <ClinicalPhotoPickerModal
+          onClose={() => setPickerSlot(null)}
+          onPick={(photo, sourceType) => pickFromLibrary(pickerSlot, photo, sourceType)}
+        />
+      )}
     </DashboardLayout>
   );
 }

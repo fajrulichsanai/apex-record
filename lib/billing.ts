@@ -144,6 +144,10 @@ export const billingApi = {
   createPayment: (id: number, payload: CreatePaymentPayload) =>
     apiClient.post<CreatePaymentResponse>(`/billings/${id}/payments`, payload),
 
+  /** Corrects an already-recorded payment (wrong amount typed in) — not a new payment. */
+  updatePayment: (id: number, paymentId: number, payload: Partial<CreatePaymentPayload>) =>
+    apiClient.patch<CreatePaymentResponse>(`/billings/${id}/payments/${paymentId}`, payload),
+
   downloadInvoicePdf: async (id: number) => {
     const res = await fetch(`${API_BASE}/billings/${id}/invoice`);
     if (!res.ok) {

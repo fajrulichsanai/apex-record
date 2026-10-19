@@ -200,9 +200,11 @@ function TransaksiPageInner() {
         if (r.key !== key) return r;
         const updated = { ...r, ...patch };
 
-        // Ensure quantity is at least 1
-        if ('quantity' in patch && updated.quantity < 1) {
-          updated.quantity = 1;
+        // Allow clearing the field to 0 while typing a new number; the
+        // input clamps it back up to 1 on blur (updateRow is also called
+        // directly elsewhere, e.g. picking a tarif, where it should stay ≥1).
+        if ('quantity' in patch && updated.quantity < 0) {
+          updated.quantity = 0;
         }
 
         // Ensure unitPrice is non-negative
@@ -490,50 +492,40 @@ function TransaksiPageInner() {
                 <div className="form-field">
                   <label>Tindakan</label>
                   <div className="item-rows">
-                    {items.map((row) => {
-                      const calc = itemProfit(row);
-                      return (
+                    {items.map((row) => (
                       <div key={row.key} className="item-row-block">
-                      <div className="item-row">
-                        <CustomSelect
-                          value={String(row.tarifId)}
-                          onChange={(value) => handleTarifSelect(row.key, value)}
-                          options={tarifs.map((t) => ({
-                            value: String(t.id),
-                            label: `${t.name} — ${formatRupiah(t.hargaJual)}`,
-                          }))}
-                          placeholder="Pilih tindakan…"
-                        />
-                        <input
-                          type="number"
-                          min={1}
-                          value={row.quantity}
-                          onChange={(e) => updateRow(row.key, { quantity: Math.max(1, Number(e.target.value) || 1) })}
-                          title="Jumlah"
-                        />
-                        <button aria-label="Hapus tindakan"
-                          type="button"
-                          className="btn-icon-sm"
-                          onClick={() => setItems((prev) => prev.filter((r) => r.key !== row.key))}
-                          disabled={items.length === 1}
-                          title="Hapus tindakan"
-                        >
-                          <span aria-hidden="true" className="material-symbols-rounded">close</span>
-                        </button>
-                      </div>
-                      {row.tarifId !== '' && showModal && (
-                        <div className="item-row-calc">
-                          <span>Harga jual {formatRupiah(calc.price)}</span>
-                          <span>Modal {formatRupiah(calc.modal)}</span>
-                          <span>Lab {formatRupiah(calc.lab)}</span>
-                          <span className={calc.perUnit < 0 ? 'neg' : undefined}>
-                            Margin {formatRupiah(calc.perUnit)} × {row.quantity} = <strong>{formatRupiah(calc.total)}</strong>
-                          </span>
+                        <div className="item-row">
+                          <CustomSelect
+                            value={String(row.tarifId)}
+                            onChange={(value) => handleTarifSelect(row.key, value)}
+                            options={tarifs.map((t) => ({
+                              value: String(t.id),
+                              label: `${t.name} — ${formatRupiah(t.hargaJual)}`,
+                            }))}
+                            placeholder="Pilih tindakan…"
+                          />
+                          <input
+                            type="number"
+                            min={1}
+                            value={row.quantity || ''}
+                            onChange={(e) =>
+                              updateRow(row.key, { quantity: e.target.value === '' ? 0 : Number(e.target.value) || 0 })
+                            }
+                            onBlur={() => updateRow(row.key, { quantity: Math.max(1, row.quantity) })}
+                            title="Jumlah"
+                          />
+                          <button aria-label="Hapus tindakan"
+                            type="button"
+                            className="btn-icon-sm"
+                            onClick={() => setItems((prev) => prev.filter((r) => r.key !== row.key))}
+                            disabled={items.length === 1}
+                            title="Hapus tindakan"
+                          >
+                            <span aria-hidden="true" className="material-symbols-rounded">close</span>
+                          </button>
                         </div>
-                      )}
                       </div>
-                      );
-                    })}
+                    ))}
                   </div>
                   <button
                     type="button"

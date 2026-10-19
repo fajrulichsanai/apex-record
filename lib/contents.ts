@@ -99,6 +99,27 @@ export const templatesApi = {
   remove: (id: number) => apiClient.delete<void>(`/contents/templates/${id}`),
 };
 
+export type ContentPhotoSource = 'patient_photo' | 'supporting_exam_image';
+
+export interface PickerPhoto {
+  id: number;
+  fileUrl: string;
+  template?: { id: number; name: string } | null;
+  imageType?: 'photo' | 'xray';
+  category?: string | null;
+}
+
+export interface PickerFolder {
+  group: { id: number; name: string } | null;
+  photos: PickerPhoto[];
+}
+
+export interface ContentPhotoPicker {
+  consentMarketing: boolean;
+  folders: PickerFolder[];
+  supportingExam: PickerPhoto[];
+}
+
 export const CONTENT_STATUS_LABEL: Record<ContentStatus, string> = {
   draft: 'Draft',
   published: 'Terbit',
@@ -135,4 +156,7 @@ export const contentsApi = {
   remove: (id: number) => apiClient.delete<void>(`/contents/${id}`),
   photo: (id: number, which: 'before' | 'after' | 'rendered') => fetchImage(`/contents/${id}/photos/${which}`),
   logo: () => fetchImage('/contents/logo'),
+  picker: (patientId: number) => apiClient.get<ContentPhotoPicker>(`/contents/picker/${patientId}`),
+  importPhoto: (sourceType: ContentPhotoSource, sourceId: number) =>
+    apiClient.post<{ url: string }>('/contents/import-photo', { sourceType, sourceId }),
 };
