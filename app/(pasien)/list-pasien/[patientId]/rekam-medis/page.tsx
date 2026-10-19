@@ -8,7 +8,8 @@ import OdontogramChart from '@/components/odontogram/OdontogramChart';
 import { patientsApi, Patient, MedicalRecordEntry } from '@/lib/patients';
 import { patientConsentApi, PatientConsent } from '@/lib/consent';
 import { prescriptionsApi } from '@/lib/prescriptions';
-import { ApiError } from '@/lib/api-client';
+import { clinicalPhotosApi, type PatientPhotoGallery } from '@/lib/clinical-photos';
+import { ApiError, fetchProtectedFileUrl } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import '../../../../styles/kunjungan.css';
 import '../../../../styles/rekam-medis.css';
@@ -20,6 +21,7 @@ type SectionId =
   | 'odontogram'
   | 'dental-exam'
   | 'supporting-exam'
+  | 'clinical-photos'
   | 'prescription'
   | 'soap';
 
@@ -29,6 +31,7 @@ const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
   { id: 'odontogram', label: 'Odontogram', icon: 'dentistry' },
   { id: 'dental-exam', label: 'Pemeriksaan Gigi Lanjutan', icon: 'cleaning_services' },
   { id: 'supporting-exam', label: 'Pemeriksaan Penunjang', icon: 'image' },
+  { id: 'clinical-photos', label: 'Galeri Foto Klinis', icon: 'photo_camera' },
   { id: 'prescription', label: 'Resep Obat', icon: 'prescriptions' },
   { id: 'soap', label: 'Catatan SOAP', icon: 'medical_services' },
 ];
@@ -78,6 +81,9 @@ export default function PatientRekamMedisPage() {
   const [consents, setConsents] = useState<PatientConsent[]>([]);
   const [printingRxFor, setPrintingRxFor] = useState<number | null>(null);
   const [printingConsentFor, setPrintingConsentFor] = useState<number | null>(null);
+  const [gallery, setGallery] = useState<PatientPhotoGallery | null>(null);
+  const [galleryUrls, setGalleryUrls] = useState<Record<number, string>>({});
+  const [savingConsent, setSavingConsent] = useState(false);
 
   useEffect(() => {
     if (!patientId) return;
@@ -88,12 +94,14 @@ export default function PatientRekamMedisPage() {
       patientsApi.get(patientId),
       patientsApi.getMedicalRecord(patientId),
       patientConsentApi.list({ patientId, limit: 100 }),
+      clinicalPhotosApi.galleryForPatient(patientId),
     ])
-      .then(([p, medicalRecord, consentRes]) => {
+      .then(([p, medicalRecord, consentRes, galleryRes]) => {
         if (!active) return;
         setPatient(p);
         setRecords(medicalRecord);
         setConsents(consentRes.data);
+        setGallery(galleryRes);
       })
       .catch((err) => {
         if (!active) return;
@@ -106,6 +114,44 @@ export default function PatientRekamMedisPage() {
       active = false;
     };
   }, [patientId]);
+
+  useEffect(() => {
+    if (!gallery) return;
+    let cancelled = false;
+    const createdUrls: string[] = [];
+    const allPhotos = gallery.folders.flatMap((f) => f.photos);
+    (async () => {
+      const entries = await Promise.all(
+        allPhotos.map(async (p) => {
+          try {
+            const url = await fetchProtectedFileUrl(p.fileUrl);
+            createdUrls.push(url);
+            return [p.id, url] as const;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      if (cancelled) return;
+      setGalleryUrls(Object.fromEntries(entries.filter((e): e is readonly [number, string] => e !== null)));
+    })();
+    return () => {
+      cancelled = true;
+      createdUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [gallery]);
+
+  const handleSetConsent = async (consent: boolean | null) => {
+    setSavingConsent(true);
+    try {
+      const res = await clinicalPhotosApi.setConsent(patientId, consent);
+      setGallery((g) => (g ? { ...g, consentMarketing: res.photoConsentMarketing } : g));
+    } catch (err) {
+      showError(err instanceof ApiError ? err.message : 'Gagal menyimpan izin pakai foto');
+    } finally {
+      setSavingConsent(false);
+    }
+  };
 
   const goBack = () => router.push(`/list-pasien?patientId=${patientId}`);
 
@@ -364,6 +410,82 @@ export default function PatientRekamMedisPage() {
                                     {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={img.fileUrl} alt={img.category || img.imageType} />
                                     <span>{img.imageType === 'xray' ? 'Rontgen' : 'Foto'}</span>
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSection === 'clinical-photos' && (
+                    <div className="rm-section">
+                      <div className="rm-section-heading">
+                        <h2>Galeri Foto Klinis</h2>
+                        <p>Foto klinis lintas kontrol, tersusun per folder (mis. Behel, atau folder buatan klinik).</p>
+                      </div>
+                      <div className="rm-section-body">
+                        <div className="cp-consent-bar">
+                          <span>
+                            Izin pakai foto pasien ini sebagai konten promosi:{' '}
+                            <strong>
+                              {gallery?.consentMarketing === true
+                                ? 'Boleh'
+                                : gallery?.consentMarketing === false
+                                  ? 'Tidak boleh'
+                                  : 'Belum diputuskan'}
+                            </strong>
+                          </span>
+                          <div className="cp-consent-actions">
+                            <button
+                              type="button"
+                              className={`btn-outline${gallery?.consentMarketing === true ? ' active' : ''}`}
+                              onClick={() => handleSetConsent(true)}
+                              disabled={savingConsent}
+                            >
+                              Boleh
+                            </button>
+                            <button
+                              type="button"
+                              className={`btn-outline${gallery?.consentMarketing === false ? ' active' : ''}`}
+                              onClick={() => handleSetConsent(false)}
+                              disabled={savingConsent}
+                            >
+                              Tidak boleh
+                            </button>
+                            {gallery?.consentMarketing !== null && gallery?.consentMarketing !== undefined && (
+                              <button
+                                type="button"
+                                className="btn-outline"
+                                onClick={() => handleSetConsent(null)}
+                                disabled={savingConsent}
+                              >
+                                Batalkan
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {!gallery || gallery.folders.length === 0 ? (
+                          <div className="rm-loading">Belum ada foto klinis tercatat.</div>
+                        ) : (
+                          gallery.folders.map(({ group, photos }) => (
+                            <div key={group?.id ?? 'lepas'} className="rm-exam-group">
+                              <div className="rm-exam-group-date">{group?.name ?? 'Foto bebas (di luar folder)'}</div>
+                              <div className="rm-exam-gallery">
+                                {photos.map((img) => (
+                                  <a
+                                    key={img.id}
+                                    href={galleryUrls[img.id] || '#'}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="rm-exam-thumb"
+                                  >
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={galleryUrls[img.id]} alt={img.template?.name || 'Foto klinis'} />
+                                    <span>{img.template?.name || 'Foto klinis'}</span>
                                   </a>
                                 ))}
                               </div>

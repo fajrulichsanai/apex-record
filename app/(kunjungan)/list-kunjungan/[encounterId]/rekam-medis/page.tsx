@@ -18,6 +18,7 @@ import ChiefComplaintPicker, { type ChiefComplaintValue } from '@/components/rek
 import SsrmeButton from '@/components/satusehat/SsrmeButton';
 import type { SoapDiagnosis } from '@/lib/terminology';
 import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
+import ClinicalPhotosPanel from '@/components/rekam-medis/ClinicalPhotosPanel';
 import DiagnosticsPanel from '@/components/rekam-medis/DiagnosticsPanel';
 import ReferralPanel from '@/components/rekam-medis/ReferralPanel';
 import InformedConsentPanel from '@/components/rekam-medis/InformedConsentPanel';
@@ -62,6 +63,7 @@ type SectionId =
   | 'odontogram'
   | 'dental-exam'
   | 'supporting-exam'
+  | 'clinical-photos'
   | 'prescription'
   | 'soap'
   | 'referral';
@@ -72,6 +74,7 @@ const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
   { id: 'odontogram', label: 'Odontogram', icon: 'dentistry' },
   { id: 'dental-exam', label: 'Pemeriksaan Gigi Lanjutan', icon: 'cleaning_services' },
   { id: 'supporting-exam', label: 'Pemeriksaan Penunjang', icon: 'image' },
+  { id: 'clinical-photos', label: 'Foto Klinis', icon: 'photo_camera' },
   { id: 'prescription', label: 'Resep Obat', icon: 'prescriptions' },
   { id: 'soap', label: 'Catatan SOAP', icon: 'medical_services' },
   { id: 'referral', label: 'Rujukan', icon: 'local_hospital' },
@@ -1844,6 +1847,18 @@ export default function RekamMedisPage() {
                         <DiagnosticsPanel encounterId={encounterId} />
                         <h3 className="rm-subheading">Foto &amp; Rontgen</h3>
                         <SupportingExamPanel encounterId={encounterId} />
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSection === 'clinical-photos' && (
+                    <div className="rm-section">
+                      <div className="rm-section-heading">
+                        <h2>Foto Klinis</h2>
+                        <p>Foto klinis per folder (mis. Behel, atau folder buatan klinik) untuk kontrol ini</p>
+                      </div>
+                      <div className="rm-section-body">
+                        <ClinicalPhotosPanel encounterId={encounterId} />
                       </div>
                     </div>
                   )}

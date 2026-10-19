@@ -1,0 +1,106 @@
+.ffk-new-group {
+  display: flex;
+  gap: 10px;
+  margin: 16px 0 20px;
+}
+.ffk-new-group input {
+  flex: 1;
+  max-width: 360px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+}
+.ffk-new-group input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.ffk-groups { display: flex; flex-direction: column; gap: 16px; }
+
+.ffk-group-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  background: var(--surface);
+}
+.ffk-group-card.ffk-inactive { opacity: 0.55; }
+
+.ffk-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.ffk-group-head h2 { font-size: 15.5px; margin: 0; display: flex; align-items: center; gap: 8px; }
+
+.ffk-badge-default {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.ffk-group-name-input {
+  font-size: 15.5px;
+  font-weight: 700;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--text-main);
+  font-family: inherit;
+}
+.ffk-group-name-input:hover,
+.ffk-group-name-input:focus { border-color: var(--border); background: var(--bg); outline: none; }
+
+.ffk-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-sub);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.ffk-slot-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ffk-slot-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  font-size: 13px;
+}
+.ffk-slot-list li.ffk-inactive { opacity: 0.55; text-decoration: line-through; }
+
+.ffk-new-slot { display: flex; gap: 8px; margin-top: 10px; }
+.ffk-new-slot input {
+  flex: 1;
+  max-width: 280px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-main);
+  background: var(--surface);
+  outline: none;
+}
