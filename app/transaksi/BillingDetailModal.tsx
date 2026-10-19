@@ -34,7 +34,7 @@ interface EditItemRow {
 }
 
 /** Margin per tindakan: (harga jual - diskon item - modal - lab) x qty. */
-function itemProfit(i: {
+export function itemProfit(i: {
   unitPrice: number;
   quantity: number;
   discount: number;

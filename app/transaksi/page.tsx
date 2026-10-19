@@ -6,7 +6,9 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import PaymentModal, { PAYMENT_METHOD_OPTIONS } from './PaymentModal';
 import CustomSelect from '@/components/form/CustomSelect';
-import BillingDetailModal from './BillingDetailModal';
+import BillingDetailModal, { itemProfit } from './BillingDetailModal';
+import { useAuth } from '@/lib/auth-context';
+import { canSeeHargaModal } from '@/lib/permissions';
 import '../styles/transaksi.css';
 import { ApiError } from '@/lib/api-client';
 import {
@@ -31,6 +33,8 @@ interface ItemRow {
   quantity: number;
   discount: number;
   discountType: DiscountType;
+  hargaPokok: number;
+  biayaLab: number;
 }
 
 function statusTag(status: BillingStatus): { tag: string; label: string } {
@@ -76,7 +80,7 @@ function todayInClinicTimezone(): string {
 
 let rowKeySeq = 0;
 function emptyRow(): ItemRow {
-  return { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal' };
+  return { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal', hargaPokok: 0, biayaLab: 0 };
 }
 
 /** How the patient pays when the transaction is saved. */
@@ -92,6 +96,8 @@ export default function TransaksiPage() {
 
 function TransaksiPageInner() {
   const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const showModal = canSeeHargaModal(user?.role);
   const [billings, setBillings] = useState<BillingListItem[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
   const [loadingList, setLoadingList] = useState(true);
@@ -226,6 +232,8 @@ function TransaksiPageInner() {
       tarifId: tarif ? tarif.id : '',
       name: tarif ? tarif.name : '',
       unitPrice: tarif ? Math.max(0, tarif.hargaJual) : 0,
+      hargaPokok: tarif ? Number(tarif.hargaPokok || 0) : 0,
+      biayaLab: tarif ? Number(tarif.biayaLab || 0) : 0,
     });
   }
 
@@ -482,8 +490,11 @@ function TransaksiPageInner() {
                 <div className="form-field">
                   <label>Tindakan</label>
                   <div className="item-rows">
-                    {items.map((row) => (
-                      <div key={row.key} className="item-row">
+                    {items.map((row) => {
+                      const calc = itemProfit(row);
+                      return (
+                      <div key={row.key} className="item-row-block">
+                      <div className="item-row">
                         <CustomSelect
                           value={String(row.tarifId)}
                           onChange={(value) => handleTarifSelect(row.key, value)}
@@ -510,7 +521,19 @@ function TransaksiPageInner() {
                           <span aria-hidden="true" className="material-symbols-rounded">close</span>
                         </button>
                       </div>
-                    ))}
+                      {row.tarifId !== '' && showModal && (
+                        <div className="item-row-calc">
+                          <span>Harga jual {formatRupiah(calc.price)}</span>
+                          <span>Modal {formatRupiah(calc.modal)}</span>
+                          <span>Lab {formatRupiah(calc.lab)}</span>
+                          <span className={calc.perUnit < 0 ? 'neg' : undefined}>
+                            Margin {formatRupiah(calc.perUnit)} × {row.quantity} = <strong>{formatRupiah(calc.total)}</strong>
+                          </span>
+                        </div>
+                      )}
+                      </div>
+                      );
+                    })}
                   </div>
                   <button
                     type="button"
@@ -621,6 +644,12 @@ function TransaksiPageInner() {
                 </div>
 
                 <div className="summary-box">
+                  {showModal && (
+                    <div className="summary-row">
+                      <span>Perkiraan margin (sebelum diskon/biaya tagihan)</span>
+                      <span>{formatRupiah(items.reduce((s, r) => s + itemProfit(r).total, 0))}</span>
+                    </div>
+                  )}
                   <div className="summary-row">
                     <span>Subtotal</span>
                     <span>{formatRupiah(itemsSubtotal)}</span>
