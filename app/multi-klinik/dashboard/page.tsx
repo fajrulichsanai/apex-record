@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { FiHome, FiUsers, FiCalendar, FiTrendingUp, FiUserCheck, FiHardDrive } from 'react-icons/fi';
 import MultiClinicLayout from '@/components/layout/MultiClinicLayout';
+import CustomSelect from '@/components/form/CustomSelect';
 import { multiClinicApi, type BranchBillingMode, type MultiClinicDashboard } from '@/lib/multi-clinic';
 import { ApiError } from '@/lib/api-client';
 import { useAuth } from '@/lib/auth-context';
@@ -83,20 +85,17 @@ export default function MultiClinicDashboardPage() {
             <div className="mk-filters">
               <label className="mk-field">
                 Tampilkan
-                <select
-                  value={clinicId}
-                  onChange={(e) => {
+                <CustomSelect
+                  value={String(clinicId)}
+                  onChange={(value) => {
                     setLoading(true);
-                    setClinicId(e.target.value ? Number(e.target.value) : '');
+                    setClinicId(value ? Number(value) : '');
                   }}
-                >
-                  <option value="">Semua cabang</option>
-                  {branches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Semua cabang' },
+                    ...branches.map((b) => ({ value: String(b.id), label: b.name })),
+                  ]}
+                />
               </label>
             </div>
           )}
@@ -127,38 +126,53 @@ export default function MultiClinicDashboardPage() {
           <>
             <div className="mk-stats" aria-busy={loading}>
               <div className="mk-stat">
-                <span className="l">{clinicId ? 'Cabang' : 'Cabang aktif'}</span>
-                <span className="v">{dashboard.clinics.length}</span>
+                <span className="ic"><FiHome /></span>
+                <div className="body">
+                  <span className="l">{clinicId ? 'Cabang' : 'Cabang aktif'}</span>
+                  <span className="v">{dashboard.clinics.length}</span>
+                </div>
               </div>
               <div className="mk-stat">
-                <span className="l">Total pasien</span>
-                <span className="v">{dashboard.totals.totalPatients.toLocaleString('id-ID')}</span>
+                <span className="ic"><FiUsers /></span>
+                <div className="body">
+                  <span className="l">Total pasien</span>
+                  <span className="v">{dashboard.totals.totalPatients.toLocaleString('id-ID')}</span>
+                </div>
               </div>
               <div className="mk-stat">
-                <span className="l">Kunjungan hari ini</span>
-                <span className="v">{dashboard.totals.todayVisits.toLocaleString('id-ID')}</span>
+                <span className="ic"><FiCalendar /></span>
+                <div className="body">
+                  <span className="l">Kunjungan hari ini</span>
+                  <span className="v">{dashboard.totals.todayVisits.toLocaleString('id-ID')}</span>
+                </div>
               </div>
               <div className="mk-stat">
-                <span className="l">Omzet bulan ini</span>
-                <span className="v">Rp {formatCurrency(dashboard.totals.monthlyRevenue)}</span>
+                <span className="ic"><FiTrendingUp /></span>
+                <div className="body">
+                  <span className="l">Omzet bulan ini</span>
+                  <span className="v">Rp {formatCurrency(dashboard.totals.monthlyRevenue)}</span>
+                </div>
               </div>
               {quota && !clinicId && (
                 <div className="mk-stat">
-                  <span className="l">Akun terpakai (bersama)</span>
-                  <span className="v">
-                    {quota.accountsUsed}/{quota.accountsLimit}
-                  </span>
-                  <div
-                    className={`mk-meter ${quotaRatio >= 1 ? 'bad' : quotaRatio >= 0.85 ? 'warn' : ''}`}
-                    role="meter"
-                    aria-valuemin={0}
-                    aria-valuemax={quota.accountsLimit}
-                    aria-valuenow={quota.accountsUsed}
-                    aria-label="Akun terpakai"
-                  >
-                    <span style={{ width: `${Math.min(100, Math.round(quotaRatio * 100))}%` }} />
+                  <span className="ic"><FiUserCheck /></span>
+                  <div className="body">
+                    <span className="l">Akun terpakai (bersama)</span>
+                    <span className="v">
+                      {quota.accountsUsed}/{quota.accountsLimit}
+                    </span>
+                    <div
+                      className={`mk-meter ${quotaRatio >= 1 ? 'bad' : quotaRatio >= 0.85 ? 'warn' : ''}`}
+                      role="meter"
+                      aria-valuemin={0}
+                      aria-valuemax={quota.accountsLimit}
+                      aria-valuenow={quota.accountsUsed}
+                      aria-label="Akun terpakai"
+                    >
+                      <span style={{ width: `${Math.min(100, Math.round(quotaRatio * 100))}%` }} />
+                    </div>
+                    <span className="s">25 akun × {quota.activeBranches} cabang aktif</span>
                   </div>
-                  <span className="s">25 akun × {quota.activeBranches} cabang aktif</span>
                 </div>
               )}
               {quota && !clinicId && quota.storageLimitBytes !== undefined && (() => {
@@ -167,19 +181,22 @@ export default function MultiClinicDashboardPage() {
                 const { ratio, tone } = storageLevel(used, limit);
                 return (
                   <div className="mk-stat">
-                    <span className="l">Storage (bersama)</span>
-                    <span className="v">{formatBytes(used)}</span>
-                    <div
-                      className={`mk-meter ${tone}`}
-                      role="meter"
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={Math.min(100, Math.round(ratio * 100))}
-                      aria-label="Storage terpakai"
-                    >
-                      <span style={{ width: `${Math.min(100, Math.round(ratio * 100))}%` }} />
+                    <span className="ic"><FiHardDrive /></span>
+                    <div className="body">
+                      <span className="l">Storage (bersama)</span>
+                      <span className="v">{formatBytes(used)}</span>
+                      <div
+                        className={`mk-meter ${tone}`}
+                        role="meter"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={Math.min(100, Math.round(ratio * 100))}
+                        aria-label="Storage terpakai"
+                      >
+                        <span style={{ width: `${Math.min(100, Math.round(ratio * 100))}%` }} />
+                      </div>
+                      <span className="s">dari {formatBytes(limit)} · 5 GB × {quota.activeBranches} cabang</span>
                     </div>
-                    <span className="s">dari {formatBytes(limit)} · 5 GB × {quota.activeBranches} cabang</span>
                   </div>
                 );
               })()}
@@ -205,13 +222,13 @@ export default function MultiClinicDashboardPage() {
                         {row.clinic.name}
                         {row.billingMode && <small>{BILLING_LABEL[row.billingMode]}</small>}
                       </td>
-                      <td>
+                      <td data-label="Langganan">
                         <SubscriptionPill sub={row.subscription ?? null} />
                       </td>
-                      <td className="r num">{row.summary.totalPatients.toLocaleString('id-ID')}</td>
-                      <td className="r num">{row.summary.todayVisits.toLocaleString('id-ID')}</td>
-                      <td className="r num">Rp {formatCurrency(row.summary.monthlyRevenue)}</td>
-                      <td className="r num">{row.summary.registeredUsers ?? '—'}</td>
+                      <td className="r num" data-label="Pasien">{row.summary.totalPatients.toLocaleString('id-ID')}</td>
+                      <td className="r num" data-label="Kunjungan hari ini">{row.summary.todayVisits.toLocaleString('id-ID')}</td>
+                      <td className="r num" data-label="Omzet bulan ini">Rp {formatCurrency(row.summary.monthlyRevenue)}</td>
+                      <td className="r num" data-label="Pengguna">{row.summary.registeredUsers ?? '—'}</td>
                       <td className="r">
                         <button
                           type="button"

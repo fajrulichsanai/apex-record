@@ -60,13 +60,22 @@
 .mk-hint { color: var(--text-sub); font-size: 13px; line-height: 1.55; margin: 0; }
 .num { font-variant-numeric: tabular-nums; }
 
-.mk-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.mk-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
 .mk-stat {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
-  padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0;
+  padding: 16px; display: flex; align-items: flex-start; gap: 12px; min-width: 0;
+  box-shadow: 0 1px 2px rgba(23, 22, 15, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
 }
+.mk-stat:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(23, 22, 15, 0.08); border-color: var(--accent); }
+.mk-stat .ic {
+  width: 38px; height: 38px; flex-shrink: 0; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--accent-soft); color: var(--accent); font-size: 18px;
+}
+.mk-stat .body { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
 .mk-stat .l { font-size: 12px; font-weight: 600; color: var(--text-muted); }
-.mk-stat .v { font-size: 22px; font-weight: 700; color: var(--text-main); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.mk-stat .v { font-size: 21px; font-weight: 700; color: var(--text-main); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; line-height: 1.2; }
 .mk-stat .s { font-size: 11.5px; color: var(--text-muted); }
 
 .mk-meter { height: 6px; border-radius: 999px; background: var(--border); overflow: hidden; margin-top: 4px; }
@@ -148,6 +157,33 @@
   .mk-field select { min-width: 0; width: 100%; }
   .mk-filters { width: 100%; }
   .mk-filters .mk-field { flex: 1 1 140px; }
+
+  /* Tabel cabang -> kartu di layar sempit, supaya tidak perlu geser ke
+     samping untuk baca angka. Butuh data-label="..." di tiap <td>. */
+  .mk-table-wrap { overflow-x: visible; border: none; background: transparent; }
+  .mk-table, .mk-table tbody, .mk-table tr { display: block; width: 100%; }
+  .mk-table thead { display: none; }
+  .mk-table tr {
+    margin-bottom: 12px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-md); overflow: hidden;
+  }
+  .mk-table tr:last-child { margin-bottom: 0; }
+  .mk-table td {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    text-align: right; padding: 10px 14px; border-bottom: 1px solid var(--border);
+  }
+  .mk-table td:empty { display: none; }
+  .mk-table td:last-child { border-bottom: none; }
+  .mk-table td.name {
+    justify-content: flex-start; text-align: left; flex-direction: column; align-items: flex-start; gap: 2px;
+    background: var(--bg); font-size: 14.5px;
+  }
+  .mk-table td::before {
+    content: attr(data-label); font-size: 11.5px; font-weight: 700; letter-spacing: 0.03em;
+    text-transform: uppercase; color: var(--text-muted); text-align: left; flex-shrink: 0;
+  }
+  .mk-table td.name::before { display: none; }
+  .mk-table tfoot tr { background: var(--bg); font-weight: 700; }
 }
 
 .mk-scope .sr-only {

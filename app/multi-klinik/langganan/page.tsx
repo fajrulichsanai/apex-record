@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import MultiClinicLayout from '@/components/layout/MultiClinicLayout';
+import CustomSelect from '@/components/form/CustomSelect';
 import { multiClinicApi, type BranchBillingMode, type OwnedClinic } from '@/lib/multi-clinic';
 import { subscriptionPlanApi } from '@/lib/subscription';
 import type { Payment, SubscriptionPlan } from '@/types/subscription';
@@ -148,20 +149,15 @@ export default function MultiClinicLanggananPage() {
                       return (
                         <tr key={c.id}>
                           <td className="name">{c.name}</td>
-                          <td>
+                          <td data-label="Cara bayar">
                             <label className="mk-field">
                               <span className="sr-only">Cara bayar {c.name}</span>
-                              <select
+                              <CustomSelect
                                 value={mode}
                                 disabled={savingMode === c.id}
-                                onChange={(e) => changeMode(c, e.target.value as BranchBillingMode)}
-                              >
-                                {MODE_OPTIONS.map((o) => (
-                                  <option key={o.value} value={o.value}>
-                                    {o.label}
-                                  </option>
-                                ))}
-                              </select>
+                                onChange={(value) => changeMode(c, value as BranchBillingMode)}
+                                options={MODE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                              />
                             </label>
                             <span className="mk-muted">{MODE_OPTIONS.find((o) => o.value === mode)?.hint}</span>
                           </td>

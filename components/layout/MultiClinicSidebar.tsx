@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { FiGrid, FiHome, FiCreditCard, FiChevronLeft, FiChevronRight, FiBarChart2 } from 'react-icons/fi';
+import { FiGrid, FiHome, FiCreditCard, FiChevronLeft, FiChevronRight, FiBarChart2, FiMessageCircle } from 'react-icons/fi';
+import { COMPANY } from '@/lib/company';
 import './sidebar.css';
 
 interface MultiClinicSidebarProps {
@@ -48,6 +49,12 @@ export default function MultiClinicSidebar({ isOpen, onClose }: MultiClinicSideb
         </button>
       </div>
 
+      <p className="sidebar-desc">
+        Ringkasan dan pengaturan lintas cabang. Untuk mengubah pasien, transaksi, tarif, atau pengguna satu klinik,
+        pilih &ldquo;Atur cabang&rdquo; pada klinik itu di Dashboard.
+      </p>
+
+      <span className="nav-section-label">Semua Cabang</span>
       <nav className="nav">
         {NAV_ITEMS.map((item) => (
           <Link
@@ -64,6 +71,16 @@ export default function MultiClinicSidebar({ isOpen, onClose }: MultiClinicSideb
           </Link>
         ))}
       </nav>
+
+      <div className="sidebar-help">
+        <span className="sidebar-help-title">
+          <FiMessageCircle /> Butuh bantuan?
+        </span>
+        <p>Tim ApexRecord siap bantu soal cabang, langganan, atau kendala lain.</p>
+        <a href={COMPANY.whatsappUrl} target="_blank" rel="noopener noreferrer">
+          Chat WhatsApp
+        </a>
+      </div>
     </aside>
   );
 }

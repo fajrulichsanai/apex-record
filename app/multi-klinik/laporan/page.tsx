@@ -1,7 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { FiCalendar, FiDollarSign, FiCheckCircle, FiClock } from 'react-icons/fi';
 import MultiClinicLayout from '@/components/layout/MultiClinicLayout';
+import CustomSelect from '@/components/form/CustomSelect';
 import { multiClinicApi, type MultiClinicReport, type OwnedClinic } from '@/lib/multi-clinic';
 import { ApiError } from '@/lib/api-client';
 import { formatCurrency } from '@/lib/format';
@@ -105,29 +107,30 @@ export default function MultiClinicReportPage() {
           <div className="mk-filters">
             <label className="mk-field">
               Cabang
-              <select
-                value={clinicId}
-                onChange={(e) => {
+              <CustomSelect
+                value={String(clinicId)}
+                onChange={(value) => {
                   setLoading(true);
-                  setClinicId(e.target.value ? Number(e.target.value) : '');
+                  setClinicId(value ? Number(value) : '');
                 }}
-              >
-                <option value="">Semua cabang</option>
-                {branches.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: 'Semua cabang' },
+                  ...branches.map((b) => ({ value: String(b.id), label: b.name })),
+                ]}
+              />
             </label>
             <label className="mk-field">
               Periode
-              <select value={preset} onChange={(e) => changePreset(e.target.value as Preset)}>
-                <option value="this-month">Bulan ini</option>
-                <option value="last-month">Bulan lalu</option>
-                <option value="30d">30 hari terakhir</option>
-                <option value="custom">Pilih tanggal…</option>
-              </select>
+              <CustomSelect
+                value={preset}
+                onChange={(value) => changePreset(value as Preset)}
+                options={[
+                  { value: 'this-month', label: 'Bulan ini' },
+                  { value: 'last-month', label: 'Bulan lalu' },
+                  { value: '30d', label: '30 hari terakhir' },
+                  { value: 'custom', label: 'Pilih tanggal…' },
+                ]}
+              />
             </label>
             {preset === 'custom' && (
               <>
@@ -169,25 +172,37 @@ export default function MultiClinicReportPage() {
           <>
             <div className="mk-stats" aria-busy={loading}>
               <div className="mk-stat">
-                <span className="l">Kunjungan</span>
-                <span className="v">{report.totals.visits.toLocaleString('id-ID')}</span>
-                <span className="s">
-                  {report.totals.finished.toLocaleString('id-ID')} selesai · {report.totals.cancelled.toLocaleString('id-ID')} batal
-                </span>
+                <span className="ic"><FiCalendar /></span>
+                <div className="body">
+                  <span className="l">Kunjungan</span>
+                  <span className="v">{report.totals.visits.toLocaleString('id-ID')}</span>
+                  <span className="s">
+                    {report.totals.finished.toLocaleString('id-ID')} selesai · {report.totals.cancelled.toLocaleString('id-ID')} batal
+                  </span>
+                </div>
               </div>
               <div className="mk-stat">
-                <span className="l">Omzet (tagihan)</span>
-                <span className="v">Rp {formatCurrency(report.totals.revenue)}</span>
-                <span className="s">{report.totals.billings.toLocaleString('id-ID')} tagihan</span>
+                <span className="ic"><FiDollarSign /></span>
+                <div className="body">
+                  <span className="l">Omzet (tagihan)</span>
+                  <span className="v">Rp {formatCurrency(report.totals.revenue)}</span>
+                  <span className="s">{report.totals.billings.toLocaleString('id-ID')} tagihan</span>
+                </div>
               </div>
               <div className="mk-stat">
-                <span className="l">Sudah dibayar</span>
-                <span className="v">Rp {formatCurrency(report.totals.collected)}</span>
-                {collectedRate !== null && <span className="s">{collectedRate}% dari omzet</span>}
+                <span className="ic"><FiCheckCircle /></span>
+                <div className="body">
+                  <span className="l">Sudah dibayar</span>
+                  <span className="v">Rp {formatCurrency(report.totals.collected)}</span>
+                  {collectedRate !== null && <span className="s">{collectedRate}% dari omzet</span>}
+                </div>
               </div>
               <div className="mk-stat">
-                <span className="l">Belum dibayar</span>
-                <span className="v">Rp {formatCurrency(report.totals.outstanding)}</span>
+                <span className="ic"><FiClock /></span>
+                <div className="body">
+                  <span className="l">Belum dibayar</span>
+                  <span className="v">Rp {formatCurrency(report.totals.outstanding)}</span>
+                </div>
               </div>
             </div>
 
@@ -244,11 +259,11 @@ export default function MultiClinicReportPage() {
                     report.clinics.map((c) => (
                       <tr key={c.clinic.id}>
                         <td className="name">{c.clinic.name}</td>
-                        <td className="r num">{c.visits.toLocaleString('id-ID')}</td>
-                        <td className="r num">{c.finished.toLocaleString('id-ID')}</td>
-                        <td className="r num">Rp {formatCurrency(c.revenue)}</td>
-                        <td className="r num">Rp {formatCurrency(c.collected)}</td>
-                        <td className="r num">Rp {formatCurrency(c.outstanding)}</td>
+                        <td className="r num" data-label="Kunjungan">{c.visits.toLocaleString('id-ID')}</td>
+                        <td className="r num" data-label="Selesai">{c.finished.toLocaleString('id-ID')}</td>
+                        <td className="r num" data-label="Omzet">Rp {formatCurrency(c.revenue)}</td>
+                        <td className="r num" data-label="Dibayar">Rp {formatCurrency(c.collected)}</td>
+                        <td className="r num" data-label="Belum dibayar">Rp {formatCurrency(c.outstanding)}</td>
                       </tr>
                     ))
                   )}
@@ -256,12 +271,12 @@ export default function MultiClinicReportPage() {
                 {report.clinics.length > 1 && (
                   <tfoot>
                     <tr>
-                      <td>Total</td>
-                      <td className="r num">{report.totals.visits.toLocaleString('id-ID')}</td>
-                      <td className="r num">{report.totals.finished.toLocaleString('id-ID')}</td>
-                      <td className="r num">Rp {formatCurrency(report.totals.revenue)}</td>
-                      <td className="r num">Rp {formatCurrency(report.totals.collected)}</td>
-                      <td className="r num">Rp {formatCurrency(report.totals.outstanding)}</td>
+                      <td className="name">Total</td>
+                      <td className="r num" data-label="Kunjungan">{report.totals.visits.toLocaleString('id-ID')}</td>
+                      <td className="r num" data-label="Selesai">{report.totals.finished.toLocaleString('id-ID')}</td>
+                      <td className="r num" data-label="Omzet">Rp {formatCurrency(report.totals.revenue)}</td>
+                      <td className="r num" data-label="Dibayar">Rp {formatCurrency(report.totals.collected)}</td>
+                      <td className="r num" data-label="Belum dibayar">Rp {formatCurrency(report.totals.outstanding)}</td>
                     </tr>
                   </tfoot>
                 )}
