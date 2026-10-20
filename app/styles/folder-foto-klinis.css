@@ -26,6 +26,18 @@
   background: var(--surface);
 }
 .ffk-group-card.ffk-inactive { opacity: 0.55; }
+.ffk-group-card[draggable="true"] { cursor: grab; }
+.ffk-group-card[draggable="true"]:active { cursor: grabbing; }
+
+.ffk-drag-handle {
+  font-size: 18px;
+  color: var(--text-sub);
+  cursor: grab;
+  flex: none;
+}
+.ffk-slot-list li[draggable="true"] { cursor: grab; }
+.ffk-slot-list li[draggable="true"]:active { cursor: grabbing; }
+.ffk-slot-label { display: inline-flex; align-items: center; gap: 6px; }
 
 .ffk-group-head {
   display: flex;

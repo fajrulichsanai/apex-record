@@ -12,6 +12,7 @@ import { ApiError, fetchProtectedFileUrl } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { clinicApi } from '@/lib/clinic';
 import ClinicalPhotoPickerModal from '@/components/konten/ClinicalPhotoPickerModal';
+import SeriesPhotosEditor from '@/components/konten/SeriesPhotosEditor';
 import {
   CONTENT_STATUS_LABEL,
   contentsApi,
@@ -42,6 +43,7 @@ import {
   type StoryFonts,
   type StorySlot,
 } from '@/lib/story-canvas';
+import { drawSeriesStory, type SeriesPhotoDraw } from '@/lib/series-canvas';
 import {
   CONTENT_TEMPLATES,
   REGION_OPTIONS,
@@ -208,6 +210,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   const [brand, setBrand] = useState<BrandFields>({ brandName: '', brandSub: '', contactLine: '' });
   const [photos, setPhotos] = useState<Record<StorySlot, Photo | null>>({ before: null, after: null });
   const [frames, setFrames] = useState<Record<StorySlot, ContentPhotoFrame>>({ before: DEFAULT_FRAME, after: DEFAULT_FRAME });
+  const [seriesPhotos, setSeriesPhotos] = useState<SeriesPhotoDraw[]>([]);
   const [pickerSlot, setPickerSlot] = useState<StorySlot | null>(null);
   const [logo, setLogo] = useState<HTMLImageElement | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
@@ -373,6 +376,20 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   useEffect(() => {
     const g = canvasRef.current?.getContext('2d');
     if (!g || loading) return;
+    if (form.layout === 'series') {
+      drawSeriesStory(
+        g,
+        {
+          ...form,
+          title: storyTitle,
+          caption,
+          logo,
+          photos: seriesPhotos,
+        },
+        FONTS,
+      );
+      return;
+    }
     drawStory(
       g,
       {
@@ -385,7 +402,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
       },
       FONTS,
     );
-  }, [form, storyTitle, caption, photos, frames, logo, fontsReady, loading]);
+  }, [form, storyTitle, caption, photos, frames, seriesPhotos, logo, fontsReady, loading]);
 
   const pickPhoto = async (slot: StorySlot, file: File | undefined) => {
     if (!file) return;
@@ -547,7 +564,12 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
 
   const onPublish = () =>
     run('publish', async () => {
-      if (!photos.before || !photos.after) {
+      if (form.layout === 'series') {
+        if (seriesPhotos.length < 2) {
+          error('Tambah minimal 2 foto dulu');
+          return;
+        }
+      } else if (!photos.before || !photos.after) {
         error('Pilih foto sebelum dan sesudah dulu');
         return;
       }
@@ -579,7 +601,12 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     });
 
   const onDownload = async () => {
-    if (!photos.before || !photos.after) {
+    if (form.layout === 'series') {
+      if (seriesPhotos.length < 2) {
+        error('Tambah minimal 2 foto dulu');
+        return;
+      }
+    } else if (!photos.before || !photos.after) {
       error('Pilih foto sebelum dan sesudah dulu');
       return;
     }
@@ -623,7 +650,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     }
   };
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (isTemplate) return;
+    if (isTemplate || form.layout === 'series') return;
     const p = toStory(e);
     if (!gesture.current) {
       const slot = slotAt(form.layout, p.x, p.y);
@@ -676,6 +703,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     if (!canvas || isTemplate) return;
     const onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
+      if (layoutRef.current === 'series') return;
       const r = canvas.getBoundingClientRect();
       const slot = slotAt(
         layoutRef.current,
@@ -831,7 +859,21 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                   </section>
                 )}
 
-                {!isTemplate && (
+                {!isTemplate && form.layout === 'series' && (
+                  <section className="kt-section">
+                    <h2>Foto</h2>
+                    <SeriesPhotosEditor
+                      contentId={recordId}
+                      onNeedSave={save}
+                      onPhotosChanged={(photos) => {
+                        setSeriesPhotos(photos);
+                        setDirty(true);
+                      }}
+                    />
+                  </section>
+                )}
+
+                {!isTemplate && form.layout !== 'series' && (
                   <section className="kt-section">
                     <h2>Foto</h2>
                     <div className="kt-photos">
@@ -1063,6 +1105,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                       [
                         ['stack', 'Atas–bawah'],
                         ['split', 'Kiri–kanan'],
+                        ['series', 'Rangkaian (3+ foto)'],
                       ] as const
                     ).map(([value, label]) => (
                       <label key={value} className={form.layout === value ? 'on' : ''}>

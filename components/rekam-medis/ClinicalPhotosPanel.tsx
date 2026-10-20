@@ -39,7 +39,7 @@ export default function ClinicalPhotosPanel({ encounterId }: ClinicalPhotosPanel
   const [imageUrls, setImageUrls] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [lastSaving, setLastSaving] = useState<{ original: number; compressed: number } | null>(null);
+  const [savingLog, setSavingLog] = useState<{ name: string; original: number; compressed: number }[]>([]);
   const [viewPhoto, setViewPhoto] = useState<PatientPhoto | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: number; label: string } | null>(null);
   useEscapeKey(() => setViewPhoto(null), viewPhoto !== null);
@@ -115,7 +115,10 @@ export default function ClinicalPhotosPanel({ encounterId }: ClinicalPhotosPanel
         pendingTemplateId ?? undefined,
         compressed.originalSizeBytes,
       );
-      setLastSaving({ original: compressed.originalSizeBytes, compressed: compressed.compressedSizeBytes });
+      setSavingLog((prev) => [
+        ...prev,
+        { name: file.name, original: compressed.originalSizeBytes, compressed: compressed.compressedSizeBytes },
+      ]);
       success('Foto berhasil diunggah');
       await load();
     } catch (err) {
@@ -176,11 +179,17 @@ export default function ClinicalPhotosPanel({ encounterId }: ClinicalPhotosPanel
         </button>
       </div>
 
-      {lastSaving && lastSaving.compressed < lastSaving.original && (
-        <p className="cp-saving-hint">
-          Dikompres: {formatBytesShort(lastSaving.original)} → {formatBytesShort(lastSaving.compressed)}{' '}
-          (hemat {savingsPct(lastSaving.original, lastSaving.compressed)}%)
-        </p>
+      {savingLog.some((s) => s.compressed < s.original) && (
+        <ul className="cp-saving-log">
+          {savingLog
+            .filter((s) => s.compressed < s.original)
+            .map((s, i) => (
+              <li key={i} className="cp-saving-hint">
+                {s.name}: {formatBytesShort(s.original)} → {formatBytesShort(s.compressed)}{' '}
+                (hemat {savingsPct(s.original, s.compressed)}%)
+              </li>
+            ))}
+        </ul>
       )}
 
       {loading ? (

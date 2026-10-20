@@ -2,7 +2,7 @@ import { ApiError, apiClient, apiFileUrl } from './api-client';
 import { isDemoMode } from './demo/demo-mode';
 
 export type ContentStatus = 'draft' | 'published';
-export type ContentLayout = 'stack' | 'split';
+export type ContentLayout = 'stack' | 'split' | 'series';
 export type ContentBackground = 'light' | 'navy';
 
 /** Position of one photo inside its frame on the story. */
@@ -120,6 +120,16 @@ export interface ContentPhotoPicker {
   supportingExam: PickerPhoto[];
 }
 
+export interface SeriesPhoto {
+  id: number;
+  contentId: number;
+  sourceType: ContentPhotoSource;
+  sourceId: number;
+  sortOrder: number;
+  caption: string | null;
+  blurFace: boolean;
+}
+
 export const CONTENT_STATUS_LABEL: Record<ContentStatus, string> = {
   draft: 'Draft',
   published: 'Terbit',
@@ -159,4 +169,17 @@ export const contentsApi = {
   picker: (patientId: number) => apiClient.get<ContentPhotoPicker>(`/contents/picker/${patientId}`),
   importPhoto: (sourceType: ContentPhotoSource, sourceId: number) =>
     apiClient.post<{ url: string }>('/contents/import-photo', { sourceType, sourceId }),
+};
+
+export const seriesPhotosApi = {
+  list: (contentId: number) => apiClient.get<SeriesPhoto[]>(`/contents/${contentId}/series-photos`),
+  add: (contentId: number, sourceType: ContentPhotoSource, sourceId: number) =>
+    apiClient.post<SeriesPhoto>(`/contents/${contentId}/series-photos`, { sourceType, sourceId }),
+  update: (contentId: number, photoId: number, payload: { caption?: string | null; blurFace?: boolean }) =>
+    apiClient.patch<SeriesPhoto>(`/contents/${contentId}/series-photos/${photoId}`, payload),
+  remove: (contentId: number, photoId: number) =>
+    apiClient.delete<void>(`/contents/${contentId}/series-photos/${photoId}`),
+  reorder: (contentId: number, orderedIds: number[]) =>
+    apiClient.patch<SeriesPhoto[]>(`/contents/${contentId}/series-photos/reorder`, { orderedIds }),
+  fileUrl: (contentId: number, photoId: number) => `/contents/${contentId}/series-photos/${photoId}/file`,
 };

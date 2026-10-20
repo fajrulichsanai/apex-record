@@ -536,6 +536,7 @@
 .cp-progress { font-size: 12.5px; font-weight: 600; color: var(--text-sub); white-space: nowrap; }
 
 .cp-saving-hint { font-size: 12px; color: var(--green); margin: 0; }
+.cp-saving-log { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 
 .cp-slot-grid {
   display: grid;

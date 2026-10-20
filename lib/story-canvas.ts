@@ -30,7 +30,7 @@ export interface StoryData {
   frames: Record<StorySlot, ContentPhotoFrame>;
 }
 
-const THEMES = {
+export const THEMES = {
   light: {
     bg: '#ffffff', fg: '#16213f', muted: '#6b7593', accent: '#1d2f6f', slot: '#eef1f7', slotInk: '#9aa4c0',
     chipA: '#ffffff', chipAfg: '#1d2f6f', chipB: '#1d2f6f', chipBfg: '#ffffff',

@@ -91,6 +91,41 @@
 .kt-details[open] summary { margin-bottom: 4px; }
 .kt-photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .kt-photo { display: flex; flex-direction: column; gap: 8px; }
+.kt-series { display: flex; flex-direction: column; gap: 10px; }
+.kt-series-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.kt-series-item {
+  display: flex; flex-direction: column; gap: 6px; cursor: grab;
+}
+.kt-series-item:active { cursor: grabbing; }
+.kt-series-thumb {
+  position: relative; aspect-ratio: 3 / 4; border-radius: 12px; overflow: hidden;
+  background: var(--surface); border: 1.5px solid var(--border);
+}
+.kt-series-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.kt-series-blur, .kt-series-remove {
+  position: absolute; display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 999px; border: none; cursor: pointer;
+  background: rgba(15, 20, 40, 0.55); color: #fff;
+}
+.kt-series-blur svg, .kt-series-remove svg { width: 15px; height: 15px; }
+.kt-series-blur { top: 8px; left: 8px; }
+.kt-series-blur.on { background: var(--accent); color: #fff; }
+.kt-series-remove { top: 8px; right: 8px; }
+.kt-series-blur:hover, .kt-series-remove:hover { background: var(--accent); }
+.kt-series-caption {
+  font: inherit; font-size: 12.5px; padding: 7px 10px; border-radius: 8px;
+  border: 1.5px solid var(--border); background: var(--surface); color: var(--text-main);
+}
+.kt-series-caption:focus { outline: none; border-color: var(--accent); }
+.kt-series-add {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  aspect-ratio: 3 / 4; border-radius: 12px; border: 1.5px dashed var(--border);
+  background: transparent; color: var(--text-sub); font: inherit; font-size: 12.5px; font-weight: 600; cursor: pointer;
+}
+.kt-series-add:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.kt-series-add:disabled { opacity: 0.55; cursor: not-allowed; }
+.kt-series-add svg { width: 20px; height: 20px; }
+
 .kt-label, .kt-field span, .kt-zoom span { font-size: 12.5px; font-weight: 600; color: var(--text-sub); }
 .kt-zoom { display: flex; align-items: center; gap: 8px; }
 .kt-zoom input { flex: 1; min-width: 0; accent-color: var(--accent); }
