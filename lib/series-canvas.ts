@@ -1,6 +1,11 @@
 import type { ContentBackground } from './contents';
-import { DISCLAIMER, STORY_H, STORY_W, THEMES } from './story-canvas';
+import { DISCLAIMER, STORY_H, STORY_W, THEMES, roundRectPath } from './story-canvas';
 import type { StoryFonts } from './story-canvas';
+
+/** See story-canvas.ts: Safari before 17.4 doesn't implement ctx.letterSpacing. */
+function setTracking(g: CanvasRenderingContext2D, px: number) {
+  if ('letterSpacing' in g) g.letterSpacing = `${px}px`;
+}
 
 export interface SeriesPhotoDraw {
   img: HTMLImageElement;
@@ -45,14 +50,14 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
     g.font = font;
     g.fillStyle = color;
     g.textAlign = align;
-    if (track) g.letterSpacing = `${track}px`;
+    if (track) setTracking(g, track);
     g.fillText(s, x, y);
     g.restore();
   };
   const fit = (s: string, maxW: number, font: string, track = 0) => {
     g.save();
     g.font = font;
-    if (track) g.letterSpacing = `${track}px`;
+    if (track) setTracking(g, track);
     let t = s;
     while (g.measureText(t).width > maxW && t.length > 3) t = `${t.slice(0, -2)}…`;
     g.restore();
@@ -73,7 +78,7 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
   }
   g.save();
   g.font = badgeFont;
-  g.letterSpacing = '6px';
+  setTracking(g, 6);
   const badgeW = d.badge ? g.measureText(d.badge).width + 32 : 0;
   g.restore();
   const brandMax = 1020 - badgeW - brandX;
@@ -93,7 +98,7 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
     const y = top + i * (rowH + gap);
     g.save();
     g.beginPath();
-    g.roundRect(x0, y, x1 - x0, rowH, 20);
+    roundRectPath(g, x0, y, x1 - x0, rowH, 20);
     g.clip();
     g.fillStyle = T.slot;
     g.fillRect(x0, y, x1 - x0, rowH);
@@ -110,11 +115,11 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
       g.shadowBlur = 16;
       const label = p.caption.toUpperCase();
       g.font = `500 24px ${f.mono}`;
-      g.letterSpacing = '4px';
+      setTracking(g, 4);
       const w = g.measureText(label).width + 44;
       g.fillStyle = T.chipA;
       g.beginPath();
-      g.roundRect(x0 + 18, y + 18, w, 50, 25);
+      roundRectPath(g, x0 + 18, y + 18, w, 50, 25);
       g.fill();
       g.shadowColor = 'transparent';
       g.fillStyle = T.chipAfg;

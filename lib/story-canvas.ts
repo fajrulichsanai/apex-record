@@ -63,6 +63,30 @@ export function storyRects(layout: ContentLayout): Record<StorySlot, Rect> {
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 
 /**
+ * Traces a rounded-rect path with arcTo — unlike `ctx.roundRect()` (only
+ * since Safari 16.4 / iOS 16.4), this works on every Canvas2D since the
+ * API's earliest versions, so the story still renders on older Safari.
+ */
+export function roundRectPath(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  const rr = Math.min(r, w / 2, h / 2);
+  g.moveTo(x + rr, y);
+  g.arcTo(x + w, y, x + w, y + h, rr);
+  g.arcTo(x + w, y + h, x, y + h, rr);
+  g.arcTo(x, y + h, x, y, rr);
+  g.arcTo(x, y, x + w, y, rr);
+  g.closePath();
+}
+
+/**
+ * Sets letter spacing when the engine supports it (`ctx.letterSpacing` isn't
+ * implemented by Safari before 17.4) — tracked text just sits unspaced
+ * there instead of throwing or silently drawing wrong widths.
+ */
+function setTracking(g: CanvasRenderingContext2D, px: number) {
+  if ('letterSpacing' in g) g.letterSpacing = `${px}px`;
+}
+
+/**
  * Cover-fits the photo into its rect at any rotation, applies zoom and pan,
  * and keeps the pan inside the photo's edges so the frame never shows a gap.
  * Returns the clamped frame and how to draw it: centre, size, angle, mirror.
@@ -109,14 +133,14 @@ export function drawStory(g: CanvasRenderingContext2D, d: StoryData, f: StoryFon
     g.font = font;
     g.fillStyle = color;
     g.textAlign = align;
-    if (track) g.letterSpacing = `${track}px`;
+    if (track) setTracking(g, track);
     g.fillText(s, x, y);
     g.restore();
   };
   const fit = (s: string, maxW: number, font: string, track = 0) => {
     g.save();
     g.font = font;
-    if (track) g.letterSpacing = `${track}px`;
+    if (track) setTracking(g, track);
     let t = s;
     while (g.measureText(t).width > maxW && t.length > 3) t = `${t.slice(0, -2)}…`;
     g.restore();
@@ -125,11 +149,11 @@ export function drawStory(g: CanvasRenderingContext2D, d: StoryData, f: StoryFon
   const chip = (x: number, y: number, label: string, bg: string, fg: string) => {
     g.save();
     g.font = `500 26px ${f.mono}`;
-    g.letterSpacing = '5px';
+    setTracking(g, 5);
     const w = g.measureText(label).width + 52;
     g.fillStyle = bg;
     g.beginPath();
-    g.roundRect(x, y, w, 58, 29);
+    roundRectPath(g, x, y, w, 58, 29);
     g.fill();
     g.shadowColor = 'transparent';
     g.fillStyle = fg;
@@ -167,7 +191,7 @@ export function drawStory(g: CanvasRenderingContext2D, d: StoryData, f: StoryFon
   }
   g.save();
   g.font = badgeFont;
-  g.letterSpacing = '6px';
+  setTracking(g, 6);
   const badgeW = d.badge ? g.measureText(d.badge).width + 32 : 0;
   g.restore();
   const brandMax = 1020 - badgeW - brandX;
@@ -190,7 +214,7 @@ export function drawStory(g: CanvasRenderingContext2D, d: StoryData, f: StoryFon
     const img = d.photos[k];
     g.save();
     g.beginPath();
-    g.roundRect(x, y, w, h, 22);
+    roundRectPath(g, x, y, w, h, 22);
     g.clip();
     g.fillStyle = T.slot;
     g.fillRect(x, y, w, h);
