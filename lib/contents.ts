@@ -1,5 +1,6 @@
 import { ApiError, apiClient, apiFileUrl } from './api-client';
 import { isDemoMode } from './demo/demo-mode';
+import type { SeriesStyle } from './series-layout';
 
 export type ContentStatus = 'draft' | 'published';
 export type ContentLayout = 'stack' | 'split' | 'series';
@@ -33,6 +34,8 @@ export interface ContentSettings {
   visits?: number;
   /** False once the caption was typed by hand. */
   autoCaption?: boolean;
+  /** Gaya layout series (susunan, jarak, keterangan, warna). */
+  series?: SeriesStyle;
 }
 
 export interface ClinicContent {

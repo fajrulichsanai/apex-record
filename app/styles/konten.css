@@ -266,3 +266,20 @@
 .kt-picker-thumb:hover { border-color: var(--accent); }
 .kt-picker-thumb img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block; background: var(--bg); }
 .kt-picker-thumb span { font-size: 11px; color: var(--text-sub); padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Gaya rangkaian (layout series) */
+.kt-series-style { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1.5px dashed var(--border); border-radius: 12px; }
+.kt-series-style h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--text-main); }
+.kt-arrange { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; }
+.kt-arrange label {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 8px 6px; cursor: pointer;
+  font-size: 12.5px; font-weight: 600; color: var(--text-sub); border: 1.5px solid var(--border); border-radius: 12px;
+}
+.kt-arrange label.on { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.kt-arrange label:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+.kt-arrange input { position: absolute; opacity: 0; pointer-events: none; }
+.kt-arrange svg rect { fill: currentColor; opacity: .75; }
+.kt-colors { display: flex; gap: 16px; flex-wrap: wrap; }
+.kt-color { display: flex; align-items: center; gap: 8px; }
+.kt-color label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-sub); }
+.kt-color input[type="color"] { width: 38px; height: 30px; padding: 0; border: 1.5px solid var(--border); border-radius: 8px; background: none; cursor: pointer; }

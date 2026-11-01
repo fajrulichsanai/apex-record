@@ -1,6 +1,7 @@
 import type { ContentBackground } from './contents';
 import { DISCLAIMER, STORY_H, STORY_W, THEMES, roundRectPath } from './story-canvas';
 import type { StoryFonts } from './story-canvas';
+import { mixHex, readableOn, resolveSeriesStyle, seriesRects, type SeriesStyle } from './series-layout';
 
 /** See story-canvas.ts: Safari before 17.4 doesn't implement ctx.letterSpacing. */
 function setTracking(g: CanvasRenderingContext2D, px: number) {
@@ -26,6 +27,8 @@ export interface SeriesStoryData {
   handle: string;
   logo: HTMLImageElement | null;
   photos: SeriesPhotoDraw[];
+  /** Gaya yang diatur pengguna; kosong = bawaan. */
+  style?: SeriesStyle | null;
 }
 
 /** Cover-fits an image into a rect, no pan/zoom controls — series photos are laid out automatically. */
@@ -36,14 +39,32 @@ function coverFit(img: HTMLImageElement, x: number, y: number, w: number, h: num
 }
 
 /**
- * A case series: 3+ photos stacked in equal rows (simplest layout that works
- * for any count — no manual framing per photo, unlike before/after).
+ * A case series: 3+ photos placed automatically by the chosen arrangement
+ * (rows / columns / grid / one big + small) — no manual framing per photo,
+ * unlike before/after. Spacing, corner radius, caption style, numbering and
+ * colours come from `d.style`.
  * `blurFace` applies a uniform blur over that whole photo (no face
  * detection — a deliberate simplification so patients can still be made
  * unidentifiable without needing one).
  */
 export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData, f: StoryFonts) {
-  const T = THEMES[d.background];
+  const st = resolveSeriesStyle(d.style);
+  const base = THEMES[d.background];
+  // Warna kustom menimpa tema; teks/slot diturunkan supaya tetap terbaca.
+  const T = st.bgColor
+    ? {
+        ...base,
+        bg: st.bgColor,
+        fg: readableOn(st.bgColor),
+        muted: mixHex(st.bgColor, readableOn(st.bgColor), 0.62),
+        slot: mixHex(st.bgColor, readableOn(st.bgColor), 0.1),
+        accent: st.accentColor || readableOn(st.bgColor),
+        chipA: st.accentColor || base.chipA,
+        chipAfg: st.accentColor ? readableOn(st.accentColor) : base.chipAfg,
+      }
+    : st.accentColor
+      ? { ...base, accent: st.accentColor, chipA: st.accentColor, chipAfg: readableOn(st.accentColor) }
+      : base;
   const txt = (s: string, x: number, y: number, font: string, color: string, align: CanvasTextAlign = 'left', track = 0) => {
     if (!s) return;
     g.save();
@@ -90,41 +111,88 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
   txt(fit(d.title || 'Nama tindakan', 960, titleFont), 60, 440, titleFont, T.fg);
   if (d.caption) txt(fit(d.caption, 960, `400 32px ${f.display}`), 60, 500, `400 32px ${f.display}`, T.muted);
 
-  // Photos — stacked rows, as many as there are.
-  const top = 560, bot = 1560, x0 = 60, x1 = 1020, gap = 14;
-  const count = Math.max(1, d.photos.length);
-  const rowH = (bot - top - gap * (count - 1)) / count;
+  // Photos — placed by the chosen arrangement, as many as there are.
+  const rects = seriesRects(d.photos.length, st, { x: 60, y: 560, w: 960, h: 1000 });
   d.photos.forEach((p, i) => {
-    const y = top + i * (rowH + gap);
+    const [x, y, w, h] = rects[i];
+    const radius = Math.min(st.radius, w / 2, h / 2);
     g.save();
     g.beginPath();
-    roundRectPath(g, x0, y, x1 - x0, rowH, 20);
+    roundRectPath(g, x, y, w, h, radius);
     g.clip();
     g.fillStyle = T.slot;
-    g.fillRect(x0, y, x1 - x0, rowH);
+    g.fillRect(x, y, w, h);
     if (p.img) {
       if (p.blurFace) g.filter = 'blur(28px)';
-      const { dx, dy, dw, dh } = coverFit(p.img, x0, y, x1 - x0, rowH);
+      const { dx, dy, dw, dh } = coverFit(p.img, x, y, w, h);
       g.drawImage(p.img, dx, dy, dw, dh);
       g.filter = 'none';
     }
+    // Keterangan model "bar": pita selebar foto, di dalam klip sudut foto.
+    const label = p.caption.trim();
+    if (label && st.captionStyle === 'bar') {
+      const barH = 64;
+      const by = st.captionPosition === 'bottom' ? y + h - barH : y;
+      g.fillStyle = 'rgba(8,16,40,.62)';
+      g.fillRect(x, by, w, barH);
+      g.font = `500 26px ${f.display}`;
+      g.fillStyle = '#ffffff';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(fit(label, w - 40, `500 26px ${f.display}`), x + w / 2, by + barH / 2 + 1);
+    }
     g.restore();
-    if (p.caption) {
+
+    const pad = Math.max(10, Math.min(18, st.radius));
+    const atBottom = st.captionPosition === 'bottom';
+    // Sel sempit (mis. 4 kolom): label lebih kecil dan ditaruh di bawah nomor.
+    const narrow = w < 300;
+    const numD = narrow ? 44 : 54;
+    const chipH = narrow ? 40 : 50;
+    const chipPx = narrow ? 19 : 24;
+    const chipTrack = narrow ? 1 : 4;
+    const stack = narrow && st.showNumbers && label !== '' && st.captionStyle === 'chip';
+    const blockH = stack ? numD + 8 + chipH : Math.max(st.showNumbers ? numD : 0, label && st.captionStyle === 'chip' ? chipH : 0);
+    const blockY = atBottom ? y + h - pad - blockH : y + pad;
+    let chipX = x + pad;
+    let chipY = blockY + (blockH - chipH) / 2;
+    if (st.showNumbers) {
+      const cy = stack ? blockY : blockY + (blockH - numD) / 2;
+      g.save();
+      g.shadowColor = 'rgba(0,0,0,.2)';
+      g.shadowBlur = 14;
+      g.fillStyle = T.accent;
+      g.beginPath();
+      g.arc(chipX + numD / 2, cy + numD / 2, numD / 2, 0, Math.PI * 2);
+      g.fill();
+      g.shadowColor = 'transparent';
+      g.fillStyle = readableOn(T.accent);
+      g.font = `700 ${narrow ? 24 : 28}px ${f.display}`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(String(i + 1), chipX + numD / 2, cy + numD / 2 + 1);
+      g.restore();
+      if (stack) chipY = blockY + numD + 8;
+      else chipX += numD + 10;
+    }
+    if (label && st.captionStyle === 'chip') {
       g.save();
       g.shadowColor = 'rgba(0,0,0,.18)';
       g.shadowBlur = 16;
-      const label = p.caption.toUpperCase();
-      g.font = `500 24px ${f.mono}`;
-      setTracking(g, 4);
-      const w = g.measureText(label).width + 44;
+      const labelFont = `500 ${chipPx}px ${f.mono}`;
+      const padX = narrow ? 14 : 22;
+      const text = fit(label.toUpperCase(), Math.max(40, x + w - pad - chipX - padX * 2), labelFont, chipTrack);
+      g.font = labelFont;
+      setTracking(g, chipTrack);
+      const cw = g.measureText(text).width + padX * 2;
       g.fillStyle = T.chipA;
       g.beginPath();
-      roundRectPath(g, x0 + 18, y + 18, w, 50, 25);
+      roundRectPath(g, chipX, chipY, cw, chipH, chipH / 2);
       g.fill();
       g.shadowColor = 'transparent';
       g.fillStyle = T.chipAfg;
       g.textBaseline = 'middle';
-      g.fillText(label, x0 + 18 + 22, y + 18 + 26);
+      g.fillText(text, chipX + padX, chipY + chipH / 2 + 1);
       g.restore();
     }
   });

@@ -44,6 +44,7 @@ import {
   type StorySlot,
 } from '@/lib/story-canvas';
 import { drawSeriesStory, type SeriesPhotoDraw } from '@/lib/series-canvas';
+import { DEFAULT_SERIES_STYLE, SERIES_ARRANGEMENTS, resolveSeriesStyle, type ResolvedSeriesStyle } from '@/lib/series-layout';
 import {
   CONTENT_TEMPLATES,
   REGION_OPTIONS,
@@ -97,6 +98,8 @@ interface Form {
   region: string;
   visits: number | null;
   autoCaption: boolean;
+  /** Gaya layout series. */
+  seriesStyle: ResolvedSeriesStyle;
 }
 
 type BrandFields = Pick<Form, 'brandName' | 'brandSub' | 'contactLine'>;
@@ -106,6 +109,13 @@ interface Photo {
   url: string | null;
   img: HTMLImageElement;
 }
+
+const ARRANGEMENT_ICON: Record<'rows' | 'columns' | 'grid' | 'hero', Array<[number, number, number, number]>> = {
+  rows: [[4, 4, 32, 8], [4, 16, 32, 8], [4, 28, 32, 8]],
+  columns: [[4, 4, 9, 32], [15, 4, 10, 32], [27, 4, 9, 32]],
+  grid: [[4, 4, 15, 15], [21, 4, 15, 15], [4, 21, 15, 15], [21, 21, 15, 15]],
+  hero: [[4, 4, 32, 18], [4, 24, 9, 12], [15, 24, 10, 12], [27, 24, 9, 12]],
+};
 
 const EMPTY_FORM: Form = {
   name: '',
@@ -126,6 +136,7 @@ const EMPTY_FORM: Form = {
   region: '',
   visits: null,
   autoCaption: true,
+  seriesStyle: DEFAULT_SERIES_STYLE,
 };
 
 /** What starting a template from an example fills in. */
@@ -160,6 +171,7 @@ const templateFields = (t: ContentTemplateRecord, brand: BrandFields): Partial<F
     region: s.region ?? '',
     visits: s.visits ?? null,
     autoCaption: true,
+    seriesStyle: resolveSeriesStyle(s.series),
   };
 };
 
@@ -351,6 +363,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
         visits: s.visits ?? null,
         // Stories made before the details existed keep their typed caption.
         autoCaption: s.autoCaption ?? false,
+        seriesStyle: resolveSeriesStyle(s.series),
       });
       setPhotos({
         before: before && content.beforeImageUrl ? { url: content.beforeImageUrl, img: before } : null,
@@ -385,6 +398,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
           caption,
           logo,
           photos: seriesPhotos,
+          style: form.seriesStyle,
         },
         FONTS,
       );
@@ -466,6 +480,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     region: form.region.trim(),
     condition: form.condition.trim(),
     visits: form.visits ?? undefined,
+    series: form.seriesStyle,
   });
 
   const contentPayload = (): ContentPayload => ({
@@ -728,6 +743,9 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   }, [loading, notFound, isTemplate]);
 
   const resetFrame = (slot: StorySlot) => commitFrame(slot, DEFAULT_FRAME);
+
+  const setSeriesStyle = (patch: Partial<ResolvedSeriesStyle>) =>
+    setForm((prev) => ({ ...prev, seriesStyle: resolveSeriesStyle({ ...prev.seriesStyle, ...patch }) }));
 
   const setLayout = (layout: ContentLayout) => {
     set('layout', layout);
@@ -1127,6 +1145,127 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                       </label>
                     ))}
                   </div>
+                  {form.layout === 'series' && (
+                    <div className="kt-series-style">
+                      <h3>Gaya rangkaian</h3>
+                      <div className="kt-label">Susunan foto</div>
+                      <div className="kt-arrange" role="radiogroup" aria-label="Susunan foto rangkaian">
+                        {SERIES_ARRANGEMENTS.map(({ value, label }) => (
+                          <label key={value} className={form.seriesStyle.arrangement === value ? 'on' : ''}>
+                            <input
+                              type="radio"
+                              name="series-arrangement"
+                              checked={form.seriesStyle.arrangement === value}
+                              onChange={() => setSeriesStyle({ arrangement: value })}
+                            />
+                            <svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
+                              {ARRANGEMENT_ICON[value].map((r, i) => (
+                                <rect key={i} x={r[0]} y={r[1]} width={r[2]} height={r[3]} rx="2" />
+                              ))}
+                            </svg>
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                      <label className="kt-zoom">
+                        <span>Jarak foto</span>
+                        <input
+                          type="range" min={0} max={48} step={1}
+                          value={form.seriesStyle.gap}
+                          onChange={(e) => setSeriesStyle({ gap: Number(e.target.value) })}
+                          aria-label="Jarak antar foto"
+                        />
+                        <output className="kt-deg">{form.seriesStyle.gap}</output>
+                      </label>
+                      <label className="kt-zoom">
+                        <span>Sudut foto</span>
+                        <input
+                          type="range" min={0} max={80} step={1}
+                          value={form.seriesStyle.radius}
+                          onChange={(e) => setSeriesStyle({ radius: Number(e.target.value) })}
+                          aria-label="Kebulatan sudut foto"
+                        />
+                        <output className="kt-deg">{form.seriesStyle.radius}</output>
+                      </label>
+                      <div className="kt-label">Keterangan tiap foto</div>
+                      <div className="kt-choice" role="radiogroup" aria-label="Gaya keterangan">
+                        {(
+                          [
+                            ['chip', 'Label'],
+                            ['bar', 'Pita'],
+                            ['none', 'Tanpa'],
+                          ] as const
+                        ).map(([value, label]) => (
+                          <label key={value} className={form.seriesStyle.captionStyle === value ? 'on' : ''}>
+                            <input
+                              type="radio" name="series-caption"
+                              checked={form.seriesStyle.captionStyle === value}
+                              onChange={() => setSeriesStyle({ captionStyle: value })}
+                            />
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                      <div className="kt-choice" role="radiogroup" aria-label="Posisi keterangan">
+                        {(
+                          [
+                            ['top', 'Di atas foto'],
+                            ['bottom', 'Di bawah foto'],
+                          ] as const
+                        ).map(([value, label]) => (
+                          <label key={value} className={form.seriesStyle.captionPosition === value ? 'on' : ''}>
+                            <input
+                              type="radio" name="series-caption-pos"
+                              checked={form.seriesStyle.captionPosition === value}
+                              onChange={() => setSeriesStyle({ captionPosition: value })}
+                            />
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                      <label className="kt-check">
+                        <input
+                          type="checkbox"
+                          checked={form.seriesStyle.showNumbers}
+                          onChange={(e) => setSeriesStyle({ showNumbers: e.target.checked })}
+                        />
+                        Beri nomor urut (1, 2, 3…) di tiap foto
+                      </label>
+                      <div className="kt-label">Warna</div>
+                      <div className="kt-colors">
+                        {(
+                          [
+                            ['bgColor', 'Latar'],
+                            ['accentColor', 'Aksen'],
+                          ] as const
+                        ).map(([key, label]) => (
+                          <div key={key} className="kt-color">
+                            <label>
+                              <span>{label}</span>
+                              <input
+                                type="color"
+                                value={form.seriesStyle[key] || (key === 'bgColor' ? (form.background === 'navy' ? '#0f1f4d' : '#ffffff') : '#1d2f6f')}
+                                onChange={(e) => setSeriesStyle({ [key]: e.target.value })}
+                                aria-label={`Warna ${label.toLowerCase()}`}
+                              />
+                            </label>
+                            {form.seriesStyle[key] && (
+                              <button type="button" className="kt-link" onClick={() => setSeriesStyle({ [key]: '' })}>
+                                Ikut tema
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="kt-hint">
+                        Pengaturan ini ikut tersimpan{isTemplate ? ' di template tindakan ini' : ' di konten ini dan dipakai template'}.
+                        {' '}
+                        <button type="button" className="kt-link" onClick={() => set('seriesStyle', DEFAULT_SERIES_STYLE)}>
+                          Kembalikan ke bawaan
+                        </button>
+                      </p>
+                    </div>
+                  )}
                   <label className="kt-check">
                     <input type="checkbox" checked={form.showDisclaimer} onChange={(e) => set('showDisclaimer', e.target.checked)} />
                     Tampilkan catatan &ldquo;Dipublikasikan atas izin pasien · Hasil tiap pasien dapat berbeda&rdquo;
