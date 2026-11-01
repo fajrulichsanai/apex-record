@@ -154,7 +154,7 @@ export default function PatientHistoryList({ patientId, kind }: Props) {
           {data.days.map((d) => (
             <span key={d.date} className="ph-day" title={`${d.count} ${noun}`}>
               {Number(d.date.slice(8))}
-              {d.count > 1 && <sup>{d.count}×</sup>}
+              {d.count > 1 && <small aria-label={`${d.count} ${noun}`}>{d.count}</small>}
             </span>
           ))}
         </div>

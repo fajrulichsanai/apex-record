@@ -788,19 +788,34 @@ const routes: [RegExp, Handler][] = [
   }],
   [/^\/encounters$/, (_m, q) => {
     const date = q.get('date');
+    const month = q.get('month');
     const status = q.get('status');
+    const active = q.get('active') === 'true';
     const doc = q.get('practitionerId');
     const unbilled = q.get('unbilled') === 'true';
-    const rows = demoEncounters
+    const inPeriod = (e: (typeof demoEncounters)[number]) =>
+      (!date || dateOf(e.arrived) === date) && (!month || dateOf(e.arrived).startsWith(month));
+    const scoped = demoEncounters.filter((e) => inPeriod(e) && (!doc || e.practitionerId === Number(doc)));
+    const rows = scoped
       .filter((e) =>
-        (!date || dateOf(e.arrived) === date) &&
         (!status || e.status === status) &&
-        (!doc || e.practitionerId === Number(doc)) &&
+        (!active || e.status === 'arrived' || e.status === 'in_progress') &&
         (!unbilled || (e.status === 'finished' && !billingByEncounter.has(e.id))))
       .slice()
       .reverse()
       .map(encounterListItem);
-    return list(rows, q, 20);
+    const page = list(rows, q, 20) as Record<string, unknown>;
+    if (month || date) {
+      const counts = { total: scoped.length, arrived: 0, in_progress: 0, finished: 0, cancelled: 0 };
+      for (const e of scoped) counts[e.status] += 1;
+      page.counts = counts;
+    }
+    if (month) {
+      const byDay = new Map<string, number>();
+      for (const e of scoped) byDay.set(dateOf(e.arrived), (byDay.get(dateOf(e.arrived)) ?? 0) + 1);
+      page.days = [...byDay].sort().map(([d, count]) => ({ date: d, count }));
+    }
+    return page;
   }],
 
   // billing
@@ -811,10 +826,17 @@ const routes: [RegExp, Handler][] = [
   }],
   [/^\/billings$/, (_m, q) => {
     const status = q.get('status');
+    const month = q.get('month');
     const from = q.get('dateFrom');
     const to = q.get('dateTo');
-    const rows = demoBillings
-      .filter((b) => (!status || b.status === status) && (!from || dateOf(b.createdAt) >= from) && (!to || dateOf(b.createdAt) <= to))
+    const scoped = demoBillings.filter(
+      (b) =>
+        (!month || dateOf(b.createdAt).startsWith(month)) &&
+        (!from || dateOf(b.createdAt) >= from) &&
+        (!to || dateOf(b.createdAt) <= to),
+    );
+    const rows = scoped
+      .filter((b) => !status || b.status === status)
       .slice()
       .reverse()
       .map((b) => ({
@@ -828,7 +850,16 @@ const routes: [RegExp, Handler][] = [
         status: b.status,
         createdAt: b.createdAt.toISOString(),
       }));
-    return list(rows, q, 10);
+    const page = list(rows, q, 10) as Record<string, unknown>;
+    const byStatus: Record<string, number> = { paid: 0, partial: 0, unpaid: 0 };
+    for (const b of scoped) byStatus[b.status] = (byStatus[b.status] ?? 0) + 1;
+    page.summary = { count: scoped.length, totalPaid: scoped.reduce((n, b) => n + b.paidAmount, 0), byStatus };
+    if (month) {
+      const byDay = new Map<string, number>();
+      for (const b of scoped) byDay.set(dateOf(b.createdAt), (byDay.get(dateOf(b.createdAt)) ?? 0) + 1);
+      page.days = [...byDay].sort().map(([d, count]) => ({ date: d, count }));
+    }
+    return page;
   }],
 
   // reservations & recalls

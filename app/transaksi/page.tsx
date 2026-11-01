@@ -14,6 +14,7 @@ import { ApiError } from '@/lib/api-client';
 import {
   billingApi,
   BillingListItem,
+  BillingListResponse,
   BillingStatus,
   CreateBillingItemPayload,
   DiscountType,
@@ -22,6 +23,7 @@ import {
 import { encounterApi, EncounterListItem } from '@/lib/encounter';
 import { tarifApi, Tarif } from '@/lib/tarif';
 import { useToast } from '@/lib/toast-context';
+import { DayChips, MonthNav, Pager, currentMonth } from '@/components/ui/PeriodNav';
 
 type FilterValue = 'semua' | BillingStatus;
 
@@ -100,6 +102,12 @@ function TransaksiPageInner() {
   const showModal = canSeeHargaModal(user?.role);
   const [billings, setBillings] = useState<BillingListItem[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
+  // Riwayat dilihat per bulan (bawaan: bulan ini), bisa disaring ke satu tanggal.
+  const [month, setMonth] = useState(currentMonth);
+  const [day, setDay] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [days, setDays] = useState<{ date: string; count: number }[]>([]);
+  const [summary, setSummary] = useState<BillingListResponse['summary']>(undefined);
   const [loadingList, setLoadingList] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
 
@@ -136,17 +144,22 @@ function TransaksiPageInner() {
     try {
       const res = await billingApi.list({
         status: currentFilter === 'semua' ? undefined : currentFilter,
-        page: 1,
-        limit: 50,
+        month: month || undefined,
+        dateFrom: day ?? undefined,
+        dateTo: day ?? undefined,
+        page,
+        limit: 20,
       });
       setBillings(res.data);
       setMeta(res.meta);
+      setSummary(res.summary);
+      setDays(res.days ?? []);
     } catch (err) {
       setListError(err instanceof ApiError ? err.message : 'Gagal memuat riwayat transaksi');
     } finally {
       setLoadingList(false);
     }
-  }, [currentFilter]);
+  }, [currentFilter, month, day, page]);
 
   useEffect(() => {
     loadBillings();
@@ -192,13 +205,25 @@ function TransaksiPageInner() {
     );
   }, [billings, searchQuery]);
 
-  const totalCount = meta.total;
-  const totalIncome = useMemo(
-    () => billings.reduce((sum, b) => sum + Number(b.paidAmount || 0), 0),
-    [billings],
-  );
-  const pendingCount = billings.filter((b) => b.status === 'partial' || b.status === 'unpaid').length;
-  const lunasCount = billings.filter((b) => b.status === 'paid').length;
+  // Kartu statistik: dihitung server untuk seluruh periode terpilih (bukan hanya halaman ini).
+  const totalCount = summary?.count ?? meta.total;
+  const totalIncome = summary?.totalPaid ?? 0;
+  const pendingCount = (summary?.byStatus.partial ?? 0) + (summary?.byStatus.unpaid ?? 0);
+  const lunasCount = summary?.byStatus.paid ?? 0;
+
+  const changeMonth = (next: string) => {
+    setMonth(next);
+    setDay(null);
+    setPage(1);
+  };
+  const changeDay = (next: string | null) => {
+    setDay(next);
+    setPage(1);
+  };
+  const changeFilter = (next: FilterValue) => {
+    setCurrentFilter(next);
+    setPage(1);
+  };
 
   function updateRow(key: number, patch: Partial<ItemRow>) {
     setItems((prev) =>
@@ -394,7 +419,13 @@ function TransaksiPageInner() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{formatRupiah(totalIncome)}</div>
+              <div
+                className="stat-value"
+                style={{ fontSize: formatRupiah(totalIncome).length > 15 ? 17 : formatRupiah(totalIncome).length > 11 ? 21 : undefined }}
+                title={formatRupiah(totalIncome)}
+              >
+                {formatRupiah(totalIncome)}
+              </div>
               <div className="stat-label">Total Pendapatan</div>
             </div>
           </div>
@@ -722,33 +753,46 @@ function TransaksiPageInner() {
               <div className="filter-tabs">
                 <button
                   className={`filter-tab ${currentFilter === 'semua' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('semua')}
+                  onClick={() => changeFilter('semua')}
                   type="button"
                 >
                   Semua
                 </button>
                 <button
                   className={`filter-tab ${currentFilter === 'paid' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('paid')}
+                  onClick={() => changeFilter('paid')}
                   type="button"
                 >
                   Lunas
                 </button>
                 <button
                   className={`filter-tab ${currentFilter === 'partial' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('partial')}
+                  onClick={() => changeFilter('partial')}
                   type="button"
                 >
                   Sebagian
                 </button>
                 <button
                   className={`filter-tab ${currentFilter === 'unpaid' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('unpaid')}
+                  onClick={() => changeFilter('unpaid')}
                   type="button"
                 >
                   Belum Bayar
                 </button>
               </div>
+            </div>
+
+            <div className="pn-period">
+              <MonthNav month={month} onChange={changeMonth} allowAll />
+              {month && (
+                <DayChips
+                  days={days}
+                  selected={day}
+                  onSelect={changeDay}
+                  label="Tanggal transaksi"
+                  noun="transaksi"
+                />
+              )}
             </div>
 
             <div className="panel-sort">
@@ -774,7 +818,7 @@ function TransaksiPageInner() {
                 <div className="empty-icon-wrap">
                   <span aria-hidden="true" className="material-symbols-rounded">receipt_long</span>
                 </div>
-                {billings.length === 0 && currentFilter === 'semua' ? (
+                {billings.length === 0 && currentFilter === 'semua' && !month && !day ? (
                   <>
                     <div className="empty-title">Belum ada transaksi</div>
                     <div className="empty-sub">Pilih kunjungan selesai di panel kiri untuk membuat tagihan pertama.</div>
@@ -782,12 +826,17 @@ function TransaksiPageInner() {
                 ) : (
                   <>
                     <div className="empty-title">Tidak ada transaksi yang cocok</div>
-                    <div className="empty-sub">Coba ubah filter atau kata kunci pencarian.</div>
+                    <div className="empty-sub">
+                      {month
+                        ? 'Belum ada transaksi pada periode ini. Coba bulan lain, ubah filter, atau kata kunci pencarian.'
+                        : 'Coba ubah filter atau kata kunci pencarian.'}
+                    </div>
                     <button
                       type="button"
                       className="btn-outline"
                       onClick={() => {
-                        setCurrentFilter('semua');
+                        changeFilter('semua');
+                        changeMonth('');
                         setSearchQuery('');
                       }}
                     >
@@ -851,6 +900,8 @@ function TransaksiPageInner() {
                 })}
               </div>
             )}
+
+            <Pager meta={meta} onPage={setPage} loading={loadingList} noun="transaksi" />
           </div>
         </div>
       </main>

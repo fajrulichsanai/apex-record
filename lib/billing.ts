@@ -25,6 +25,14 @@ export interface BillingListResponse {
     limit: number;
     totalPages: number;
   };
+  /** Ringkasan seluruh periode (bukan hanya halaman ini), tidak terpengaruh filter status. */
+  summary?: {
+    count: number;
+    totalPaid: number;
+    byStatus: Record<string, number>;
+  };
+  /** Hanya saat difilter per bulan: tanggal yang berisi transaksi. */
+  days?: { date: string; count: number }[];
 }
 
 export interface BillingItem {
@@ -115,6 +123,8 @@ export interface CreatePaymentResponse {
 export const billingApi = {
   list: (query?: {
     status?: BillingStatus;
+    /** YYYY-MM berdasarkan tanggal invoice dibuat. */
+    month?: string;
     dateFrom?: string;
     dateTo?: string;
     patientId?: number;

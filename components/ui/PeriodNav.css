@@ -1,0 +1,38 @@
+.pn-month { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pn-select {
+  flex: 1; min-width: 140px; font: inherit; font-size: 13px; font-weight: 600; padding: 8px 10px;
+  border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-main);
+}
+.pn-nav {
+  display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; flex: none; cursor: pointer;
+  border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-sub);
+}
+.pn-nav:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.pn-nav:disabled, .pn-btn:disabled { opacity: .4; cursor: not-allowed; }
+.pn-select:focus-visible, .pn-nav:focus-visible, .pn-btn:focus-visible, .pn-today:focus-visible, .pn-day:focus-visible, .pn-clear:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.pn-today, .pn-clear {
+  font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 12px; cursor: pointer;
+  border: 1.5px solid var(--border); border-radius: 999px; background: none; color: var(--accent);
+}
+.pn-days { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--text-muted); }
+.pn-days-label { font-weight: 600; margin-right: 2px; }
+.pn-day {
+  display: inline-flex; align-items: center; gap: 5px; min-width: 30px; padding: 4px 9px; justify-content: center; font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer;
+  border: 1.5px solid transparent; border-radius: 999px; background: var(--accent-soft); color: var(--accent);
+}
+.pn-day:hover { border-color: var(--accent); }
+.pn-day.on { background: var(--accent-solid, var(--accent)); color: #17160F; border-color: var(--accent-solid, var(--accent)); }
+.pn-day small { font-size: 10.5px; font-weight: 600; opacity: .75; padding-left: 5px; border-left: 1px solid currentColor; line-height: 1.2; }
+.pn-pager { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; padding: 12px 16px; border-top: 1px solid var(--border); }
+.pn-range { font-size: 12px; color: var(--text-muted); }
+.pn-pager-btns { display: flex; align-items: center; gap: 8px; }
+.pn-page { font-size: 12.5px; font-weight: 600; color: var(--text-sub); }
+.pn-btn {
+  font: inherit; font-size: 12.5px; font-weight: 600; padding: 6px 12px; cursor: pointer;
+  border: 1.5px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-sub);
+}
+.pn-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.pn-period { display: flex; flex-direction: column; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.pn-mode { display: flex; gap: 6px; flex-wrap: wrap; }
