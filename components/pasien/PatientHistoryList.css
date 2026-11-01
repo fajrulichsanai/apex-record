@@ -46,3 +46,6 @@
   border: 1.5px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text-sub);
 }
 .ph-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.ph-linked { display: block; text-decoration: none; }
+.ph-linked:hover { color: var(--accent); text-decoration: underline; }
+.ph-linked:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }

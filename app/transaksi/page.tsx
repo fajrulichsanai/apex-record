@@ -122,6 +122,12 @@ function TransaksiPageInner() {
   const [pendingPaymentBilling, setPendingPaymentBilling] = useState<BillingListItem | null>(null);
   const [selectedBillingId, setSelectedBillingId] = useState<number | null>(null);
 
+  // Tautan dari riwayat transaksi pasien (?billingId=…): langsung buka detail invoicenya.
+  const linkedBillingId = Number(searchParams.get('billingId'));
+  useEffect(() => {
+    if (Number.isInteger(linkedBillingId) && linkedBillingId > 0) setSelectedBillingId(linkedBillingId);
+  }, [linkedBillingId]);
+
   const { success, error: showError } = useToast();
 
   const loadBillings = useCallback(async () => {

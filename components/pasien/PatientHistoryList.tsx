@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { patientsApi, type Encounter, type PatientBillingRow, type PatientHistoryPage } from '@/lib/patients';
 import './PatientHistoryList.css';
@@ -181,7 +182,9 @@ export default function PatientHistoryList({ patientId, kind }: Props) {
                 <div className="ph-item" key={enc.id}>
                   <div className="ph-dot" />
                   <div className="ph-info">
-                    <div className="ph-title">{enc.chiefComplaint || enc.serviceType}</div>
+                    <Link className="ph-title ph-linked" href={`/list-kunjungan/${enc.id}/rekam-medis`} title="Buka rekam medis kunjungan ini">
+                      {enc.chiefComplaint || enc.serviceType}
+                    </Link>
                     <div className="ph-sub">
                       {dateTimeLabel(enc.arrivedTime)}
                       {enc.practitionerName ? ` · drg. ${enc.practitionerName}` : ''}
@@ -194,7 +197,9 @@ export default function PatientHistoryList({ patientId, kind }: Props) {
                 <div className="ph-item" key={b.id}>
                   <div className="ph-dot ph-dot-money" />
                   <div className="ph-info">
-                    <div className="ph-title">{b.invoiceNumber}</div>
+                    <Link className="ph-title ph-linked" href={`/transaksi?billingId=${b.id}`} title="Buka detail invoice">
+                      {b.invoiceNumber}
+                    </Link>
                     <div className="ph-sub">
                       {dateTimeLabel(b.createdAt)}
                       {b.itemNames?.length ? ` · ${b.itemNames.join(', ')}` : ''}
