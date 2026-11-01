@@ -369,3 +369,19 @@
 .billing-payment-edit-btn .material-symbols-rounded { font-size: 17px; }
 .billing-payment-edit-btn:hover:not(:disabled) { color: var(--accent); background: var(--accent-soft); }
 .billing-payment-edit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.billing-refund-confirm {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  margin: 8px 0;
+  border: 1px solid #e0a800;
+  border-radius: 10px;
+  background: #fff8e1;
+  color: #5c4400;
+  font-size: 13px;
+  line-height: 1.45;
+  cursor: pointer;
+}
+.billing-refund-confirm input { margin-top: 3px; flex-shrink: 0; width: 16px; height: 16px; }

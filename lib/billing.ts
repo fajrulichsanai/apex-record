@@ -94,6 +94,8 @@ export interface UpdateBillingPayload {
   totalDiscountType?: DiscountType;
   additionalFee?: number;
   notes?: string;
+  /** Konfirmasi: kembalikan kelebihan bayar ke pasien bila total baru < yang sudah dibayar. */
+  refundExcess?: boolean;
 }
 
 export interface CreatePaymentPayload {

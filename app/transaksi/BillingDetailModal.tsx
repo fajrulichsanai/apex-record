@@ -96,6 +96,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [additionalFee, setAdditionalFee] = useState(0);
   const [notes, setNotes] = useState('');
+  const [confirmRefund, setConfirmRefund] = useState(false);
   const [sendingWa, setSendingWa] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -153,6 +154,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
     setTotalDiscount(Number(detail.totalDiscount || 0));
     setAdditionalFee(Number(detail.additionalFee || 0));
     setNotes(detail.notes || '');
+    setConfirmRefund(false);
     setEditing(true);
   }
 
@@ -177,10 +179,18 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
   }, 0);
   const editGrandTotal = Math.max(0, editSubtotal - totalDiscount + additionalFee);
 
+  // Total baru lebih kecil dari yang sudah dibayar → selisih dikembalikan ke pasien
+  const refundAmount = detail ? Math.max(0, Math.round((Number(detail.paidAmount) - editGrandTotal) * 100) / 100) : 0;
+
   async function handleSave() {
     const validItems = items.filter((r) => r.name);
     if (validItems.length === 0) {
       showError('Tambahkan minimal satu tindakan');
+      return;
+    }
+
+    if (refundAmount > 0 && !confirmRefund) {
+      showError(`Centang konfirmasi pengembalian ${formatRupiah(refundAmount)} ke pasien untuk melanjutkan`);
       return;
     }
 
@@ -199,11 +209,12 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
         totalDiscountType: totalDiscount > 0 ? 'nominal' : undefined,
         additionalFee: additionalFee > 0 ? additionalFee : undefined,
         notes: notes || undefined,
+        refundExcess: refundAmount > 0 ? true : undefined,
       });
       if (!isMounted.current) return;
       setDetail(updated);
       setEditing(false);
-      success('Invoice berhasil diperbarui');
+      success(refundAmount > 0 ? `Invoice diperbarui — ${formatRupiah(refundAmount)} dikembalikan ke pasien` : 'Invoice berhasil diperbarui');
       onUpdated();
     } catch (err) {
       if (!isMounted.current) return;
@@ -446,6 +457,20 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                         <span>Perkiraan margin (sebelum diskon/biaya tagihan)</span>
                         <span>{formatRupiah(items.reduce((s, r) => s + itemProfit(r).total, 0))}</span>
                       </div>
+                    )}
+                    {refundAmount > 0 && (
+                      <label className="billing-refund-confirm">
+                        <input
+                          type="checkbox"
+                          checked={confirmRefund}
+                          onChange={(e) => setConfirmRefund(e.target.checked)}
+                        />
+                        <span>
+                          Total baru lebih kecil dari yang sudah dibayar ({formatRupiah(Number(detail?.paidAmount ?? 0))}).
+                          Kembalikan selisih <strong>{formatRupiah(refundAmount)}</strong> ke pasien — pembayaran
+                          terbaru dikurangi dan dicatat di log aktivitas.
+                        </span>
+                      </label>
                     )}
                     <div className="billing-summary-note">
                       Perubahan tersimpan di log aktivitas (sebelum &amp; sesudah). Stok bahan disesuaikan otomatis.
