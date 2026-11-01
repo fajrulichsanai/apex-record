@@ -123,6 +123,35 @@ export interface Encounter {
   practitionerName?: string;
 }
 
+/** Satu halaman riwayat (kunjungan/transaksi) satu pasien, difilter per bulan. */
+export interface PatientHistoryPage<T> {
+  items: T[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+  /** Semua bulan (YYYY-MM) yang punya data, terbaru dulu. */
+  months: { month: string; count: number }[];
+  /** Tanggal (YYYY-MM-DD) yang punya data pada bulan terpilih. */
+  days: { date: string; count: number }[];
+}
+
+export interface PatientBillingRow {
+  id: number;
+  invoiceNumber: string;
+  status: string;
+  grandTotal: number;
+  paidAmount: number;
+  outstandingAmount: number;
+  createdAt: string;
+  encounterId: number;
+  itemNames: string[];
+}
+
+export interface PatientHistoryQuery {
+  /** YYYY-MM; kosong = semua bulan. */
+  month?: string;
+  page?: number;
+  limit?: number;
+}
+
 export type TimelineItemType = 'kunjungan' | 'billing' | 'foto' | 'treatment_plan' | 'recall';
 
 export interface TimelineItem {
@@ -284,6 +313,12 @@ export const patientsApi = {
   remove: (id: number) => apiClient.delete<void>(`/patients/${id}`),
 
   encounters: (id: number) => apiClient.get<Encounter[]>(`/patients/${id}/encounters`),
+
+  encounterHistory: (id: number, q: PatientHistoryQuery = {}) =>
+    apiClient.get<PatientHistoryPage<Encounter>>(`/patients/${id}/encounter-history?${toQueryString({ ...q })}`),
+
+  billingHistory: (id: number, q: PatientHistoryQuery = {}) =>
+    apiClient.get<PatientHistoryPage<PatientBillingRow>>(`/patients/${id}/billing-history?${toQueryString({ ...q })}`),
 
   getTimeline: (id: number) => apiClient.get<TimelineItem[]>(`/patients/${id}/timeline`),
 

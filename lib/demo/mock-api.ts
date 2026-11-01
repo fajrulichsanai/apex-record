@@ -672,6 +672,54 @@ const routes: [RegExp, Handler][] = [
       finishedTime: e.finished?.toISOString(),
       practitionerName: practitionerById.get(e.practitionerId)?.name,
     }))],
+  [/^\/patients\/(\d+)\/(encounter|billing)-history$/, (m, q) => {
+    const page = Math.max(1, Number(q.get('page') ?? 1));
+    const limit = Math.min(50, Math.max(1, Number(q.get('limit') ?? 10)));
+    const month = q.get('month') ?? '';
+    const isEnc = m[2] === 'encounter';
+    type Hist = { at: Date; e?: (typeof demoEncounters)[number]; b?: (typeof demoBillings)[number] };
+    const all: Hist[] = (isEnc
+      ? demoEncounters.filter((e) => e.patientId === Number(m[1])).map((e): Hist => ({ at: e.arrived, e }))
+      : demoBillings.filter((b) => b.patientId === Number(m[1])).map((b): Hist => ({ at: b.createdAt, b }))
+    ).sort((a, b) => b.at.getTime() - a.at.getTime());
+    const ym = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const ymd = (d: Date) => `${ym(d)}-${String(d.getDate()).padStart(2, '0')}`;
+    const inMonth = month ? all.filter((r) => ym(r.at) === month) : all;
+    const count = (keys: string[]) => {
+      const c = new Map<string, number>();
+      keys.forEach((k) => c.set(k, (c.get(k) ?? 0) + 1));
+      return c;
+    };
+    const rows = inMonth.slice((page - 1) * limit, page * limit).map((r) =>
+      isEnc && r.e
+        ? {
+            id: r.e.id,
+            status: r.e.status,
+            serviceType: 'outpatient',
+            chiefComplaint: r.e.chiefComplaint,
+            arrivedTime: r.e.arrived.toISOString(),
+            finishedTime: r.e.finished?.toISOString(),
+            practitionerName: practitionerById.get(r.e.practitionerId)?.name,
+          }
+        : r.b && {
+            id: r.b.id,
+            invoiceNumber: r.b.invoiceNumber,
+            status: r.b.status,
+            grandTotal: r.b.grandTotal,
+            paidAmount: r.b.paidAmount,
+            outstandingAmount: Math.max(0, r.b.grandTotal - r.b.paidAmount),
+            createdAt: r.b.createdAt.toISOString(),
+            encounterId: r.b.encounterId,
+            itemNames: r.b.items.map((i) => i.name),
+          },
+    );
+    return {
+      items: rows,
+      meta: { page, limit, total: inMonth.length, totalPages: Math.ceil(inMonth.length / limit) },
+      months: [...count(all.map((r) => ym(r.at)))].map(([month, count]) => ({ month, count })),
+      days: [...count(inMonth.map((r) => ymd(r.at)))].sort().map(([date, count]) => ({ date, count })),
+    };
+  }],
   [/^\/patients\/(\d+)\/medical-record$/, (m) => medicalRecord(Number(m[1]))],
   [/^\/patients\/(\d+)\/timeline$/, (m) =>
     demoEncounters.filter((e) => e.patientId === Number(m[1])).reverse().slice(0, 15).map((e) => ({

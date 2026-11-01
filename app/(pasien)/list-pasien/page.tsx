@@ -4,7 +4,8 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
-import { patientsApi, Patient, Encounter, PatientQuery, PatientStats, TimelineItem } from '@/lib/patients';
+import { patientsApi, Patient, PatientQuery, PatientStats, TimelineItem } from '@/lib/patients';
+import PatientHistoryList from '@/components/pasien/PatientHistoryList';
 import { ApiError } from '@/lib/api-client';
 import { pressable, useEscapeKey } from '@/lib/a11y';
 import '../../styles/list-pasien.css';
@@ -77,12 +78,6 @@ function formatDate(dateStr?: string) {
   return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
 }
 
-const ENCOUNTER_STATUS_LABEL: Record<string, string> = {
-  finished: 'Selesai',
-  arrived: 'Sedang Berlangsung',
-  cancelled: 'Dibatalkan',
-};
-
 const TIMELINE_TYPE_META: Record<
   TimelineItem['type'],
   { label: string; icon: string; dot: string }
@@ -134,11 +129,9 @@ function ListPasienContent() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const [encounters, setEncounters] = useState<Encounter[]>([]);
-  const [encountersLoading, setEncountersLoading] = useState(false);
 
 
-  const [detailTab, setDetailTab] = useState<'ringkasan' | 'timeline'>('ringkasan');
+  const [detailTab, setDetailTab] = useState<'kunjungan' | 'transaksi' | 'timeline'>('kunjungan');
   const [timeline, setTimeline] = useState<TimelineItem[]>([]);
   const [timelineLoading, setTimelineLoading] = useState(false);
 
@@ -278,26 +271,6 @@ function ListPasienContent() {
   }, [linkedPatientId]);
 
   useEffect(() => {
-    if (!selectedPatient) return;
-    let active = true;
-    setEncountersLoading(true);
-    patientsApi
-      .encounters(selectedPatient.id)
-      .then((data) => {
-        if (active) setEncounters(data);
-      })
-      .catch(() => {
-        if (active) setEncounters([]);
-      })
-      .finally(() => {
-        if (active) setEncountersLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [selectedPatient]);
-
-  useEffect(() => {
     if (!selectedPatient || detailTab !== 'timeline') return;
     let active = true;
     setTimelineLoading(true);
@@ -320,7 +293,7 @@ function ListPasienContent() {
   const handleSelectPatient = (patient: Patient) => {
     setSelectedPatient(patient);
     setShowDetailOnMobile(true);
-    setDetailTab('ringkasan');
+    setDetailTab('kunjungan');
   };
 
   useEffect(() => {
@@ -687,10 +660,17 @@ function ListPasienContent() {
                 <div className="detail-tabs">
                   <button
                     type="button"
-                    className={`filter-tab ${detailTab === 'ringkasan' ? 'active' : ''}`}
-                    onClick={() => setDetailTab('ringkasan')}
+                    className={`filter-tab ${detailTab === 'kunjungan' ? 'active' : ''}`}
+                    onClick={() => setDetailTab('kunjungan')}
                   >
-                    Ringkasan
+                    Kunjungan
+                  </button>
+                  <button
+                    type="button"
+                    className={`filter-tab ${detailTab === 'transaksi' ? 'active' : ''}`}
+                    onClick={() => setDetailTab('transaksi')}
+                  >
+                    Transaksi
                   </button>
                   <button
                     type="button"
@@ -701,32 +681,16 @@ function ListPasienContent() {
                   </button>
                 </div>
 
-                {detailTab === 'ringkasan' && (
-                  <>
-                    <div className="detail-section">
-                      <div className="section-title">
-                        <span aria-hidden="true" className="material-symbols-rounded">calendar_month</span>
-                        Riwayat Kunjungan
-                      </div>
-                      {encountersLoading && <div className="empty-sub">Memuat riwayat kunjungan…</div>}
-                      {!encountersLoading && encounters.length === 0 && (
-                        <div className="empty-sub">Belum ada riwayat kunjungan.</div>
-                      )}
-                      {!encountersLoading &&
-                        encounters.map((enc) => (
-                          <div className="visit-item" key={enc.id}>
-                            <div className="visit-dot" />
-                            <div className="visit-info">
-                              <div className="visit-type">{enc.serviceType}</div>
-                              <div className="visit-date">
-                                {formatDate(enc.arrivedTime)} ·{' '}
-                                {ENCOUNTER_STATUS_LABEL[enc.status] ?? enc.status}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
+                {(detailTab === 'kunjungan' || detailTab === 'transaksi') && (
+                  <div className="detail-section">
+                    <div className="section-title">
+                      <span aria-hidden="true" className="material-symbols-rounded">
+                        {detailTab === 'kunjungan' ? 'calendar_month' : 'receipt_long'}
+                      </span>
+                      {detailTab === 'kunjungan' ? 'Riwayat Kunjungan' : 'Riwayat Transaksi'}
                     </div>
-                  </>
+                    <PatientHistoryList key={`${selectedPatient.id}-${detailTab}`} patientId={selectedPatient.id} kind={detailTab} />
+                  </div>
                 )}
 
                 {detailTab === 'timeline' && (
