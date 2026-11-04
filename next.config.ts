@@ -13,12 +13,16 @@ function buildId(): string {
   }
 }
 
+const BUILD_ID = buildId();
+
 const nextConfig: NextConfig = {
   // The deploy builds into a separate directory and swaps it in just before
   // the restart (see .github/workflows/deploy-vps.yml), so the running server
   // never serves a half-overwritten .next during `npm run build`.
   distDir: process.env.NEXT_DIST_DIR || ".next",
-  deploymentId: buildId(),
+  deploymentId: BUILD_ID,
+  // Ditanam ke bundle browser dan ke /api/version; lihat components/layout/VersionWatcher.tsx.
+  env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },
   experimental: {
     // Pages here render per-user data fetched on mount; don't let the client
     // router reuse a previously visited page for minutes (default: 5 min).

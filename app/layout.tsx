@@ -8,6 +8,7 @@ import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme-context";
 import ImpersonationBanner from "@/components/subscription/ImpersonationBanner";
 import DemoBanner from "@/components/demo/DemoBanner";
 import VisitorTracking from "@/components/layout/VisitorTracking";
+import VersionWatcher from "@/components/layout/VersionWatcher";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -57,6 +58,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <VisitorTracking />
+        <VersionWatcher />
         <ThemeProvider>
           <AuthProvider>
             <FeaturesProvider>
