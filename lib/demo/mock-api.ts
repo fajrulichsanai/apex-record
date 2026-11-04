@@ -920,12 +920,29 @@ const routes: [RegExp, Handler][] = [
     const start = q.get('startDate');
     const end = q.get('endDate');
     const search = (q.get('search') || '').toLowerCase();
-    const rows = demoExpenses
-      .filter((x) => (!kategori || x.kategori === kategori) && (!start || x.tanggal >= start) && (!end || x.tanggal <= end) && (!search || x.deskripsi.toLowerCase().includes(search)))
+    const inPeriod = demoExpenses.filter(
+      (x) => (!start || x.tanggal >= start) && (!end || x.tanggal <= end) && (!search || x.deskripsi.toLowerCase().includes(search)),
+    );
+    const rows = inPeriod
+      .filter((x) => !kategori || x.kategori === kategori)
       .slice()
-      .reverse()
+      .sort((a, b) => (a.tanggal < b.tanggal ? 1 : a.tanggal > b.tanggal ? -1 : b.id - a.id))
       .map((x) => ({ ...x, clinicId: DEMO_CLINIC_ID, createdAt: `${x.tanggal}T09:00:00.000Z`, updatedAt: `${x.tanggal}T09:00:00.000Z` }));
-    return list(rows, q, 10);
+    const byKat = new Map<string, { total: number; count: number }>();
+    for (const x of inPeriod) {
+      const cur = byKat.get(x.kategori) ?? { total: 0, count: 0 };
+      byKat.set(x.kategori, { total: cur.total + x.nominal, count: cur.count + 1 });
+    }
+    const byKategori = [...byKat].map(([k, v]) => ({ kategori: k, ...v })).sort((a, b) => b.total - a.total);
+    const total = byKategori.reduce((n, r) => n + r.total, 0);
+    const page = list(rows, q, 10) as { data: unknown[]; meta: Record<string, unknown> } & Record<string, unknown>;
+    page.summary = {
+      total,
+      count: inPeriod.length,
+      byKategori,
+      filteredTotal: kategori ? (byKat.get(kategori)?.total ?? 0) : total,
+    };
+    return page;
   }],
   [/^\/settings\/doctor-fee-configs$/, () =>
     demoTarifs.map((t) => ({ id: t.id, tarifId: t.id, tarifName: t.name, feeType: 'percentage', feeValue: DOCTOR_FEE_PERCENT, isActive: true, updatedAt: t.updatedAt }))],

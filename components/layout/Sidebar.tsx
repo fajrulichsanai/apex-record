@@ -117,7 +117,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       groupId: 'operasional',
       icon: <FiBriefcase />,
       items: [
-        { label: 'Catat Operasional', icon: <FiEdit3 />, href: '/catat-operasional', feature: 'operasional' },
+        { label: 'Pengeluaran', icon: <FiEdit3 />, href: '/catat-operasional', feature: 'operasional' },
         { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter', feature: 'share-fee-dokter' },
         { label: 'Penggajian', icon: <FiCreditCard />, href: '/penggajian', feature: 'payroll' },
         { label: 'Share Fee Saya', icon: <FiDollarSign />, href: '/share-fee-saya', feature: 'share-fee-saya' },
