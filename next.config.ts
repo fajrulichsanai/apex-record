@@ -27,6 +27,12 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Font ikon yang dihost sendiri: nama berkas tidak berubah, tapi isinya
+        // praktis tidak pernah; simpan lama di browser agar tidak diunduh ulang.
+        source: '/fonts/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
+      {
         // Baseline security headers for every page and the /api proxy. The
         // /api routes are same-origin only now (they carry the session
         // cookie), so there is deliberately no Access-Control-Allow-Origin.
@@ -52,7 +58,7 @@ const nextConfig: NextConfig = {
         // build assets under _next/static are excluded: their filename
         // already changes on every deploy, so they're safe to cache
         // indefinitely and shouldn't be forced to revalidate on every load.
-        source: '/((?!_next/static|_next/image|favicon.ico).*)',
+        source: '/((?!_next/static|_next/image|fonts/|favicon.ico).*)',
         headers: [
           {
             key: 'Cache-Control',
