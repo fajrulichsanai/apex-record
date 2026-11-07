@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import {type FeatureKey } from '@/lib/permissions';
+import { canAccessFeature, type FeatureKey } from '@/lib/permissions';
 import {
   FiGrid,
   FiUsers,
@@ -56,7 +56,7 @@ interface NavGroupDef {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { can } = useFeatures();
+  const { can, satusehatPending } = useFeatures();
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -155,12 +155,26 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const isSettingsActive = SETTINGS_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   // Buang item tanpa href/tanpa akses, lalu buang grup yang jadi kosong.
+  // Integrasi SATUSEHAT belum aktif (dalam pengajuan): satu menu "segera" saja,
+  // bukan seluruh submenu yang tidak bisa dipakai.
+  const satusehatTeaser = satusehatPending && canAccessFeature(user?.role, 'satusehat');
   const visibleGroups = groupDefs
     .map((g) => ({
       ...g,
-      items: g.items.filter(
-        (item): item is NavLeaf & { href: string } => !!item.href && can(item.feature)
-      ),
+      items:
+        g.groupId === 'satusehat' && satusehatTeaser
+          ? [
+              {
+                label: 'SATUSEHAT',
+                soloLabel: 'SATUSEHAT (segera)',
+                icon: <FiCloud />,
+                href: '/satusehat',
+                feature: 'dashboard' as FeatureKey,
+              },
+            ]
+          : g.items.filter(
+              (item): item is NavLeaf & { href: string } => !!item.href && can(item.feature)
+            ),
     }))
     .filter((g) => g.items.length > 0);
 

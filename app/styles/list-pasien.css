@@ -1193,3 +1193,6 @@
 @media (max-width: 760px) { .mh-add { grid-template-columns: 1fr; } .mh-active { padding-top: 0; } }
 .mh-add .kfa-picker { min-width: 0; }
 .mh-add .kfa-picker input { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-main); font: inherit; font-size: 13px; }
+
+/* Master wilayah tidak tersedia → isian manual */
+.wizard-wilayah-note { font-size: 13px; color: var(--text-sub); }

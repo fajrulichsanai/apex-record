@@ -92,7 +92,7 @@ interface InvitedDoctor {
 export default function OnboardingPage() {
   const router = useRouter();
   const { success, error: showError } = useToast();
-  const { can } = useFeatures();
+  const { can, ready } = useFeatures();
   const [satusehatDone, setSatusehatDone] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -116,8 +116,8 @@ export default function OnboardingPage() {
         clinicApi.get(),
         onboardingApi.getStatus(),
         tarifApi.list({ limit: 1 }),
-        // Klinik tanpa fitur SATUSEHAT: ditolak (403) → abaikan
-        satusehatOnboardingApi.status().catch(() => null),
+        // Tanpa fitur SATUSEHAT (dimatikan / belum aktif di platform): tidak dipanggil sama sekali
+        can('satusehat') ? satusehatOnboardingApi.status().catch(() => null) : Promise.resolve(null),
       ]);
       setClinicForm(toClinicForm(clinic, ssStatus?.profile));
       setStatus(onboarding);
@@ -133,21 +133,30 @@ export default function OnboardingPage() {
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, [showError, can]);
 
+  // Tunggu daftar fitur siap supaya langkah SATUSEHAT tidak sempat dimuat lalu dicabut
   useEffect(() => {
-    loadAll();
-  }, [loadAll]);
+    if (ready) loadAll();
+  }, [ready, loadAll]);
 
   const satusehatOn = can('satusehat');
   const STEPS = satusehatOn ? ALL_STEPS : ALL_STEPS.slice(0, 3);
 
   async function handleSaveClinic() {
+    // Tanpa SATUSEHAT alamat diisi bebas (tidak butuh master wilayah SATUSEHAT)
+    const addressMissing: string[] = satusehatOn
+      ? missingAddress(clinicForm)
+      : ([
+          !clinicForm.line?.trim() && 'alamat',
+          !clinicForm.provinceName?.trim() && 'provinsi',
+          !clinicForm.cityName?.trim() && 'kabupaten/kota',
+        ].filter(Boolean) as string[]);
     const missing = [
       !clinicForm.name.trim() && 'nama klinik',
       !clinicForm.phone.trim() && 'telepon',
       satusehatOn && !clinicForm.facilityType && 'jenis fasyankes',
-      ...missingAddress(clinicForm),
+      ...addressMissing,
     ].filter(Boolean);
     if (missing.length) {
       showError(`Lengkapi ${missing.join(', ')}`);
@@ -313,9 +322,44 @@ export default function OnboardingPage() {
                         </select>
                       </label>
                     )}
-                    <div className="span-2 onboarding-address">
-                      <AddressFields value={clinicForm} onChange={(a) => setClinicForm((p) => ({ ...p, ...a }))} />
-                    </div>
+                    {satusehatOn ? (
+                      <div className="span-2 onboarding-address">
+                        <AddressFields value={clinicForm} onChange={(a) => setClinicForm((p) => ({ ...p, ...a }))} />
+                      </div>
+                    ) : (
+                      <>
+                        <label className="span-2">
+                          Alamat
+                          <input
+                            value={clinicForm.line ?? ''}
+                            placeholder="Jalan, nomor, kelurahan, kecamatan"
+                            onChange={(e) => setClinicForm((p) => ({ ...p, line: e.target.value }))}
+                          />
+                        </label>
+                        <label>
+                          Provinsi
+                          <input
+                            value={clinicForm.provinceName ?? ''}
+                            onChange={(e) => setClinicForm((p) => ({ ...p, provinceName: e.target.value }))}
+                          />
+                        </label>
+                        <label>
+                          Kabupaten/Kota
+                          <input
+                            value={clinicForm.cityName ?? ''}
+                            onChange={(e) => setClinicForm((p) => ({ ...p, cityName: e.target.value }))}
+                          />
+                        </label>
+                        <label>
+                          Kode Pos (opsional)
+                          <input
+                            value={clinicForm.postalCode ?? ''}
+                            inputMode="numeric"
+                            onChange={(e) => setClinicForm((p) => ({ ...p, postalCode: e.target.value }))}
+                          />
+                        </label>
+                      </>
+                    )}
                   </div>
                   <div className="onboarding-actions">
                     <button type="button" className="btn-primary" onClick={handleSaveClinic} disabled={savingClinic}>

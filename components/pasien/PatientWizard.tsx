@@ -9,6 +9,7 @@ import { Patient, PatientPayload, patientsApi } from '@/lib/patients';
 import { masterDataApi, WilayahItem } from '@/lib/master-data';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
+import { useFeatures } from '@/lib/features-context';
 
 type UiGender = 'laki-laki' | 'perempuan';
 
@@ -311,6 +312,9 @@ export default function PatientWizard({
   const [cityCode, setCityCode] = useState('');
   const [districtCode, setDistrictCode] = useState('');
   const [provincesError, setProvincesError] = useState<string | null>(null);
+  const { can } = useFeatures();
+  // Master wilayah (dari SATUSEHAT) tidak tersedia → alamat diisi manual, pendaftaran tidak terhambat
+  const wilayahManual = !!provincesError;
   const [provincesLoading, setProvincesLoading] = useState(false);
 
   const hydrated = useRef(false);
@@ -645,7 +649,9 @@ export default function PatientWizard({
             {currentStep.label}
           </div>
 
-          {currentStep.key === 'identitas' && mode === 'create' && <SatusehatPatientSearch onUse={applySatusehat} />}
+          {currentStep.key === 'identitas' && mode === 'create' && can('satusehat') && (
+            <SatusehatPatientSearch onUse={applySatusehat} />
+          )}
 
           {currentStep.key === 'identitas' && (
             <div className="form-row">
@@ -754,6 +760,37 @@ export default function PatientWizard({
                   onChange={(e) => update('address', e.target.value)}
                 />
               </div>
+              {wilayahManual ? (
+                <>
+                  <div className="form-field full">
+                    <span className="wizard-wilayah-note">
+                      Daftar wilayah sedang tidak tersedia — isi manual.{' '}
+                      <button type="button" className="wizard-inline-retry" onClick={loadProvinces}>
+                        Coba muat lagi
+                      </button>
+                    </span>
+                  </div>
+                  <div className="form-field">
+                    <label>Provinsi</label>
+                    <input type="text" placeholder="Contoh: Jawa Barat" value={form.province} onChange={(e) => update('province', e.target.value)} />
+                  </div>
+                  <div className={`form-field ${fieldErrors.city ? 'error' : ''}`}>
+                    <label>Kota / Kabupaten *</label>
+                    <input type="text" placeholder="Contoh: Kota Bandung" value={form.city} onChange={(e) => update('city', e.target.value)} />
+                    {fieldErrors.city && <span className="field-error">{fieldErrors.city}</span>}
+                  </div>
+                  <div className={`form-field ${fieldErrors.kecamatan ? 'error' : ''}`}>
+                    <label>Kecamatan *</label>
+                    <input type="text" value={form.kecamatan} onChange={(e) => update('kecamatan', e.target.value)} />
+                    {fieldErrors.kecamatan && <span className="field-error">{fieldErrors.kecamatan}</span>}
+                  </div>
+                  <div className="form-field">
+                    <label>Kelurahan</label>
+                    <input type="text" value={form.kelurahan} onChange={(e) => update('kelurahan', e.target.value)} />
+                  </div>
+                </>
+              ) : (
+                <>
               <div className="form-field">
                 <label>Provinsi</label>
                 <CustomSelect
@@ -832,6 +869,8 @@ export default function PatientWizard({
                   ]}
                 />
               </div>
+                </>
+              )}
               <div className={`form-field ${fieldErrors.postalCode ? 'error' : ''}`}>
                 <label>Kode Pos</label>
                 <input

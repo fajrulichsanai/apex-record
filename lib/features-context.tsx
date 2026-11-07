@@ -10,6 +10,10 @@ interface FeaturesState {
   /** Fitur efektif dari server; null selama belum dimuat (pakai bawaan role) */
   features: Set<string> | null;
   custom: { key: string; name: string }[];
+  /** Integrasi SATUSEHAT belum diaktifkan di platform (dalam proses pengajuan) */
+  satusehatPending: boolean;
+  /** Daftar fitur dari server sudah dimuat (atau gagal dimuat) */
+  ready: boolean;
   /** Boleh mengakses fitur standar (FeatureKey) atau fitur custom ("custom:…")? */
   can: (key: FeatureKey | `custom:${string}`) => boolean;
   reload: () => Promise<void>;
@@ -22,25 +26,34 @@ const FeaturesContext = createContext<FeaturesState | undefined>(undefined);
  * admin untuk klinik, lalu pengaturan owner untuk user ini (GET /features/me).
  */
 export function FeaturesProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [features, setFeatures] = useState<Set<string> | null>(null);
   const [custom, setCustom] = useState<{ key: string; name: string }[]>([]);
+  const [satusehatPending, setSatusehatPending] = useState(false);
+  // Pengguna yang daftar fiturnya sudah selesai dimuat (sukses maupun gagal)
+  const [loadedKey, setLoadedKey] = useState<string | null>(null);
   const userKey = user ? `${user.id}:${user.role}:${user.clinicId ?? ''}` : '';
 
   const reload = useCallback(async () => {
     if (!userKey || isDemoMode()) {
       setFeatures(null);
       setCustom([]);
+      setSatusehatPending(false);
+      setLoadedKey(userKey);
       return;
     }
     try {
       const res = await featuresApi.me();
       setFeatures(new Set(res.features));
       setCustom(res.custom);
+      setSatusehatPending(res.platform?.satusehat === false);
     } catch {
       // Server belum mendukung / gagal: tetap pakai bawaan role
       setFeatures(null);
       setCustom([]);
+      setSatusehatPending(false);
+    } finally {
+      setLoadedKey(userKey);
     }
   }, [userKey]);
 
@@ -49,6 +62,8 @@ export function FeaturesProvider({ children }: { children: ReactNode }) {
   }, [reload]);
 
   const role = user?.role;
+  // Belum siap selama sesi masih dibaca atau daftar fitur pengguna ini belum datang
+  const ready = !authLoading && loadedKey === userKey;
   const can = useCallback(
     (key: FeatureKey | `custom:${string}`) => {
       if (features) return features.has(key);
@@ -57,7 +72,10 @@ export function FeaturesProvider({ children }: { children: ReactNode }) {
     [features, role],
   );
 
-  const value = useMemo(() => ({ features, custom, can, reload }), [features, custom, can, reload]);
+  const value = useMemo(
+    () => ({ features, custom, satusehatPending, ready, can, reload }),
+    [features, custom, satusehatPending, ready, can, reload],
+  );
   return <FeaturesContext.Provider value={value}>{children}</FeaturesContext.Provider>;
 }
 

@@ -25,6 +25,7 @@ import {
   type SatusehatPractitioner,
 } from '@/lib/practitioners';
 import { useToast } from '@/lib/toast-context';
+import { useFeatures } from '@/lib/features-context';
 import { useEscapeKey } from '@/lib/a11y';
 import './PractitionerPanel.css';
 
@@ -97,10 +98,10 @@ function expiryNote(label: string, date?: string | null) {
 }
 
 /** Peringatan kelengkapan data per nakes. */
-function issuesOf(p: Practitioner) {
+function issuesOf(p: Practitioner, satusehatOn = true) {
   const out: string[] = [];
   if (!p.hasNik) out.push('NIK belum diisi');
-  else if (!p.satusehatPractitionerId) out.push('Belum terhubung SATUSEHAT');
+  else if (satusehatOn && !p.satusehatPractitionerId) out.push('Belum terhubung SATUSEHAT');
   if (!p.profession) out.push('Profesi belum diisi');
   if (!p.sipNumber && /dokter|bidan|perawat|apoteker/.test(p.profession ?? 'dokter')) out.push('No. SIP kosong');
   const sip = expiryNote('SIP', p.sipExpiredAt);
@@ -149,6 +150,9 @@ const formatDateTime = (v: string) =>
 
 export default function PractitionerPanel() {
   const { success, error: showError } = useToast();
+  // Integrasi SATUSEHAT belum aktif → bagian SATUSEHAT disembunyikan, data nakes tetap lengkap
+  const { can } = useFeatures();
+  const satusehatOn = can('satusehat');
   const [list, setList] = useState<Practitioner[] | null>(null);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('semua');
@@ -197,9 +201,9 @@ export default function PractitionerPanel() {
     return {
       total: all.length,
       linked: all.filter((p) => p.satusehatPractitionerId).length,
-      attention: all.filter((p) => p.isActive !== false && issuesOf(p).length > 0).length,
+      attention: all.filter((p) => p.isActive !== false && issuesOf(p, satusehatOn).length > 0).length,
     };
-  }, [list]);
+  }, [list, satusehatOn]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -207,14 +211,14 @@ export default function PractitionerPanel() {
       const active = p.isActive !== false;
       if (filter === 'terhubung' && !p.satusehatPractitionerId) return false;
       if (filter === 'belum' && (p.satusehatPractitionerId || !active)) return false;
-      if (filter === 'perhatian' && (!active || issuesOf(p).length === 0)) return false;
+      if (filter === 'perhatian' && (!active || issuesOf(p, satusehatOn).length === 0)) return false;
       if (filter === 'nonaktif' && active) return false;
       if (!q) return true;
       return [p.name, p.specialization, p.sipNumber, p.strNumber, p.satusehatPractitionerId, p.nikMasked, p.phone, p.email, professionLabel(p.profession)]
         .filter(Boolean)
         .some((v) => String(v).toLowerCase().includes(q));
     });
-  }, [list, query, filter]);
+  }, [list, query, filter, satusehatOn]);
 
   function openCreate(prefill?: Partial<FormState>) {
     setEditing(null);
@@ -431,9 +435,11 @@ export default function PractitionerPanel() {
         <div className="stat-pill">
           <span className="stat-dot dot-blue" /> Total <strong>{stats.total}</strong>
         </div>
-        <div className="stat-pill">
-          <span className="stat-dot dot-green" /> Terhubung SATUSEHAT <strong>{stats.linked}</strong>
-        </div>
+        {satusehatOn && (
+          <div className="stat-pill">
+            <span className="stat-dot dot-green" /> Terhubung SATUSEHAT <strong>{stats.linked}</strong>
+          </div>
+        )}
         <div className="stat-pill">
           <span className="stat-dot nakes-dot-warn" /> Perlu dilengkapi <strong>{stats.attention}</strong>
         </div>
@@ -452,9 +458,11 @@ export default function PractitionerPanel() {
             aria-label="Cari tenaga kesehatan"
           />
         </div>
-        <button type="button" className="btn-outline" onClick={() => setSearchOpen((v) => !v)}>
-          <FiSearch /> Cari di SATUSEHAT
-        </button>
+        {satusehatOn && (
+          <button type="button" className="btn-outline" onClick={() => setSearchOpen((v) => !v)}>
+            <FiSearch /> Cari di SATUSEHAT
+          </button>
+        )}
         <button type="button" className="btn-primary" onClick={() => openCreate()}>
           <FiPlus /> Tambah Nakes
         </button>
@@ -469,14 +477,16 @@ export default function PractitionerPanel() {
             ['terhubung', 'Terhubung'],
             ['nonaktif', 'Nonaktif'],
           ] as [Filter, string][]
-        ).map(([k, label]) => (
+        )
+          .filter(([k]) => satusehatOn || (k !== 'belum' && k !== 'terhubung'))
+          .map(([k, label]) => (
           <button key={k} type="button" className={`filter-btn ${filter === k ? 'active' : ''}`} onClick={() => setFilter(k)}>
             {label}
           </button>
         ))}
       </div>
 
-      {searchOpen && (
+      {satusehatOn && searchOpen && (
         <div className="satusehat-panel nakes-search">
           <div className="nakes-search-head">
             <div>
@@ -616,20 +626,21 @@ export default function PractitionerPanel() {
       ) : (
         <div className="nakes-list">
           {visible.map((p) => {
-            const issues = p.isActive === false ? [] : issuesOf(p);
+            const issues = p.isActive === false ? [] : issuesOf(p, satusehatOn);
             return (
               <button key={p.id} type="button" className={`nakes-card ${p.isActive === false ? 'inactive' : ''}`} onClick={() => openEdit(p)}>
                 <div className="result-avatar nakes-avatar">{initials(p.name)}</div>
                 <div className="nakes-card-body">
                   <div className="nakes-card-top">
                     <span className="result-name">{p.name}</span>
-                    {p.satusehatPractitionerId ? (
-                      <span className="nakes-badge ok">
-                        <FiCheckCircle /> SATUSEHAT
-                      </span>
-                    ) : (
-                      <span className="nakes-badge warn">Belum terhubung</span>
-                    )}
+                    {satusehatOn &&
+                      (p.satusehatPractitionerId ? (
+                        <span className="nakes-badge ok">
+                          <FiCheckCircle /> SATUSEHAT
+                        </span>
+                      ) : (
+                        <span className="nakes-badge warn">Belum terhubung</span>
+                      ))}
                     {p.isActive === false && <span className="nakes-badge muted">Nonaktif</span>}
                     {p.account ? (
                       <span className={`nakes-badge ${p.account.isActive ? 'info' : 'muted'}`}>
@@ -879,7 +890,8 @@ export default function PractitionerPanel() {
 
               {editing && (
                 <fieldset className="nakes-section">
-                  <legend>SATUSEHAT & status</legend>
+                  <legend>{satusehatOn ? 'SATUSEHAT & status' : 'Status'}</legend>
+                  {satusehatOn && (
                   <div className="nakes-ss span-2">
                     <div>
                       {editing.satusehatPractitionerId ? (
@@ -894,7 +906,8 @@ export default function PractitionerPanel() {
                       <FiLink /> {matching ? 'Mencocokkan...' : 'Cocokkan dengan SATUSEHAT'}
                     </button>
                   </div>
-                  {match && (
+                  )}
+                  {satusehatOn && match && (
                     <div className={`nakes-match span-2 ${match.found ? (match.nameMatches ? 'ok' : 'diff') : 'none'}`}>
                       {!match.found ? (
                         match.message
