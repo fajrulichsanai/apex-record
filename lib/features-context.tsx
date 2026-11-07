@@ -10,7 +10,7 @@ interface FeaturesState {
   /** Fitur efektif dari server; null selama belum dimuat (pakai bawaan role) */
   features: Set<string> | null;
   custom: { key: string; name: string }[];
-  /** Integrasi SATUSEHAT belum diaktifkan di platform (dalam proses pengajuan) */
+  /** Integrasi SATUSEHAT belum diaktifkan untuk faskes ini (diatur super admin) */
   satusehatPending: boolean;
   /** Daftar fitur dari server sudah dimuat (atau gagal dimuat) */
   ready: boolean;
@@ -46,7 +46,7 @@ export function FeaturesProvider({ children }: { children: ReactNode }) {
       const res = await featuresApi.me();
       setFeatures(new Set(res.features));
       setCustom(res.custom);
-      setSatusehatPending(res.platform?.satusehat === false);
+      setSatusehatPending(res.integrations?.satusehat === false);
     } catch {
       // Server belum mendukung / gagal: tetap pakai bawaan role
       setFeatures(null);

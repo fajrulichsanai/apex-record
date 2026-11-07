@@ -5,8 +5,8 @@ import type { UserRole } from '@/types/user';
 export interface EffectiveFeatures {
   features: string[];
   custom: { key: string; name: string }[];
-  /** Status platform: satusehat=false → integrasi SATUSEHAT belum diaktifkan (dalam pengajuan) */
-  platform?: { satusehat: boolean };
+  /** Status integrasi faskes ini (diatur super admin): satusehat=false → belum diaktifkan */
+  integrations?: { satusehat: boolean };
 }
 
 export interface FeatureToggle {

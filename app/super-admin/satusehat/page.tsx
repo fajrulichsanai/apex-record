@@ -179,6 +179,7 @@ export default function SuperAdminSatusehatPage() {
                       </td>
                       <td>
                         <span className={`ss-badge ${HEALTH[r.health].badge}`}>{HEALTH[r.health].label}</span>
+                        {!r.integrationEnabled && <span className="ss-badge pending ss-badge-xs">Belum diaktifkan</span>}
                       </td>
                       <td>
                         {r.credential.source ? (

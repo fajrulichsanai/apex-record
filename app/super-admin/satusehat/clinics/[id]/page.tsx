@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { FiArrowLeft, FiRefreshCw } from 'react-icons/fi';
 import { AdminSatusehatShell, formatDateTime } from '@/components/satusehat/SatusehatShell';
 import { FACILITY_TYPE_LABELS, satusehatAdminApi, type AdminClinicDetail } from '@/lib/satusehat';
+import { featuresApi } from '@/lib/features';
 import { useToast } from '@/lib/toast-context';
 
 /** Super admin: detail kondisi SATUSEHAT satu klinik. */
@@ -15,6 +16,7 @@ export default function SuperAdminSatusehatClinicPage() {
   const { showToast } = useToast();
   const [data, setData] = useState<AdminClinicDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [toggling, setToggling] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -30,6 +32,26 @@ export default function SuperAdminSatusehatClinicPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  async function toggleIntegration(next: boolean) {
+    const name = data?.clinic.name ?? 'faskes ini';
+    const ok = window.confirm(
+      next
+        ? `Aktifkan integrasi SATUSEHAT untuk ${name}? Kunjungan baru klinik ini akan mulai dikirim otomatis ke SATUSEHAT, dan menunya tampil untuk owner/admin klinik.`
+        : `Nonaktifkan integrasi SATUSEHAT untuk ${name}? Pengiriman otomatis berhenti dan menu SATUSEHAT klinik kembali "segera hadir".`,
+    );
+    if (!ok) return;
+    setToggling(true);
+    try {
+      await featuresApi.setClinicFeature(id, 'satusehat', next);
+      setData((d) => (d ? { ...d, integrationEnabled: next } : d));
+      showToast(next ? 'Integrasi SATUSEHAT diaktifkan' : 'Integrasi SATUSEHAT dinonaktifkan', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Gagal menyimpan', 'error');
+    } finally {
+      setToggling(false);
+    }
+  }
 
   const s = data?.summary;
   const profile = data?.profile;
@@ -58,6 +80,30 @@ export default function SuperAdminSatusehatClinicPage() {
         <div className="ss-card ss-empty">Memuat...</div>
       ) : data && s ? (
         <>
+          <div className="ss-card ss-activation">
+            <div>
+              <h2>
+                Integrasi SATUSEHAT{' '}
+                <span className={`ss-badge ${data.integrationEnabled ? 'synced' : 'pending'}`}>
+                  {data.integrationEnabled ? 'Aktif' : 'Belum diaktifkan'}
+                </span>
+              </h2>
+              <p className="ss-muted">
+                {data.integrationEnabled
+                  ? 'Kunjungan baru klinik ini dikirim otomatis ke SATUSEHAT dan menunya tampil untuk owner/admin.'
+                  : 'Tidak ada pengiriman, token, maupun pencarian ke SATUSEHAT untuk klinik ini. Menunya tampil sebagai "segera hadir". Nyalakan setelah akses SATUSEHAT klinik disetujui.'}
+              </p>
+            </div>
+            <button
+              type="button"
+              className={`ss-btn ${data.integrationEnabled ? '' : 'primary'}`}
+              onClick={() => toggleIntegration(!data.integrationEnabled)}
+              disabled={toggling}
+            >
+              {toggling ? 'Menyimpan…' : data.integrationEnabled ? 'Nonaktifkan' : 'Aktifkan untuk faskes ini'}
+            </button>
+          </div>
+
           <div className="ss-grid">
             <div className="ss-card">
               <h2>Koneksi</h2>

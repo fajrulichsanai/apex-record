@@ -8,8 +8,8 @@ import { useFeatures } from '@/lib/features-context';
 import '@/app/styles/satusehat.css';
 
 /**
- * Selama integrasi SATUSEHAT belum diaktifkan di platform (masih dalam
- * proses pengajuan), semua halaman /satusehat/* diganti satu halaman
+ * Selama integrasi SATUSEHAT belum diaktifkan untuk faskes ini (diatur super
+ * admin; akses SATUSEHAT masih dalam pengajuan), semua halaman /satusehat/* diganti satu halaman
  * informasi. Halaman aslinya tidak dimuat, jadi tidak ada panggilan API.
  */
 export default function SatusehatGroupLayout({ children }: { children: ReactNode }) {
@@ -31,15 +31,15 @@ export default function SatusehatGroupLayout({ children }: { children: ReactNode
           <span className="ss-pending-icon" aria-hidden="true">
             <FiCloud />
           </span>
-          <h2>Segera hadir — sedang dalam proses pengajuan</h2>
+          <h2>Segera hadir — belum diaktifkan untuk klinik Anda</h2>
           <p>
-            ApexRecord sedang mengurus akses resmi ke SATUSEHAT. Selama proses ini berjalan, pengiriman data ke
-            SATUSEHAT belum diaktifkan.
+            Akses resmi ke SATUSEHAT sedang dalam proses pengajuan. Integrasi diaktifkan oleh admin ApexRecord per
+            faskes setelah akses disetujui, dan selama itu belum ada data yang dikirim ke SATUSEHAT.
           </p>
           <ul>
             <li>Pasien, kunjungan, rekam medis, resep, billing, dan laporan berjalan seperti biasa.</li>
             <li>Data klinis Anda tetap tersimpan lengkap di ApexRecord.</li>
-            <li>Kami akan memberi tahu Anda begitu integrasi SATUSEHAT dapat dipakai.</li>
+            <li>Hubungi admin ApexRecord bila klinik Anda sudah siap mengaktifkan integrasi SATUSEHAT.</li>
           </ul>
           <Link href="/dashboard" className="ss-btn primary">
             Kembali ke Dashboard

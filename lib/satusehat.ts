@@ -465,6 +465,8 @@ export interface AdminClinicRow {
   id: number;
   name: string;
   city: string | null;
+  /** Diaktifkan super admin untuk faskes ini */
+  integrationEnabled: boolean;
   credential: {
     source: 'clinic' | 'env' | null;
     environment: 'sandbox' | 'production' | null;
@@ -489,6 +491,7 @@ export interface AdminOverview {
 
 export interface AdminClinicDetail {
   clinic: { id: number; name: string; city: string | null };
+  integrationEnabled: boolean;
   credentialSource: 'clinic' | 'env' | null;
   verifiedName: string | null;
   profile: FacilityProfile | null;
