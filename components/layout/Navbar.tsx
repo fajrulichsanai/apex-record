@@ -1,11 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { pageTitleFor } from '@/lib/page-title';
 import { useAuth } from '@/lib/auth-context';
 import { notificationApi, type AppNotification, type NotificationType } from '@/lib/notifications';
 import { formatCurrency } from '@/lib/format';
 import { pressable } from '@/lib/a11y';
+import AttendanceChip from '@/components/attendance/AttendanceChip';
+import BranchSwitcher from '@/components/multi-clinic/BranchSwitcher';
 import './navbar.css';
 
 interface NavbarProps {
@@ -16,6 +19,7 @@ const ROLE_LABEL: Record<string, string> = {
   super_admin: 'Super Admin',
   multi_clinic_owner: 'Multi-Klinik Owner',
   owner: 'Owner',
+  manajer_cabang: 'Manajer Cabang',
   admin: 'Admin',
   dokter: 'Dokter',
   perawat: 'Perawat',
@@ -70,8 +74,9 @@ function timeAgo(iso: string): string {
 }
 
 export default function Navbar({ onMenuClick }: NavbarProps) {
+  const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, account, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
@@ -157,10 +162,12 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
         </button>
         <div>
           <div className="topbar-title">ApexRecord</div>
-          <div className="topbar-subtitle">Dashboard</div>
+          <div className="topbar-subtitle">{pageTitleFor(pathname)}</div>
         </div>
       </div>
       <div className="topbar-right">
+        <BranchSwitcher />
+        <AttendanceChip />
         <div className="notif-wrap" ref={notifRef}>
           <button
             className="icon-btn"
@@ -229,7 +236,7 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
           <div className="avatar">{initials}</div>
           <span className="user-name">
             {user?.name || 'User'}
-            {user?.role && <small style={{ display: 'block', opacity: 0.6, fontSize: '11px' }}>{ROLE_LABEL[user.role] || user.role}</small>}
+            {account?.role && <small style={{ display: 'block', opacity: 0.6, fontSize: '11px' }}>{ROLE_LABEL[account.role] || account.role}</small>}
           </span>
           <span className="chip-chevron">
             <svg viewBox="0 0 24 24" fill="none">
@@ -256,6 +263,12 @@ export default function Navbar({ onMenuClick }: NavbarProps) {
                 zIndex: 50,
               }}
             >
+              <div
+                {...pressable(() => router.push('/ganti-password'))}
+                style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
+              >
+                Ganti password
+              </div>
               <div
                 {...pressable(handleLogout)}
                 style={{ padding: '10px 14px', cursor: 'pointer', color: 'var(--red, #dc2626)' }}

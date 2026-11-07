@@ -3,7 +3,7 @@
 import Link from 'next/link';
 
 interface GudangTabsProps {
-  active: 'dashboard' | 'barang' | 'transaksi';
+  active: 'dashboard' | 'barang' | 'transaksi' | 'opname';
 }
 
 export default function GudangTabs({ active }: GudangTabsProps) {
@@ -11,6 +11,7 @@ export default function GudangTabs({ active }: GudangTabsProps) {
     { key: 'dashboard', label: 'Dashboard', href: '/gudang' },
     { key: 'barang', label: 'Master Barang', href: '/gudang/barang' },
     { key: 'transaksi', label: 'Transaksi Stok', href: '/gudang/transaksi' },
+    { key: 'opname', label: 'Stock Opname', href: '/gudang/opname' },
   ] as const;
 
   return (

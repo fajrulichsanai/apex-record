@@ -101,6 +101,13 @@ function range(query: Query) {
 
 // ---------- entity views ----------
 
+function demoPatientSearch(q: Query) {
+  const search = (q.get('search') || '').trim().toLowerCase();
+  return demoPatients.filter(
+    (p) => !search || p.name.toLowerCase().includes(search) || p.noRm.toLowerCase().includes(search),
+  );
+}
+
 function patientView(id: number) {
   const p = patientById.get(id)!;
   return {
@@ -665,6 +672,54 @@ const routes: [RegExp, Handler][] = [
       finishedTime: e.finished?.toISOString(),
       practitionerName: practitionerById.get(e.practitionerId)?.name,
     }))],
+  [/^\/patients\/(\d+)\/(encounter|billing)-history$/, (m, q) => {
+    const page = Math.max(1, Number(q.get('page') ?? 1));
+    const limit = Math.min(50, Math.max(1, Number(q.get('limit') ?? 10)));
+    const month = q.get('month') ?? '';
+    const isEnc = m[2] === 'encounter';
+    type Hist = { at: Date; e?: (typeof demoEncounters)[number]; b?: (typeof demoBillings)[number] };
+    const all: Hist[] = (isEnc
+      ? demoEncounters.filter((e) => e.patientId === Number(m[1])).map((e): Hist => ({ at: e.arrived, e }))
+      : demoBillings.filter((b) => b.patientId === Number(m[1])).map((b): Hist => ({ at: b.createdAt, b }))
+    ).sort((a, b) => b.at.getTime() - a.at.getTime());
+    const ym = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const ymd = (d: Date) => `${ym(d)}-${String(d.getDate()).padStart(2, '0')}`;
+    const inMonth = month ? all.filter((r) => ym(r.at) === month) : all;
+    const count = (keys: string[]) => {
+      const c = new Map<string, number>();
+      keys.forEach((k) => c.set(k, (c.get(k) ?? 0) + 1));
+      return c;
+    };
+    const rows = inMonth.slice((page - 1) * limit, page * limit).map((r) =>
+      isEnc && r.e
+        ? {
+            id: r.e.id,
+            status: r.e.status,
+            serviceType: 'outpatient',
+            chiefComplaint: r.e.chiefComplaint,
+            arrivedTime: r.e.arrived.toISOString(),
+            finishedTime: r.e.finished?.toISOString(),
+            practitionerName: practitionerById.get(r.e.practitionerId)?.name,
+          }
+        : r.b && {
+            id: r.b.id,
+            invoiceNumber: r.b.invoiceNumber,
+            status: r.b.status,
+            grandTotal: r.b.grandTotal,
+            paidAmount: r.b.paidAmount,
+            outstandingAmount: Math.max(0, r.b.grandTotal - r.b.paidAmount),
+            createdAt: r.b.createdAt.toISOString(),
+            encounterId: r.b.encounterId,
+            itemNames: r.b.items.map((i) => i.name),
+          },
+    );
+    return {
+      items: rows,
+      meta: { page, limit, total: inMonth.length, totalPages: Math.ceil(inMonth.length / limit) },
+      months: [...count(all.map((r) => ym(r.at)))].map(([month, count]) => ({ month, count })),
+      days: [...count(inMonth.map((r) => ymd(r.at)))].sort().map(([date, count]) => ({ date, count })),
+    };
+  }],
   [/^\/patients\/(\d+)\/medical-record$/, (m) => medicalRecord(Number(m[1]))],
   [/^\/patients\/(\d+)\/timeline$/, (m) =>
     demoEncounters.filter((e) => e.patientId === Number(m[1])).reverse().slice(0, 15).map((e) => ({
@@ -679,16 +734,29 @@ const routes: [RegExp, Handler][] = [
     if (!patientById.has(Number(m[1]))) throw new ApiError('Pasien tidak ditemukan', 404);
     return patientView(Number(m[1]));
   }],
+  [/^\/patients\/stats$/, (_m, q) => {
+    const rows = demoPatientSearch(q);
+    // Demo patients all have their own NIK, so none count as bayi.
+    return {
+      success: true,
+      data: {
+        total: rows.length,
+        male: rows.filter((p) => p.gender === 'male').length,
+        female: rows.filter((p) => p.gender === 'female').length,
+        baby: 0,
+      },
+    };
+  }],
   [/^\/patients$/, (_m, q) => {
-    const search = (q.get('search') || '').toLowerCase();
     const gender = q.get('gender');
-    const rows = demoPatients
-      .filter((p) => (!search || p.name.toLowerCase().includes(search) || p.noRm.toLowerCase().includes(search)) && (!gender || p.gender === gender))
+    const rows = demoPatientSearch(q)
+      .filter((p) => (!gender || p.gender === gender) && q.get('kategori') !== 'bayi')
       .slice()
       .reverse()
       .map((p) => patientView(p.id));
-    // The real endpoint's list is unwrapped to a bare array by apiClient.
-    return paginate(rows, q, 10).data;
+    // Same envelope as the real endpoint; apiClient unwraps it to a bare
+    // array unless the caller asked for the page meta.
+    return { success: true, ...paginate(rows, q, 10) };
   }],
 
   // encounters
@@ -720,19 +788,34 @@ const routes: [RegExp, Handler][] = [
   }],
   [/^\/encounters$/, (_m, q) => {
     const date = q.get('date');
+    const month = q.get('month');
     const status = q.get('status');
+    const active = q.get('active') === 'true';
     const doc = q.get('practitionerId');
     const unbilled = q.get('unbilled') === 'true';
-    const rows = demoEncounters
+    const inPeriod = (e: (typeof demoEncounters)[number]) =>
+      (!date || dateOf(e.arrived) === date) && (!month || dateOf(e.arrived).startsWith(month));
+    const scoped = demoEncounters.filter((e) => inPeriod(e) && (!doc || e.practitionerId === Number(doc)));
+    const rows = scoped
       .filter((e) =>
-        (!date || dateOf(e.arrived) === date) &&
         (!status || e.status === status) &&
-        (!doc || e.practitionerId === Number(doc)) &&
+        (!active || e.status === 'arrived' || e.status === 'in_progress') &&
         (!unbilled || (e.status === 'finished' && !billingByEncounter.has(e.id))))
       .slice()
       .reverse()
       .map(encounterListItem);
-    return list(rows, q, 20);
+    const page = list(rows, q, 20) as Record<string, unknown>;
+    if (month || date) {
+      const counts = { total: scoped.length, arrived: 0, in_progress: 0, finished: 0, cancelled: 0 };
+      for (const e of scoped) counts[e.status] += 1;
+      page.counts = counts;
+    }
+    if (month) {
+      const byDay = new Map<string, number>();
+      for (const e of scoped) byDay.set(dateOf(e.arrived), (byDay.get(dateOf(e.arrived)) ?? 0) + 1);
+      page.days = [...byDay].sort().map(([d, count]) => ({ date: d, count }));
+    }
+    return page;
   }],
 
   // billing
@@ -743,10 +826,17 @@ const routes: [RegExp, Handler][] = [
   }],
   [/^\/billings$/, (_m, q) => {
     const status = q.get('status');
+    const month = q.get('month');
     const from = q.get('dateFrom');
     const to = q.get('dateTo');
-    const rows = demoBillings
-      .filter((b) => (!status || b.status === status) && (!from || dateOf(b.createdAt) >= from) && (!to || dateOf(b.createdAt) <= to))
+    const scoped = demoBillings.filter(
+      (b) =>
+        (!month || dateOf(b.createdAt).startsWith(month)) &&
+        (!from || dateOf(b.createdAt) >= from) &&
+        (!to || dateOf(b.createdAt) <= to),
+    );
+    const rows = scoped
+      .filter((b) => !status || b.status === status)
       .slice()
       .reverse()
       .map((b) => ({
@@ -760,7 +850,16 @@ const routes: [RegExp, Handler][] = [
         status: b.status,
         createdAt: b.createdAt.toISOString(),
       }));
-    return list(rows, q, 10);
+    const page = list(rows, q, 10) as Record<string, unknown>;
+    const byStatus: Record<string, number> = { paid: 0, partial: 0, unpaid: 0 };
+    for (const b of scoped) byStatus[b.status] = (byStatus[b.status] ?? 0) + 1;
+    page.summary = { count: scoped.length, totalPaid: scoped.reduce((n, b) => n + b.paidAmount, 0), byStatus };
+    if (month) {
+      const byDay = new Map<string, number>();
+      for (const b of scoped) byDay.set(dateOf(b.createdAt), (byDay.get(dateOf(b.createdAt)) ?? 0) + 1);
+      page.days = [...byDay].sort().map(([d, count]) => ({ date: d, count }));
+    }
+    return page;
   }],
 
   // reservations & recalls
@@ -821,12 +920,29 @@ const routes: [RegExp, Handler][] = [
     const start = q.get('startDate');
     const end = q.get('endDate');
     const search = (q.get('search') || '').toLowerCase();
-    const rows = demoExpenses
-      .filter((x) => (!kategori || x.kategori === kategori) && (!start || x.tanggal >= start) && (!end || x.tanggal <= end) && (!search || x.deskripsi.toLowerCase().includes(search)))
+    const inPeriod = demoExpenses.filter(
+      (x) => (!start || x.tanggal >= start) && (!end || x.tanggal <= end) && (!search || x.deskripsi.toLowerCase().includes(search)),
+    );
+    const rows = inPeriod
+      .filter((x) => !kategori || x.kategori === kategori)
       .slice()
-      .reverse()
+      .sort((a, b) => (a.tanggal < b.tanggal ? 1 : a.tanggal > b.tanggal ? -1 : b.id - a.id))
       .map((x) => ({ ...x, clinicId: DEMO_CLINIC_ID, createdAt: `${x.tanggal}T09:00:00.000Z`, updatedAt: `${x.tanggal}T09:00:00.000Z` }));
-    return list(rows, q, 10);
+    const byKat = new Map<string, { total: number; count: number }>();
+    for (const x of inPeriod) {
+      const cur = byKat.get(x.kategori) ?? { total: 0, count: 0 };
+      byKat.set(x.kategori, { total: cur.total + x.nominal, count: cur.count + 1 });
+    }
+    const byKategori = [...byKat].map(([k, v]) => ({ kategori: k, ...v })).sort((a, b) => b.total - a.total);
+    const total = byKategori.reduce((n, r) => n + r.total, 0);
+    const page = list(rows, q, 10) as { data: unknown[]; meta: Record<string, unknown> } & Record<string, unknown>;
+    page.summary = {
+      total,
+      count: inPeriod.length,
+      byKategori,
+      filteredTotal: kategori ? (byKat.get(kategori)?.total ?? 0) : total,
+    };
+    return page;
   }],
   [/^\/settings\/doctor-fee-configs$/, () =>
     demoTarifs.map((t) => ({ id: t.id, tarifId: t.id, tarifName: t.name, feeType: 'percentage', feeValue: DOCTOR_FEE_PERCENT, isActive: true, updatedAt: t.updatedAt }))],

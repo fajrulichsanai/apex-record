@@ -228,7 +228,75 @@
 
 .list-pasien-page .sort-btn .material-symbols-rounded { font-size: 15px; }
 
-.list-pasien-page .patient-list { flex: 1; overflow-y: auto; }
+.list-pasien-page .patient-list { flex: 1; overflow-y: auto; min-height: 0; transition: opacity var(--transition); }
+.list-pasien-page .patient-list.is-refreshing { opacity: .55; pointer-events: none; }
+
+/* The list loads 20 at a time as it scrolls, so on desktop it scrolls inside
+   its own panel (kept in view next to the detail) instead of growing the page. */
+@media (min-width: 901px) {
+  .list-pasien-page .content-area > .panel {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    max-height: calc(100dvh - 32px);
+  }
+}
+
+.list-pasien-page .list-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 18px;
+  min-height: 24px;
+}
+.list-pasien-page .list-footer-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.list-pasien-page .list-footer-note.error { color: var(--red); }
+.list-pasien-page .list-more-btn {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.list-pasien-page .list-more-btn:hover { background: var(--bg); }
+.list-pasien-page .list-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  animation: list-pasien-spin .8s linear infinite;
+}
+@keyframes list-pasien-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .list-pasien-page .list-spinner { animation-duration: 2.4s; }
+}
+
+.list-pasien-page .list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+.list-pasien-page .list-empty .material-symbols-rounded { font-size: 32px; }
+.list-pasien-page .list-empty .empty-title { font-weight: 600; color: var(--text-main); font-size: 14px; }
+.list-pasien-page .list-empty .empty-sub { font-size: 12.5px; }
 
 .list-pasien-page .patient-item {
   display: flex;

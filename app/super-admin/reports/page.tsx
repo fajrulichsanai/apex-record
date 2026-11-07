@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
+import { PageHeader, PeriodBar, SkeletonBlock, StatCard } from '@/components/super-admin/ui';
 import { superAdminReportApi } from '@/lib/subscription';
 import type { SuperAdminReportSummary } from '@/types/subscription';
 import { ApiError } from '@/lib/api-client';
@@ -36,14 +37,7 @@ export default function SuperAdminReportsPage() {
   return (
     <SuperAdminLayout>
       <div className="sa-page">
-        <div className="page-header">
-          <div className="page-title-block">
-            <div className="page-title">
-              <h1>Laporan</h1>
-            </div>
-            <p className="page-subtitle">Pendapatan, pertumbuhan klinik, dan distribusi paket langganan.</p>
-          </div>
-        </div>
+        <PageHeader title="Laporan" subtitle="Satu-satunya tempat total pendapatan dan tren: pendapatan, pertumbuhan klinik, dan distribusi paket." />
 
         <div className="filter-bar">
           <input type="date" className="date-input" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} aria-label="Dari tanggal" />
@@ -53,36 +47,26 @@ export default function SuperAdminReportsPage() {
         {error && <div className="alert-error">{error}</div>}
 
         {loading ? (
-          <p>Memuat...</p>
+          <SkeletonBlock lines={4} />
         ) : summary ? (
           <>
             <div className="stat-grid">
-              <div className="stat-card">
-                <div className="stat-card-label">Total Pendapatan</div>
-                <div className="stat-card-value">Rp {formatCurrency(summary.totalRevenue)}</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-label">MRR (30 hari)</div>
-                <div className="stat-card-value">Rp {formatCurrency(summary.mrr)}</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-card-label">Klinik Aktif / Total</div>
-                <div className="stat-card-value">{summary.activeClinics} / {summary.totalClinics}</div>
-              </div>
+              <StatCard label="Total pendapatan" value={`Rp ${formatCurrency(summary.totalRevenue)}`} />
+              <StatCard label="MRR (30 hari)" value={`Rp ${formatCurrency(summary.mrr)}`} />
+              <StatCard label="Klinik aktif / total" value={`${summary.activeClinics} / ${summary.totalClinics}`} />
+              <StatCard label="Menunggu konfirmasi" value={summary.pendingConfirmations} href="/super-admin/payments" />
             </div>
 
             <div className="card">
               <h3>Pendapatan per Bulan</h3>
               {summary.revenueByPeriod.length === 0 ? (
-                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Belum ada pembayaran terkonfirmasi.</p>
+                <p className="text-muted">Belum ada pembayaran terkonfirmasi.</p>
               ) : (
                 <div className="period-list">
                   {summary.revenueByPeriod.map((p) => (
                     <div className="period-row" key={p.period}>
                       <span className="period-label">{p.period}</span>
-                      <div className="period-bar-wrap">
-                        <div className="period-bar" style={{ width: `${(p.revenue / maxRevenue) * 100}%` }} />
-                      </div>
+                      <PeriodBar value={p.revenue} max={maxRevenue} />
                       <span className="period-value">Rp {formatCurrency(p.revenue)}</span>
                     </div>
                   ))}
@@ -93,15 +77,13 @@ export default function SuperAdminReportsPage() {
             <div className="card">
               <h3>Klinik Baru per Bulan</h3>
               {summary.newClinicsByPeriod.length === 0 ? (
-                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Belum ada data.</p>
+                <p className="text-muted">Belum ada data.</p>
               ) : (
                 <div className="period-list">
                   {summary.newClinicsByPeriod.map((p) => (
                     <div className="period-row" key={p.period}>
                       <span className="period-label">{p.period}</span>
-                      <div className="period-bar-wrap">
-                        <div className="period-bar" style={{ width: `${(p.count / maxNewClinics) * 100}%` }} />
-                      </div>
+                      <PeriodBar value={p.count} max={maxNewClinics} />
                       <span className="period-value">{p.count} klinik</span>
                     </div>
                   ))}
@@ -112,15 +94,13 @@ export default function SuperAdminReportsPage() {
             <div className="card">
               <h3>Distribusi Paket (klinik aktif)</h3>
               {summary.planDistribution.every((p) => p.count === 0) ? (
-                <p style={{ fontSize: 13, color: 'var(--text-muted)' }}>Belum ada klinik aktif.</p>
+                <p className="text-muted">Belum ada klinik aktif.</p>
               ) : (
                 <div className="period-list">
                   {summary.planDistribution.map((p) => (
                     <div className="period-row" key={p.planId}>
                       <span className="period-label">{p.planName}</span>
-                      <div className="period-bar-wrap">
-                        <div className="period-bar" style={{ width: `${(p.count / maxPlanCount) * 100}%` }} />
-                      </div>
+                      <PeriodBar value={p.count} max={maxPlanCount} />
                       <span className="period-value">{p.count} klinik</span>
                     </div>
                   ))}

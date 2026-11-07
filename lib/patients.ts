@@ -1,4 +1,4 @@
-import { apiClient } from './api-client';
+import { apiClient, toQueryString } from './api-client';
 
 export type ApiGender = 'male' | 'female';
 export type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed';
@@ -123,6 +123,35 @@ export interface Encounter {
   practitionerName?: string;
 }
 
+/** Satu halaman riwayat (kunjungan/transaksi) satu pasien, difilter per bulan. */
+export interface PatientHistoryPage<T> {
+  items: T[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+  /** Semua bulan (YYYY-MM) yang punya data, terbaru dulu. */
+  months: { month: string; count: number }[];
+  /** Tanggal (YYYY-MM-DD) yang punya data pada bulan terpilih. */
+  days: { date: string; count: number }[];
+}
+
+export interface PatientBillingRow {
+  id: number;
+  invoiceNumber: string;
+  status: string;
+  grandTotal: number;
+  paidAmount: number;
+  outstandingAmount: number;
+  createdAt: string;
+  encounterId: number;
+  itemNames: string[];
+}
+
+export interface PatientHistoryQuery {
+  /** YYYY-MM; kosong = semua bulan. */
+  month?: string;
+  page?: number;
+  limit?: number;
+}
+
 export type TimelineItemType = 'kunjungan' | 'billing' | 'foto' | 'treatment_plan' | 'recall';
 
 export interface TimelineItem {
@@ -190,9 +219,20 @@ export interface ReferralSummaryResponse {
   byReferrer: { referrerPatientId: number; referrerName: string; referralCount: number }[];
 }
 
+export type PatientCategory = 'bayi' | 'umum';
+
+export interface PatientStats {
+  total: number;
+  male: number;
+  female: number;
+  baby: number;
+}
+
 export interface PatientQuery {
   search?: string;
   gender?: ApiGender;
+  /** bayi = registered with the mother's NIK (no own NIK); umum = everyone else. */
+  kategori?: PatientCategory;
   page?: number;
   limit?: number;
   sortBy?: string;
@@ -238,6 +278,13 @@ export const patientsApi = {
           : '')
     ),
 
+  /** One page plus `meta.total`, for the infinite-scrolling patient list. */
+  listPage: (query: PatientQuery) => apiClient.getPage<Patient>(`/patients?${toQueryString(query)}`),
+
+  /** Counts for the patient-list stat cards (server-side, so not capped by paging). */
+  stats: (search?: string) =>
+    apiClient.get<PatientStats>(`/patients/stats${search?.trim() ? `?${toQueryString({ search: search.trim() })}` : ''}`),
+
   // Backend caps `limit` at 100 per page, so a plain list() only returns the
   // first 10 (default) patients. This paginates through every page to fetch
   // the full list, for UI pickers (reservasi/kunjungan) that need all patients.
@@ -267,6 +314,12 @@ export const patientsApi = {
 
   encounters: (id: number) => apiClient.get<Encounter[]>(`/patients/${id}/encounters`),
 
+  encounterHistory: (id: number, q: PatientHistoryQuery = {}) =>
+    apiClient.get<PatientHistoryPage<Encounter>>(`/patients/${id}/encounter-history?${toQueryString({ ...q })}`),
+
+  billingHistory: (id: number, q: PatientHistoryQuery = {}) =>
+    apiClient.get<PatientHistoryPage<PatientBillingRow>>(`/patients/${id}/billing-history?${toQueryString({ ...q })}`),
+
   getTimeline: (id: number) => apiClient.get<TimelineItem[]>(`/patients/${id}/timeline`),
 
   getMedicalRecord: (id: number) =>
@@ -274,7 +327,26 @@ export const patientsApi = {
 
   getReferralSummary: () =>
     apiClient.get<ReferralSummaryResponse>('/patients/referral-summary'),
+
+  birthdays: (range: 'today' | 'week' | 'month', month?: number) =>
+    apiClient.get<BirthdayPatient[]>(
+      `/patients/birthdays?range=${range}${month ? `&month=${month}` : ''}`,
+    ),
 };
+
+export interface BirthdayPatient {
+  id: number;
+  noRm: string;
+  name: string;
+  gender: string | null;
+  phone: string | null;
+  birthDate: string;
+  /** Usia yang dirayakan */
+  turning: number;
+  isToday: boolean;
+  consentMarketing: boolean;
+  lastVisit: string | null;
+}
 
 /** Riwayat penyakit keluarga (dikirim ke SATUSEHAT sebagai FamilyMemberHistory) */
 export type FamilyRelationship =

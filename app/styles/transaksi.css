@@ -749,3 +749,16 @@
 @media (max-width: 520px) {
   .transaksi-page .pay-option-group { grid-template-columns: 1fr; }
 }
+
+/* Rincian margin per tindakan di form "Buat Tagihan Baru" (owner/dokter — admin tidak melihat modal) */
+.transaksi-page .item-row-block { display: flex; flex-direction: column; gap: 4px; }
+.transaksi-page .item-row-calc {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  padding: 0 4px;
+  font-size: 12px;
+  color: var(--text-muted, var(--text-sub));
+}
+.transaksi-page .item-row-calc strong { color: var(--text-main); }
+.transaksi-page .item-row-calc .neg { color: var(--tag-cancel, #C0392B); }

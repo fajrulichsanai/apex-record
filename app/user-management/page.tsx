@@ -15,10 +15,22 @@ import PractitionerPanel from '@/components/user-management/PractitionerPanel';
 import { pressable, useEscapeKey } from '@/lib/a11y';
 import '../styles/user-management.css';
 
+interface AccountQuota {
+  used: number;
+  limit: number;
+  scope: 'clinic' | 'multiklinik';
+  tier: string | null;
+  planName: string | null;
+  activeBranches?: number;
+  trialStage?: 'starter' | 'pro';
+  trialProFrom?: string;
+}
+
 const ROLE_LABEL: Record<string, string> = {
   super_admin: 'Super Admin',
   multi_clinic_owner: 'Multi-Klinik Owner',
   owner: 'Owner',
+  manajer_cabang: 'Manajer Cabang',
   admin: 'Admin',
   dokter: 'Dokter',
   perawat: 'Perawat',
@@ -93,7 +105,20 @@ export default function UserManagementPage() {
   useEscapeKey(() => setEditRoleModalOpen(false), editRoleModalOpen);
   useEscapeKey(() => setConfirmModal((prev) => ({ ...prev, isOpen: false })), confirmModal.isOpen);
 
+  // Akun aktif terhadap batas paket (PRD Super Admin BL-02).
+  const [quota, setQuota] = useState<AccountQuota | null>(null);
+  const loadQuota = async () => {
+    if (isSuperAdmin) return;
+    try {
+      setQuota(await apiClient.get<AccountQuota | null>('/users/quota'));
+    } catch {
+      setQuota(null);
+    }
+  };
+  const quotaFull = !!quota && quota.used >= quota.limit;
+
   const loadUsers = async () => {
+    void loadQuota();
     try {
       const data = await apiClient.get<User[]>('/users');
       setUsers(data);
@@ -113,6 +138,7 @@ export default function UserManagementPage() {
         ]);
         setUsers(usersData);
         setRoleOptions(rolesData);
+        void loadQuota();
         setInviteForm((f) => (f.role ? f : { ...f, role: rolesData[0]?.value || '' }));
         if (isSuperAdmin) {
           const clinicsData = await apiClient.get<Clinic[]>('/clinics');
@@ -162,8 +188,16 @@ export default function UserManagementPage() {
       if (isSuperAdmin && inviteForm.clinicId) {
         payload.clinicId = Number(inviteForm.clinicId);
       }
-      const created = await apiClient.post<{ temporaryPassword: string; email: string }>('/users/invite', payload);
-      success(`Email: ${created.email}\nPassword sementara: ${created.temporaryPassword}`);
+      const created = await apiClient.post<{ temporaryPassword: string; email: string; emailSent?: boolean }>(
+        '/users/invite',
+        payload,
+      );
+      success(
+        `Email: ${created.email}\nPassword sementara: ${created.temporaryPassword}\n` +
+          (created.emailSent
+            ? 'Password sementara juga sudah dikirim ke email tersebut. Pengguna wajib menggantinya saat login pertama.'
+            : 'Email gagal terkirim — bagikan password ini langsung. Pengguna wajib menggantinya saat login pertama.'),
+      );
       setInviteForm({ email: '', name: '', role: roleOptions[0]?.value || '', clinicId: '' });
       setInviteModalOpen(false);
       await loadUsers();
@@ -272,7 +306,12 @@ export default function UserManagementPage() {
             <p>Kelola akses, peran, dan data tenaga kesehatan klinik Anda</p>
           </div>
           <div className="page-header-actions">
-            <button className="btn-primary" onClick={() => setInviteModalOpen(true)}>
+            <button
+              className="btn-primary"
+              onClick={() => setInviteModalOpen(true)}
+              disabled={quotaFull}
+              title={quotaFull ? 'Batas akun paket sudah penuh' : undefined}
+            >
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
@@ -320,6 +359,24 @@ export default function UserManagementPage() {
               <div className="stat-pill">
                 <span className="stat-dot dot-blue" /> Total <strong>{totalUsers}</strong>
               </div>
+              {quota && (
+                <div
+                  className="stat-pill"
+                  title={
+                    quota.scope === 'multiklinik'
+                      ? `Jatah bersama ${quota.activeBranches ?? 0} cabang multiklinik`
+                      : `Batas akun aktif paket ${quota.planName ?? 'Starter'}`
+                  }
+                >
+                  <span className="stat-dot" style={{ background: quotaFull ? '#C1381F' : '#367D2F' }} /> Akun aktif{' '}
+                  <strong>
+                    {quota.used}/{quota.limit}
+                  </strong>
+                  <span style={{ opacity: 0.7 }}>
+                    {quota.scope === 'multiklinik' ? '· bersama multiklinik' : `· ${quota.planName ?? 'Starter'}`}
+                  </span>
+                </div>
+              )}
               <div className="stat-pill">
                 <span className="stat-dot dot-green" /> Aktif <strong>{aktifCount}</strong>
               </div>
@@ -332,6 +389,20 @@ export default function UserManagementPage() {
                 <strong>{adminCount}</strong>
               </div>
             </div>
+
+            {quotaFull && quota && (
+              <div className="alert-info" role="status" style={{ margin: '0 0 12px' }}>
+                {quota.scope === 'multiklinik'
+                  ? `Jatah akun bersama multiklinik sudah penuh (${quota.used}/${quota.limit}). Nonaktifkan akun yang tidak dipakai atau hubungi owner multiklinik.`
+                  : quota.tier === 'trial'
+                    ? quota.trialStage === 'starter'
+                      ? `Masa coba minggu pertama dibatasi ${quota.limit} akun seperti Starter. Mulai ${quota.trialProFrom} batasnya otomatis naik menjadi 25 akun seperti Pro, atau berlangganan sekarang.`
+                      : `Batas akun masa coba sudah penuh (${quota.used}/${quota.limit}). Berlangganan paket Pro untuk tetap memakai sampai 25 akun.`
+                  : quota.tier === 'basic' || !quota.tier
+                    ? `Batas akun paket ${quota.planName ?? 'Starter'} sudah penuh (${quota.used}/${quota.limit}). Naik ke paket Pro di menu Langganan untuk sampai 25 akun, atau nonaktifkan akun yang tidak dipakai.`
+                    : `Batas akun paket ${quota.planName ?? ''} sudah penuh (${quota.used}/${quota.limit}). Nonaktifkan akun yang tidak dipakai.`}
+              </div>
+            )}
 
             {/* Toolbar */}
             <div className="toolbar">
@@ -376,7 +447,7 @@ export default function UserManagementPage() {
                 const isSelf = u.id === currentUser?.id;
                 return (
                   <div className="user-card" key={u.id} style={{ position: 'relative' }}>
-                    <div className={`user-avatar ${u.role === 'admin' ? 'avatar-admin' : 'avatar-doc'}`}>
+                    <div className={`user-avatar ${u.role === 'admin' || u.role === 'manajer_cabang' ? 'avatar-admin' : 'avatar-doc'}`}>
                       {initials}
                       <span
                         className={`status-dot status-${status === 'aktif' ? 'active' : status === 'nonaktif' ? 'inactive' : 'pending'}`}
@@ -411,7 +482,7 @@ export default function UserManagementPage() {
                       </div>
                     </div>
                     <div className="user-badges">
-                      <span className={`badge ${u.role === 'admin' ? 'badge-admin' : 'badge-dokter'}`}>
+                      <span className={`badge ${u.role === 'admin' || u.role === 'manajer_cabang' ? 'badge-admin' : 'badge-dokter'}`}>
                         {ROLE_LABEL[u.role] || u.role}
                       </span>
                       <span className={`badge badge-${status}`}>

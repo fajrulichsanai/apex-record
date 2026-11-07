@@ -74,12 +74,12 @@ export default function WilayahPage() {
       subtitle="Kode wilayah resmi SATUSEHAT (dipakai untuk alamat pasien & klinik)"
     >
       <div className="ss-card">
-        <div className="ss-toolbar" style={{ fontSize: 13 }}>
+        <div className="ss-toolbar ss-crumbs">
           <button type="button" className="ss-btn sm" onClick={() => goTo(0)} disabled={depth === 0}>
             Indonesia
           </button>
           {trail.map((t, i) => (
-            <span key={t.code} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span key={t.code} className="ss-crumb">
               ›
               <button type="button" className="ss-btn sm" onClick={() => goTo(i + 1)} disabled={i === depth - 1}>
                 {t.name}

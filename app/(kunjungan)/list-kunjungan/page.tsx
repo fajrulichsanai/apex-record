@@ -10,11 +10,13 @@ import EditVisitModal from './EditVisitModal';
 import {
   encounterApi,
   EncounterListItem,
+  EncounterListResponse,
   EncounterStatus,
   EncounterDetail,
 } from '@/lib/encounter';
 import { encounterSoapApi, SoapNote } from '@/lib/encounter-soap';
 import { ApiError } from '@/lib/api-client';
+import { DayChips, MonthNav, Pager, currentMonth } from '@/components/ui/PeriodNav';
 import '../../styles/kunjungan.css';
 
 // 'aktif' = Menunggu + Berlangsung, dipakai kartu statistik "Menunggu / Berlangsung".
@@ -87,6 +89,15 @@ function ListKunjunganPageInner() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [currentFilter, setCurrentFilter] = useState<FilterValue>('semua');
+  // 'hari-ini' = tampilan operasional (hari ini + antrean belum selesai);
+  // 'bulan' = telusuri per bulan/tanggal, berhalaman, dengan hitungan dari server.
+  const [viewMode, setViewMode] = useState<'hari-ini' | 'bulan'>('hari-ini');
+  const [month, setMonth] = useState(currentMonth);
+  const [day, setDay] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageMeta, setPageMeta] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
+  const [monthDays, setMonthDays] = useState<{ date: string; count: number }[]>([]);
+  const [monthCounts, setMonthCounts] = useState<EncounterListResponse['counts']>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVisitId, setSelectedVisitId] = useState<number | null>(null);
   const [showDetailOnMobile, setShowDetailOnMobile] = useState(false);
@@ -112,6 +123,31 @@ function ListKunjunganPageInner() {
     setLoading(true);
     setLoadError(null);
     try {
+      if (viewMode === 'bulan') {
+        const res = await encounterApi.list({
+          month,
+          date: day ?? undefined,
+          status:
+            currentFilter === 'semua' || currentFilter === 'aktif' ? undefined : (currentFilter as EncounterStatus),
+          active: currentFilter === 'aktif' ? true : undefined,
+          page,
+          limit: 20,
+        });
+        setVisits(res.data);
+        setBacklogVisits([]);
+        setPageMeta(res.meta);
+        setMonthDays(res.days ?? []);
+        setMonthCounts(res.counts);
+        const queryEncounterId = Number(searchParams.get('encounterId'));
+        setSelectedVisitId((prev) =>
+          queryEncounterId && res.data.some((v) => v.encounterId === queryEncounterId)
+            ? queryEncounterId
+            : prev !== null && res.data.some((v) => v.encounterId === prev)
+              ? prev
+              : (res.data[0]?.encounterId ?? null),
+        );
+        return;
+      }
       const [todayRes, arrivedRes, inProgressRes] = await Promise.all([
         encounterApi.list(),
         encounterApi.list({ status: 'arrived', limit: 100 }),
@@ -141,7 +177,9 @@ function ListKunjunganPageInner() {
     } finally {
       setLoading(false);
     }
-  }, [searchParams]);
+    // Filter status hanya memicu muat ulang di mode bulan (di mode hari ini disaring di browser).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, viewMode, month, day, page, viewMode === 'bulan' ? currentFilter : null]);
 
   useEffect(() => {
     loadVisits();
@@ -165,6 +203,7 @@ function ListKunjunganPageInner() {
 
   const filteredVisits = visits.filter((v) => {
     const matchStatus =
+      viewMode === 'bulan' ||
       currentFilter === 'semua' ||
       (currentFilter === 'aktif' ? v.status === 'arrived' || v.status === 'in_progress' : v.status === currentFilter);
     const q = searchQuery.toLowerCase();
@@ -175,10 +214,32 @@ function ListKunjunganPageInner() {
     return matchStatus && matchSearch;
   });
 
-  const totalCount = visits.length;
-  const pendingCount = visits.filter((v) => v.status === 'arrived' || v.status === 'in_progress').length;
-  const doneCount = visits.filter((v) => v.status === 'finished').length;
-  const cancelCount = visits.filter((v) => v.status === 'cancelled').length;
+  // Mode bulan: hitungan seluruh periode dari server (bukan hanya halaman ini).
+  const useServerCounts = viewMode === 'bulan' && monthCounts;
+  const totalCount = useServerCounts ? monthCounts.total : visits.length;
+  const pendingCount = useServerCounts
+    ? monthCounts.arrived + monthCounts.in_progress
+    : visits.filter((v) => v.status === 'arrived' || v.status === 'in_progress').length;
+  const doneCount = useServerCounts ? monthCounts.finished : visits.filter((v) => v.status === 'finished').length;
+  const cancelCount = useServerCounts ? monthCounts.cancelled : visits.filter((v) => v.status === 'cancelled').length;
+
+  const changeMode = (mode: 'hari-ini' | 'bulan') => {
+    if (mode === viewMode) return;
+    setViewMode(mode);
+    setPage(1);
+    setDay(null);
+    setCurrentFilter('semua');
+    setSelectedVisitId(null);
+  };
+  const changeMonth = (next: string) => {
+    setMonth(next);
+    setDay(null);
+    setPage(1);
+  };
+  const changeDay = (next: string | null) => {
+    setDay(next);
+    setPage(1);
+  };
 
   const selectedVisit =
     visits.find((v) => v.encounterId === selectedVisitId) ??
@@ -193,6 +254,7 @@ function ListKunjunganPageInner() {
 
   const handleSetFilter = (filter: FilterValue) => {
     setCurrentFilter(filter);
+    setPage(1);
   };
 
   const handleAddVisit = () => {
@@ -363,7 +425,7 @@ function ListKunjunganPageInner() {
                 <span aria-hidden="true" className="material-symbols-rounded">search</span>
                 <input
                   type="text"
-                  placeholder="Cari pasien, dokter, keluhan…"
+                  placeholder={viewMode === 'bulan' ? 'Cari di halaman ini…' : 'Cari pasien, dokter, keluhan…'}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -412,9 +474,42 @@ function ListKunjunganPageInner() {
               </div>
             </div>
 
+            <div className="pn-period">
+              <div className="pn-mode" role="group" aria-label="Rentang tampilan">
+                <button
+                  type="button"
+                  className={`filter-tab ${viewMode === 'hari-ini' ? 'active' : ''}`}
+                  aria-pressed={viewMode === 'hari-ini'}
+                  onClick={() => changeMode('hari-ini')}
+                >
+                  Hari ini
+                </button>
+                <button
+                  type="button"
+                  className={`filter-tab ${viewMode === 'bulan' ? 'active' : ''}`}
+                  aria-pressed={viewMode === 'bulan'}
+                  onClick={() => changeMode('bulan')}
+                >
+                  Per bulan
+                </button>
+              </div>
+              {viewMode === 'bulan' && (
+                <>
+                  <MonthNav month={month} onChange={changeMonth} />
+                  <DayChips
+                    days={monthDays}
+                    selected={day}
+                    onSelect={changeDay}
+                    label="Tanggal ada kunjungan"
+                    noun="kunjungan"
+                  />
+                </>
+              )}
+            </div>
+
             <div className="panel-sort">
               <span className="sort-label">
-                {loading ? 'Memuat…' : `${filteredVisits.length} Kunjungan ditemukan`}
+                {loading ? 'Memuat…' : viewMode === 'bulan' ? `${pageMeta.total} Kunjungan ditemukan` : `${filteredVisits.length} Kunjungan ditemukan`}
               </span>
             </div>
 
@@ -427,8 +522,12 @@ function ListKunjunganPageInner() {
                 </div>
                 {visits.length === 0 ? (
                   <>
-                    <div className="empty-title">Belum ada kunjungan hari ini</div>
-                    <div className="empty-sub">Kunjungan baru akan muncul di sini setelah dibuat.</div>
+                    <div className="empty-title">{viewMode === 'bulan' ? 'Tidak ada kunjungan pada periode ini' : 'Belum ada kunjungan hari ini'}</div>
+                    <div className="empty-sub">
+                      {viewMode === 'bulan'
+                        ? 'Coba pilih bulan atau tanggal lain.'
+                        : 'Kunjungan baru akan muncul di sini setelah dibuat.'}
+                    </div>
                     <button type="button" className="btn-primary" style={{ marginTop: 8 }} onClick={handleAddVisit}>
                       <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '18px' }}>add</span>
                       Buat Kunjungan
@@ -479,7 +578,7 @@ function ListKunjunganPageInner() {
                           <span className={`tag ${statusTagClass(visit.status)}`}>{statusLabel(visit.status)}</span>
                         </div>
                         <div className="visit-row-sub">
-                          {visit.practitionerName || '—'} · {typeof dt === 'string' ? dt : dt.time}
+                          {visit.practitionerName || '—'} · {typeof dt === 'string' ? dt : viewMode === 'bulan' ? `${dt.date}, ${dt.time}` : dt.time}
                         </div>
                       </div>
                       <span aria-hidden="true" className="material-symbols-rounded chevron-icon">chevron_right</span>
@@ -488,6 +587,8 @@ function ListKunjunganPageInner() {
                 })}
               </div>
             )}
+
+            {viewMode === 'bulan' && <Pager meta={pageMeta} onPage={setPage} loading={loading} noun="kunjungan" />}
           </div>
 
           {/* Detail Panel */}

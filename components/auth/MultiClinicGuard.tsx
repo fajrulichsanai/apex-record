@@ -4,11 +4,11 @@ import { useAuth } from '@/lib/auth-context';
 import './feature-guard.css';
 
 export default function MultiClinicGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { account, loading } = useAuth();
 
   if (loading) return null;
 
-  if (user?.role !== 'multi_clinic_owner') {
+  if (account?.role !== 'multi_clinic_owner') {
     return (
       <div className="access-denied">
         <div className="access-denied-icon">🔒</div>

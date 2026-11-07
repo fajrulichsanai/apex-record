@@ -37,6 +37,34 @@ export async function fetchProtectedFileUrl(path: string): Promise<string> {
 }
 
 /**
+ * Downloads a backend-hosted authenticated file (e.g. the clinic data ZIP)
+ * under the name the backend gives in Content-Disposition.
+ */
+export async function downloadProtectedFile(path: string, fallbackName: string): Promise<void> {
+  const res = await fetch(apiFileUrl(path));
+  if (!res.ok) {
+    let message = 'Gagal mengunduh file';
+    try {
+      const body = (await res.json()) as { error?: { message?: string }; message?: string };
+      message = body.error?.message || body.message || message;
+    } catch {
+      // not JSON
+    }
+    throw new ApiError(message, res.status);
+  }
+  const name =
+    /filename="?([^";]+)"?/i.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? fallbackName;
+  const url = URL.createObjectURL(await res.blob());
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+}
+
+/**
  * Opens a backend-hosted authenticated file in a new tab. Opens the tab
  * synchronously (before the fetch) so browsers don't treat it as a blocked
  * popup, then navigates it to the fetched blob once ready.
@@ -102,12 +130,23 @@ function nonJsonErrorMessage(status: number): string {
   return `Respons server tidak valid (HTTP ${status}).`;
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+// Only unwrap `.data` for the explicit { success, data } envelope. Paginated
+// endpoints return `{ data, meta }` with no `success` field and must pass
+// through as-is, or callers expecting { data, meta } get a bare array instead.
+// `keepEnvelope` skips the unwrap so a `{ success, data, meta }` list keeps
+// its `meta` (total / pages) for paged UIs.
+function unwrap<T>(body: unknown, keepEnvelope: boolean): T {
+  const env = body as ApiEnvelope<T> | null;
+  if (!keepEnvelope && env && env.success === true && env.data !== undefined) return env.data;
+  return body as T;
+}
+
+async function request<T>(path: string, options: RequestInit = {}, keepEnvelope = false): Promise<T> {
   if (isDemoMode()) {
     // Demo tab: answered in the browser with fictional data (lazy-loaded so
     // normal sessions never download it). Nothing is sent to the backend.
     const { demoRequest } = await import('./demo/mock-api');
-    return demoRequest<T>(path, options);
+    return unwrap<T>(await demoRequest<unknown>(path, options), keepEnvelope);
   }
   // FormData bodies must NOT get an explicit Content-Type — the browser sets
   // its own multipart boundary. Only set it for JSON bodies.
@@ -137,6 +176,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     if (code === 'SUBSCRIPTION_EXPIRED') {
       onSubscriptionExpired?.();
     }
+    if (
+      code === 'PASSWORD_CHANGE_REQUIRED' &&
+      typeof window !== 'undefined' &&
+      window.location.pathname !== '/ganti-password'
+    ) {
+      window.location.assign('/ganti-password');
+    }
     if (res.status === 401 && hasSession()) {
       // Only a *previously logged-in* session going 401 (token now invalid/
       // expired) should force a logout — a request made with no token at all
@@ -147,10 +193,19 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw new ApiError(body?.error?.message || 'Terjadi kesalahan', res.status, code);
   }
 
-  // Only unwrap `.data` for the explicit { success, data } envelope. Paginated
-  // endpoints return `{ data, meta }` with no `success` field and must pass
-  // through as-is, or callers expecting { data, meta } get a bare array instead.
-  return (body.success === true && body.data !== undefined ? body.data : body) as T;
+  return unwrap<T>(body, keepEnvelope);
+}
+
+export interface PageMeta {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+}
+
+export interface Page<T> {
+  data: T[];
+  meta: PageMeta;
 }
 
 export function toQueryString(query: object) {
@@ -164,7 +219,17 @@ export function toQueryString(query: object) {
 }
 
 export const apiClient = {
-  get: <T>(path: string) => request<T>(path, { method: 'GET' }),
+  get: <T>(path: string, init?: Pick<RequestInit, 'headers'>) => request<T>(path, { ...init, method: 'GET' }),
+  /** GET a paginated list, keeping `meta` (total, totalPages) next to `data`. */
+  getPage: async <T>(path: string): Promise<Page<T>> => {
+    const body = await request<Partial<Page<T>> | T[]>(path, { method: 'GET' }, true);
+    const data = Array.isArray(body) ? body : Array.isArray(body?.data) ? body.data : [];
+    const meta = !Array.isArray(body) && body?.meta ? body.meta : null;
+    return {
+      data,
+      meta: meta ?? { page: 1, limit: data.length, total: data.length, totalPages: 1 },
+    };
+  },
   post: <T>(path: string, data?: unknown) =>
     request<T>(path, { method: 'POST', body: data ? JSON.stringify(data) : undefined }),
   patch: <T>(path: string, data?: unknown) =>

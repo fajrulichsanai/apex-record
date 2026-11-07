@@ -150,9 +150,7 @@ const formatDateTime = (v: string) =>
 
 export default function PractitionerPanel() {
   const { success, error: showError } = useToast();
-  // Integrasi SATUSEHAT belum aktif → bagian SATUSEHAT disembunyikan, data nakes tetap lengkap
-  const { can } = useFeatures();
-  const satusehatOn = can('satusehat');
+  const satusehatOn = useFeatures().can('satusehat');
   const [list, setList] = useState<Practitioner[] | null>(null);
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('semua');

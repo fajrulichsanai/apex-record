@@ -318,3 +318,31 @@
 :root[data-theme="dark"] .notif-item.unread:hover {
   background: #2C4325;
 }
+
+/* ---------- STATUS ABSEN (pegawai) ---------- */
+.att-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  background: var(--bg);
+  color: var(--text-dark);
+  border: 1px solid var(--border);
+}
+.att-chip:hover { border-color: var(--text-muted); }
+.att-chip:focus-visible { outline: 2px solid #1D5FAE; outline-offset: 2px; }
+.att-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
+.att-chip.todo { background: #FCEACB; color: #8A5A00; border-color: transparent; }
+.att-chip.todo .att-dot { background: #B7791F; }
+.att-chip.in { background: #E3F3DA; color: #2B6B22; border-color: transparent; }
+.att-chip.in .att-dot { background: #367D2F; }
+:root[data-theme="dark"] .att-chip.todo { background: #3A2C10; color: #E8A930; }
+:root[data-theme="dark"] .att-chip.in { background: #23361F; color: #6BC85F; }
+@media (max-width: 640px) {
+  .att-chip .att-label { max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
+}

@@ -491,7 +491,10 @@ export interface AdminOverview {
 
 export interface AdminClinicDetail {
   clinic: { id: number; name: string; city: string | null };
+  /** Diaktifkan super admin untuk faskes ini */
   integrationEnabled: boolean;
+  /** Saklar global platform (Pengaturan Platform) */
+  globalEnabled: boolean;
   credentialSource: 'clinic' | 'env' | null;
   verifiedName: string | null;
   profile: FacilityProfile | null;

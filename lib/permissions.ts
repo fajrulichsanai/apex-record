@@ -28,7 +28,10 @@ export type FeatureKey =
   | 'data-privasi'
   | 'konten'
   | 'satusehat'
-  | 'imunisasi';
+  | 'imunisasi'
+  | 'absensi'
+  | 'payroll'
+  | 'ulang-tahun';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',
@@ -55,6 +58,9 @@ const FULL_ACCESS: FeatureKey[] = [
   'api',
   'konten',
   'satusehat',
+  'absensi',
+  'payroll',
+  'ulang-tahun',
 ];
 
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
@@ -65,6 +71,8 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
   multi_clinic_owner: ['tampilan'],
   // Data requests (UU PDP) are the clinic owner's to make.
   owner: [...FULL_ACCESS, 'onboarding', 'data-privasi'],
+  // Manajer Cabang mengurus cabangnya dengan hak owner (PRD Multi-Klinik MC-01).
+  manajer_cabang: [...FULL_ACCESS, 'onboarding', 'data-privasi'],
   admin: [
     'pasien',
     'reservasi',
@@ -79,14 +87,16 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'info-klinik',
     'tarif',
     'referral',
+    'ulang-tahun',
     'langganan',
     'konten',
     'tampilan',
     'satusehat',
+    'absensi',
   ],
-  dokter: ['pasien', 'reservasi', 'kunjungan', 'farmasi', 'informed-consent', 'share-fee-saya', 'tampilan'],
+  dokter: ['pasien', 'reservasi', 'kunjungan', 'farmasi', 'informed-consent', 'share-fee-saya', 'tampilan', 'absensi'],
   // Perawat: akses sama persis dengan dokter
-  perawat: ['pasien', 'reservasi', 'kunjungan', 'farmasi', 'informed-consent', 'share-fee-saya', 'tampilan'],
+  perawat: ['pasien', 'reservasi', 'kunjungan', 'farmasi', 'informed-consent', 'share-fee-saya', 'tampilan', 'absensi'],
   pending: ['tampilan'],
 };
 

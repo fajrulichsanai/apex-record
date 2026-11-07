@@ -1,18 +1,51 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import { useAuth } from '@/lib/auth-context';
 import { isFeatureViewOnly } from '@/lib/permissions';
-import { paymentApi, subscriptionPlanApi } from '@/lib/subscription';
-import type { Payment, SubscriptionBillingCycle, SubscriptionPlan, SubscriptionPlanTier } from '@/types/subscription';
-import { ApiError, openProtectedFile } from '@/lib/api-client';
+import { clinicSubscriptionApi, paymentApi, subscriptionPlanApi } from '@/lib/subscription';
+import type { InEffectSubscription, Payment, SubscriptionPlan, SubscriptionPlanTier, UpgradeQuote } from '@/types/subscription';
+import { apiClient, ApiError, openProtectedFile } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency } from '@/lib/format';
 import { useSubscriptionGate } from '@/lib/subscription-gate-context';
 import SettingsTabs from '@/components/settings/SettingsTabs';
 import './langganan.css';
+import StorageUsageCard from '@/components/storage/StorageUsageCard';
+import type { StorageQuota } from '@/lib/storage';
+import { clinicDataApi, type RetentionStatus } from '@/lib/super-admin';
+import {
+  DurationPicker,
+  PlanPrice,
+  QuoteBreakdown,
+  monthlyPlanFor,
+  paymentDetail,
+  useDurationDiscounts,
+  useQuote,
+} from '@/components/subscription/pricing';
+
+/** Masa coba 14 hari: 7 hari pertama batas Starter, lalu otomatis batas Pro. */
+function trialInfo(startDate: string) {
+  const start = new Date(`${startDate.slice(0, 10)}T00:00:00`);
+  const proFrom = new Date(start);
+  proFrom.setDate(proFrom.getDate() + 7);
+  const today = new Date(new Date().toDateString());
+  return today < proFrom
+    ? `Minggu pertama memakai batas Starter (5 akun); mulai ${formatDate(proFrom.toISOString())} otomatis naik ke batas Pro (25 akun).`
+    : 'Minggu kedua: batas akun sudah naik ke Pro (25 akun).';
+}
+
+/** Urutan paket untuk naik/turun paket (Multi Klinik lewat akun owner). */
+const TIER_RANK: Record<string, number> = { trial: 0, basic: 1, pro: 2 };
+
+function nextDay(date: string) {
+  const d = new Date(`${date.slice(0, 10)}T00:00:00`);
+  d.setDate(d.getDate() + 1);
+  return d.toISOString();
+}
 
 function formatDate(value?: string) {
   if (!value) return '-';
@@ -72,8 +105,6 @@ const TIERS: TierMeta[] = [
   },
 ];
 
-const CYCLE_LABEL: Record<SubscriptionBillingCycle, string> = { monthly: 'Bulanan', yearly: 'Tahunan' };
-
 export default function LanggananPage() {
   return (
     <DashboardLayout>
@@ -85,7 +116,7 @@ export default function LanggananPage() {
 }
 
 function LanggananPageInner() {
-  const { user } = useAuth();
+  const { user, branch } = useAuth();
   const { subscription, daysUntilExpiry, refresh } = useSubscriptionGate();
   const { success, error: showError } = useToast();
   const canSubmit = !isFeatureViewOnly(user?.role, 'langganan');
@@ -93,11 +124,30 @@ function LanggananPageInner() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [history, setHistory] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [cycle, setCycle] = useState<SubscriptionBillingCycle>('monthly');
+  const [months, setMonths] = useState(1);
+  const discounts = useDurationDiscounts();
   const [selectedTier, setSelectedTier] = useState<SubscriptionPlanTier | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Cabang multiklinik: siapa yang membayar (PRD Multi-Klinik MK-06).
+  const [branchBilling, setBranchBilling] = useState<'owner' | 'self' | 'stopped' | null>(null);
+
+  useEffect(() => {
+    apiClient
+      .get<{ billingMode: 'owner' | 'self' | 'stopped' } | null>('/clinic-links/current')
+      .then((link) => setBranchBilling(link && typeof link === 'object' && 'billingMode' in link ? link.billingMode : null))
+      .catch(() => setBranchBilling(null));
+  }, []);
+  const selfPayingBranch = branchBilling === 'self';
+  // Langganan berhenti: tanggal data dihapus (lihat Data & Privasi).
+  const [retention, setRetention] = useState<RetentionStatus | null>(null);
+  useEffect(() => {
+    clinicDataApi
+      .retention()
+      .then(setRetention)
+      .catch(() => setRetention(null));
+  }, []);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -122,25 +172,55 @@ function LanggananPageInner() {
     })();
   }, [loadHistory, showError]);
 
+  // One monthly plan per tier; the duration (1/3/6/12 bulan) is chosen here.
   const plansByTier = useMemo(() => {
-    const map = new Map<SubscriptionPlanTier, Partial<Record<SubscriptionBillingCycle, SubscriptionPlan>>>();
-    for (const plan of plans) {
-      if (!plan.tier || !plan.billingCycle) continue;
-      const entry = map.get(plan.tier) || {};
-      entry[plan.billingCycle] = plan;
-      map.set(plan.tier, entry);
+    const map = new Map<SubscriptionPlanTier, SubscriptionPlan>();
+    for (const meta of TIERS) {
+      const plan = monthlyPlanFor(plans, meta.tier);
+      if (plan) map.set(meta.tier, plan);
     }
     return map;
   }, [plans]);
 
-  const selectedPlan = selectedTier ? plansByTier.get(selectedTier)?.[cycle] : null;
-  const effectiveQuantity = selectedTier === 'multi_klinik' ? Math.max(1, quantity) : 1;
-  const ownerFee = Number(selectedPlan?.ownerFee || 0);
-  const unitTotal = selectedPlan ? Number(selectedPlan.price) * effectiveQuantity : 0;
-  const totalPrice = unitTotal + ownerFee;
+  const selectedPlan = selectedTier ? plansByTier.get(selectedTier) ?? null : null;
+  // A self-paying branch pays for itself only, without the owner fee
+  // (the backend prices it the same way).
+  const effectiveQuantity = selectedTier === 'multi_klinik' && !selfPayingBranch ? Math.max(1, quantity) : 1;
+  // Storage tambahan ikut tagihan yang sama (PRD Super Admin BL-06); the
+  // server quote includes it, so refetch whenever it changes.
+  const [storage, setStorage] = useState<StorageQuota | null>(null);
+  const { quote, failed: quoteFailed } = useQuote(
+    selectedPlan ? () => paymentApi.quote({ planId: selectedPlan.id, months, quantity: effectiveQuantity }) : null,
+    `${selectedPlan?.id}:${months}:${effectiveQuantity}:${storage?.extraGb}:${storage?.billableExtraGb}`,
+  );
+  // Whoever pays for the storage may buy more: the clinic's owner, or the
+  // Multi-Klinik Owner inside one of their branches (shared pool).
+  const canBuyStorage = user?.role === 'owner' && (branchBilling === null || !!branch);
 
-  const selectTier = (tier: SubscriptionPlanTier) => {
+  // Naik/turun paket: paket yang berlaku hari ini dan akhir masa aktif.
+  const [inEffect, setInEffect] = useState<InEffectSubscription | null>(null);
+  useEffect(() => {
+    clinicSubscriptionApi
+      .inEffect()
+      .then(setInEffect)
+      .catch(() => setInEffect(null));
+  }, [subscription?.id]);
+  const currentTier = inEffect?.subscription?.plan?.tier ?? null;
+  const paidTier = currentTier && TIER_RANK[currentTier] !== undefined && currentTier !== 'trial' ? currentTier : null;
+  const changeOf = (tier: SubscriptionPlanTier): 'renew' | 'upgrade' | 'downgrade' | null => {
+    if (!paidTier || TIER_RANK[tier] === undefined) return null;
+    if (tier === paidTier) return 'renew';
+    return TIER_RANK[tier] > TIER_RANK[paidTier] ? 'upgrade' : 'downgrade';
+  };
+  const [upgrading, setUpgrading] = useState(false);
+  const { quote: upgradeQuote, failed: upgradeFailed } = useQuote<UpgradeQuote>(
+    upgrading && selectedPlan ? () => paymentApi.upgradeQuote(selectedPlan.id) : null,
+    `upgrade:${upgrading}:${selectedPlan?.id}`,
+  );
+
+  const selectTier = (tier: SubscriptionPlanTier, upgrade = false) => {
     setSelectedTier(tier);
+    setUpgrading(upgrade);
     setQuantity(1);
   };
 
@@ -149,11 +229,18 @@ function LanggananPageInner() {
     setSubmitting(true);
     try {
       await paymentApi.create(
-        { planId: selectedPlan.id, quantity: selectedTier === 'multi_klinik' ? effectiveQuantity : undefined },
+        upgrading
+          ? { planId: selectedPlan.id, kind: 'upgrade' }
+          : { planId: selectedPlan.id, months, quantity: selectedTier === 'multi_klinik' ? effectiveQuantity : undefined },
         proofFile || undefined,
       );
-      success('Klaim pembayaran terkirim. Menunggu konfirmasi Super Admin.');
+      success(
+        upgrading
+          ? 'Klaim naik paket terkirim. Paket baru berlaku setelah dikonfirmasi Super Admin.'
+          : 'Klaim pembayaran terkirim. Menunggu konfirmasi Super Admin.',
+      );
       setSelectedTier(null);
+      setUpgrading(false);
       setQuantity(1);
       setProofFile(null);
       loadHistory();
@@ -196,7 +283,10 @@ function LanggananPageInner() {
                   {urgent && <span className="status-days-left"> · {daysUntilExpiry} hari lagi</span>}
                 </p>
                 {isActive && subscription.plan?.tier === 'trial' && (
-                  <p className="status-period">Upgrade kapan saja sebelum trial berakhir agar data klinik tidak terkunci.</p>
+                  <p className="status-period">
+                    {trialInfo(subscription.startDate)} Storage masa coba maks. 100 MB. Upgrade kapan saja sebelum masa coba
+                    berakhir agar data klinik tidak terkunci.
+                  </p>
                 )}
               </>
             ) : (
@@ -208,6 +298,22 @@ function LanggananPageInner() {
           </div>
         </div>
 
+        {retention?.deleteAfter && !retention.purgedAt && (
+          <div className="alert-danger" role="alert">
+            Langganan sudah berakhir. Data klinik bisa diunduh sampai{' '}
+            <strong>{formatDate(retention.deleteAfter)}</strong>, lalu dihapus permanen.{' '}
+            <Link href="/data-privasi">Unduh semua data</Link> atau perpanjang di bawah agar data tetap tersimpan.
+          </div>
+        )}
+
+        <StorageUsageCard canPurchase={canBuyStorage} onChange={setStorage} />
+
+        {branchBilling === 'owner' && (
+          <div className="alert-info">
+            Langganan klinik ini ditanggung owner multiklinik dan diperpanjang dari akunnya. Anda tidak perlu membayar dari sini.
+          </div>
+        )}
+
         {!canSubmit && (
           <div className="alert-info">
             Hanya Owner klinik yang dapat mengajukan pembayaran langganan. Hubungi Owner untuk memperpanjang.
@@ -218,23 +324,9 @@ function LanggananPageInner() {
           <div className="card pricing-card">
             <div className="pricing-header">
               <h3>Pilih Paket</h3>
-              <div className="cycle-toggle">
-                <button
-                  type="button"
-                  className={cycle === 'monthly' ? 'active' : ''}
-                  onClick={() => setCycle('monthly')}
-                >
-                  Bulanan
-                </button>
-                <button
-                  type="button"
-                  className={cycle === 'yearly' ? 'active' : ''}
-                  onClick={() => setCycle('yearly')}
-                >
-                  Tahunan
-                  <span className="save-badge">Hemat 2 Bulan</span>
-                </button>
-              </div>
+              {!upgrading && (
+                <DurationPicker months={months} onChange={setMonths} discounts={discounts} disabled={submitting} />
+              )}
             </div>
 
             {loading ? (
@@ -242,31 +334,26 @@ function LanggananPageInner() {
             ) : !selectedTier ? (
               <div className="tier-grid">
                 {TIERS.map((meta) => {
-                  const plan = plansByTier.get(meta.tier)?.[cycle];
+                  const plan = plansByTier.get(meta.tier);
                   if (!plan) return null;
-                  const monthlyEquivalentPlan = plansByTier.get(meta.tier)?.monthly;
-                  const savings =
-                    cycle === 'yearly' && monthlyEquivalentPlan
-                      ? Number(monthlyEquivalentPlan.price) * 12 - Number(plan.price) * 10
-                      : 0;
                   return (
                     <div key={meta.tier} className={`tier-card${meta.highlight ? ' highlight' : ''}`}>
                       {meta.highlight && <div className="tier-ribbon">Paling Direkomendasikan</div>}
                       <div className="tier-icon">{meta.icon}</div>
                       <div className="tier-name">{meta.label}</div>
                       <div className="tier-tagline">{meta.tagline}</div>
-                      <div className="tier-price">
-                        <span className="tier-price-amount">Rp {formatCurrency(plan.price)}</span>
-                        <span className="tier-price-unit">
-                          /{meta.perClinic ? 'klinik' : ''}
-                          {CYCLE_LABEL[cycle] === 'Bulanan' ? 'bulan' : 'tahun'}
-                        </span>
-                      </div>
-                      {meta.perClinic && Number(plan.ownerFee) > 0 && (
-                        <div className="tier-owner-fee">+ Rp {formatCurrency(Number(plan.ownerFee))} admin owner (sekali per periode)</div>
+                      {changeOf(meta.tier) === 'renew' && <div className="tier-current">Paket Anda sekarang</div>}
+                      <PlanPrice plan={plan} months={months} discountPct={discounts[months] ?? 0} perClinic={meta.perClinic} />
+                      {meta.perClinic && selfPayingBranch && (
+                        <div className="tier-owner-fee">Harga cabang multiklinik, tanpa biaya admin owner</div>
                       )}
-                      {cycle === 'yearly' && savings > 0 && (
-                        <div className="tier-savings">Hemat ~Rp {formatCurrency(savings)}/tahun</div>
+                      {meta.perClinic && !selfPayingBranch && Number(plan.ownerFee) > 0 && (
+                        <div className="tier-owner-fee">
+                          + Rp {formatCurrency(Number(plan.effectiveOwnerFee ?? plan.ownerFee))} admin owner per bulan
+                          {plan.promoActive && Number(plan.effectiveOwnerFee) < Number(plan.ownerFee) && (
+                            <> (normal <s>Rp {formatCurrency(Number(plan.ownerFee))}</s>)</>
+                          )}
+                        </div>
                       )}
                       <ul className="tier-features">
                         {meta.features.map((f) => (
@@ -276,9 +363,24 @@ function LanggananPageInner() {
                           </li>
                         ))}
                       </ul>
-                      <button type="button" className="btn-primary tier-select-btn" onClick={() => selectTier(meta.tier)}>
-                        Pilih Paket
-                      </button>
+                      {changeOf(meta.tier) === 'upgrade' ? (
+                        <>
+                          <button type="button" className="btn-primary tier-select-btn" onClick={() => selectTier(meta.tier, true)}>
+                            Naik ke {meta.label} sekarang
+                          </button>
+                          <button type="button" className="btn-link tier-alt-btn" onClick={() => selectTier(meta.tier)}>
+                            atau mulai periode berikutnya
+                          </button>
+                        </>
+                      ) : (
+                        <button type="button" className="btn-primary tier-select-btn" onClick={() => selectTier(meta.tier)}>
+                          {changeOf(meta.tier) === 'renew'
+                            ? 'Perpanjang'
+                            : changeOf(meta.tier) === 'downgrade'
+                              ? `Turun ke ${meta.label}`
+                              : 'Pilih Paket'}
+                        </button>
+                      )}
                     </div>
                   );
                 })}
@@ -287,10 +389,26 @@ function LanggananPageInner() {
               <div className="checkout-step">
                 <div className="checkout-summary">
                   <div className="checkout-plan-name">
-                    {TIERS.find((t) => t.tier === selectedTier)?.label} · {CYCLE_LABEL[cycle]}
+                    {upgrading
+                      ? `Naik ke ${TIERS.find((t) => t.tier === selectedTier)?.label}`
+                      : `${TIERS.find((t) => t.tier === selectedTier)?.label} · ${months === 12 ? '1 tahun' : `${months} bulan`}`}
                   </div>
 
-                  {selectedTier === 'multi_klinik' && (
+                  {!upgrading && selectedTier && changeOf(selectedTier) === 'downgrade' && inEffect?.paidUntil && (
+                    <div className="alert-info">
+                      Turun paket berlaku mulai periode berikutnya ({formatDate(nextDay(inEffect.paidUntil))}). Sampai{' '}
+                      {formatDate(inEffect.paidUntil)} klinik tetap memakai paket{' '}
+                      {inEffect.subscription?.plan?.name}. Klaim ditolak bila akun aktif atau storage melebihi batas paket
+                      tujuan.
+                    </div>
+                  )}
+                  {!upgrading && selectedTier && changeOf(selectedTier) === 'upgrade' && inEffect?.paidUntil && (
+                    <div className="alert-info">
+                      Paket ini mulai berlaku {formatDate(nextDay(inEffect.paidUntil))}, setelah masa aktif sekarang.
+                    </div>
+                  )}
+
+                  {selectedTier === 'multi_klinik' && !selfPayingBranch && (
                     <div className="quantity-field">
                       <label>Jumlah Klinik</label>
                       <div className="stepper">
@@ -305,26 +423,41 @@ function LanggananPageInner() {
                     </div>
                   )}
 
-                  <div className="price-breakdown">
-                    {selectedTier === 'multi_klinik' && selectedPlan && (
-                      <div className="breakdown-row">
-                        <span>
-                          {effectiveQuantity} klinik &times; Rp {formatCurrency(selectedPlan.price)}
-                        </span>
-                        <span>Rp {formatCurrency(unitTotal)}</span>
-                      </div>
-                    )}
-                    {ownerFee > 0 && (
-                      <div className="breakdown-row">
-                        <span>Biaya admin owner</span>
-                        <span>Rp {formatCurrency(ownerFee)}</span>
-                      </div>
-                    )}
-                    <div className="breakdown-row total">
-                      <span>Total Tagihan</span>
-                      <span>Rp {formatCurrency(totalPrice)}</span>
-                    </div>
-                  </div>
+                  {upgrading ? (
+                    upgradeQuote ? (
+                      upgradeQuote.allowed ? (
+                        <div className="price-breakdown">
+                          <div className="breakdown-row">
+                            <span>
+                              Selisih {upgradeQuote.fromPlanName} → {upgradeQuote.toPlanName}
+                            </span>
+                            <span>Rp {formatCurrency(upgradeQuote.monthlyDifference)} / bulan</span>
+                          </div>
+                          <div className="breakdown-row">
+                            <span>
+                              Sisa masa aktif {upgradeQuote.remainingDays} hari (s.d. {formatDate(upgradeQuote.until ?? undefined)})
+                            </span>
+                            <span>× {upgradeQuote.remainingDays}/30</span>
+                          </div>
+                          <div className="breakdown-row total">
+                            <span>Total Tagihan</span>
+                            <span>Rp {formatCurrency(upgradeQuote.amount)}</span>
+                          </div>
+                          <p className="breakdown-saved">
+                            {upgradeQuote.toPlanName} langsung berlaku setelah dikonfirmasi; masa aktif tidak berubah.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="alert-info">{upgradeQuote.reason}</div>
+                      )
+                    ) : (
+                      <p className="pricing-loading">{upgradeFailed ? 'Gagal menghitung selisih. Coba lagi.' : 'Menghitung selisih...'}</p>
+                    )
+                  ) : quote ? (
+                    <QuoteBreakdown quote={quote} />
+                  ) : (
+                    <p className="pricing-loading">{quoteFailed ? 'Gagal menghitung tagihan. Coba lagi.' : 'Menghitung tagihan...'}</p>
+                  )}
                 </div>
 
                 <div className="qr-box">
@@ -354,7 +487,12 @@ function LanggananPageInner() {
                   <button type="button" className="btn-outline" onClick={() => setSelectedTier(null)} disabled={submitting}>
                     Ganti Paket
                   </button>
-                  <button type="button" className="btn-primary" onClick={handleClaimPaid} disabled={submitting}>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={handleClaimPaid}
+                    disabled={submitting || (upgrading ? !upgradeQuote?.allowed : !quote)}
+                  >
                     {submitting ? 'Mengirim...' : 'Saya Sudah Bayar'}
                   </button>
                 </div>
@@ -371,7 +509,7 @@ function LanggananPageInner() {
                 <tr>
                   <th>Tanggal</th>
                   <th>Paket</th>
-                  <th>Kuantitas</th>
+                  <th>Rincian</th>
                   <th>Jumlah</th>
                   <th>Status</th>
                   <th>Bukti</th>
@@ -385,11 +523,18 @@ function LanggananPageInner() {
                     <tr key={p.id}>
                       <td>{formatDate(p.createdAt)}</td>
                       <td>{p.plan?.name || '-'}</td>
-                      <td>{p.quantity > 1 ? `${p.quantity} klinik` : '-'}</td>
-                      <td>Rp {formatCurrency(p.amount)}</td>
+                      <td>{paymentDetail(p)}</td>
+                      <td>
+                        Rp {formatCurrency(p.amount)}
+                        {p.status === 'confirmed' && (
+                          <Link href={`/kuitansi/${p.id}`} target="_blank" className="receipt-link">
+                            Kuitansi
+                          </Link>
+                        )}
+                      </td>
                       <td>
                         <span className={`tag ${p.status === 'confirmed' ? 'tag-confirmed' : p.status === 'rejected' ? 'tag-rejected' : 'tag-pending'}`}>
-                          {p.status === 'confirmed' ? 'Dikonfirmasi' : p.status === 'rejected' ? 'Ditolak' : 'Menunggu'}
+                          {p.status === 'confirmed' ? 'Lunas, dikonfirmasi' : p.status === 'rejected' ? 'Ditolak' : 'Menunggu'}
                         </span>
                       </td>
                       <td>

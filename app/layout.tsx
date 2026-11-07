@@ -8,6 +8,7 @@ import { ThemeProvider, THEME_INIT_SCRIPT } from "@/lib/theme-context";
 import ImpersonationBanner from "@/components/subscription/ImpersonationBanner";
 import DemoBanner from "@/components/demo/DemoBanner";
 import VisitorTracking from "@/components/layout/VisitorTracking";
+import VersionWatcher from "@/components/layout/VersionWatcher";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -26,6 +27,11 @@ export const metadata: Metadata = {
   },
 };
 
+// Menandai <html> setelah font ikon siap. Sebelum itu ikon disembunyikan (lihat
+// globals.css) supaya nama ikon tidak muncul sebagai teks mentah di koneksi lambat.
+// Bila font gagal dimuat, ikon tetap tersembunyi (label teks di tombol tetap ada).
+const ICON_FONT_READY_SCRIPT = `(function(){var d=document.documentElement;function ok(){d.classList.add('icons-ready')}try{if(document.fonts&&document.fonts.load){document.fonts.load('24px "Material Symbols Rounded"','add').then(function(f){if(f&&f.length)ok()},function(){})}else{ok()}}catch(e){ok()}})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -38,14 +44,21 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        {/* Font ikon dihost sendiri (544 KB, hanya sumbu FILL yang dipakai) dan
+            diunduh bersamaan dengan HTML; dulu 5,4 MB dari Google Fonts. */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
-          rel="stylesheet"
+          rel="preload"
+          href="/fonts/material-symbols-rounded.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
         />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: ICON_FONT_READY_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
         <VisitorTracking />
+        <VersionWatcher />
         <ThemeProvider>
           <AuthProvider>
             <FeaturesProvider>

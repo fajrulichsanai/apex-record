@@ -1,12 +1,27 @@
 'use client';
 
-import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState, ReactNode } from 'react';
 import type { User } from '@/types/user';
 import { API_BASE, setOnUnauthorized } from './api-client';
 import { DEMO_USER, exitDemoMode, isDemoMode } from './demo/demo-mode';
+import { readActiveBranch, writeActiveBranch, type ActiveBranch } from './branch';
 
 interface AuthState {
+  /**
+   * The user as the app should treat them. For a Multi-Klinik Owner inside a
+   * branch this is that branch's owner (role `owner`, clinicId = branch), so
+   * every existing role/feature check works unchanged; `account` keeps the
+   * real account.
+   */
   user: User | null;
+  /** The signed-in account itself (real role), regardless of branch mode. */
+  account: User | null;
+  /** Multi-Klinik Owner: the branch being managed, or null for "Semua cabang". */
+  branch: ActiveBranch | null;
+  /** Multi-Klinik Owner: open a branch (full reload so no data from another branch lingers). */
+  enterBranch: (branch: ActiveBranch, redirectTo?: string) => void;
+  /** Multi-Klinik Owner: back to "Semua cabang". */
+  exitBranch: (redirectTo?: string) => void;
   loading: boolean;
   /**
    * Records the signed-in user. The access token itself never reaches page
@@ -43,6 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [impersonating, setImpersonating] = useState(false);
+  const [branch, setBranch] = useState<ActiveBranch | null>(null);
 
   // Hydrate from localStorage after mount only — avoids a server/client markup
   // mismatch, since localStorage doesn't exist during server rendering.
@@ -63,18 +79,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
       setRoleCookie(parsedUser.role);
+      if (parsedUser.role === 'multi_clinic_owner') setBranch(readActiveBranch());
+      else writeActiveBranch(null);
     }
     setImpersonating(!!sessionStorage.getItem('impersonator_user'));
     setLoading(false);
   }, []);
 
+  // Password sementara: nothing else works until it is replaced (the API
+  // refuses with PASSWORD_CHANGE_REQUIRED), so go straight to the form.
+  useEffect(() => {
+    if (
+      user?.mustChangePassword &&
+      !sessionStorage.getItem('impersonator_user') &&
+      window.location.pathname !== '/ganti-password' &&
+      window.location.pathname !== '/'
+    ) {
+      window.location.assign('/ganti-password');
+    }
+  }, [user]);
+
   const login = (newUser: User) => {
     localStorage.setItem('user', JSON.stringify(newUser));
     setRoleCookie(newUser.role);
+    // A branch only means something to the account that chose it.
+    if (newUser.role !== 'multi_clinic_owner' || (user && user.id !== newUser.id)) {
+      writeActiveBranch(null);
+      setBranch(null);
+    }
     setUser(newUser);
   };
 
+  const enterBranch = (next: ActiveBranch, redirectTo = '/dashboard') => {
+    writeActiveBranch(next);
+    window.location.assign(redirectTo);
+  };
+
+  const exitBranch = (redirectTo = '/multi-klinik/dashboard') => {
+    writeActiveBranch(null);
+    window.location.assign(redirectTo);
+  };
+
   const clearLocalSession = () => {
+    writeActiveBranch(null);
+    setBranch(null);
     localStorage.removeItem('user');
     sessionStorage.removeItem('impersonator_user');
     setRoleCookie(null);
@@ -134,9 +182,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const activeBranch = user?.role === 'multi_clinic_owner' ? branch : null;
+  // Memoised so effects depending on `user` don't re-run on every render.
+  // A Manajer Cabang works with the owner's rights (the backend does the
+  // same), so every role check in the app treats them as `owner`.
+  const effectiveUser = useMemo<User | null>(() => {
+    if (user && activeBranch) return { ...user, role: 'owner', clinicId: activeBranch.id };
+    if (user?.role === 'manajer_cabang') return { ...user, role: 'owner' };
+    return user;
+  }, [user, activeBranch]);
+
   return (
     <AuthContext.Provider
-      value={{ user, loading, login, logout, impersonating, startImpersonation, exitImpersonation }}
+      value={{
+        user: effectiveUser,
+        account: user,
+        branch: activeBranch,
+        enterBranch,
+        exitBranch,
+        loading,
+        login,
+        logout,
+        impersonating,
+        startImpersonation,
+        exitImpersonation,
+      }}
     >
       {children}
     </AuthContext.Provider>

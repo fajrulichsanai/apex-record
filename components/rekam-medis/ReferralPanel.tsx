@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import { useToast } from '@/lib/toast-context';
+import { useFeatures } from '@/lib/features-context';
 import type { SoapDiagnosis } from '@/lib/terminology';
 import {
   referralsApi,
@@ -54,6 +55,9 @@ export default function ReferralPanel({
   diagnoses: SoapDiagnosis[];
 }) {
   const { success, error } = useToast();
+  // SATUSEHAT mati (platform atau klinik): hanya rujukan manual (surat
+  // rujukan) yang bisa dibuat — server menolak rujukan lewat SATUSEHAT.
+  const satusehatOn = useFeatures().can('satusehat');
   const [rows, setRows] = useState<Referral[]>([]);
   const [opts, setOpts] = useState<ReferralOptions | null>(null);
   const [adding, setAdding] = useState(false);
@@ -82,7 +86,7 @@ export default function ReferralPanel({
 
   const startAdding = () => {
     const primary = icd.find((d) => d.primary)?.code ?? icd[0]?.code ?? '';
-    setForm({ ...EMPTY_FORM, primary, plannedDate: today() });
+    setForm({ ...EMPTY_FORM, primary, plannedDate: today(), manual: !satusehatOn });
     setAdding(true);
   };
 
@@ -262,11 +266,17 @@ export default function ReferralPanel({
               onChange={(e) => set('pcareNumber', e.target.value)}
             />
           </label>
-          <label className="ref-check ph-span-2">
-            <input type="checkbox" checked={form.manual} onChange={(e) => set('manual', e.target.checked)} />
-            Rujukan manual (surat rujukan saja, tidak lewat SATUSEHAT)
-          </label>
-          {form.manual && (
+          {satusehatOn ? (
+            <label className="ref-check ph-span-2">
+              <input type="checkbox" checked={form.manual} onChange={(e) => set('manual', e.target.checked)} />
+              Rujukan manual (surat rujukan saja, tidak lewat SATUSEHAT)
+            </label>
+          ) : (
+            <p className="ref-note ph-span-2">
+              SATUSEHAT belum aktif untuk klinik ini, jadi rujukan dicatat sebagai surat rujukan manual.
+            </p>
+          )}
+          {(form.manual || !satusehatOn) && (
             <label className="ph-span-2">
               Nama RS / fasyankes tujuan
               <input

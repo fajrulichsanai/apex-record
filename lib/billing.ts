@@ -25,6 +25,14 @@ export interface BillingListResponse {
     limit: number;
     totalPages: number;
   };
+  /** Ringkasan seluruh periode (bukan hanya halaman ini), tidak terpengaruh filter status. */
+  summary?: {
+    count: number;
+    totalPaid: number;
+    byStatus: Record<string, number>;
+  };
+  /** Hanya saat difilter per bulan: tanggal yang berisi transaksi. */
+  days?: { date: string; count: number }[];
 }
 
 export interface BillingItem {
@@ -36,6 +44,10 @@ export interface BillingItem {
   discount: number;
   discountType: DiscountType;
   subtotal: number;
+  /** Snapshot modal (bahan) per unit saat transaksi dibuat. */
+  hargaPokok?: number | null;
+  /** Snapshot biaya lab per unit saat transaksi dibuat. */
+  biayaLab?: number | null;
 }
 
 export interface Payment {
@@ -90,6 +102,8 @@ export interface UpdateBillingPayload {
   totalDiscountType?: DiscountType;
   additionalFee?: number;
   notes?: string;
+  /** Konfirmasi: kembalikan kelebihan bayar ke pasien bila total baru < yang sudah dibayar. */
+  refundExcess?: boolean;
 }
 
 export interface CreatePaymentPayload {
@@ -109,6 +123,8 @@ export interface CreatePaymentResponse {
 export const billingApi = {
   list: (query?: {
     status?: BillingStatus;
+    /** YYYY-MM berdasarkan tanggal invoice dibuat. */
+    month?: string;
     dateFrom?: string;
     dateTo?: string;
     patientId?: number;
@@ -139,6 +155,10 @@ export const billingApi = {
 
   createPayment: (id: number, payload: CreatePaymentPayload) =>
     apiClient.post<CreatePaymentResponse>(`/billings/${id}/payments`, payload),
+
+  /** Corrects an already-recorded payment (wrong amount typed in) — not a new payment. */
+  updatePayment: (id: number, paymentId: number, payload: Partial<CreatePaymentPayload>) =>
+    apiClient.patch<CreatePaymentResponse>(`/billings/${id}/payments/${paymentId}`, payload),
 
   downloadInvoicePdf: async (id: number) => {
     const res = await fetch(`${API_BASE}/billings/${id}/invoice`);

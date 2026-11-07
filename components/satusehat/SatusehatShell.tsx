@@ -7,6 +7,8 @@ import FeatureGuard from '@/components/auth/FeatureGuard';
 import type { SyncState } from '@/lib/satusehat';
 import { SYNC_STATE_LABELS } from '@/lib/satusehat';
 import '@/app/styles/satusehat.css';
+import '@/app/styles/super-admin.css';
+import { PageHeader } from '@/components/super-admin/ui';
 
 /** Kerangka halaman di bawah menu SATUSEHAT. */
 export function SatusehatShell({
@@ -40,7 +42,11 @@ export function SatusehatShell({
   );
 }
 
-/** Kerangka halaman SATUSEHAT di panel Super Admin (master data, pantauan klinik). */
+/**
+ * Kerangka halaman SATUSEHAT di panel Super Admin (master data, pantauan
+ * klinik). Memakai header dan gaya panel Super Admin (PRD SS-01); kelas ss-*
+ * di dalamnya diselaraskan lewat app/styles/super-admin.css.
+ */
 export function AdminSatusehatShell({
   title,
   subtitle,
@@ -54,16 +60,10 @@ export function AdminSatusehatShell({
 }) {
   return (
     <SuperAdminLayout>
-      <main className="ss-page">
-        <div className="ss-header">
-          <div>
-            <h1>{title}</h1>
-            {subtitle && <p>{subtitle}</p>}
-          </div>
-          {actions && <div className="ss-actions">{actions}</div>}
-        </div>
+      <div className="sa-page ss-page ss-in-admin">
+        <PageHeader title={title} subtitle={subtitle} actions={actions} breadcrumb={[{ label: 'SATUSEHAT' }, { label: title }]} />
         {children}
-      </main>
+      </div>
     </SuperAdminLayout>
   );
 }

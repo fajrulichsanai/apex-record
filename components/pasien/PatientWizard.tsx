@@ -298,6 +298,7 @@ export default function PatientWizard({
   onCancel,
 }: PatientWizardProps) {
   const toast = useToast();
+  const { can } = useFeatures();
   const [form, setForm] = useState<WizardForm>(EMPTY_FORM);
   const [stepIndex, setStepIndex] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
@@ -312,7 +313,6 @@ export default function PatientWizard({
   const [cityCode, setCityCode] = useState('');
   const [districtCode, setDistrictCode] = useState('');
   const [provincesError, setProvincesError] = useState<string | null>(null);
-  const { can } = useFeatures();
   // Master wilayah (dari SATUSEHAT) tidak tersedia → alamat diisi manual, pendaftaran tidak terhambat
   const wilayahManual = !!provincesError;
   const [provincesLoading, setProvincesLoading] = useState(false);

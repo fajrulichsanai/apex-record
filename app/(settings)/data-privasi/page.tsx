@@ -15,9 +15,14 @@ import {
   type DataRequest,
   type DataRequestType,
 } from '@/lib/data-requests';
+import { useAuth } from '@/lib/auth-context';
+import { clinicDataApi, type RetentionStatus } from '@/lib/super-admin';
 import '../../styles/data-privasi.css';
 
 const CLOSE_CONFIRM_TEXT = 'TUTUP AKUN';
+
+const formatDateLong = (iso: string) =>
+  new Date(`${iso.slice(0, 10)}T00:00:00`).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
 const formatDate = (iso: string) =>
   new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -30,6 +35,17 @@ export default function DataPrivasiPage() {
   const [reason, setReason] = useState('');
   const [confirmText, setConfirmText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [retention, setRetention] = useState<RetentionStatus | null>(null);
+  const { user } = useAuth();
+  const isOwner = user?.role === 'owner';
+
+  useEffect(() => {
+    clinicDataApi
+      .retention()
+      .then(setRetention)
+      .catch(() => setRetention(null));
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -74,6 +90,18 @@ export default function DataPrivasiPage() {
     }
   };
 
+  const downloadAll = async () => {
+    setDownloading(true);
+    try {
+      await clinicDataApi.exportAll();
+      success('Data klinik berhasil diunduh. Simpan file ini di tempat yang aman.');
+    } catch (err) {
+      error(err instanceof ApiError ? err.message : 'Gagal mengunduh data klinik');
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   const openExport = openRequest('export');
   const openClose = openRequest('close_account');
 
@@ -92,22 +120,45 @@ export default function DataPrivasiPage() {
               untuk rinciannya.
             </p>
 
+            {retention?.deleteAfter && !retention.purgedAt && (
+              <div className="dp-retention" role="alert">
+                <strong>
+                  Langganan berakhir. Data klinik akan dihapus permanen setelah {formatDateLong(retention.deleteAfter)}
+                  {retention.daysLeft !== null && retention.daysLeft >= 0
+                    ? ` (${retention.daysLeft === 0 ? 'hari ini hari terakhir' : `${retention.daysLeft} hari lagi`})`
+                    : ''}
+                  .
+                </strong>{' '}
+                Unduh semua data sekarang, atau <Link href="/langganan">perpanjang langganan</Link> agar data tetap
+                tersimpan.
+              </div>
+            )}
+
             <div className="dp-options">
               <section className="dp-card">
-                <h2>Minta salinan data klinik</h2>
+                <h2>Unduh semua data klinik</h2>
                 <p>
-                  Kami kirimkan file berisi data pasien, rekam medis, kunjungan, transaksi, dan pengaturan klinik ke email
-                  pemilik. Akun tetap aktif seperti biasa.
+                  Satu file ZIP berisi Excel yang rapi (satu sheet per jenis data: pasien, kunjungan, rekam medis, resep,
+                  tagihan, stok, dan lainnya) beserta foto pemeriksaan, konten, dan tanda tangan. Bisa diunduh kapan saja.
                 </p>
+                {isOwner ? (
+                  <button type="button" className="btn-primary" onClick={downloadAll} disabled={downloading}>
+                    {downloading ? 'Menyiapkan ZIP…' : 'Unduh semua data'}
+                  </button>
+                ) : (
+                  <p className="dp-open">Hanya owner klinik yang bisa mengunduh semua data.</p>
+                )}
                 {openExport ? (
                   <p className="dp-open">
-                    Permintaan sedang {DATA_REQUEST_STATUS_LABEL[openExport.status].toLowerCase()} sejak{' '}
+                    Permintaan ekspor lewat tim sedang {DATA_REQUEST_STATUS_LABEL[openExport.status].toLowerCase()} sejak{' '}
                     {formatDate(openExport.createdAt)}.
                   </p>
                 ) : (
-                  <button type="button" className="btn-outline" onClick={() => startForm('export')} disabled={form === 'export'}>
-                    Minta ekspor data
-                  </button>
+                  isOwner && (
+                    <button type="button" className="dp-link" onClick={() => startForm('export')} disabled={form === 'export'}>
+                      Butuh bantuan? Minta ekspor lewat tim ApexRecord
+                    </button>
+                  )
                 )}
               </section>
 

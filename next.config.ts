@@ -13,12 +13,16 @@ function buildId(): string {
   }
 }
 
+const BUILD_ID = buildId();
+
 const nextConfig: NextConfig = {
   // The deploy builds into a separate directory and swaps it in just before
   // the restart (see .github/workflows/deploy-vps.yml), so the running server
   // never serves a half-overwritten .next during `npm run build`.
   distDir: process.env.NEXT_DIST_DIR || ".next",
-  deploymentId: buildId(),
+  deploymentId: BUILD_ID,
+  // Ditanam ke bundle browser dan ke /api/version; lihat components/layout/VersionWatcher.tsx.
+  env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },
   experimental: {
     // Pages here render per-user data fetched on mount; don't let the client
     // router reuse a previously visited page for minutes (default: 5 min).
@@ -26,6 +30,12 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        // Font ikon yang dihost sendiri: nama berkas tidak berubah, tapi isinya
+        // praktis tidak pernah; simpan lama di browser agar tidak diunduh ulang.
+        source: '/fonts/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
       {
         // Baseline security headers for every page and the /api proxy. The
         // /api routes are same-origin only now (they carry the session
@@ -36,7 +46,9 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          // Kamera & lokasi hanya untuk halaman ApexRecord sendiri (absensi:
+          // selfie + jarak ke klinik); iframe pihak ketiga tetap diblokir.
+          { key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=(self)' },
           {
             key: 'Content-Security-Policy',
             value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
@@ -50,7 +62,7 @@ const nextConfig: NextConfig = {
         // build assets under _next/static are excluded: their filename
         // already changes on every deploy, so they're safe to cache
         // indefinitely and shouldn't be forced to revalidate on every load.
-        source: '/((?!_next/static|_next/image|favicon.ico).*)',
+        source: '/((?!_next/static|_next/image|fonts/|favicon.ico).*)',
         headers: [
           {
             key: 'Cache-Control',

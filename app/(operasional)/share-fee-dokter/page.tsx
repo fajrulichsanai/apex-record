@@ -43,7 +43,7 @@ export default function ShareFeeDokterPage() {
             <div className="page-title">
               <h1>Share Fee Dokter</h1>
             </div>
-            <p className="page-subtitle">Konfigurasi fee per tindakan dan laporan share fee dokter bulanan.</p>
+            <p className="page-subtitle">Konfigurasi fee per tindakan dan laporan share fee dokter bulanan. Fee persentase dihitung dari harga tindakan dikurangi biaya lab.</p>
           </div>
         </div>
 
