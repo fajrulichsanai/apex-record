@@ -18,6 +18,8 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
+  // Alamat absolut untuk ikon & gambar pratinjau: selalu domain utama
+  metadataBase: new URL("https://apexrecord.my.id"),
   title: "ApexRecord",
   description: "Sistem manajemen klinik ApexRecord",
   icons: {
@@ -39,7 +41,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="id"
       className={`${poppins.variable} h-full antialiased`}
       suppressHydrationWarning
     >

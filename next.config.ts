@@ -15,6 +15,12 @@ function buildId(): string {
 
 const BUILD_ID = buildId();
 
+/** Cara membaca host permintaan: langsung (Host) atau lewat nginx (X-Forwarded-Host). */
+const HOST_SOURCES = [
+  (value: string) => [{ type: 'host' as const, value }],
+  (value: string) => [{ type: 'header' as const, key: 'x-forwarded-host', value }],
+];
+
 const nextConfig: NextConfig = {
   // The deploy builds into a separate directory and swaps it in just before
   // the restart (see .github/workflows/deploy-vps.yml), so the running server
@@ -55,6 +61,23 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Hanya domain utama (apexrecord.my.id) yang boleh bersaing di Google.
+      // Staging dan subdomain aplikasi bertanda noindex supaya tidak menjadi
+      // duplikat; landing page tetap boleh diindeks bila disajikan lewat
+      // app.apexrecord.my.id. Host dibaca dari Host maupun X-Forwarded-Host
+      // (tergantung konfigurasi nginx).
+      // (aturan yang datang belakangan menang untuk header yang sama, jadi
+      // semua noindex ditulis dulu, pengecualian landing sesudahnya)
+      ...HOST_SOURCES.map((has) => ({
+        source: '/:path*',
+        has: has('(staging|app|api)\\.apexrecord\\.my\\.id'),
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }],
+      })),
+      ...HOST_SOURCES.map((has) => ({
+        source: '/landingpage',
+        has: has('app\\.apexrecord\\.my\\.id'),
+        headers: [{ key: 'X-Robots-Tag', value: 'index, follow' }],
+      })),
       {
         // Every page here is auth-gated and renders per-user data, so none
         // of it should sit in a browser/proxy cache — that's what was
