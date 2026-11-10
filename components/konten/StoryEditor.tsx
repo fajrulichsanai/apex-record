@@ -43,6 +43,7 @@ import {
   type StoryFonts,
   type StorySlot,
 } from '@/lib/story-canvas';
+import PhotoLibraryPanel from '@/components/konten/PhotoLibraryPanel';
 import { drawSeriesStory } from '@/lib/series-canvas';
 import { useSeriesPhotos } from '@/lib/use-series-photos';
 import { DEFAULT_SERIES_STYLE, SERIES_ARRANGEMENTS, autoGridCols, resolveSeriesStyle, seriesArea, seriesRects, type ResolvedSeriesStyle, type SeriesArrangement } from '@/lib/series-layout';
@@ -234,6 +235,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   const [busy, setBusy] = useState<null | 'save' | 'publish' | 'unpublish' | 'delete'>(null);
   const [dirty, setDirty] = useState(false);
   const [swapMode, setSwapMode] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const saveRef = useRef<(allowUntitled?: boolean) => Promise<number | null>>(async () => null);
   const series = useSeriesPhotos(recordId, () => saveRef.current(true), () => setDirty(true));
@@ -559,6 +561,16 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   useEffect(() => {
     saveRef.current = save;
   });
+
+  const showLibrary = libraryOpen && form.layout === 'series' && !isTemplate;
+  const usedLibraryIds = new Set(
+    series.items.filter((i) => i.photo.sourceType === 'patient_photo' && i.photo.sourceId).map((i) => i.photo.sourceId as number),
+  );
+  const toggleLibraryPhoto = (photoId: number, used: boolean) => {
+    if (!used) return void series.addFromLibrary([{ sourceType: 'patient_photo', sourceId: photoId }]);
+    const index = series.items.findIndex((i) => i.photo.sourceType === 'patient_photo' && i.photo.sourceId === photoId);
+    if (index >= 0) void series.remove(index);
+  };
 
   const run = async (kind: NonNullable<typeof busy>, fn: () => Promise<void>) => {
     setBusy(kind);
@@ -988,6 +1000,8 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                       onFrame={(index, patch) => applySeriesFrame(index, patch)}
                       swapMode={swapMode}
                       onSwapMode={setSwapMode}
+                      libraryOpen={libraryOpen}
+                      onToggleLibrary={() => setLibraryOpen((v) => !v)}
                     />
                   </section>
                 )}
@@ -1522,7 +1536,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
               </form>
 
               <div className="kt-preview">
-                <div className="kt-stage">
+                <div className="kt-stage" hidden={showLibrary}>
                 <canvas
                   ref={canvasRef}
                   width={STORY_W}
@@ -1547,7 +1561,15 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                   );
                 })()}
                 </div>
-                <p className="kt-hint">
+                {showLibrary && (
+                  <PhotoLibraryPanel
+                    usedIds={usedLibraryIds}
+                    busy={series.busy}
+                    onToggle={(photo, used) => toggleLibraryPhoto(photo.id, used)}
+                    onClose={() => setLibraryOpen(false)}
+                  />
+                )}
+                <p className="kt-hint" hidden={showLibrary}>
                   {isTemplate
                     ? 'Pratinjau template — foto diisi per konten.'
                     : '1080 × 1920 px · ukuran story Instagram & WhatsApp'}

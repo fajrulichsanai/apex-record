@@ -2,8 +2,6 @@
 
 import { useRef, useState } from 'react';
 import { FiArrowLeft, FiArrowRight, FiEyeOff, FiFolder, FiRefreshCcw, FiRepeat, FiRotateCcw, FiRotateCw, FiShuffle, FiTrash2, FiUpload } from 'react-icons/fi';
-import PhotoLibraryModal from '@/components/konten/PhotoLibraryModal';
-import type { LibraryPhoto } from '@/lib/contents';
 import { DEFAULT_FRAME, MAX_ZOOM, MIN_ZOOM, normalizeAngle } from '@/lib/story-canvas';
 import type { SeriesPhotosController } from '@/lib/use-series-photos';
 
@@ -13,6 +11,8 @@ interface SeriesPhotosEditorProps {
   onFrame: (index: number, patch: Partial<typeof DEFAULT_FRAME>) => void;
   swapMode: boolean;
   onSwapMode: (on: boolean) => void;
+  libraryOpen: boolean;
+  onToggleLibrary: () => void;
 }
 
 /**
@@ -20,9 +20,8 @@ interface SeriesPhotosEditorProps {
  * lalu atur tiap foto — geser/zoom langsung di preview, atau pakai tombol di
  * bawah: putar, cermin, zoom, geser urutan, tukar, blur, hapus.
  */
-export default function SeriesPhotosEditor({ ctl, onFrame, swapMode, onSwapMode }: SeriesPhotosEditorProps) {
+export default function SeriesPhotosEditor({ ctl, onFrame, swapMode, onSwapMode, libraryOpen, onToggleLibrary }: SeriesPhotosEditorProps) {
   const { items, selected, select, busy, loading } = ctl;
-  const [libraryOpen, setLibraryOpen] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const dragIndex = useRef<number | null>(null);
@@ -34,11 +33,6 @@ export default function SeriesPhotosEditor({ ctl, onFrame, swapMode, onSwapMode 
   const onFiles = (list: FileList | File[] | null) => {
     if (!list) return;
     void ctl.addFiles(Array.from(list));
-  };
-
-  const addFromLibrary = (photos: LibraryPhoto[]) => {
-    setLibraryOpen(false);
-    void ctl.addFromLibrary(photos.map((p) => ({ sourceType: 'patient_photo' as const, sourceId: p.id })));
   };
 
   const onThumbClick = (index: number) => {
@@ -72,7 +66,7 @@ export default function SeriesPhotosEditor({ ctl, onFrame, swapMode, onSwapMode 
         <button type="button" className="kt-btn primary" onClick={() => fileRef.current?.click()} disabled={busy}>
           <FiUpload aria-hidden="true" /> Dari perangkat
         </button>
-        <button type="button" className="kt-btn" onClick={() => setLibraryOpen(true)} disabled={busy}>
+        <button type="button" className={`kt-btn${libraryOpen ? ' primary' : ''}`} onClick={onToggleLibrary} aria-pressed={libraryOpen}>
           <FiFolder aria-hidden="true" /> Dari rekam medis
         </button>
         <span className="kt-hint">{busy ? 'Memproses foto…' : 'Pilih banyak foto sekaligus, atau seret ke sini.'}</span>
@@ -221,7 +215,6 @@ export default function SeriesPhotosEditor({ ctl, onFrame, swapMode, onSwapMode 
         </>
       )}
 
-      {libraryOpen && <PhotoLibraryModal onClose={() => setLibraryOpen(false)} onAdd={addFromLibrary} />}
     </div>
   );
 }
