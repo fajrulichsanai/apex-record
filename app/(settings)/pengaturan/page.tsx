@@ -4,7 +4,8 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/lib/auth-context';
-import { canAccessFeature, type FeatureKey } from '@/lib/permissions';
+import {type FeatureKey } from '@/lib/permissions';
+import { useFeatures } from '@/lib/features-context';
 
 const SETTINGS_ORDER: { href: string; feature: FeatureKey; requireManageUsers?: boolean }[] = [
   { href: '/info-klinik', feature: 'info-klinik' },
@@ -19,12 +20,13 @@ const SETTINGS_ORDER: { href: string; feature: FeatureKey; requireManageUsers?: 
 export default function PengaturanPage() {
   const router = useRouter();
   const { user, loading } = useAuth();
+  const { can } = useFeatures();
 
   useEffect(() => {
     if (loading || !user) return;
     const canManageUsers = user.role === 'owner' || user.role === 'super_admin';
     const target = SETTINGS_ORDER.find(
-      (s) => (!s.requireManageUsers || canManageUsers) && canAccessFeature(user.role, s.feature)
+      (s) => (!s.requireManageUsers || canManageUsers) && can(s.feature)
     );
     router.replace(target?.href ?? '/dashboard');
   }, [loading, user, router]);

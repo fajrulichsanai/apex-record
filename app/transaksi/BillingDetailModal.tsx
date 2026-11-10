@@ -10,6 +10,8 @@ import { useToast } from '@/lib/toast-context';
 import { waLink } from '@/lib/utils/whatsapp';
 import PaymentModal, { PAYMENT_METHOD_LABEL } from './PaymentModal';
 import { useEscapeKey } from '@/lib/a11y';
+import { useAuth } from '@/lib/auth-context';
+import { canSeeHargaModal } from '@/lib/permissions';
 import './BillingDetailModal.css';
 
 interface BillingDetailModalProps {
@@ -27,6 +29,25 @@ interface EditItemRow {
   quantity: number;
   discount: number;
   discountType: DiscountType;
+  hargaPokok: number;
+  biayaLab: number;
+}
+
+/** Margin per tindakan: (harga jual - diskon item - modal - lab) x qty. */
+export function itemProfit(i: {
+  unitPrice: number;
+  quantity: number;
+  discount: number;
+  discountType: DiscountType;
+  hargaPokok?: number | null;
+  biayaLab?: number | null;
+}) {
+  const price = Number(i.unitPrice || 0);
+  const disc = i.discountType === 'percent' ? (price * Number(i.discount || 0)) / 100 : Number(i.discount || 0);
+  const modal = Number(i.hargaPokok || 0);
+  const lab = Number(i.biayaLab || 0);
+  const perUnit = price - disc - modal - lab;
+  return { price, disc, modal, lab, perUnit, total: perUnit * Number(i.quantity || 0) };
 }
 
 function formatRupiah(value: number) {
@@ -62,6 +83,8 @@ let rowKeySeq = 0;
 
 export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdated }: BillingDetailModalProps) {
   const { success, error: showError } = useToast();
+  const { user } = useAuth();
+  const showModal = canSeeHargaModal(user?.role);
   const isMounted = useRef(true);
   const [detail, setDetail] = useState<BillingDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -73,10 +96,14 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
   const [totalDiscount, setTotalDiscount] = useState(0);
   const [additionalFee, setAdditionalFee] = useState(0);
   const [notes, setNotes] = useState('');
+  const [confirmRefund, setConfirmRefund] = useState(false);
   const [sendingWa, setSendingWa] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [editingPaymentId, setEditingPaymentId] = useState<number | null>(null);
+  const [editAmountText, setEditAmountText] = useState('');
+  const [savingPayment, setSavingPayment] = useState(false);
 
   useEffect(() => {
     isMounted.current = true;
@@ -120,11 +147,14 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
         quantity: i.quantity,
         discount: i.discount,
         discountType: i.discountType,
+        hargaPokok: Number(i.hargaPokok ?? tarifs.find((t) => t.id === i.tarifId)?.hargaPokok ?? 0),
+        biayaLab: Number(i.biayaLab ?? tarifs.find((t) => t.id === i.tarifId)?.biayaLab ?? 0),
       })),
     );
     setTotalDiscount(Number(detail.totalDiscount || 0));
     setAdditionalFee(Number(detail.additionalFee || 0));
     setNotes(detail.notes || '');
+    setConfirmRefund(false);
     setEditing(true);
   }
 
@@ -138,6 +168,8 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
       tarifId: tarif ? tarif.id : '',
       name: tarif ? tarif.name : '',
       unitPrice: tarif ? Math.max(0, tarif.hargaJual) : 0,
+      hargaPokok: tarif ? Number(tarif.hargaPokok || 0) : 0,
+      biayaLab: tarif ? Number(tarif.biayaLab || 0) : 0,
     });
   }
 
@@ -147,10 +179,18 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
   }, 0);
   const editGrandTotal = Math.max(0, editSubtotal - totalDiscount + additionalFee);
 
+  // Total baru lebih kecil dari yang sudah dibayar → selisih dikembalikan ke pasien
+  const refundAmount = detail ? Math.max(0, Math.round((Number(detail.paidAmount) - editGrandTotal) * 100) / 100) : 0;
+
   async function handleSave() {
     const validItems = items.filter((r) => r.name);
     if (validItems.length === 0) {
       showError('Tambahkan minimal satu tindakan');
+      return;
+    }
+
+    if (refundAmount > 0 && !confirmRefund) {
+      showError(`Centang konfirmasi pengembalian ${formatRupiah(refundAmount)} ke pasien untuk melanjutkan`);
       return;
     }
 
@@ -169,17 +209,41 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
         totalDiscountType: totalDiscount > 0 ? 'nominal' : undefined,
         additionalFee: additionalFee > 0 ? additionalFee : undefined,
         notes: notes || undefined,
+        refundExcess: refundAmount > 0 ? true : undefined,
       });
       if (!isMounted.current) return;
       setDetail(updated);
       setEditing(false);
-      success('Invoice berhasil diperbarui');
+      success(refundAmount > 0 ? `Invoice diperbarui — ${formatRupiah(refundAmount)} dikembalikan ke pasien` : 'Invoice berhasil diperbarui');
       onUpdated();
     } catch (err) {
       if (!isMounted.current) return;
       showError(err instanceof ApiError ? err.message : 'Gagal memperbarui invoice');
     } finally {
       if (isMounted.current) setSaving(false);
+    }
+  }
+
+  function startEditPayment(paymentId: number, currentAmount: number) {
+    setEditingPaymentId(paymentId);
+    setEditAmountText(String(Math.round(currentAmount)));
+  }
+
+  async function handleSavePayment(paymentId: number) {
+    const amount = Math.round(Number(editAmountText.replace(/\D/g, '')) || 0);
+    setSavingPayment(true);
+    try {
+      await billingApi.updatePayment(billingId, paymentId, { amount });
+      if (!isMounted.current) return;
+      setEditingPaymentId(null);
+      success('Pembayaran berhasil diperbaiki');
+      await loadDetail();
+      onUpdated();
+    } catch (err) {
+      if (!isMounted.current) return;
+      showError(err instanceof ApiError ? err.message : 'Gagal memperbaiki pembayaran');
+    } finally {
+      if (isMounted.current) setSavingPayment(false);
     }
   }
 
@@ -283,8 +347,11 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
               {editing ? (
                 <>
                   <div className="billing-item-rows">
-                    {items.map((row) => (
-                      <div key={row.key} className="billing-item-row">
+                    {items.map((row) => {
+                      const calc = itemProfit(row);
+                      return (
+                      <div key={row.key} className="billing-item-block">
+                      <div className="billing-item-row">
                         <CustomSelect
                           value={String(row.tarifId)}
                           onChange={(value) => handleTarifSelect(row.key, value)}
@@ -311,12 +378,37 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                           <span aria-hidden="true" className="material-symbols-rounded">close</span>
                         </button>
                       </div>
-                    ))}
+                      {row.tarifId !== '' && (
+                        <div className="billing-item-calc">
+                          <span>
+                            Harga jual {formatRupiah(calc.price)}
+                            {calc.disc > 0 && <> − diskon {formatRupiah(calc.disc)}</>}
+                          </span>
+                          {showModal && (
+                            <>
+                              <span>Modal {formatRupiah(calc.modal)}</span>
+                              <span>Lab {formatRupiah(calc.lab)}</span>
+                              <span className={calc.perUnit < 0 ? 'neg' : undefined}>
+                                Margin {formatRupiah(calc.perUnit)} × {row.quantity} ={' '}
+                                <strong>{formatRupiah(calc.total)}</strong>
+                              </span>
+                            </>
+                          )}
+                          {!showModal && (
+                            <span>
+                              × {row.quantity} = <strong>{formatRupiah((calc.price - calc.disc) * row.quantity)}</strong>
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      </div>
+                      );
+                    })}
                   </div>
                   <button
                     type="button"
                     className="btn-outline billing-add-item-btn"
-                    onClick={() => setItems((prev) => [...prev, { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal' }])}
+                    onClick={() => setItems((prev) => [...prev, { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal', hargaPokok: 0, biayaLab: 0 }])}
                   >
                     <span aria-hidden="true" className="material-symbols-rounded">add</span>
                     Tambah Tindakan
@@ -360,6 +452,29 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                       <span>Total Bayar</span>
                       <span>{formatRupiah(editGrandTotal)}</span>
                     </div>
+                    {showModal && (
+                      <div className="billing-summary-row">
+                        <span>Perkiraan margin (sebelum diskon/biaya tagihan)</span>
+                        <span>{formatRupiah(items.reduce((s, r) => s + itemProfit(r).total, 0))}</span>
+                      </div>
+                    )}
+                    {refundAmount > 0 && (
+                      <label className="billing-refund-confirm">
+                        <input
+                          type="checkbox"
+                          checked={confirmRefund}
+                          onChange={(e) => setConfirmRefund(e.target.checked)}
+                        />
+                        <span>
+                          Total baru lebih kecil dari yang sudah dibayar ({formatRupiah(Number(detail?.paidAmount ?? 0))}).
+                          Kembalikan selisih <strong>{formatRupiah(refundAmount)}</strong> ke pasien — pembayaran
+                          terbaru dikurangi dan dicatat di log aktivitas.
+                        </span>
+                      </label>
+                    )}
+                    <div className="billing-summary-note">
+                      Perubahan tersimpan di log aktivitas (sebelum &amp; sesudah). Stok bahan disesuaikan otomatis.
+                    </div>
                   </div>
                 </>
               ) : (
@@ -392,6 +507,56 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                       ))}
                     </tbody>
                   </table>
+
+                  {showModal && (
+                    <>
+                      <div className="billing-modal-section-title">Rincian Margin per Tindakan</div>
+                      <div className="billing-modal-table-wrap">
+                        <table className="billing-modal-table">
+                          <thead>
+                            <tr>
+                              <th>Tindakan</th>
+                              <th>Harga jual</th>
+                              <th>Modal</th>
+                              <th>Lab</th>
+                              <th>Margin/unit</th>
+                              <th>Qty</th>
+                              <th>Total margin</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {detail.items.map((i) => {
+                              const c = itemProfit(i);
+                              return (
+                                <tr key={i.id}>
+                                  <td>{i.name}</td>
+                                  <td>
+                                    {formatRupiah(c.price - c.disc)}
+                                    {c.disc > 0 && <div className="billing-modal-muted">diskon {formatRupiah(c.disc)}</div>}
+                                  </td>
+                                  <td>{formatRupiah(c.modal)}</td>
+                                  <td>{formatRupiah(c.lab)}</td>
+                                  <td className={c.perUnit < 0 ? 'neg' : undefined}>{formatRupiah(c.perUnit)}</td>
+                                  <td>× {i.quantity}</td>
+                                  <td className={c.total < 0 ? 'neg' : undefined}>
+                                    <strong>{formatRupiah(c.total)}</strong>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                          <tfoot>
+                            <tr>
+                              <td colSpan={6}>Total margin tindakan</td>
+                              <td>
+                                <strong>{formatRupiah(detail.items.reduce((s, i) => s + itemProfit(i).total, 0))}</strong>
+                              </td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    </>
+                  )}
 
                   <div className="billing-summary-box">
                     <div className="billing-summary-row">
@@ -441,6 +606,7 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                             <th>Metode</th>
                             <th>Jumlah</th>
                             <th>Tanggal</th>
+                            {canEdit && <th />}
                           </tr>
                         </thead>
                         <tbody>
@@ -448,8 +614,58 @@ export default function BillingDetailModal({ billingId, tarifs, onClose, onUpdat
                             <tr key={p.id}>
                               <td>{p.receiptNumber}</td>
                               <td>{PAYMENT_METHOD_LABEL[p.method] ?? p.method}</td>
-                              <td>{formatRupiah(p.amount)}</td>
+                              <td>
+                                {editingPaymentId === p.id ? (
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    className="billing-payment-edit-input"
+                                    value={editAmountText}
+                                    onChange={(e) => setEditAmountText(e.target.value)}
+                                    disabled={savingPayment}
+                                    autoFocus
+                                  />
+                                ) : (
+                                  formatRupiah(p.amount)
+                                )}
+                              </td>
                               <td>{formatDateTime(p.paidAt)}</td>
+                              {canEdit && (
+                                <td>
+                                  {editingPaymentId === p.id ? (
+                                    <div className="billing-payment-edit-actions">
+                                      <button
+                                        type="button"
+                                        className="billing-payment-edit-btn"
+                                        aria-label="Simpan"
+                                        onClick={() => handleSavePayment(p.id)}
+                                        disabled={savingPayment}
+                                      >
+                                        <span aria-hidden="true" className="material-symbols-rounded">check</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="billing-payment-edit-btn"
+                                        aria-label="Batal"
+                                        onClick={() => setEditingPaymentId(null)}
+                                        disabled={savingPayment}
+                                      >
+                                        <span aria-hidden="true" className="material-symbols-rounded">close</span>
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className="billing-payment-edit-btn"
+                                      aria-label="Perbaiki jumlah pembayaran"
+                                      title="Perbaiki jumlah pembayaran"
+                                      onClick={() => startEditPayment(p.id, p.amount)}
+                                    >
+                                      <span aria-hidden="true" className="material-symbols-rounded">edit</span>
+                                    </button>
+                                  )}
+                                </td>
+                              )}
                             </tr>
                           ))}
                         </tbody>

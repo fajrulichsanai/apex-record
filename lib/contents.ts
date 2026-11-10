@@ -1,8 +1,9 @@
 import { ApiError, apiClient, apiFileUrl } from './api-client';
 import { isDemoMode } from './demo/demo-mode';
+import type { SeriesStyle } from './series-layout';
 
 export type ContentStatus = 'draft' | 'published';
-export type ContentLayout = 'stack' | 'split';
+export type ContentLayout = 'stack' | 'split' | 'series';
 export type ContentBackground = 'light' | 'navy';
 
 /** Position of one photo inside its frame on the story. */
@@ -33,6 +34,8 @@ export interface ContentSettings {
   visits?: number;
   /** False once the caption was typed by hand. */
   autoCaption?: boolean;
+  /** Gaya layout series (susunan, jarak, keterangan, warna). */
+  series?: SeriesStyle;
 }
 
 export interface ClinicContent {
@@ -99,6 +102,37 @@ export const templatesApi = {
   remove: (id: number) => apiClient.delete<void>(`/contents/templates/${id}`),
 };
 
+export type ContentPhotoSource = 'patient_photo' | 'supporting_exam_image';
+
+export interface PickerPhoto {
+  id: number;
+  fileUrl: string;
+  template?: { id: number; name: string } | null;
+  imageType?: 'photo' | 'xray';
+  category?: string | null;
+}
+
+export interface PickerFolder {
+  group: { id: number; name: string } | null;
+  photos: PickerPhoto[];
+}
+
+export interface ContentPhotoPicker {
+  consentMarketing: boolean;
+  folders: PickerFolder[];
+  supportingExam: PickerPhoto[];
+}
+
+export interface SeriesPhoto {
+  id: number;
+  contentId: number;
+  sourceType: ContentPhotoSource;
+  sourceId: number;
+  sortOrder: number;
+  caption: string | null;
+  blurFace: boolean;
+}
+
 export const CONTENT_STATUS_LABEL: Record<ContentStatus, string> = {
   draft: 'Draft',
   published: 'Terbit',
@@ -135,4 +169,20 @@ export const contentsApi = {
   remove: (id: number) => apiClient.delete<void>(`/contents/${id}`),
   photo: (id: number, which: 'before' | 'after' | 'rendered') => fetchImage(`/contents/${id}/photos/${which}`),
   logo: () => fetchImage('/contents/logo'),
+  picker: (patientId: number) => apiClient.get<ContentPhotoPicker>(`/contents/picker/${patientId}`),
+  importPhoto: (sourceType: ContentPhotoSource, sourceId: number) =>
+    apiClient.post<{ url: string }>('/contents/import-photo', { sourceType, sourceId }),
+};
+
+export const seriesPhotosApi = {
+  list: (contentId: number) => apiClient.get<SeriesPhoto[]>(`/contents/${contentId}/series-photos`),
+  add: (contentId: number, sourceType: ContentPhotoSource, sourceId: number) =>
+    apiClient.post<SeriesPhoto>(`/contents/${contentId}/series-photos`, { sourceType, sourceId }),
+  update: (contentId: number, photoId: number, payload: { caption?: string | null; blurFace?: boolean }) =>
+    apiClient.patch<SeriesPhoto>(`/contents/${contentId}/series-photos/${photoId}`, payload),
+  remove: (contentId: number, photoId: number) =>
+    apiClient.delete<void>(`/contents/${contentId}/series-photos/${photoId}`),
+  reorder: (contentId: number, orderedIds: number[]) =>
+    apiClient.patch<SeriesPhoto[]>(`/contents/${contentId}/series-photos/reorder`, { orderedIds }),
+  fileUrl: (contentId: number, photoId: number) => `/contents/${contentId}/series-photos/${photoId}/file`,
 };

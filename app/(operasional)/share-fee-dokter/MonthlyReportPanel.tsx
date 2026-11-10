@@ -35,7 +35,17 @@ function initialsFromName(name?: string) {
 }
 
 const exportReportToExcel = (reports: DoctorMonthlyShareReport[], year: number, month: number) => {
-  const headers = ['Dokter', 'Tindakan', 'Jumlah', 'Tipe Fee', 'Nilai Fee', 'Total Share (Rp)'];
+  const headers = [
+    'Dokter',
+    'Tindakan',
+    'Jumlah',
+    'Total Harga (Rp)',
+    'Biaya Lab (Rp)',
+    'Dasar Fee (Rp)',
+    'Tipe Fee',
+    'Nilai Fee',
+    'Total Share (Rp)',
+  ];
   const rows: string[][] = [];
   for (const r of reports) {
     for (const b of r.breakdown) {
@@ -43,6 +53,9 @@ const exportReportToExcel = (reports: DoctorMonthlyShareReport[], year: number, 
         r.practitionerName,
         b.tarifName,
         String(b.count),
+        String(b.totalHarga ?? 0),
+        String(b.totalBiayaLab ?? 0),
+        String(b.dasarFee ?? 0),
         b.feeType === 'fixed' ? 'Fixed' : 'Persentase',
         b.feeType === 'fixed' ? `Rp ${b.feeValue}` : `${b.feeValue}%`,
         b.totalShare.toString(),
@@ -205,8 +218,10 @@ export default function MonthlyReportPanel({ selfView = false }: MonthlyReportPa
                     <tr>
                       <th>Tindakan</th>
                       <th>Jumlah</th>
-                      <th>Tipe Fee</th>
-                      <th>Nilai Fee</th>
+                      <th>Harga</th>
+                      <th>− Biaya Lab</th>
+                      <th>Dasar Fee</th>
+                      <th>Fee</th>
                       <th>Total Share</th>
                     </tr>
                   </thead>
@@ -215,15 +230,24 @@ export default function MonthlyReportPanel({ selfView = false }: MonthlyReportPa
                       <tr key={b.tarifId}>
                         <td>{b.tarifName}</td>
                         <td>{b.count}</td>
-                        <td>{b.feeType === 'fixed' ? 'Fixed' : 'Persentase'}</td>
-                        <td>{b.feeType === 'fixed' ? `Rp ${b.feeValue.toLocaleString('id-ID')}` : `${b.feeValue}%`}</td>
+                        <td>Rp {(b.totalHarga ?? 0).toLocaleString('id-ID')}</td>
+                        <td>{b.totalBiayaLab ? `Rp ${b.totalBiayaLab.toLocaleString('id-ID')}` : '-'}</td>
+                        <td>{b.feeType === 'fixed' ? '-' : `Rp ${(b.dasarFee ?? 0).toLocaleString('id-ID')}`}</td>
+                        <td>
+                          {b.feeType === 'fixed' ? `Rp ${b.feeValue.toLocaleString('id-ID')} / tindakan` : `${b.feeValue}%`}
+                        </td>
                         <td>Rp {b.totalShare.toLocaleString('id-ID')}</td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan={4}>Total Tindakan: {selected.totalTindakan}</td>
+                      <td colSpan={7}>
+                        Total Tindakan: {selected.totalTindakan}
+                        {selected.totalBiayaLab
+                          ? ` · Biaya lab dipotong: Rp ${selected.totalBiayaLab.toLocaleString('id-ID')}`
+                          : ''}
+                      </td>
                       <td>Rp {selected.totalShareFee.toLocaleString('id-ID')}</td>
                     </tr>
                   </tfoot>

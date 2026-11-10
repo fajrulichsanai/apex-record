@@ -4,13 +4,15 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { Bricolage_Grotesque, Instrument_Serif, JetBrains_Mono } from 'next/font/google';
-import { FiArrowLeft, FiDownload, FiPlus, FiRotateCcw, FiRotateCw, FiUpload } from 'react-icons/fi';
+import { FiArrowLeft, FiDownload, FiFolder, FiPlus, FiRotateCcw, FiRotateCw, FiUpload } from 'react-icons/fi';
 import { MdFlip } from 'react-icons/md';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
-import { ApiError } from '@/lib/api-client';
+import { ApiError, fetchProtectedFileUrl } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { clinicApi } from '@/lib/clinic';
+import ClinicalPhotoPickerModal from '@/components/konten/ClinicalPhotoPickerModal';
+import SeriesPhotosEditor from '@/components/konten/SeriesPhotosEditor';
 import {
   CONTENT_STATUS_LABEL,
   contentsApi,
@@ -20,10 +22,12 @@ import {
   type ContentLayout,
   type ContentPayload,
   type ContentPhotoFrame,
+  type ContentPhotoSource,
   type ContentSettings,
   type ContentStatus,
   type ContentTemplatePayload,
   type ContentTemplateRecord,
+  type PickerPhoto,
 } from '@/lib/contents';
 import {
   DEFAULT_FRAME,
@@ -39,6 +43,8 @@ import {
   type StoryFonts,
   type StorySlot,
 } from '@/lib/story-canvas';
+import { drawSeriesStory, type SeriesPhotoDraw } from '@/lib/series-canvas';
+import { DEFAULT_SERIES_STYLE, SERIES_ARRANGEMENTS, resolveSeriesStyle, type ResolvedSeriesStyle } from '@/lib/series-layout';
 import {
   CONTENT_TEMPLATES,
   REGION_OPTIONS,
@@ -92,6 +98,8 @@ interface Form {
   region: string;
   visits: number | null;
   autoCaption: boolean;
+  /** Gaya layout series. */
+  seriesStyle: ResolvedSeriesStyle;
 }
 
 type BrandFields = Pick<Form, 'brandName' | 'brandSub' | 'contactLine'>;
@@ -101,6 +109,13 @@ interface Photo {
   url: string | null;
   img: HTMLImageElement;
 }
+
+const ARRANGEMENT_ICON: Record<'rows' | 'columns' | 'grid' | 'hero', Array<[number, number, number, number]>> = {
+  rows: [[4, 4, 32, 8], [4, 16, 32, 8], [4, 28, 32, 8]],
+  columns: [[4, 4, 9, 32], [15, 4, 10, 32], [27, 4, 9, 32]],
+  grid: [[4, 4, 15, 15], [21, 4, 15, 15], [4, 21, 15, 15], [21, 21, 15, 15]],
+  hero: [[4, 4, 32, 18], [4, 24, 9, 12], [15, 24, 10, 12], [27, 24, 9, 12]],
+};
 
 const EMPTY_FORM: Form = {
   name: '',
@@ -121,6 +136,7 @@ const EMPTY_FORM: Form = {
   region: '',
   visits: null,
   autoCaption: true,
+  seriesStyle: DEFAULT_SERIES_STYLE,
 };
 
 /** What starting a template from an example fills in. */
@@ -155,6 +171,7 @@ const templateFields = (t: ContentTemplateRecord, brand: BrandFields): Partial<F
     region: s.region ?? '',
     visits: s.visits ?? null,
     autoCaption: true,
+    seriesStyle: resolveSeriesStyle(s.series),
   };
 };
 
@@ -205,6 +222,8 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   const [brand, setBrand] = useState<BrandFields>({ brandName: '', brandSub: '', contactLine: '' });
   const [photos, setPhotos] = useState<Record<StorySlot, Photo | null>>({ before: null, after: null });
   const [frames, setFrames] = useState<Record<StorySlot, ContentPhotoFrame>>({ before: DEFAULT_FRAME, after: DEFAULT_FRAME });
+  const [seriesPhotos, setSeriesPhotos] = useState<SeriesPhotoDraw[]>([]);
+  const [pickerSlot, setPickerSlot] = useState<StorySlot | null>(null);
   const [logo, setLogo] = useState<HTMLImageElement | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -344,6 +363,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
         visits: s.visits ?? null,
         // Stories made before the details existed keep their typed caption.
         autoCaption: s.autoCaption ?? false,
+        seriesStyle: resolveSeriesStyle(s.series),
       });
       setPhotos({
         before: before && content.beforeImageUrl ? { url: content.beforeImageUrl, img: before } : null,
@@ -369,6 +389,21 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   useEffect(() => {
     const g = canvasRef.current?.getContext('2d');
     if (!g || loading) return;
+    if (form.layout === 'series') {
+      drawSeriesStory(
+        g,
+        {
+          ...form,
+          title: storyTitle,
+          caption,
+          logo,
+          photos: seriesPhotos,
+          style: form.seriesStyle,
+        },
+        FONTS,
+      );
+      return;
+    }
     drawStory(
       g,
       {
@@ -381,7 +416,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
       },
       FONTS,
     );
-  }, [form, storyTitle, caption, photos, frames, logo, fontsReady, loading]);
+  }, [form, storyTitle, caption, photos, frames, seriesPhotos, logo, fontsReady, loading]);
 
   const pickPhoto = async (slot: StorySlot, file: File | undefined) => {
     if (!file) return;
@@ -408,6 +443,29 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     }
   };
 
+  /** Picking a photo already in the patient's folder/Pemeriksaan Penunjang: preview it immediately from its own authenticated URL, then copy it into this story's storage in the background. */
+  const pickFromLibrary = async (slot: StorySlot, photo: PickerPhoto, sourceType: ContentPhotoSource) => {
+    setPickerSlot(null);
+    let img: HTMLImageElement;
+    try {
+      const objectUrl = await fetchProtectedFileUrl(photo.fileUrl);
+      img = await loadImage(objectUrl);
+    } catch {
+      error('Foto ini tidak bisa dimuat.');
+      return;
+    }
+    setPhotos((prev) => ({ ...prev, [slot]: { url: null, img } }));
+    setFrames((prev) => ({ ...prev, [slot]: DEFAULT_FRAME }));
+    setDirty(true);
+    try {
+      const { url } = await contentsApi.importPhoto(sourceType, photo.id);
+      setPhotos((prev) => (prev[slot]?.img === img ? { ...prev, [slot]: { url, img } } : prev));
+    } catch (err) {
+      setPhotos((prev) => (prev[slot]?.img === img ? { ...prev, [slot]: null } : prev));
+      error(err instanceof ApiError ? err.message : 'Gagal mengambil foto dari rekam medis');
+    }
+  };
+
   const uploading = !!(photos.before && !photos.before.url) || !!(photos.after && !photos.after.url);
 
   /** Settings shared by a story and a template. */
@@ -422,6 +480,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     region: form.region.trim(),
     condition: form.condition.trim(),
     visits: form.visits ?? undefined,
+    series: form.seriesStyle,
   });
 
   const contentPayload = (): ContentPayload => ({
@@ -520,7 +579,12 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
 
   const onPublish = () =>
     run('publish', async () => {
-      if (!photos.before || !photos.after) {
+      if (form.layout === 'series') {
+        if (seriesPhotos.length < 2) {
+          error('Tambah minimal 2 foto dulu');
+          return;
+        }
+      } else if (!photos.before || !photos.after) {
         error('Pilih foto sebelum dan sesudah dulu');
         return;
       }
@@ -552,7 +616,12 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     });
 
   const onDownload = async () => {
-    if (!photos.before || !photos.after) {
+    if (form.layout === 'series') {
+      if (seriesPhotos.length < 2) {
+        error('Tambah minimal 2 foto dulu');
+        return;
+      }
+    } else if (!photos.before || !photos.after) {
       error('Pilih foto sebelum dan sesudah dulu');
       return;
     }
@@ -596,7 +665,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     }
   };
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (isTemplate) return;
+    if (isTemplate || form.layout === 'series') return;
     const p = toStory(e);
     if (!gesture.current) {
       const slot = slotAt(form.layout, p.x, p.y);
@@ -649,6 +718,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     if (!canvas || isTemplate) return;
     const onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
+      if (layoutRef.current === 'series') return;
       const r = canvas.getBoundingClientRect();
       const slot = slotAt(
         layoutRef.current,
@@ -673,6 +743,9 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   }, [loading, notFound, isTemplate]);
 
   const resetFrame = (slot: StorySlot) => commitFrame(slot, DEFAULT_FRAME);
+
+  const setSeriesStyle = (patch: Partial<ResolvedSeriesStyle>) =>
+    setForm((prev) => ({ ...prev, seriesStyle: resolveSeriesStyle({ ...prev.seriesStyle, ...patch }) }));
 
   const setLayout = (layout: ContentLayout) => {
     set('layout', layout);
@@ -804,7 +877,21 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                   </section>
                 )}
 
-                {!isTemplate && (
+                {!isTemplate && form.layout === 'series' && (
+                  <section className="kt-section">
+                    <h2>Foto</h2>
+                    <SeriesPhotosEditor
+                      contentId={recordId}
+                      onNeedSave={save}
+                      onPhotosChanged={(photos) => {
+                        setSeriesPhotos(photos);
+                        setDirty(true);
+                      }}
+                    />
+                  </section>
+                )}
+
+                {!isTemplate && form.layout !== 'series' && (
                   <section className="kt-section">
                     <h2>Foto</h2>
                     <div className="kt-photos">
@@ -818,6 +905,10 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                             <button type="button" className="kt-btn" onClick={() => fileInputs[slot].current?.click()}>
                               <FiUpload aria-hidden="true" />
                               {photos[slot] ? (photos[slot]?.url ? 'Ganti foto' : 'Mengunggah…') : 'Pilih foto'}
+                            </button>
+                            <button type="button" className="kt-btn" onClick={() => setPickerSlot(slot)}>
+                              <FiFolder aria-hidden="true" />
+                              Dari Rekam Medis
                             </button>
                             <input
                               ref={fileInputs[slot]}
@@ -1032,6 +1123,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                       [
                         ['stack', 'Atas–bawah'],
                         ['split', 'Kiri–kanan'],
+                        ['series', 'Rangkaian (3+ foto)'],
                       ] as const
                     ).map(([value, label]) => (
                       <label key={value} className={form.layout === value ? 'on' : ''}>
@@ -1053,6 +1145,127 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                       </label>
                     ))}
                   </div>
+                  {form.layout === 'series' && (
+                    <div className="kt-series-style">
+                      <h3>Gaya rangkaian</h3>
+                      <div className="kt-label">Susunan foto</div>
+                      <div className="kt-arrange" role="radiogroup" aria-label="Susunan foto rangkaian">
+                        {SERIES_ARRANGEMENTS.map(({ value, label }) => (
+                          <label key={value} className={form.seriesStyle.arrangement === value ? 'on' : ''}>
+                            <input
+                              type="radio"
+                              name="series-arrangement"
+                              checked={form.seriesStyle.arrangement === value}
+                              onChange={() => setSeriesStyle({ arrangement: value })}
+                            />
+                            <svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
+                              {ARRANGEMENT_ICON[value].map((r, i) => (
+                                <rect key={i} x={r[0]} y={r[1]} width={r[2]} height={r[3]} rx="2" />
+                              ))}
+                            </svg>
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                      <label className="kt-zoom">
+                        <span>Jarak foto</span>
+                        <input
+                          type="range" min={0} max={48} step={1}
+                          value={form.seriesStyle.gap}
+                          onChange={(e) => setSeriesStyle({ gap: Number(e.target.value) })}
+                          aria-label="Jarak antar foto"
+                        />
+                        <output className="kt-deg">{form.seriesStyle.gap}</output>
+                      </label>
+                      <label className="kt-zoom">
+                        <span>Sudut foto</span>
+                        <input
+                          type="range" min={0} max={80} step={1}
+                          value={form.seriesStyle.radius}
+                          onChange={(e) => setSeriesStyle({ radius: Number(e.target.value) })}
+                          aria-label="Kebulatan sudut foto"
+                        />
+                        <output className="kt-deg">{form.seriesStyle.radius}</output>
+                      </label>
+                      <div className="kt-label">Keterangan tiap foto</div>
+                      <div className="kt-choice" role="radiogroup" aria-label="Gaya keterangan">
+                        {(
+                          [
+                            ['chip', 'Label'],
+                            ['bar', 'Pita'],
+                            ['none', 'Tanpa'],
+                          ] as const
+                        ).map(([value, label]) => (
+                          <label key={value} className={form.seriesStyle.captionStyle === value ? 'on' : ''}>
+                            <input
+                              type="radio" name="series-caption"
+                              checked={form.seriesStyle.captionStyle === value}
+                              onChange={() => setSeriesStyle({ captionStyle: value })}
+                            />
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                      <div className="kt-choice" role="radiogroup" aria-label="Posisi keterangan">
+                        {(
+                          [
+                            ['top', 'Di atas foto'],
+                            ['bottom', 'Di bawah foto'],
+                          ] as const
+                        ).map(([value, label]) => (
+                          <label key={value} className={form.seriesStyle.captionPosition === value ? 'on' : ''}>
+                            <input
+                              type="radio" name="series-caption-pos"
+                              checked={form.seriesStyle.captionPosition === value}
+                              onChange={() => setSeriesStyle({ captionPosition: value })}
+                            />
+                            {label}
+                          </label>
+                        ))}
+                      </div>
+                      <label className="kt-check">
+                        <input
+                          type="checkbox"
+                          checked={form.seriesStyle.showNumbers}
+                          onChange={(e) => setSeriesStyle({ showNumbers: e.target.checked })}
+                        />
+                        Beri nomor urut (1, 2, 3…) di tiap foto
+                      </label>
+                      <div className="kt-label">Warna</div>
+                      <div className="kt-colors">
+                        {(
+                          [
+                            ['bgColor', 'Latar'],
+                            ['accentColor', 'Aksen'],
+                          ] as const
+                        ).map(([key, label]) => (
+                          <div key={key} className="kt-color">
+                            <label>
+                              <span>{label}</span>
+                              <input
+                                type="color"
+                                value={form.seriesStyle[key] || (key === 'bgColor' ? (form.background === 'navy' ? '#0f1f4d' : '#ffffff') : '#1d2f6f')}
+                                onChange={(e) => setSeriesStyle({ [key]: e.target.value })}
+                                aria-label={`Warna ${label.toLowerCase()}`}
+                              />
+                            </label>
+                            {form.seriesStyle[key] && (
+                              <button type="button" className="kt-link" onClick={() => setSeriesStyle({ [key]: '' })}>
+                                Ikut tema
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <p className="kt-hint">
+                        Pengaturan ini ikut tersimpan{isTemplate ? ' di template tindakan ini' : ' di konten ini dan dipakai template'}.
+                        {' '}
+                        <button type="button" className="kt-link" onClick={() => set('seriesStyle', DEFAULT_SERIES_STYLE)}>
+                          Kembalikan ke bawaan
+                        </button>
+                      </p>
+                    </div>
+                  )}
                   <label className="kt-check">
                     <input type="checkbox" checked={form.showDisclaimer} onChange={(e) => set('showDisclaimer', e.target.checked)} />
                     Tampilkan catatan &ldquo;Dipublikasikan atas izin pasien · Hasil tiap pasien dapat berbeda&rdquo;
@@ -1186,6 +1399,13 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
           )}
         </main>
       </FeatureGuard>
+
+      {pickerSlot && (
+        <ClinicalPhotoPickerModal
+          onClose={() => setPickerSlot(null)}
+          onPick={(photo, sourceType) => pickFromLibrary(pickerSlot, photo, sourceType)}
+        />
+      )}
     </DashboardLayout>
   );
 }

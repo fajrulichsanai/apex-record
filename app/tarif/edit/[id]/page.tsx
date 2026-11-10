@@ -6,7 +6,7 @@ import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import CustomSelect from '@/components/form/CustomSelect';
-import { tarifApi, Tarif } from '@/lib/tarif';
+import { tarifApi, tarifMargin, Tarif } from '@/lib/tarif';
 import { ApiError } from '@/lib/api-client';
 import { formatCurrencyInput, parseCurrency } from '@/lib/format';
 import { useToast } from '@/lib/toast-context';
@@ -29,6 +29,10 @@ export default function EditTarifPage() {
   const [kategori, setKategori] = useState('');
   const [hargaPokok, setHargaPokok] = useState('');
   const [hargaJual, setHargaJual] = useState('');
+  const [biayaLab, setBiayaLab] = useState('');
+  const [diskonMaksimal, setDiskonMaksimal] = useState('');
+  const [kodeIcd9, setKodeIcd9] = useState('');
+  const [bomModal, setBomModal] = useState(0);
   const [deskripsi, setDeskripsi] = useState('');
   const [isActive, setIsActive] = useState(true);
 
@@ -44,6 +48,9 @@ export default function EditTarifPage() {
         setKategori(data.kategori);
         setHargaPokok((data.hargaPokok || 0).toString());
         setHargaJual((data.hargaJual || 0).toString());
+        setBiayaLab(Math.round(Number(data.biayaLab || 0)).toString());
+        setDiskonMaksimal(Math.round(Number(data.diskonMaksimal || 0)).toString());
+        setKodeIcd9(data.kodeIcd9 || '');
         setDeskripsi(data.deskripsi || '');
         setIsActive(data.isActive);
       })
@@ -53,7 +60,11 @@ export default function EditTarifPage() {
       .finally(() => setLoading(false));
   }, [tarifId]);
 
-  const margin = (parseCurrency(hargaJual) || 0) - (parseCurrency(hargaPokok) || 0);
+  const margin = tarifMargin({
+    hargaJual: parseCurrency(hargaJual) || 0,
+    hargaPokok: parseCurrency(hargaPokok) || 0,
+    biayaLab: parseCurrency(biayaLab) || 0,
+  });
 
   const handleCancel = () => router.push('/tarif');
 
@@ -62,6 +73,10 @@ export default function EditTarifPage() {
     if (!tarif) return;
     if (!name.trim() || !kategori.trim() || !hargaJual.trim()) {
       warning('Title, Category, dan Harga Jual harus diisi');
+      return;
+    }
+    if (parseCurrency(diskonMaksimal) > parseCurrency(hargaJual)) {
+      warning('Diskon maksimal melebihi harga jual');
       return;
     }
 
@@ -73,6 +88,9 @@ export default function EditTarifPage() {
         deskripsi: deskripsi || undefined,
         hargaPokok: parseCurrency(hargaPokok),
         hargaJual: parseCurrency(hargaJual),
+        biayaLab: parseCurrency(biayaLab),
+        diskonMaksimal: parseCurrency(diskonMaksimal),
+        kodeIcd9: kodeIcd9.trim(),
         isActive,
       });
       success(`Tarif "${name}" telah diperbarui.`);
@@ -159,9 +177,47 @@ export default function EditTarifPage() {
                       required
                     />
                   </div>
+                  {bomModal > 0 && bomModal !== (parseCurrency(hargaPokok) || 0) && (
+                    <div className="form-field full bom-cost-hint">
+                      <span>
+                        Modal dari resep bahan (BOM) di bawah: <strong>Rp {bomModal.toLocaleString('id-ID')}</strong>
+                      </span>
+                      <button type="button" className="btn-outline" onClick={() => setHargaPokok(String(bomModal))}>
+                        Pakai sebagai harga modal
+                      </button>
+                    </div>
+                  )}
                   <div className="form-field">
-                    <label>Margin</label>
+                    <label>Biaya Lab</label>
+                    <input
+                      type="text"
+                      value={formatCurrencyInput(biayaLab)}
+                      onChange={(e) => setBiayaLab(e.target.value.replace(/\D/g, ''))}
+                      placeholder="0 bila tanpa lab"
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label>Margin (jual − modal − lab)</label>
                     <input type="text" value={`Rp ${margin.toLocaleString('id-ID')}`} readOnly disabled />
+                  </div>
+                  <div className="form-field">
+                    <label>Diskon Maksimal (Rp)</label>
+                    <input
+                      type="text"
+                      value={formatCurrencyInput(diskonMaksimal)}
+                      onChange={(e) => setDiskonMaksimal(e.target.value.replace(/\D/g, ''))}
+                      placeholder="0 = tanpa diskon"
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label>Kode ICD-9-CM</label>
+                    <input
+                      type="text"
+                      maxLength={20}
+                      value={kodeIcd9}
+                      onChange={(e) => setKodeIcd9(e.target.value)}
+                      placeholder="mis. 23.2"
+                    />
                   </div>
                   <div className="form-field">
                     <label>Status</label>
@@ -197,7 +253,7 @@ export default function EditTarifPage() {
           )}
         </div>
 
-        {!loading && !loadError && tarif && <BomPanel tarifId={tarif.id} />}
+        {!loading && !loadError && tarif && <BomPanel tarifId={tarif.id} onCostChange={setBomModal} />}
       </main>
       </FeatureGuard>
     </DashboardLayout>

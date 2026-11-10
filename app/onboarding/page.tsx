@@ -4,20 +4,29 @@ import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FiCheck,
+  FiCloud,
   FiCopy,
   FiHome,
-  FiPlus,
   FiTag,
-  FiTrash2,
   FiUserPlus,
 } from 'react-icons/fi';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import { ApiError, apiClient } from '@/lib/api-client';
-import { clinicApi } from '@/lib/clinic';
+import { clinicApi, type ClinicResponse } from '@/lib/clinic';
 import { tarifApi } from '@/lib/tarif';
+import TarifStep from './TarifStep';
 import { onboardingApi, type OnboardingStatus } from '@/lib/onboarding';
 import { useToast } from '@/lib/toast-context';
+import { useFeatures } from '@/lib/features-context';
+import { AddressFields, cleanAddress, missingAddress } from '@/components/satusehat/AddressFields';
+import {
+  FACILITY_TYPE_LABELS,
+  onboardingApi as satusehatOnboardingApi,
+  type FacilityProfile,
+  type FacilityType,
+} from '@/lib/satusehat';
+import SatusehatStep from './SatusehatStep';
 import './onboarding.css';
 
 const PLACEHOLDER_VALUES = new Set(['To be completed', '000000000']);
@@ -26,43 +35,52 @@ function stripPlaceholder(value?: string | null) {
   return value;
 }
 
-const STEPS = [
+const ALL_STEPS = [
   { id: 1, label: 'Info Klinik', icon: FiHome },
   { id: 2, label: 'Tarif Layanan', icon: FiTag },
   { id: 3, label: 'Undang Dokter', icon: FiUserPlus },
+  { id: 4, label: 'SATUSEHAT', icon: FiCloud },
 ] as const;
 
-interface ClinicForm {
+/**
+ * Info klinik + profil fasyankes SATUSEHAT dalam satu form: alamat dipilih
+ * dari master wilayah sekali, dipakai untuk data klinik dan SATUSEHAT.
+ */
+interface ClinicForm extends FacilityProfile {
   name: string;
-  address: string;
-  city: string;
-  province: string;
   phone: string;
   email: string;
 }
 
 const EMPTY_CLINIC_FORM: ClinicForm = {
   name: '',
-  address: '',
-  city: '',
-  province: '',
   phone: '',
   email: '',
+  facilityType: null,
 };
 
-interface TarifRow {
-  id: string;
-  name: string;
-  kategori: string;
-  hargaJual: string;
-}
-
-// Only a React key for the row — crypto.randomUUID() needs iOS 15.4+, so
-// older iPhones get a counter-based id instead.
-let tarifRowSeq = 0;
-function newTarifRow(): TarifRow {
-  const id = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : `row-${Date.now()}-${++tarifRowSeq}`;
-  return { id, name: '', kategori: '', hargaJual: '' };
+/** Data klinik + profil SATUSEHAT (alamat berkode wilayah bila sudah ada) → form */
+function toClinicForm(clinic: ClinicResponse, profile?: FacilityProfile | null): ClinicForm {
+  return {
+    name: stripPlaceholder(clinic.name),
+    phone: stripPlaceholder(clinic.phone) || profile?.phone || '',
+    email: clinic.email ?? profile?.email ?? '',
+    facilityType: profile?.facilityType ?? null,
+    line: profile?.line ?? stripPlaceholder(clinic.address),
+    provinceCode: profile?.provinceCode ?? null,
+    provinceName: profile?.provinceName ?? null,
+    cityCode: profile?.cityCode ?? null,
+    cityName: profile?.cityName ?? null,
+    districtCode: profile?.districtCode ?? null,
+    districtName: profile?.districtName ?? null,
+    villageCode: profile?.villageCode ?? null,
+    villageName: profile?.villageName ?? null,
+    rt: profile?.rt ?? null,
+    rw: profile?.rw ?? null,
+    postalCode: profile?.postalCode ?? clinic.postalCode ?? null,
+    latitude: profile?.latitude ?? null,
+    longitude: profile?.longitude ?? null,
+  };
 }
 
 interface InvitedDoctor {
@@ -74,6 +92,8 @@ interface InvitedDoctor {
 export default function OnboardingPage() {
   const router = useRouter();
   const { success, error: showError } = useToast();
+  const { can, ready } = useFeatures();
+  const [satusehatDone, setSatusehatDone] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<OnboardingStatus | null>(null);
@@ -83,8 +103,6 @@ export default function OnboardingPage() {
   const [savingClinic, setSavingClinic] = useState(false);
 
   const [existingTarifCount, setExistingTarifCount] = useState(0);
-  const [tarifRows, setTarifRows] = useState<TarifRow[]>([newTarifRow()]);
-  const [savingTarif, setSavingTarif] = useState(false);
 
   const [doctorName, setDoctorName] = useState('');
   const [doctorEmail, setDoctorEmail] = useState('');
@@ -94,53 +112,77 @@ export default function OnboardingPage() {
   const loadAll = useCallback(async () => {
     try {
       setLoading(true);
-      const [clinic, onboarding, tarifs] = await Promise.all([
+      const [clinic, onboarding, tarifs, ssStatus] = await Promise.all([
         clinicApi.get(),
         onboardingApi.getStatus(),
         tarifApi.list({ limit: 1 }),
+        // Tanpa fitur SATUSEHAT (dimatikan / belum aktif di platform): tidak dipanggil sama sekali
+        can('satusehat') ? satusehatOnboardingApi.status().catch(() => null) : Promise.resolve(null),
       ]);
-      setClinicForm({
-        name: stripPlaceholder(clinic.name),
-        address: stripPlaceholder(clinic.address),
-        city: stripPlaceholder(clinic.city),
-        province: stripPlaceholder(clinic.province),
-        phone: stripPlaceholder(clinic.phone),
-        email: clinic.email ?? '',
-      });
+      setClinicForm(toClinicForm(clinic, ssStatus?.profile));
       setStatus(onboarding);
       setExistingTarifCount(tarifs.meta?.total ?? 0);
 
       if (!onboarding.infoKlinik.complete) setStep(1);
       else if (!onboarding.tarif.complete) setStep(2);
       else if (!onboarding.dokter.complete) setStep(3);
-      else setStep(1);
+      else setStep(ssStatus ? 4 : 1);
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'Gagal memuat data onboarding';
       showError(message);
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, [showError, can]);
 
+  // Tunggu daftar fitur siap supaya langkah SATUSEHAT tidak sempat dimuat lalu dicabut
   useEffect(() => {
-    loadAll();
-  }, [loadAll]);
+    if (ready) loadAll();
+  }, [ready, loadAll]);
+
+  const satusehatOn = can('satusehat');
+  const STEPS = satusehatOn ? ALL_STEPS : ALL_STEPS.slice(0, 3);
 
   async function handleSaveClinic() {
-    if (!clinicForm.name || !clinicForm.address || !clinicForm.city || !clinicForm.province || !clinicForm.phone) {
-      showError('Nama, alamat, kota, provinsi, dan telepon wajib diisi');
+    // Tanpa SATUSEHAT alamat diisi bebas (tidak butuh master wilayah SATUSEHAT)
+    const addressMissing: string[] = satusehatOn
+      ? missingAddress(clinicForm)
+      : ([
+          !clinicForm.line?.trim() && 'alamat',
+          !clinicForm.provinceName?.trim() && 'provinsi',
+          !clinicForm.cityName?.trim() && 'kabupaten/kota',
+        ].filter(Boolean) as string[]);
+    const missing = [
+      !clinicForm.name.trim() && 'nama klinik',
+      !clinicForm.phone.trim() && 'telepon',
+      satusehatOn && !clinicForm.facilityType && 'jenis fasyankes',
+      ...addressMissing,
+    ].filter(Boolean);
+    if (missing.length) {
+      showError(`Lengkapi ${missing.join(', ')}`);
       return;
     }
     try {
       setSavingClinic(true);
       await clinicApi.update({
-        name: clinicForm.name,
-        address: clinicForm.address,
-        city: clinicForm.city,
-        province: clinicForm.province,
-        phone: clinicForm.phone,
-        email: clinicForm.email || undefined,
+        name: clinicForm.name.trim(),
+        address: clinicForm.line!.trim(),
+        city: clinicForm.cityName ?? '',
+        province: clinicForm.provinceName ?? '',
+        postalCode: clinicForm.postalCode || undefined,
+        phone: clinicForm.phone.trim(),
+        email: clinicForm.email.trim() || undefined,
       });
+      if (satusehatOn) {
+        await satusehatOnboardingApi.saveProfile({
+          ...(cleanAddress(clinicForm) ?? {}),
+          facilityType: clinicForm.facilityType,
+          phone: clinicForm.phone.trim() || null,
+          email: clinicForm.email.trim() || null,
+          latitude: clinicForm.latitude ?? null,
+          longitude: clinicForm.longitude ?? null,
+        });
+      }
       success('Info klinik tersimpan');
       setStatus((prev) => (prev ? { ...prev, infoKlinik: { complete: true } } : prev));
       setStep(2);
@@ -152,40 +194,10 @@ export default function OnboardingPage() {
     }
   }
 
-  function updateTarifRow(id: string, patch: Partial<TarifRow>) {
-    setTarifRows((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } : r)));
-  }
-
-  function removeTarifRow(id: string) {
-    setTarifRows((prev) => (prev.length > 1 ? prev.filter((r) => r.id !== id) : prev));
-  }
-
-  async function handleSaveTarif() {
-    const validRows = tarifRows.filter((r) => r.name.trim() && r.kategori.trim() && r.hargaJual.trim());
-    if (validRows.length === 0 && existingTarifCount === 0) {
-      showError('Tambahkan minimal 1 tarif (nama, kategori, dan harga jual wajib diisi)');
-      return;
-    }
-    try {
-      setSavingTarif(true);
-      for (const row of validRows) {
-        await tarifApi.create({
-          name: row.name,
-          kategori: row.kategori,
-          hargaJual: Number(row.hargaJual),
-        });
-      }
-      success(validRows.length > 0 ? `${validRows.length} tarif berhasil ditambahkan` : 'Tarif sudah lengkap');
-      setExistingTarifCount((prev) => prev + validRows.length);
-      setTarifRows([newTarifRow()]);
-      setStatus((prev) => (prev ? { ...prev, tarif: { complete: true, count: prev.tarif.count + validRows.length } } : prev));
-      setStep(3);
-    } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Gagal menyimpan tarif';
-      showError(message);
-    } finally {
-      setSavingTarif(false);
-    }
+  function handleTarifSaved(added: number) {
+    setExistingTarifCount((prev) => prev + added);
+    setStatus((prev) => (prev ? { ...prev, tarif: { complete: true, count: prev.tarif.count + added } } : prev));
+    setStep(3);
   }
 
   async function handleInviteDoctor() {
@@ -220,7 +232,7 @@ export default function OnboardingPage() {
     );
   }
 
-  const allComplete = !!status?.allComplete;
+  const allComplete = !!status?.allComplete && (!satusehatOn || satusehatDone);
 
   return (
     <DashboardLayout>
@@ -229,7 +241,7 @@ export default function OnboardingPage() {
           <div className="onboarding-header">
             <div>
               <h1>Onboarding Klinik</h1>
-              <p>Lengkapi 3 langkah ini supaya klinik Anda siap menerima pasien.</p>
+              <p>Lengkapi {STEPS.length} langkah ini supaya klinik Anda siap menerima pasien.</p>
             </div>
             <button type="button" className="btn-outline" onClick={() => router.push('/dashboard')}>
               Lewati untuk sekarang
@@ -241,7 +253,8 @@ export default function OnboardingPage() {
               const complete =
                 (s.id === 1 && status?.infoKlinik.complete) ||
                 (s.id === 2 && status?.tarif.complete) ||
-                (s.id === 3 && status?.dokter.complete);
+                (s.id === 3 && status?.dokter.complete) ||
+                (s.id === 4 && satusehatDone);
               const Icon = s.icon;
               return (
                 <button
@@ -263,7 +276,10 @@ export default function OnboardingPage() {
             <div className="onboarding-card onboarding-done">
               <FiCheck className="onboarding-done-icon" />
               <h2>Klinik Anda sudah siap!</h2>
-              <p>Info klinik, tarif layanan, dan dokter sudah lengkap.</p>
+              <p>
+                Info klinik, tarif layanan, dan dokter sudah lengkap
+                {satusehatOn ? ', dan klinik sudah terhubung ke SATUSEHAT' : ''}.
+              </p>
               <button type="button" className="btn-primary" onClick={() => router.push('/dashboard')}>
                 Ke Dashboard
               </button>
@@ -283,22 +299,67 @@ export default function OnboardingPage() {
                       Nomor Telepon
                       <input value={clinicForm.phone} onChange={(e) => setClinicForm((p) => ({ ...p, phone: e.target.value }))} />
                     </label>
-                    <label className="span-2">
-                      Alamat Lengkap
-                      <textarea value={clinicForm.address} onChange={(e) => setClinicForm((p) => ({ ...p, address: e.target.value }))} />
-                    </label>
                     <label>
-                      Kota
-                      <input value={clinicForm.city} onChange={(e) => setClinicForm((p) => ({ ...p, city: e.target.value }))} />
-                    </label>
-                    <label>
-                      Provinsi
-                      <input value={clinicForm.province} onChange={(e) => setClinicForm((p) => ({ ...p, province: e.target.value }))} />
-                    </label>
-                    <label className="span-2">
                       Email Klinik (opsional)
                       <input type="email" value={clinicForm.email} onChange={(e) => setClinicForm((p) => ({ ...p, email: e.target.value }))} />
                     </label>
+                    {satusehatOn && (
+                      <label>
+                        Jenis Fasyankes
+                        <select
+                          aria-label="Jenis fasyankes"
+                          value={clinicForm.facilityType ?? ''}
+                          onChange={(e) =>
+                            setClinicForm((p) => ({ ...p, facilityType: (e.target.value || null) as FacilityType | null }))
+                          }
+                        >
+                          <option value="">Pilih jenis fasyankes</option>
+                          {Object.entries(FACILITY_TYPE_LABELS).map(([k, v]) => (
+                            <option key={k} value={k}>
+                              {v}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                    {satusehatOn ? (
+                      <div className="span-2 onboarding-address">
+                        <AddressFields value={clinicForm} onChange={(a) => setClinicForm((p) => ({ ...p, ...a }))} />
+                      </div>
+                    ) : (
+                      <>
+                        <label className="span-2">
+                          Alamat
+                          <input
+                            value={clinicForm.line ?? ''}
+                            placeholder="Jalan, nomor, kelurahan, kecamatan"
+                            onChange={(e) => setClinicForm((p) => ({ ...p, line: e.target.value }))}
+                          />
+                        </label>
+                        <label>
+                          Provinsi
+                          <input
+                            value={clinicForm.provinceName ?? ''}
+                            onChange={(e) => setClinicForm((p) => ({ ...p, provinceName: e.target.value }))}
+                          />
+                        </label>
+                        <label>
+                          Kabupaten/Kota
+                          <input
+                            value={clinicForm.cityName ?? ''}
+                            onChange={(e) => setClinicForm((p) => ({ ...p, cityName: e.target.value }))}
+                          />
+                        </label>
+                        <label>
+                          Kode Pos (opsional)
+                          <input
+                            value={clinicForm.postalCode ?? ''}
+                            inputMode="numeric"
+                            onChange={(e) => setClinicForm((p) => ({ ...p, postalCode: e.target.value }))}
+                          />
+                        </label>
+                      </>
+                    )}
                   </div>
                   <div className="onboarding-actions">
                     <button type="button" className="btn-primary" onClick={handleSaveClinic} disabled={savingClinic}>
@@ -309,54 +370,7 @@ export default function OnboardingPage() {
               )}
 
               {step === 2 && (
-                <div className="onboarding-step-body">
-                  <h2>Tarif Layanan</h2>
-                  <p className="onboarding-step-desc">
-                    Tambahkan minimal 1 layanan/tindakan yang klinik Anda tawarkan.
-                    {existingTarifCount > 0 && ` Saat ini sudah ada ${existingTarifCount} tarif.`}
-                  </p>
-                  <div className="onboarding-tarif-rows">
-                    {tarifRows.map((row) => (
-                      <div key={row.id} className="onboarding-tarif-row">
-                        <input
-                          placeholder="Nama tindakan (mis. Konsultasi Umum)"
-                          value={row.name}
-                          onChange={(e) => updateTarifRow(row.id, { name: e.target.value })}
-                        />
-                        <input
-                          placeholder="Kategori (mis. Konsultasi)"
-                          value={row.kategori}
-                          onChange={(e) => updateTarifRow(row.id, { kategori: e.target.value })}
-                        />
-                        <input
-                          type="number"
-                          placeholder="Harga jual"
-                          value={row.hargaJual}
-                          onChange={(e) => updateTarifRow(row.id, { hargaJual: e.target.value })}
-                        />
-                        <button aria-label="Hapus baris tarif"
-                          type="button"
-                          className="onboarding-row-remove"
-                          onClick={() => removeTarifRow(row.id)}
-                          disabled={tarifRows.length === 1}
-                        >
-                          <FiTrash2 />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                  <button type="button" className="onboarding-add-row" onClick={() => setTarifRows((prev) => [...prev, newTarifRow()])}>
-                    <FiPlus /> Tambah Baris
-                  </button>
-                  <div className="onboarding-actions">
-                    <button type="button" className="btn-outline" onClick={() => setStep(1)}>
-                      Kembali
-                    </button>
-                    <button type="button" className="btn-primary" onClick={handleSaveTarif} disabled={savingTarif}>
-                      {savingTarif ? 'Menyimpan...' : 'Simpan & Lanjut'}
-                    </button>
-                  </div>
-                </div>
+                <TarifStep existingCount={existingTarifCount} onBack={() => setStep(1)} onSaved={handleTarifSaved} />
               )}
 
               {step === 3 && (
@@ -404,13 +418,19 @@ export default function OnboardingPage() {
                       <button type="button" className="btn-outline" onClick={() => setStep(2)}>
                         Kembali
                       </button>
-                      <button type="button" className="btn-primary" onClick={() => router.push('/dashboard')}>
-                        Selesai
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        onClick={() => (satusehatOn ? setStep(4) : router.push('/dashboard'))}
+                      >
+                        {satusehatOn ? 'Lanjut' : 'Selesai'}
                       </button>
                     </div>
                   )}
                 </div>
               )}
+
+              {step === 4 && satusehatOn && <SatusehatStep onChanged={setSatusehatDone} />}
             </div>
           )}
         </main>

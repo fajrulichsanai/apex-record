@@ -1,11 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import SuperAdminLayout from '@/components/layout/SuperAdminLayout';
-import CustomSelect from '@/components/form/CustomSelect';
+import { Modal, Notice, PageHeader, StatusBadge, TableState, Tabs, formatDateTime, type Tone } from '@/components/super-admin/ui';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
-import { useEscapeKey } from '@/lib/a11y';
 import {
   dataRequestsApi,
   DATA_REQUEST_STATUS_LABEL,
@@ -15,12 +15,23 @@ import {
 } from '@/lib/data-requests';
 import '../../styles/super-admin.css';
 
-const FILTER_OPTIONS = [
-  { value: 'open', label: 'Perlu ditindaklanjuti' },
-  { value: 'completed', label: 'Selesai' },
-  { value: 'rejected', label: 'Ditolak' },
-  { value: 'all', label: 'Semua' },
+const FILTER_TABS = [
+  { key: 'open', label: 'Perlu ditindaklanjuti' },
+  { key: 'completed', label: 'Selesai' },
+  { key: 'rejected', label: 'Ditolak' },
+  { key: 'all', label: 'Semua' },
 ];
+
+const DEADLINE_HOURS = 72;
+
+/** Sisa waktu dari batas 3 × 24 jam (PRD KP-01); merah bila lewat. */
+function deadline(createdAt: string): { label: string; tone: Tone } {
+  const left = new Date(createdAt).getTime() + DEADLINE_HOURS * 3600_000 - Date.now();
+  const hours = Math.round(Math.abs(left) / 3600_000);
+  if (left < 0) return { label: `Lewat ${hours} jam`, tone: 'bad' };
+  if (hours < 24) return { label: `Sisa ${hours} jam`, tone: 'warn' };
+  return { label: `Sisa ${Math.floor(hours / 24)} hari ${hours % 24} jam`, tone: 'info' };
+}
 
 type Action = Exclude<DataRequestStatus, 'pending'>;
 const ACTION_LABEL: Record<Action, string> = {
@@ -29,16 +40,12 @@ const ACTION_LABEL: Record<Action, string> = {
   rejected: 'Tolak',
 };
 
-const STATUS_STYLE: Record<DataRequestStatus, { background: string; color: string }> = {
-  pending: { background: 'rgba(245,166,35,.15)', color: '#8A5A00' },
-  in_progress: { background: 'rgba(29,95,174,.12)', color: '#1D5FAE' },
-  completed: { background: 'rgba(54,125,47,.12)', color: '#2B6B22' },
-  rejected: { background: 'rgba(193,56,31,.12)', color: '#C1381F' },
+const STATUS_TONE: Record<DataRequestStatus, Tone> = {
+  pending: 'warn',
+  in_progress: 'info',
+  completed: 'ok',
+  rejected: 'bad',
 };
-
-function formatDateTime(value: string) {
-  return new Date(value).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
 
 /** UU PDP data requests from clinic owners: export a copy of the data, or close the account. */
 export default function SuperAdminDataRequestsPage() {
@@ -49,7 +56,6 @@ export default function SuperAdminDataRequestsPage() {
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { success, error: showError } = useToast();
-  useEscapeKey(() => !submitting && setActing(null), acting !== null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -93,30 +99,25 @@ export default function SuperAdminDataRequestsPage() {
   return (
     <SuperAdminLayout>
       <div className="sa-page">
-        <div className="page-header">
-          <div className="page-title-block">
-            <div className="page-title">
-              <h1>Permintaan Data</h1>
-              {filter === 'open' && <span className="badge-count">{openCount}</span>}
-            </div>
-            <p className="page-subtitle">
-              Permintaan ekspor data dan penutupan akun dari pemilik klinik (UU PDP). Tanggapi paling lambat 3 x 24 jam.
-              Untuk tutup akun, kirim salinan data ke klinik sebelum menghapus.
-            </p>
-          </div>
-        </div>
+        <PageHeader
+          title="Permintaan Data"
+          count={filter === 'open' ? openCount : undefined}
+          subtitle="Permintaan ekspor data dan penutupan akun dari pemilik klinik (UU PDP). Tanggapi paling lambat 3 × 24 jam."
+        />
 
-        <div className="filter-bar">
-          <div className="filter-select">
-            <CustomSelect value={filter} onChange={setFilter} options={FILTER_OPTIONS} placeholder="Status" />
-          </div>
-        </div>
+        <Notice tone="info">
+          Owner kini bisa mengunduh semua data kliniknya sendiri dari Pengaturan › Data &amp; Privasi. Untuk permintaan
+          ekspor, Anda juga bisa mengunduh ZIP-nya dari detail klinik › Ringkasan › Unduh semua data.
+        </Notice>
+
+        <Tabs active={filter} onChange={setFilter} tabs={FILTER_TABS} />
 
         <div className="table-wrap">
           <table className="sa-table">
             <thead>
               <tr>
                 <th>Diajukan</th>
+                <th>Batas waktu</th>
                 <th>Klinik</th>
                 <th>Permintaan</th>
                 <th>Alasan</th>
@@ -125,88 +126,68 @@ export default function SuperAdminDataRequestsPage() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan={6} className="empty-row">Memuat...</td></tr>
-              ) : rows.length === 0 ? (
-                <tr><td colSpan={6} className="empty-row">Tidak ada permintaan untuk filter ini.</td></tr>
-              ) : (
-                rows.map((row) => (
-                  <tr key={row.id}>
-                    <td className="col-time">{formatDateTime(row.createdAt)}</td>
-                    <td>
-                      <strong>{row.clinicName ?? `Klinik #${row.clinicId}`}</strong>
-                      {row.requestedBy && (
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                          {row.requestedBy.name} · {row.requestedBy.email}
-                        </div>
-                      )}
-                    </td>
-                    <td>{DATA_REQUEST_TYPE_LABEL[row.type]}</td>
-                    <td style={{ maxWidth: 260, whiteSpace: 'normal' }}>
-                      {row.reason || '—'}
-                      {row.adminNote && (
-                        <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>Catatan: {row.adminNote}</div>
-                      )}
-                    </td>
-                    <td>
-                      <span style={{ ...STATUS_STYLE[row.status], padding: '3px 10px', borderRadius: 999, fontSize: 12, fontWeight: 600 }}>
-                        {DATA_REQUEST_STATUS_LABEL[row.status]}
-                      </span>
-                    </td>
-                    <td>
-                      {(row.status === 'pending' || row.status === 'in_progress') && (
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                          {row.status === 'pending' && (
-                            <button type="button" className="btn-outline btn-sm" onClick={() => { setNote(''); setActing({ row, action: 'in_progress' }); }}>
-                              Proses
+              <TableState loading={loading} empty={rows.length === 0} colSpan={7} message="Tidak ada permintaan untuk filter ini." />
+              {!loading &&
+                rows.map((row) => {
+                  const open = row.status === 'pending' || row.status === 'in_progress';
+                  const due = deadline(row.createdAt);
+                  return (
+                    <tr key={row.id}>
+                      <td className="col-time">{formatDateTime(row.createdAt)}</td>
+                      <td>{open ? <StatusBadge tone={due.tone}>{due.label}</StatusBadge> : '-'}</td>
+                      <td>
+                        <Link href={`/super-admin/clinics/${row.clinicId}`} className="cell-strong">
+                          {row.clinicName ?? `Klinik #${row.clinicId}`}
+                        </Link>
+                        {row.requestedBy && (
+                          <span className="cell-sub">
+                            {row.requestedBy.name} · {row.requestedBy.email}
+                          </span>
+                        )}
+                      </td>
+                      <td>{DATA_REQUEST_TYPE_LABEL[row.type]}</td>
+                      <td className="cell-wrap">
+                        {row.reason || '—'}
+                        {row.adminNote && <span className="cell-sub">Catatan: {row.adminNote}</span>}
+                      </td>
+                      <td>
+                        <StatusBadge tone={STATUS_TONE[row.status]}>{DATA_REQUEST_STATUS_LABEL[row.status]}</StatusBadge>
+                      </td>
+                      <td>
+                        {open && (
+                          <div className="cell-actions">
+                            {row.status === 'pending' && (
+                              <button type="button" className="btn-outline btn-sm" onClick={() => { setNote(''); setActing({ row, action: 'in_progress' }); }}>
+                                Proses
+                              </button>
+                            )}
+                            <button type="button" className="btn-primary btn-sm" onClick={() => { setNote(''); setActing({ row, action: 'completed' }); }}>
+                              Selesai
                             </button>
-                          )}
-                          <button type="button" className="btn-primary btn-sm" onClick={() => { setNote(''); setActing({ row, action: 'completed' }); }}>
-                            Selesai
-                          </button>
-                          <button type="button" className="btn-danger btn-sm" onClick={() => { setNote(''); setActing({ row, action: 'rejected' }); }}>
-                            Tolak
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
+                            <button type="button" className="btn-danger btn-sm" onClick={() => { setNote(''); setActing({ row, action: 'rejected' }); }}>
+                              Tolak
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
         </div>
       </div>
 
       {acting && (
-        <div className="sa-modal-overlay" onClick={() => !submitting && setActing(null)}>
-          <div className="sa-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="dr-modal-title">
-            <div className="sa-modal-header">
-              <h2 id="dr-modal-title">{ACTION_LABEL[acting.action]}</h2>
-              <button type="button" className="sa-modal-close" aria-label="Tutup" onClick={() => setActing(null)} disabled={submitting}>&times;</button>
-            </div>
-            <div className="sa-modal-body">
-              <p style={{ fontSize: 13.5, color: 'var(--text-sub)' }}>
-                {acting.row.clinicName ?? `Klinik #${acting.row.clinicId}`} &middot; {DATA_REQUEST_TYPE_LABEL[acting.row.type]}
-              </p>
-              {acting.action === 'completed' && acting.row.type === 'close_account' && (
-                <p style={{ fontSize: 13, color: '#8A5A00', background: 'rgba(245,166,35,.12)', padding: '10px 12px', borderRadius: 8 }}>
-                  Pastikan salinan data sudah dikirim ke klinik dan data sudah dihapus dari server sebelum menandai selesai.
-                </p>
-              )}
-              <div className="sa-field">
-                <label htmlFor="drNote">{acting.action === 'rejected' ? 'Alasan penolakan (dikirim ke klinik)' : 'Catatan untuk klinik (opsional)'}</label>
-                <textarea
-                  id="drNote"
-                  rows={3}
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  placeholder={acting.action === 'completed' ? 'mis. File ekspor dikirim ke email pemilik tanggal ...' : ''}
-                />
-              </div>
-            </div>
-            <div className="sa-modal-footer">
-              <button type="button" className="btn-outline" onClick={() => setActing(null)} disabled={submitting}>Batal</button>
+        <Modal
+          title={ACTION_LABEL[acting.action]}
+          onClose={() => setActing(null)}
+          busy={submitting}
+          footer={
+            <>
+              <button type="button" className="btn-outline" onClick={() => setActing(null)} disabled={submitting}>
+                Batal
+              </button>
               <button
                 type="button"
                 className={acting.action === 'rejected' ? 'btn-danger' : 'btn-primary'}
@@ -215,9 +196,31 @@ export default function SuperAdminDataRequestsPage() {
               >
                 {submitting ? 'Menyimpan...' : ACTION_LABEL[acting.action]}
               </button>
-            </div>
+            </>
+          }
+        >
+          <p className="text-sub">
+            {acting.row.clinicName ?? `Klinik #${acting.row.clinicId}`} &middot; {DATA_REQUEST_TYPE_LABEL[acting.row.type]}
+          </p>
+          {acting.action === 'completed' && acting.row.type === 'close_account' && (
+            <Notice tone="warn">
+              Pastikan salinan data sudah dikirim ke klinik dan data sudah dihapus (Penghapusan Data › Hapus sekarang)
+              sebelum menandai selesai.
+            </Notice>
+          )}
+          <div className="sa-field">
+            <label htmlFor="drNote">
+              {acting.action === 'rejected' ? 'Alasan penolakan (dikirim ke klinik)' : 'Catatan untuk klinik (opsional)'}
+            </label>
+            <textarea
+              id="drNote"
+              rows={3}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={acting.action === 'completed' ? 'mis. File ekspor dikirim ke email pemilik tanggal ...' : ''}
+            />
           </div>
-        </div>
+        </Modal>
       )}
     </SuperAdminLayout>
   );

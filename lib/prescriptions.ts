@@ -1,19 +1,102 @@
 import { API_BASE, apiClient, ApiError } from './api-client';
+import type { Signa } from './signa';
 
 
 export interface PrescriptionItem {
   id: number;
   encounterId?: number;
   drugName: string;
+  /** Kode KFA (SATUSEHAT); null bila obat diketik bebas */
+  kfaCode?: string | null;
+  kfaName?: string | null;
   dosage?: string;
   frequency?: string;
   duration?: string;
   quantity?: string;
   instructions?: string;
+  /** Bentuk sediaan, mis. "Tablet" */
+  dosageForm?: string | null;
+  /** Numero (jumlah) — ditulis "No. XV" */
+  numero?: number | null;
+  /** Aturan pakai terstruktur */
+  signa?: Signa | null;
+  /** Racikan: SD = d.t.d, EP = dibagi rata */
+  compoundType?: CompoundType | null;
+  compoundFormCode?: string | null;
+  compoundFormName?: string | null;
+  compoundUnit?: string | null;
+  ingredients?: CompoundIngredient[] | null;
+  routeCode?: string | null;
+  /** Farmasi: obat diserahkan ke pasien (MedicationDispense) */
+  dispensedAt?: string | null;
+  batchNumber?: string | null;
+  batchExpiry?: string | null;
+  /** Obat diberikan langsung di klinik (MedicationAdministration) */
+  administeredAt?: string | null;
+  administeredDose?: string | null;
 }
+
+export type CompoundType = 'SD' | 'EP';
+
+/** Tanda tangan dokter pada lembar resep */
+export interface PrescriptionSignature {
+  signature: string;
+  signedAt: string;
+  signedBy: number | null;
+}
+
+export interface CompoundIngredient {
+  /** Kode KFA zat aktif (91…) atau produk (92…/93…) */
+  kfaCode: string;
+  name: string;
+  amount: number;
+  amountUnit: string;
+  perAmount: number;
+  perUnit: string;
+}
+
+/** Pasang kode KFA, atau jadikan racikan dengan bahan berkode KFA */
+export interface PrescriptionCodingPayload {
+  kfaCode?: string;
+  kfaName?: string;
+  compoundType?: CompoundType;
+  compoundFormCode?: string;
+  compoundFormName?: string;
+  compoundUnit?: string;
+  ingredients?: CompoundIngredient[];
+  routeCode?: string;
+}
+
+/** Bentuk sediaan racikan (medication-form, kode dari playbook resmi SATUSEHAT) */
+export const COMPOUND_FORMS: { code: string; name: string; unit: string }[] = [
+  { code: 'BS047', name: 'Serbuk Oral (puyer)', unit: 'POWD' },
+  { code: 'BS019', name: 'Kapsul', unit: 'CAP' },
+  { code: 'BS066', name: 'Tablet', unit: 'TAB' },
+  { code: 'BS055', name: 'Sirup', unit: 'SYRUP' },
+  { code: 'BS030', name: 'Krim / salep', unit: 'CRM' },
+  { code: 'BS059', name: 'Supositoria', unit: 'SUPP' },
+];
+
+export const STRENGTH_UNITS = ['mg', 'g', 'mcg', 'mL', 'IU', 'TAB', 'CAP', 'POWD', 'OINT', 'CRM', 'SUPP', 'SYRUP'];
+
+/** Rute pemberian WHO ATC */
+export const ROUTE_OPTIONS: { code: string; name: string }[] = [
+  { code: 'O', name: 'Oral' },
+  { code: 'SL', name: 'Sublingual' },
+  { code: 'R', name: 'Rektal' },
+  { code: 'V', name: 'Vaginal' },
+  { code: 'N', name: 'Nasal' },
+  { code: 'TD', name: 'Transdermal / topikal' },
+  { code: 'P', name: 'Parenteral' },
+];
 
 export interface CreatePrescriptionItemPayload {
   drugName: string;
+  kfaCode?: string;
+  kfaName?: string;
+  dosageForm?: string;
+  numero?: number;
+  signa?: Signa;
   dosage?: string;
   frequency?: string;
   duration?: string;
@@ -21,12 +104,58 @@ export interface CreatePrescriptionItemPayload {
   instructions?: string;
 }
 
+/** Pengkajian resep (Questionnaire Q0007) */
+export type ReviewAnswer = 'sesuai' | 'tidak_sesuai' | boolean;
+export interface ReviewQuestion {
+  linkId: string;
+  text: string;
+  kind: 'coding' | 'boolean';
+}
+export interface ReviewGroup {
+  linkId: string;
+  text: string;
+  items: ReviewQuestion[];
+}
+export interface PrescriptionReview {
+  answers: Record<string, ReviewAnswer>;
+  note: string | null;
+  reviewedAt: string;
+  reviewedBy: number;
+}
+
 export const prescriptionsApi = {
+  dispense: (encounterId: number, itemId: number, data: { batchNumber?: string; batchExpiry?: string }) =>
+    apiClient.post<PrescriptionItem>(`/encounters/${encounterId}/prescriptions/${itemId}/dispense`, data),
+  undoDispense: (encounterId: number, itemId: number) =>
+    apiClient.delete<PrescriptionItem>(`/encounters/${encounterId}/prescriptions/${itemId}/dispense`),
+  administer: (encounterId: number, itemId: number, data: { dose?: string }) =>
+    apiClient.post<PrescriptionItem>(`/encounters/${encounterId}/prescriptions/${itemId}/administer`, data),
+  undoAdminister: (encounterId: number, itemId: number) =>
+    apiClient.delete<PrescriptionItem>(`/encounters/${encounterId}/prescriptions/${itemId}/administer`),
+  getReview: (encounterId: number) =>
+    apiClient.get<{ review: PrescriptionReview | null; questions: ReviewGroup[] }>(
+      `/encounters/${encounterId}/prescriptions/review`,
+    ),
+  saveReview: (encounterId: number, data: { answers: Record<string, ReviewAnswer>; note?: string }) =>
+    apiClient.put<PrescriptionReview>(`/encounters/${encounterId}/prescriptions/review`, data),
+
   list: (encounterId: number) =>
     apiClient.get<PrescriptionItem[]>(`/encounters/${encounterId}/prescriptions`),
 
   create: (encounterId: number, payload: CreatePrescriptionItemPayload) =>
     apiClient.post<PrescriptionItem>(`/encounters/${encounterId}/prescriptions`, payload),
+
+  setCoding: (encounterId: number, itemId: number, payload: PrescriptionCodingPayload) =>
+    apiClient.put<PrescriptionItem>(`/encounters/${encounterId}/prescriptions/${itemId}/coding`, payload),
+
+  getSignature: (encounterId: number) =>
+    apiClient.get<PrescriptionSignature | null>(`/encounters/${encounterId}/prescriptions/signature`),
+
+  saveSignature: (encounterId: number, signature: string) =>
+    apiClient.put<PrescriptionSignature>(`/encounters/${encounterId}/prescriptions/signature`, { signature }),
+
+  removeSignature: (encounterId: number) =>
+    apiClient.delete<null>(`/encounters/${encounterId}/prescriptions/signature`),
 
   remove: (encounterId: number, itemId: number) =>
     apiClient.delete<void>(`/encounters/${encounterId}/prescriptions/${itemId}`),

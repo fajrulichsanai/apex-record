@@ -6,12 +6,15 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import PaymentModal, { PAYMENT_METHOD_OPTIONS } from './PaymentModal';
 import CustomSelect from '@/components/form/CustomSelect';
-import BillingDetailModal from './BillingDetailModal';
+import BillingDetailModal, { itemProfit } from './BillingDetailModal';
+import { useAuth } from '@/lib/auth-context';
+import { canSeeHargaModal } from '@/lib/permissions';
 import '../styles/transaksi.css';
 import { ApiError } from '@/lib/api-client';
 import {
   billingApi,
   BillingListItem,
+  BillingListResponse,
   BillingStatus,
   CreateBillingItemPayload,
   DiscountType,
@@ -20,6 +23,7 @@ import {
 import { encounterApi, EncounterListItem } from '@/lib/encounter';
 import { tarifApi, Tarif } from '@/lib/tarif';
 import { useToast } from '@/lib/toast-context';
+import { DayChips, MonthNav, Pager, currentMonth } from '@/components/ui/PeriodNav';
 
 type FilterValue = 'semua' | BillingStatus;
 
@@ -31,6 +35,8 @@ interface ItemRow {
   quantity: number;
   discount: number;
   discountType: DiscountType;
+  hargaPokok: number;
+  biayaLab: number;
 }
 
 function statusTag(status: BillingStatus): { tag: string; label: string } {
@@ -76,7 +82,7 @@ function todayInClinicTimezone(): string {
 
 let rowKeySeq = 0;
 function emptyRow(): ItemRow {
-  return { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal' };
+  return { key: ++rowKeySeq, tarifId: '', name: '', unitPrice: 0, quantity: 1, discount: 0, discountType: 'nominal', hargaPokok: 0, biayaLab: 0 };
 }
 
 /** How the patient pays when the transaction is saved. */
@@ -92,8 +98,16 @@ export default function TransaksiPage() {
 
 function TransaksiPageInner() {
   const searchParams = useSearchParams();
+  const { user } = useAuth();
+  const showModal = canSeeHargaModal(user?.role);
   const [billings, setBillings] = useState<BillingListItem[]>([]);
   const [meta, setMeta] = useState({ total: 0, page: 1, limit: 20, totalPages: 1 });
+  // Riwayat dilihat per bulan (bawaan: bulan ini), bisa disaring ke satu tanggal.
+  const [month, setMonth] = useState(currentMonth);
+  const [day, setDay] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [days, setDays] = useState<{ date: string; count: number }[]>([]);
+  const [summary, setSummary] = useState<BillingListResponse['summary']>(undefined);
   const [loadingList, setLoadingList] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
 
@@ -116,6 +130,12 @@ function TransaksiPageInner() {
   const [pendingPaymentBilling, setPendingPaymentBilling] = useState<BillingListItem | null>(null);
   const [selectedBillingId, setSelectedBillingId] = useState<number | null>(null);
 
+  // Tautan dari riwayat transaksi pasien (?billingId=…): langsung buka detail invoicenya.
+  const linkedBillingId = Number(searchParams.get('billingId'));
+  useEffect(() => {
+    if (Number.isInteger(linkedBillingId) && linkedBillingId > 0) setSelectedBillingId(linkedBillingId);
+  }, [linkedBillingId]);
+
   const { success, error: showError } = useToast();
 
   const loadBillings = useCallback(async () => {
@@ -124,17 +144,22 @@ function TransaksiPageInner() {
     try {
       const res = await billingApi.list({
         status: currentFilter === 'semua' ? undefined : currentFilter,
-        page: 1,
-        limit: 50,
+        month: month || undefined,
+        dateFrom: day ?? undefined,
+        dateTo: day ?? undefined,
+        page,
+        limit: 20,
       });
       setBillings(res.data);
       setMeta(res.meta);
+      setSummary(res.summary);
+      setDays(res.days ?? []);
     } catch (err) {
       setListError(err instanceof ApiError ? err.message : 'Gagal memuat riwayat transaksi');
     } finally {
       setLoadingList(false);
     }
-  }, [currentFilter]);
+  }, [currentFilter, month, day, page]);
 
   useEffect(() => {
     loadBillings();
@@ -180,13 +205,25 @@ function TransaksiPageInner() {
     );
   }, [billings, searchQuery]);
 
-  const totalCount = meta.total;
-  const totalIncome = useMemo(
-    () => billings.reduce((sum, b) => sum + Number(b.paidAmount || 0), 0),
-    [billings],
-  );
-  const pendingCount = billings.filter((b) => b.status === 'partial' || b.status === 'unpaid').length;
-  const lunasCount = billings.filter((b) => b.status === 'paid').length;
+  // Kartu statistik: dihitung server untuk seluruh periode terpilih (bukan hanya halaman ini).
+  const totalCount = summary?.count ?? meta.total;
+  const totalIncome = summary?.totalPaid ?? 0;
+  const pendingCount = (summary?.byStatus.partial ?? 0) + (summary?.byStatus.unpaid ?? 0);
+  const lunasCount = summary?.byStatus.paid ?? 0;
+
+  const changeMonth = (next: string) => {
+    setMonth(next);
+    setDay(null);
+    setPage(1);
+  };
+  const changeDay = (next: string | null) => {
+    setDay(next);
+    setPage(1);
+  };
+  const changeFilter = (next: FilterValue) => {
+    setCurrentFilter(next);
+    setPage(1);
+  };
 
   function updateRow(key: number, patch: Partial<ItemRow>) {
     setItems((prev) =>
@@ -194,9 +231,11 @@ function TransaksiPageInner() {
         if (r.key !== key) return r;
         const updated = { ...r, ...patch };
 
-        // Ensure quantity is at least 1
-        if ('quantity' in patch && updated.quantity < 1) {
-          updated.quantity = 1;
+        // Allow clearing the field to 0 while typing a new number; the
+        // input clamps it back up to 1 on blur (updateRow is also called
+        // directly elsewhere, e.g. picking a tarif, where it should stay ≥1).
+        if ('quantity' in patch && updated.quantity < 0) {
+          updated.quantity = 0;
         }
 
         // Ensure unitPrice is non-negative
@@ -226,6 +265,8 @@ function TransaksiPageInner() {
       tarifId: tarif ? tarif.id : '',
       name: tarif ? tarif.name : '',
       unitPrice: tarif ? Math.max(0, tarif.hargaJual) : 0,
+      hargaPokok: tarif ? Number(tarif.hargaPokok || 0) : 0,
+      biayaLab: tarif ? Number(tarif.biayaLab || 0) : 0,
     });
   }
 
@@ -378,7 +419,13 @@ function TransaksiPageInner() {
               </span>
             </div>
             <div className="stat-info">
-              <div className="stat-value">{formatRupiah(totalIncome)}</div>
+              <div
+                className="stat-value"
+                style={{ fontSize: formatRupiah(totalIncome).length > 15 ? 17 : formatRupiah(totalIncome).length > 11 ? 21 : undefined }}
+                title={formatRupiah(totalIncome)}
+              >
+                {formatRupiah(totalIncome)}
+              </div>
               <div className="stat-label">Total Pendapatan</div>
             </div>
           </div>
@@ -483,32 +530,37 @@ function TransaksiPageInner() {
                   <label>Tindakan</label>
                   <div className="item-rows">
                     {items.map((row) => (
-                      <div key={row.key} className="item-row">
-                        <CustomSelect
-                          value={String(row.tarifId)}
-                          onChange={(value) => handleTarifSelect(row.key, value)}
-                          options={tarifs.map((t) => ({
-                            value: String(t.id),
-                            label: `${t.name} — ${formatRupiah(t.hargaJual)}`,
-                          }))}
-                          placeholder="Pilih tindakan…"
-                        />
-                        <input
-                          type="number"
-                          min={1}
-                          value={row.quantity}
-                          onChange={(e) => updateRow(row.key, { quantity: Math.max(1, Number(e.target.value) || 1) })}
-                          title="Jumlah"
-                        />
-                        <button aria-label="Hapus tindakan"
-                          type="button"
-                          className="btn-icon-sm"
-                          onClick={() => setItems((prev) => prev.filter((r) => r.key !== row.key))}
-                          disabled={items.length === 1}
-                          title="Hapus tindakan"
-                        >
-                          <span aria-hidden="true" className="material-symbols-rounded">close</span>
-                        </button>
+                      <div key={row.key} className="item-row-block">
+                        <div className="item-row">
+                          <CustomSelect
+                            value={String(row.tarifId)}
+                            onChange={(value) => handleTarifSelect(row.key, value)}
+                            options={tarifs.map((t) => ({
+                              value: String(t.id),
+                              label: `${t.name} — ${formatRupiah(t.hargaJual)}`,
+                            }))}
+                            placeholder="Pilih tindakan…"
+                          />
+                          <input
+                            type="number"
+                            min={1}
+                            value={row.quantity || ''}
+                            onChange={(e) =>
+                              updateRow(row.key, { quantity: e.target.value === '' ? 0 : Number(e.target.value) || 0 })
+                            }
+                            onBlur={() => updateRow(row.key, { quantity: Math.max(1, row.quantity) })}
+                            title="Jumlah"
+                          />
+                          <button aria-label="Hapus tindakan"
+                            type="button"
+                            className="btn-icon-sm"
+                            onClick={() => setItems((prev) => prev.filter((r) => r.key !== row.key))}
+                            disabled={items.length === 1}
+                            title="Hapus tindakan"
+                          >
+                            <span aria-hidden="true" className="material-symbols-rounded">close</span>
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -621,6 +673,12 @@ function TransaksiPageInner() {
                 </div>
 
                 <div className="summary-box">
+                  {showModal && (
+                    <div className="summary-row">
+                      <span>Perkiraan margin (sebelum diskon/biaya tagihan)</span>
+                      <span>{formatRupiah(items.reduce((s, r) => s + itemProfit(r).total, 0))}</span>
+                    </div>
+                  )}
                   <div className="summary-row">
                     <span>Subtotal</span>
                     <span>{formatRupiah(itemsSubtotal)}</span>
@@ -695,33 +753,46 @@ function TransaksiPageInner() {
               <div className="filter-tabs">
                 <button
                   className={`filter-tab ${currentFilter === 'semua' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('semua')}
+                  onClick={() => changeFilter('semua')}
                   type="button"
                 >
                   Semua
                 </button>
                 <button
                   className={`filter-tab ${currentFilter === 'paid' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('paid')}
+                  onClick={() => changeFilter('paid')}
                   type="button"
                 >
                   Lunas
                 </button>
                 <button
                   className={`filter-tab ${currentFilter === 'partial' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('partial')}
+                  onClick={() => changeFilter('partial')}
                   type="button"
                 >
                   Sebagian
                 </button>
                 <button
                   className={`filter-tab ${currentFilter === 'unpaid' ? 'active' : ''}`}
-                  onClick={() => setCurrentFilter('unpaid')}
+                  onClick={() => changeFilter('unpaid')}
                   type="button"
                 >
                   Belum Bayar
                 </button>
               </div>
+            </div>
+
+            <div className="pn-period">
+              <MonthNav month={month} onChange={changeMonth} allowAll />
+              {month && (
+                <DayChips
+                  days={days}
+                  selected={day}
+                  onSelect={changeDay}
+                  label="Tanggal transaksi"
+                  noun="transaksi"
+                />
+              )}
             </div>
 
             <div className="panel-sort">
@@ -747,7 +818,7 @@ function TransaksiPageInner() {
                 <div className="empty-icon-wrap">
                   <span aria-hidden="true" className="material-symbols-rounded">receipt_long</span>
                 </div>
-                {billings.length === 0 && currentFilter === 'semua' ? (
+                {billings.length === 0 && currentFilter === 'semua' && !month && !day ? (
                   <>
                     <div className="empty-title">Belum ada transaksi</div>
                     <div className="empty-sub">Pilih kunjungan selesai di panel kiri untuk membuat tagihan pertama.</div>
@@ -755,12 +826,17 @@ function TransaksiPageInner() {
                 ) : (
                   <>
                     <div className="empty-title">Tidak ada transaksi yang cocok</div>
-                    <div className="empty-sub">Coba ubah filter atau kata kunci pencarian.</div>
+                    <div className="empty-sub">
+                      {month
+                        ? 'Belum ada transaksi pada periode ini. Coba bulan lain, ubah filter, atau kata kunci pencarian.'
+                        : 'Coba ubah filter atau kata kunci pencarian.'}
+                    </div>
                     <button
                       type="button"
                       className="btn-outline"
                       onClick={() => {
-                        setCurrentFilter('semua');
+                        changeFilter('semua');
+                        changeMonth('');
                         setSearchQuery('');
                       }}
                     >
@@ -824,6 +900,8 @@ function TransaksiPageInner() {
                 })}
               </div>
             )}
+
+            <Pager meta={meta} onPage={setPage} loading={loadingList} noun="transaksi" />
           </div>
         </div>
       </main>

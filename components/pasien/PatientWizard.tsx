@@ -1,11 +1,15 @@
 'use client';
 
+import FamilyHistoryEditor, { type FamilyRow } from '@/components/pasien/FamilyHistoryEditor';
+import MedicationHistoryEditor, { type MedicationRow } from '@/components/pasien/MedicationHistoryEditor';
+import SatusehatPatientSearch, { type SatusehatPatientPick } from '@/components/pasien/SatusehatPatientSearch';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import { Patient, PatientPayload, patientsApi } from '@/lib/patients';
 import { masterDataApi, WilayahItem } from '@/lib/master-data';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
+import { useFeatures } from '@/lib/features-context';
 
 type UiGender = 'laki-laki' | 'perempuan';
 
@@ -46,6 +50,8 @@ interface WizardForm {
   riwayatSyaraf: boolean;
   riwayatSistemikLainnya: boolean;
   catatanSistemikLainnya: string;
+  riwayatKeluarga: FamilyRow[];
+  riwayatObat: MedicationRow[];
   alergiObat: boolean;
   alergiMakanan: boolean;
 
@@ -91,6 +97,8 @@ const EMPTY_FORM: WizardForm = {
   riwayatSyaraf: false,
   riwayatSistemikLainnya: false,
   catatanSistemikLainnya: '',
+  riwayatKeluarga: [],
+  riwayatObat: [],
   alergiObat: false,
   alergiMakanan: false,
 
@@ -168,6 +176,12 @@ function patientToForm(patient: Patient): WizardForm {
     riwayatSyaraf: !!patient.riwayatSyaraf,
     riwayatSistemikLainnya: !!patient.riwayatSistemikLainnya,
     catatanSistemikLainnya: patient.catatanSistemikLainnya || '',
+    riwayatKeluarga: (patient.riwayatKeluarga ?? [])
+      .filter((e) => !e.removed)
+      .map((e) => ({ key: e.key, relationship: e.relationship, code: e.code, display: e.display, nameId: e.nameId, note: e.note ?? '' })),
+    riwayatObat: (patient.riwayatObat ?? [])
+      .filter((e) => !e.removed)
+      .map((e) => ({ key: e.key, kfaCode: e.kfaCode, name: e.name, dosage: e.dosage ?? '', active: e.active })),
     alergiObat: !!patient.alergiObat,
     alergiMakanan: !!patient.alergiMakanan,
 
@@ -213,6 +227,19 @@ function formToPayload(form: WizardForm): PatientPayload {
     riwayatParuParu: form.riwayatParuParu,
     riwayatSyaraf: form.riwayatSyaraf,
     riwayatSistemikLainnya: form.riwayatSistemikLainnya,
+    riwayatKeluarga: form.riwayatKeluarga.map((r) => ({
+      ...(r.key ? { key: r.key } : {}),
+      relationship: r.relationship,
+      code: r.code,
+      note: r.note || undefined,
+    })),
+    riwayatObat: form.riwayatObat.map((r) => ({
+      ...(r.key ? { key: r.key } : {}),
+      kfaCode: r.kfaCode || undefined,
+      name: r.name,
+      dosage: r.dosage || undefined,
+      active: r.active,
+    })),
     catatanSistemikLainnya: form.riwayatSistemikLainnya
       ? form.catatanSistemikLainnya || undefined
       : undefined,
@@ -271,6 +298,7 @@ export default function PatientWizard({
   onCancel,
 }: PatientWizardProps) {
   const toast = useToast();
+  const { can } = useFeatures();
   const [form, setForm] = useState<WizardForm>(EMPTY_FORM);
   const [stepIndex, setStepIndex] = useState(0);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | null>>({});
@@ -285,6 +313,8 @@ export default function PatientWizard({
   const [cityCode, setCityCode] = useState('');
   const [districtCode, setDistrictCode] = useState('');
   const [provincesError, setProvincesError] = useState<string | null>(null);
+  // Master wilayah (dari SATUSEHAT) tidak tersedia → alamat diisi manual, pendaftaran tidak terhambat
+  const wilayahManual = !!provincesError;
   const [provincesLoading, setProvincesLoading] = useState(false);
 
   const hydrated = useRef(false);
@@ -444,6 +474,23 @@ export default function PatientWizard({
     return () => clearTimeout(timeout);
   }, [form.referrerSearch]);
 
+  // Isi form dari hasil pencarian SATUSEHAT; field yang kosong di SATUSEHAT
+  // tidak menimpa isian petugas.
+  const applySatusehat = (pick: SatusehatPatientPick) => {
+    setForm((prev) => ({
+      ...prev,
+      name: pick.name || prev.name,
+      gender: pick.gender ?? prev.gender,
+      birthDate: pick.birthDate || prev.birthDate,
+      nik: pick.nik || prev.nik,
+      nikIbu: pick.nikIbu || prev.nikIbu,
+      phone: pick.phone || prev.phone,
+      address: pick.address || prev.address,
+    }));
+    setFieldErrors((prev) => ({ ...prev, name: null, gender: null, birthDate: null, nik: null }));
+    toast.success(pick.nik ? 'Data SATUSEHAT diisi — lengkapi data lainnya' : 'Data SATUSEHAT diisi — isi NIK pasien');
+  };
+
   const update = <K extends keyof WizardForm>(key: K, value: WizardForm[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setFieldErrors((prev) => (prev[key as string] ? { ...prev, [key]: null } : prev));
@@ -602,6 +649,10 @@ export default function PatientWizard({
             {currentStep.label}
           </div>
 
+          {currentStep.key === 'identitas' && mode === 'create' && can('satusehat') && (
+            <SatusehatPatientSearch onUse={applySatusehat} />
+          )}
+
           {currentStep.key === 'identitas' && (
             <div className="form-row">
               <div className={`form-field full ${fieldErrors.name ? 'error' : ''}`}>
@@ -709,6 +760,37 @@ export default function PatientWizard({
                   onChange={(e) => update('address', e.target.value)}
                 />
               </div>
+              {wilayahManual ? (
+                <>
+                  <div className="form-field full">
+                    <span className="wizard-wilayah-note">
+                      Daftar wilayah sedang tidak tersedia — isi manual.{' '}
+                      <button type="button" className="wizard-inline-retry" onClick={loadProvinces}>
+                        Coba muat lagi
+                      </button>
+                    </span>
+                  </div>
+                  <div className="form-field">
+                    <label>Provinsi</label>
+                    <input type="text" placeholder="Contoh: Jawa Barat" value={form.province} onChange={(e) => update('province', e.target.value)} />
+                  </div>
+                  <div className={`form-field ${fieldErrors.city ? 'error' : ''}`}>
+                    <label>Kota / Kabupaten *</label>
+                    <input type="text" placeholder="Contoh: Kota Bandung" value={form.city} onChange={(e) => update('city', e.target.value)} />
+                    {fieldErrors.city && <span className="field-error">{fieldErrors.city}</span>}
+                  </div>
+                  <div className={`form-field ${fieldErrors.kecamatan ? 'error' : ''}`}>
+                    <label>Kecamatan *</label>
+                    <input type="text" value={form.kecamatan} onChange={(e) => update('kecamatan', e.target.value)} />
+                    {fieldErrors.kecamatan && <span className="field-error">{fieldErrors.kecamatan}</span>}
+                  </div>
+                  <div className="form-field">
+                    <label>Kelurahan</label>
+                    <input type="text" value={form.kelurahan} onChange={(e) => update('kelurahan', e.target.value)} />
+                  </div>
+                </>
+              ) : (
+                <>
               <div className="form-field">
                 <label>Provinsi</label>
                 <CustomSelect
@@ -787,6 +869,8 @@ export default function PatientWizard({
                   ]}
                 />
               </div>
+                </>
+              )}
               <div className={`form-field ${fieldErrors.postalCode ? 'error' : ''}`}>
                 <label>Kode Pos</label>
                 <input
@@ -994,6 +1078,14 @@ export default function PatientWizard({
                   )}
                 </div>
               ))}
+              <FamilyHistoryEditor
+                value={form.riwayatKeluarga}
+                onChange={(rows) => update('riwayatKeluarga', rows)}
+              />
+              <MedicationHistoryEditor
+                value={form.riwayatObat}
+                onChange={(rows) => update('riwayatObat', rows)}
+              />
               <div className="form-field full wizard-switch-field">
                 <label>Punya Alergi?</label>
                 <button

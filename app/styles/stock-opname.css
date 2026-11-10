@@ -1,0 +1,30 @@
+/* Stock Opname — melengkapi gudang.css */
+.opname-page .opname-count, .opname-page .opname-detail { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.opname-page .opname-form { display: flex; gap: 12px; flex-wrap: wrap; }
+.opname-page .opname-form label { display: flex; flex-direction: column; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--text-sub); }
+.opname-page .opname-form label.grow { flex: 1; min-width: 220px; }
+.opname-page .opname-form input, .opname-page .opname-search, .opname-page .opname-input, .opname-page .opname-note {
+  border: 1.5px solid var(--border); border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 13.5px; background: var(--bg); color: var(--text-main);
+}
+.opname-page .opname-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.opname-page .opname-search { min-width: 220px; }
+.opname-page .opname-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-sub); }
+.opname-page .opname-summary { margin-left: auto; font-size: 13px; color: var(--text-sub); }
+.opname-page .opname-input { width: 96px; text-align: right; }
+.opname-page .opname-note { width: 180px; font-size: 12.5px; }
+.opname-page .opname-diff td { background: rgba(255, 196, 87, .1); }
+.opname-page .neg { color: #C0392B; }
+.opname-page .pos { color: var(--accent-ink); }
+.opname-page .opname-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.opname-page .opname-detail-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.opname-page .opname-detail-head h2 { margin: 0; font-size: 17px; }
+.opname-page .opname-detail-actions { display: flex; gap: 8px; }
+.opname-page .opname-view { padding: 6px 12px; font-size: 12.5px; }
+.opname-page .gudang-table tfoot td { font-weight: 600; border-top: 1px solid var(--border); }
+.opname-page .opname-sign { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; text-align: center; font-size: 13px; padding-top: 24px; }
+.opname-page .opname-sign span { display: block; margin-top: 56px; }
+@media (max-width: 640px) { .opname-page .opname-summary { margin-left: 0; } }
+@media print {
+  .sidebar, .navbar, .gudang-tabs, .page-header, .opname-detail-actions, .opname-page > .panel:not(.opname-detail) { display: none !important; }
+  .opname-page .opname-detail { box-shadow: none; border: none; }
+}

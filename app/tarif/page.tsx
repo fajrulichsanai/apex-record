@@ -7,7 +7,7 @@ import FeatureGuard from '@/components/auth/FeatureGuard';
 import ConfirmationModal from '@/components/feedback/ConfirmationModal';
 import CustomSelect from '@/components/form/CustomSelect';
 import { ApiError } from '@/lib/api-client';
-import { tarifApi, type Tarif } from '@/lib/tarif';
+import { tarifApi, tarifMargin, type Tarif } from '@/lib/tarif';
 import { useToast } from '@/lib/toast-context';
 import { useAuth } from '@/lib/auth-context';
 import { isFeatureViewOnly, canSeeHargaModal } from '@/lib/permissions';
@@ -17,16 +17,17 @@ import '../styles/tarif.css';
 // Simple function to export CSV (Excel compatible)
 const exportToExcel = (tarifs: Tarif[], showHargaModal: boolean) => {
   const headers = showHargaModal
-    ? ['Title', 'Category', 'Harga Modal (Rp)', 'Harga Jual (Rp)', 'Margin (Rp)', 'Status']
+    ? ['Title', 'Category', 'Harga Modal (Rp)', 'Biaya Lab (Rp)', 'Harga Jual (Rp)', 'Margin (Rp)', 'Status']
     : ['Title', 'Category', 'Harga Jual (Rp)', 'Status'];
 
   const rows = tarifs.map(item => {
-    const margin = (item.hargaJual || 0) - (item.hargaPokok || 0);
+    const margin = tarifMargin(item);
     if (showHargaModal) {
       return [
         item.name,
         item.kategori,
         (item.hargaPokok || 0).toString(),
+        Number(item.biayaLab || 0).toString(),
         (item.hargaJual || 0).toString(),
         margin.toString(),
         item.isActive ? 'Aktif' : 'Nonaktif',
@@ -111,9 +112,8 @@ export default function TarifPage() {
   const totalCount = tarifs.length;
   const avgMarginMargin = tarifs.length > 0
     ? Math.round(tarifs.reduce((s, t) => {
-        const hargaPokok = t.hargaPokok || 0;
-        const hargaJual = t.hargaJual || 0;
-        return s + (hargaJual > 0 ? ((hargaJual - hargaPokok) / hargaJual * 100) : 0);
+        const hargaJual = Number(t.hargaJual || 0);
+        return s + (hargaJual > 0 ? (tarifMargin(t) / hargaJual * 100) : 0);
       }, 0) / tarifs.length)
     : 0;
   const termahal = tarifs.length > 0 ? tarifs.reduce((a, b) => ((b.hargaJual || 0) > (a.hargaJual || 0) ? b : a)) : null;
@@ -279,6 +279,7 @@ export default function TarifPage() {
                     <th>Title</th>
                     <th>Category</th>
                     {showHargaModal && <th>Harga Modal</th>}
+                    {showHargaModal && <th>Biaya Lab</th>}
                     <th>Harga Jual</th>
                     {showHargaModal && <th>Margin</th>}
                     <th>Status</th>
@@ -287,7 +288,7 @@ export default function TarifPage() {
                 </thead>
                 <tbody>
                   {filteredTarif.map((item) => {
-                    const margin = (item.hargaJual || 0) - (item.hargaPokok || 0);
+                    const margin = tarifMargin(item);
                     return (
                       <tr key={item.id}>
                         <td>
@@ -296,6 +297,7 @@ export default function TarifPage() {
                         </td>
                         <td><span className="tag">{item.kategori}</span></td>
                         {showHargaModal && <td>Rp {(item.hargaPokok || 0).toLocaleString('id-ID')}</td>}
+                        {showHargaModal && <td>Rp {Number(item.biayaLab || 0).toLocaleString('id-ID')}</td>}
                         <td>Rp {(item.hargaJual || 0).toLocaleString('id-ID')}</td>
                         {showHargaModal && (
                           <td>

@@ -10,20 +10,34 @@ import { useToast } from '@/lib/toast-context';
 import type { User, RoleOption } from '@/types/user';
 import type { Clinic } from '@/types/clinic';
 import SettingsTabs from '@/components/settings/SettingsTabs';
+import UserFeaturesModal from '@/components/features/UserFeaturesModal';
+import PractitionerPanel from '@/components/user-management/PractitionerPanel';
 import { pressable, useEscapeKey } from '@/lib/a11y';
 import '../styles/user-management.css';
+
+interface AccountQuota {
+  used: number;
+  limit: number;
+  scope: 'clinic' | 'multiklinik';
+  tier: string | null;
+  planName: string | null;
+  activeBranches?: number;
+  trialStage?: 'starter' | 'pro';
+  trialProFrom?: string;
+}
 
 const ROLE_LABEL: Record<string, string> = {
   super_admin: 'Super Admin',
   multi_clinic_owner: 'Multi-Klinik Owner',
   owner: 'Owner',
+  manajer_cabang: 'Manajer Cabang',
   admin: 'Admin',
   dokter: 'Dokter',
+  perawat: 'Perawat',
   pending: 'Pending',
 };
 
 type MainTab = 'users' | 'practitioner';
-type SearchMethod = 'nik' | 'nama' | 'id';
 type UserFilter = 'semua' | 'pending' | 'aktif' | 'nonaktif';
 
 function statusOf(u: User): 'aktif' | 'nonaktif' | 'pending' {
@@ -58,11 +72,9 @@ export default function UserManagementPage() {
 
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [editRoleModalOpen, setEditRoleModalOpen] = useState(false);
+  /** User yang sedang diatur fiturnya (owner) */
+  const [featuresUser, setFeaturesUser] = useState<User | null>(null);
 
-  const [searchMethod, setSearchMethod] = useState<SearchMethod>('nik');
-  const [searchInput, setSearchInput] = useState('');
-  const [searchNamaInput, setSearchNamaInput] = useState({ nama: '', ttl: '' });
-  const [showSearchResult, setShowSearchResult] = useState(false);
 
   const [inviteForm, setInviteForm] = useState({ email: '', name: '', role: '', clinicId: '' });
   const [inviteSubmitting, setInviteSubmitting] = useState(false);
@@ -93,7 +105,20 @@ export default function UserManagementPage() {
   useEscapeKey(() => setEditRoleModalOpen(false), editRoleModalOpen);
   useEscapeKey(() => setConfirmModal((prev) => ({ ...prev, isOpen: false })), confirmModal.isOpen);
 
+  // Akun aktif terhadap batas paket (PRD Super Admin BL-02).
+  const [quota, setQuota] = useState<AccountQuota | null>(null);
+  const loadQuota = async () => {
+    if (isSuperAdmin) return;
+    try {
+      setQuota(await apiClient.get<AccountQuota | null>('/users/quota'));
+    } catch {
+      setQuota(null);
+    }
+  };
+  const quotaFull = !!quota && quota.used >= quota.limit;
+
   const loadUsers = async () => {
+    void loadQuota();
     try {
       const data = await apiClient.get<User[]>('/users');
       setUsers(data);
@@ -113,6 +138,7 @@ export default function UserManagementPage() {
         ]);
         setUsers(usersData);
         setRoleOptions(rolesData);
+        void loadQuota();
         setInviteForm((f) => (f.role ? f : { ...f, role: rolesData[0]?.value || '' }));
         if (isSuperAdmin) {
           const clinicsData = await apiClient.get<Clinic[]>('/clinics');
@@ -162,8 +188,16 @@ export default function UserManagementPage() {
       if (isSuperAdmin && inviteForm.clinicId) {
         payload.clinicId = Number(inviteForm.clinicId);
       }
-      const created = await apiClient.post<{ temporaryPassword: string; email: string }>('/users/invite', payload);
-      success(`Email: ${created.email}\nPassword sementara: ${created.temporaryPassword}`);
+      const created = await apiClient.post<{ temporaryPassword: string; email: string; emailSent?: boolean }>(
+        '/users/invite',
+        payload,
+      );
+      success(
+        `Email: ${created.email}\nPassword sementara: ${created.temporaryPassword}\n` +
+          (created.emailSent
+            ? 'Password sementara juga sudah dikirim ke email tersebut. Pengguna wajib menggantinya saat login pertama.'
+            : 'Email gagal terkirim — bagikan password ini langsung. Pengguna wajib menggantinya saat login pertama.'),
+      );
       setInviteForm({ email: '', name: '', role: roleOptions[0]?.value || '', clinicId: '' });
       setInviteModalOpen(false);
       await loadUsers();
@@ -272,7 +306,12 @@ export default function UserManagementPage() {
             <p>Kelola akses, peran, dan data tenaga kesehatan klinik Anda</p>
           </div>
           <div className="page-header-actions">
-            <button className="btn-primary" onClick={() => setInviteModalOpen(true)}>
+            <button
+              className="btn-primary"
+              onClick={() => setInviteModalOpen(true)}
+              disabled={quotaFull}
+              title={quotaFull ? 'Batas akun paket sudah penuh' : undefined}
+            >
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
@@ -308,7 +347,7 @@ export default function UserManagementPage() {
                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
               />
             </svg>
-            Cari Tenaga Kesehatan (SATUSEHAT)
+            Tenaga Kesehatan
           </button>
         </div>
 
@@ -320,6 +359,24 @@ export default function UserManagementPage() {
               <div className="stat-pill">
                 <span className="stat-dot dot-blue" /> Total <strong>{totalUsers}</strong>
               </div>
+              {quota && (
+                <div
+                  className="stat-pill"
+                  title={
+                    quota.scope === 'multiklinik'
+                      ? `Jatah bersama ${quota.activeBranches ?? 0} cabang multiklinik`
+                      : `Batas akun aktif paket ${quota.planName ?? 'Starter'}`
+                  }
+                >
+                  <span className="stat-dot" style={{ background: quotaFull ? '#C1381F' : '#367D2F' }} /> Akun aktif{' '}
+                  <strong>
+                    {quota.used}/{quota.limit}
+                  </strong>
+                  <span style={{ opacity: 0.7 }}>
+                    {quota.scope === 'multiklinik' ? '· bersama multiklinik' : `· ${quota.planName ?? 'Starter'}`}
+                  </span>
+                </div>
+              )}
               <div className="stat-pill">
                 <span className="stat-dot dot-green" /> Aktif <strong>{aktifCount}</strong>
               </div>
@@ -332,6 +389,20 @@ export default function UserManagementPage() {
                 <strong>{adminCount}</strong>
               </div>
             </div>
+
+            {quotaFull && quota && (
+              <div className="alert-info" role="status" style={{ margin: '0 0 12px' }}>
+                {quota.scope === 'multiklinik'
+                  ? `Jatah akun bersama multiklinik sudah penuh (${quota.used}/${quota.limit}). Nonaktifkan akun yang tidak dipakai atau hubungi owner multiklinik.`
+                  : quota.tier === 'trial'
+                    ? quota.trialStage === 'starter'
+                      ? `Masa coba minggu pertama dibatasi ${quota.limit} akun seperti Starter. Mulai ${quota.trialProFrom} batasnya otomatis naik menjadi 25 akun seperti Pro, atau berlangganan sekarang.`
+                      : `Batas akun masa coba sudah penuh (${quota.used}/${quota.limit}). Berlangganan paket Pro untuk tetap memakai sampai 25 akun.`
+                  : quota.tier === 'basic' || !quota.tier
+                    ? `Batas akun paket ${quota.planName ?? 'Starter'} sudah penuh (${quota.used}/${quota.limit}). Naik ke paket Pro di menu Langganan untuk sampai 25 akun, atau nonaktifkan akun yang tidak dipakai.`
+                    : `Batas akun paket ${quota.planName ?? ''} sudah penuh (${quota.used}/${quota.limit}). Nonaktifkan akun yang tidak dipakai.`}
+              </div>
+            )}
 
             {/* Toolbar */}
             <div className="toolbar">
@@ -376,7 +447,7 @@ export default function UserManagementPage() {
                 const isSelf = u.id === currentUser?.id;
                 return (
                   <div className="user-card" key={u.id} style={{ position: 'relative' }}>
-                    <div className={`user-avatar ${u.role === 'admin' ? 'avatar-admin' : 'avatar-doc'}`}>
+                    <div className={`user-avatar ${u.role === 'admin' || u.role === 'manajer_cabang' ? 'avatar-admin' : 'avatar-doc'}`}>
                       {initials}
                       <span
                         className={`status-dot status-${status === 'aktif' ? 'active' : status === 'nonaktif' ? 'inactive' : 'pending'}`}
@@ -411,7 +482,7 @@ export default function UserManagementPage() {
                       </div>
                     </div>
                     <div className="user-badges">
-                      <span className={`badge ${u.role === 'admin' ? 'badge-admin' : 'badge-dokter'}`}>
+                      <span className={`badge ${u.role === 'admin' || u.role === 'manajer_cabang' ? 'badge-admin' : 'badge-dokter'}`}>
                         {ROLE_LABEL[u.role] || u.role}
                       </span>
                       <span className={`badge badge-${status}`}>
@@ -420,6 +491,22 @@ export default function UserManagementPage() {
                     </div>
                     {!isSelf && (
                       <div className="user-actions">
+                        {['admin', 'dokter', 'perawat'].includes(u.role) && (
+                          <button
+                            className="user-action-btn features"
+                            aria-label="Atur fitur"
+                            title="Atur fitur"
+                            onClick={() => setFeaturesUser(u)}
+                          >
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                              />
+                            </svg>
+                          </button>
+                        )}
                         <button
                           className="user-action-btn edit"
                           aria-label="Ubah Peran"
@@ -468,134 +555,10 @@ export default function UserManagementPage() {
           </div>
         )}
 
-        {/* VIEW: PRACTITIONER / SATUSEHAT (not yet backed by API — out of scope for this change) */}
+        {/* VIEW: TENAGA KESEHATAN — data nakes klinik, cari SATUSEHAT, revisi */}
         {mainTab === 'practitioner' && (
           <div className="view-section visible">
-            <div className="satusehat-grid">
-              <div className="satusehat-panel">
-                <div className="satusehat-header">
-                  <div className="satusehat-logo">
-                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
-                      />
-                    </svg>
-                  </div>
-                  <div>
-                    <div className="satusehat-title">SATUSEHAT Search</div>
-                    <div className="satusehat-subtitle">Cari tenaga kesehatan nasional</div>
-                  </div>
-                </div>
-
-                <div className="method-section-label">Metode Pencarian</div>
-                <div className="search-methods">
-                  <div
-                    className={`method-btn ${searchMethod === 'nik' ? 'active' : ''}`}
-                    {...pressable(() => setSearchMethod('nik'))}
-                  >
-                    <div className="method-btn-label">NIK</div>
-                    <div className="method-btn-sub">16 digit KTP</div>
-                  </div>
-                  <div
-                    className={`method-btn ${searchMethod === 'nama' ? 'active' : ''}`}
-                    {...pressable(() => setSearchMethod('nama'))}
-                  >
-                    <div className="method-btn-label">Nama</div>
-                    <div className="method-btn-sub">Nama + TTL</div>
-                  </div>
-                  <div
-                    className={`method-btn ${searchMethod === 'id' ? 'active' : ''}`}
-                    {...pressable(() => setSearchMethod('id'))}
-                  >
-                    <div className="method-btn-label">ID</div>
-                    <div className="method-btn-sub">ID Practitioner</div>
-                  </div>
-                </div>
-
-                <div className="search-form">
-                  {searchMethod === 'nik' && (
-                    <input
-                      type="text"
-                      placeholder="Masukkan 16 digit NIK"
-                      value={searchInput}
-                      onChange={(e) => setSearchInput(e.target.value)}
-                      className="search-input"
-                      maxLength={16}
-                    />
-                  )}
-                  {searchMethod === 'nama' && (
-                    <>
-                      <input
-                        type="text"
-                        placeholder="Nama lengkap"
-                        value={searchNamaInput.nama}
-                        onChange={(e) => setSearchNamaInput({ ...searchNamaInput, nama: e.target.value })}
-                        className="search-input"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Tempat/Tanggal Lahir (TTL)"
-                        value={searchNamaInput.ttl}
-                        onChange={(e) => setSearchNamaInput({ ...searchNamaInput, ttl: e.target.value })}
-                        className="search-input"
-                      />
-                    </>
-                  )}
-                  {searchMethod === 'id' && (
-                    <input
-                      type="text"
-                      placeholder="Masukkan ID Practitioner"
-                      value={searchInput}
-                      onChange={(e) => setSearchInput(e.target.value)}
-                      className="search-input"
-                    />
-                  )}
-                  <button
-                    className="btn-primary btn-search-full"
-                    onClick={() => setShowSearchResult(true)}
-                    disabled={
-                      searchMethod === 'nik' && !searchInput ||
-                      searchMethod === 'id' && !searchInput ||
-                      searchMethod === 'nama' && (!searchNamaInput.nama || !searchNamaInput.ttl)
-                    }
-                  >
-                    Cari Practitioner
-                  </button>
-                </div>
-              </div>
-
-              <div className="search-result-panel">
-                {showSearchResult ? (
-                  <div style={{ width: '100%' }}>
-                    <div className="result-count">
-                      <span className="result-count-dot" />
-                      1 Hasil Ditemukan
-                    </div>
-                    <div className="search-result-card">
-                      <div className="result-avatar">DS</div>
-                      <div className="result-info">
-                        <div className="result-name">drg Daffa Safra</div>
-                        <div className="result-tags">
-                          <span className="result-tag">IHS: 13229303626</span>
-                          <span className="result-tag">NIK: 13070***</span>
-                          <span className="result-tag">Perempuan · 1990-06-12</span>
-                        </div>
-                      </div>
-                      <button className="btn-add-to-clinic">
-                        Tambah ke Klinik
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="empty-state">
-                    <p>Mulai Pencarian</p>
-                    <span>Pilih metode dan isi data di panel kiri</span>
-                  </div>
-                )}
-              </div>
-            </div>
+            <PractitionerPanel />
           </div>
         )}
 
@@ -669,6 +632,23 @@ export default function UserManagementPage() {
                 </div>
               ))}
             </div>
+            {(inviteForm.role === 'dokter' || inviteForm.role === 'perawat') && (
+              <div className="modal-hint invite-nakes-hint">
+                Untuk dokter/perawat, sebaiknya tambahkan dari tab <strong>Tenaga Kesehatan</strong> — data NIK, SIP &amp;
+                SATUSEHAT-nya sekaligus diisi, lalu akun login dibuat di form yang sama.{' '}
+                <button
+                  type="button"
+                  className="invite-nakes-link"
+                  onClick={() => {
+                    setInviteModalOpen(false);
+                    switchMainTab('practitioner');
+                  }}
+                >
+                  Buka Tenaga Kesehatan
+                </button>
+              </div>
+            )}
+
 
             <div className="modal-footer">
               <button className="btn-outline" onClick={() => setInviteModalOpen(false)}>
@@ -684,6 +664,8 @@ export default function UserManagementPage() {
             </div>
           </div>
         </div>
+
+        <UserFeaturesModal user={featuresUser} onClose={() => setFeaturesUser(null)} />
 
         {/* MODAL: Ubah Peran */}
         <div

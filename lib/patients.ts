@@ -1,4 +1,4 @@
-import { apiClient } from './api-client';
+import { apiClient, toQueryString } from './api-client';
 
 export type ApiGender = 'male' | 'female';
 export type MaritalStatus = 'single' | 'married' | 'divorced' | 'widowed';
@@ -53,6 +53,8 @@ export interface Patient {
   riwayatSyaraf?: boolean;
   riwayatSistemikLainnya?: boolean;
   catatanSistemikLainnya?: string;
+  riwayatKeluarga?: FamilyHistoryEntry[] | null;
+  riwayatObat?: MedicationHistoryEntry[] | null;
   alergiObat?: boolean;
   alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
@@ -99,6 +101,8 @@ export interface PatientPayload {
   riwayatSyaraf?: boolean;
   riwayatSistemikLainnya?: boolean;
   catatanSistemikLainnya?: string;
+  riwayatKeluarga?: FamilyHistoryInput[];
+  riwayatObat?: MedicationHistoryInput[];
   alergiObat?: boolean;
   alergiMakanan?: boolean;
   preferensiKontak?: PreferensiKontak;
@@ -117,6 +121,35 @@ export interface Encounter {
   arrivedTime: string;
   finishedTime?: string;
   practitionerName?: string;
+}
+
+/** Satu halaman riwayat (kunjungan/transaksi) satu pasien, difilter per bulan. */
+export interface PatientHistoryPage<T> {
+  items: T[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+  /** Semua bulan (YYYY-MM) yang punya data, terbaru dulu. */
+  months: { month: string; count: number }[];
+  /** Tanggal (YYYY-MM-DD) yang punya data pada bulan terpilih. */
+  days: { date: string; count: number }[];
+}
+
+export interface PatientBillingRow {
+  id: number;
+  invoiceNumber: string;
+  status: string;
+  grandTotal: number;
+  paidAmount: number;
+  outstandingAmount: number;
+  createdAt: string;
+  encounterId: number;
+  itemNames: string[];
+}
+
+export interface PatientHistoryQuery {
+  /** YYYY-MM; kosong = semua bulan. */
+  month?: string;
+  page?: number;
+  limit?: number;
 }
 
 export type TimelineItemType = 'kunjungan' | 'billing' | 'foto' | 'treatment_plan' | 'recall';
@@ -186,16 +219,52 @@ export interface ReferralSummaryResponse {
   byReferrer: { referrerPatientId: number; referrerName: string; referralCount: number }[];
 }
 
+export type PatientCategory = 'bayi' | 'umum';
+
+export interface PatientStats {
+  total: number;
+  male: number;
+  female: number;
+  baby: number;
+}
+
 export interface PatientQuery {
   search?: string;
   gender?: ApiGender;
+  /** bayi = registered with the mother's NIK (no own NIK); umum = everyone else. */
+  kategori?: PatientCategory;
   page?: number;
   limit?: number;
   sortBy?: string;
   sortOrder?: 'ASC' | 'DESC';
 }
 
+export interface SatusehatPatientResult {
+  id: string;
+  name: string | null;
+  gender: 'male' | 'female' | string | null;
+  birthDate: string | null;
+  nikMasked: string | null;
+  address: string | null;
+  city: string | null;
+  phone: string | null;
+  deceased: boolean;
+  inClinic: { id: number; name: string; noRm: string } | null;
+}
+
+export interface SatusehatPatientQuery {
+  nik?: string;
+  name?: string;
+  birthDate?: string;
+  gender?: 'male' | 'female';
+  nikIbu?: string;
+  ihsId?: string;
+}
+
 export const patientsApi = {
+  /** Cari pasien di SATUSEHAT (MPI): NIK · nama+tgl lahir+JK · NIK ibu · ID SATUSEHAT */
+  searchSatusehat: (q: SatusehatPatientQuery) =>
+    apiClient.post<{ found: boolean; results: SatusehatPatientResult[] }>('/patients/search-satusehat', q),
   list: (query?: PatientQuery) =>
     apiClient.get<Patient[]>(
       '/patients' +
@@ -208,6 +277,13 @@ export const patientsApi = {
             ).toString()
           : '')
     ),
+
+  /** One page plus `meta.total`, for the infinite-scrolling patient list. */
+  listPage: (query: PatientQuery) => apiClient.getPage<Patient>(`/patients?${toQueryString(query)}`),
+
+  /** Counts for the patient-list stat cards (server-side, so not capped by paging). */
+  stats: (search?: string) =>
+    apiClient.get<PatientStats>(`/patients/stats${search?.trim() ? `?${toQueryString({ search: search.trim() })}` : ''}`),
 
   // Backend caps `limit` at 100 per page, so a plain list() only returns the
   // first 10 (default) patients. This paginates through every page to fetch
@@ -238,6 +314,12 @@ export const patientsApi = {
 
   encounters: (id: number) => apiClient.get<Encounter[]>(`/patients/${id}/encounters`),
 
+  encounterHistory: (id: number, q: PatientHistoryQuery = {}) =>
+    apiClient.get<PatientHistoryPage<Encounter>>(`/patients/${id}/encounter-history?${toQueryString({ ...q })}`),
+
+  billingHistory: (id: number, q: PatientHistoryQuery = {}) =>
+    apiClient.get<PatientHistoryPage<PatientBillingRow>>(`/patients/${id}/billing-history?${toQueryString({ ...q })}`),
+
   getTimeline: (id: number) => apiClient.get<TimelineItem[]>(`/patients/${id}/timeline`),
 
   getMedicalRecord: (id: number) =>
@@ -245,4 +327,88 @@ export const patientsApi = {
 
   getReferralSummary: () =>
     apiClient.get<ReferralSummaryResponse>('/patients/referral-summary'),
+
+  birthdays: (range: 'today' | 'week' | 'month', month?: number) =>
+    apiClient.get<BirthdayPatient[]>(
+      `/patients/birthdays?range=${range}${month ? `&month=${month}` : ''}`,
+    ),
 };
+
+export interface BirthdayPatient {
+  id: number;
+  noRm: string;
+  name: string;
+  gender: string | null;
+  phone: string | null;
+  birthDate: string;
+  /** Usia yang dirayakan */
+  turning: number;
+  isToday: boolean;
+  consentMarketing: boolean;
+  lastVisit: string | null;
+}
+
+/** Riwayat penyakit keluarga (dikirim ke SATUSEHAT sebagai FamilyMemberHistory) */
+export type FamilyRelationship =
+  | 'FTH'
+  | 'MTH'
+  | 'BRO'
+  | 'SIS'
+  | 'GRFTH'
+  | 'GRMTH'
+  | 'SON'
+  | 'DAU'
+  | 'UNCLE'
+  | 'AUNT'
+  | 'COUSN'
+  | 'FAMMEMB';
+
+export const FAMILY_RELATIONSHIP_OPTIONS: { value: FamilyRelationship; label: string }[] = [
+  { value: 'FTH', label: 'Ayah' },
+  { value: 'MTH', label: 'Ibu' },
+  { value: 'BRO', label: 'Saudara laki-laki' },
+  { value: 'SIS', label: 'Saudara perempuan' },
+  { value: 'GRFTH', label: 'Kakek' },
+  { value: 'GRMTH', label: 'Nenek' },
+  { value: 'SON', label: 'Anak laki-laki' },
+  { value: 'DAU', label: 'Anak perempuan' },
+  { value: 'UNCLE', label: 'Paman' },
+  { value: 'AUNT', label: 'Bibi' },
+  { value: 'COUSN', label: 'Sepupu' },
+  { value: 'FAMMEMB', label: 'Anggota keluarga lain' },
+];
+
+export interface FamilyHistoryEntry {
+  key: string;
+  relationship: FamilyRelationship;
+  code: string;
+  display: string;
+  nameId: string | null;
+  note: string | null;
+  removed?: boolean;
+}
+
+/** Obat yang dikonsumsi pasien (MedicationStatement) */
+export interface MedicationHistoryEntry {
+  key: string;
+  kfaCode: string | null;
+  name: string;
+  dosage: string | null;
+  active: boolean;
+  removed?: boolean;
+}
+
+export interface MedicationHistoryInput {
+  key?: string;
+  kfaCode?: string | null;
+  name: string;
+  dosage?: string | null;
+  active: boolean;
+}
+
+export interface FamilyHistoryInput {
+  key?: string;
+  relationship: FamilyRelationship;
+  code: string;
+  note?: string | null;
+}

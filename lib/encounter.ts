@@ -22,10 +22,16 @@ export interface EncounterListItem {
 export interface EncounterListResponse {
   data: EncounterListItem[];
   meta: { total: number; page: number; limit: number; totalPages: number };
+  /** Hanya saat difilter per bulan/tanggal: jumlah per status untuk seluruh periode. */
+  counts?: { total: number; arrived: number; in_progress: number; finished: number; cancelled: number };
+  /** Hanya saat difilter per bulan: tanggal yang berisi kunjungan. */
+  days?: { date: string; count: number }[];
 }
 
 export interface EncounterDetail {
   id: number;
+  /** false = kunjungan dokter lain (riwayat pasien bersama) — hanya bisa dilihat */
+  canEdit?: boolean;
   clinicId: number;
   patientId: number;
   practitionerId: number;
@@ -42,7 +48,7 @@ export interface EncounterDetail {
   syncStatus: SatusehatSyncStatus;
   syncError?: string;
   lastSyncAt?: string;
-  patient?: { id: number; name: string; noRm: string };
+  patient?: { id: number; name: string; noRm: string; gender?: 'male' | 'female' | null };
   practitioner?: { id: number; name: string };
   location?: { id: number; name: string };
 }
@@ -72,6 +78,10 @@ export interface UpdateEncounterPayload {
 export const encounterApi = {
   list: (query?: {
     date?: string;
+    /** YYYY-MM: seluruh bulan itu (bukan hanya hari ini). */
+    month?: string;
+    /** true = hanya Menunggu/Berlangsung. */
+    active?: boolean;
     status?: EncounterStatus;
     practitionerId?: number;
     unbilled?: boolean;

@@ -1,0 +1,44 @@
+/* Tambahan halaman Farmasi — memakai token & layout .kunjungan-page */
+.farmasi-page .stat-card.partial .stat-icon { background: var(--info-soft); color: var(--info); }
+
+.farmasi-page .panel-sort { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.farmasi-page .fm-reset {
+  border: 0; background: none; padding: 0; font: inherit; font-size: 12.5px; font-weight: 600;
+  color: var(--info); cursor: pointer;
+}
+.farmasi-page .fm-reset:hover { text-decoration: underline; }
+
+.farmasi-page .fm-date-range { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.farmasi-page .fm-date-range label {
+  display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 600; color: var(--text-sub);
+}
+.farmasi-page .fm-date-range input {
+  width: 100%; min-width: 0; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg); color: var(--text-main); font: inherit; font-size: 13px;
+}
+.farmasi-page .fm-date-range input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(126,217,87,.22); }
+
+.farmasi-page .fm-patient-chip {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px 8px 12px;
+  border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--accent-ink); font-size: 13px;
+}
+.farmasi-page .fm-patient-chip > span:nth-child(2) { flex: 1; min-width: 0; }
+.farmasi-page .fm-patient-chip .material-symbols-rounded { font-size: 18px; }
+.farmasi-page .fm-patient-chip button {
+  display: inline-flex; border: 0; background: none; padding: 2px; border-radius: 6px; color: inherit; cursor: pointer;
+}
+.farmasi-page .fm-patient-chip button:hover { background: rgba(0,0,0,.06); }
+
+.farmasi-page .fm-row-drugs {
+  margin-top: 4px; font-size: 12.5px; color: var(--text-main);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.farmasi-page .fm-progress { margin-top: 8px; height: 4px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.farmasi-page .fm-progress span { display: block; height: 100%; border-radius: inherit; background: var(--accent); transition: width var(--transition); }
+
+.farmasi-page .fm-more { margin: 12px auto; }
+.farmasi-page .detail-section .ph-panel { margin-top: 0; }
+
+@media (max-width: 1100px) {
+  .farmasi-page .stat-grid { grid-template-columns: repeat(2, 1fr); }
+}

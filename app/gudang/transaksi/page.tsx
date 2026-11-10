@@ -133,7 +133,7 @@ export default function TransaksiPage() {
                         <div className="gudang-code">{t.barang?.sku}</div>
                       </td>
                       <td><span className="tag">{TYPE_LABELS[t.type]}</span></td>
-                      <td>{t.type === 'in' ? '+' : '-'}{t.qty} {t.barang?.satuanPakai}</td>
+                      <td>{t.type === 'in' ? `+${t.qty}` : t.type === 'adjustment' ? (t.qty > 0 ? `+${t.qty}` : t.qty) : `-${t.qty}`} {t.barang?.satuanPakai}</td>
                       <td>{t.noFaktur || t.noBatch || '-'}</td>
                       <td>{t.alasan || '-'}</td>
                     </tr>

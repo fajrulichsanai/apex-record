@@ -6,6 +6,7 @@ import PricingSection from './PricingSection';
 import Reveal from './Reveal';
 import ThemeToggle from './ThemeToggle';
 import { COMPANY, LEGAL_LINKS } from '@/lib/company';
+import { FAQS } from './faqs';
 import './landingpage.css';
 
 const APP_URL = 'https://app.apexrecord.my.id';
@@ -174,49 +175,6 @@ const AUDIENCE = [
   },
 ];
 
-const FAQS = [
-  {
-    q: 'Data pasien saya aman?',
-    a: 'Ya. Semua koneksi memakai HTTPS, NIK pasien dienkripsi sebelum disimpan, password tidak pernah disimpan dalam bentuk aslinya, akses diatur berdasarkan peran (dokter, admin, owner), login yang berulang kali gagal dikunci sementara, serta akses dan perubahan rekam medis tercatat di audit log.',
-    open: true,
-  },
-  {
-    q: 'Apakah ApexRecord cocok untuk praktik mandiri (TPMD/TPMDG)?',
-    a: 'Sangat cocok. Baik Anda praktik sendirian sebagai dokter umum (TPMD) maupun dokter gigi (TPMDG), atau mengelola Klinik Pratama/Utama dengan banyak tenaga medis, ApexRecord menyesuaikan — mulai dari satu akun dokter hingga puluhan.',
-  },
-  {
-    q: 'Bagaimana kalau saya sudah punya data pasien lama?',
-    a: 'Tim kami dapat membantu proses migrasi data dari sistem atau spreadsheet Anda sebelumnya. Hubungi kami setelah mendaftar untuk dipandu prosesnya.',
-  },
-  {
-    q: 'Apakah bisa dipakai untuk lebih dari satu cabang klinik?',
-    a: 'Bisa. Role Multi-Klinik Owner memberi Anda satu dashboard untuk memantau performa seluruh cabang sekaligus, tanpa perlu login bergantian.',
-  },
-  {
-    q: 'Apakah diagnosis sudah memakai standar ICD-10 dan SNOMED CT?',
-    a: 'Sudah. Saat mengisi Assessment di catatan SOAP, dokter bisa mencari diagnosis ICD-10 (18.500+ kode) atau SNOMED CT (499.000+ konsep) lewat kode, nama resmi, maupun nama sehari-hari dalam bahasa Indonesia — misalnya “gigi berlubang” atau “radang gusi” — lengkap dengan penjelasannya.',
-  },
-  {
-    q: 'Bisakah jadwal dokter dan reservasi tampil di website klinik saya?',
-    a: 'Bisa. Buat API key di Pengaturan → API, lalu tim IT atau pembuat website Anda tinggal menampilkan jam buka, profil & jadwal dokter, layanan, slot kosong, dan formulir reservasi. Dokumentasinya tersedia langsung di halaman tersebut. Kuota request mengikuti paket langganan.',
-  },
-  {
-    q: 'Apakah pasien bisa bayar DP dulu?',
-    a: 'Bisa. Saat membuat tagihan, pilih Lunas, DP, atau Bayar Nanti. Sisa tagihan terlihat jelas di daftar transaksi dan bisa dilunasi kapan saja lewat tombol Pelunasan, dengan metode bayar yang berbeda sekalipun. Laporan keuangan menampilkan berapa tagihan yang masih DP dan sisa piutangnya.',
-  },
-  {
-    q: 'Bagaimana dengan kunjungan kontrol yang tidak ditagih lagi?',
-    a: 'Misalnya kontrol lanjutan yang sudah dibayar di awal atau konsultasi gratis. Buat tagihan Rp 0 dan langsung tercatat lunas, jadi kunjungannya tetap masuk rekam medis dan laporan kunjungan, dan di laporan keuangan tampil sebagai kunjungan gratis.',
-  },
-  {
-    q: 'Kalau berhenti berlangganan, data klinik saya bagaimana?',
-    a: 'Data tetap milik klinik. Setelah langganan berakhir, data masih bisa dilihat. Pemilik klinik bisa meminta salinan seluruh data atau menutup akun kapan saja dari menu Pengaturan → Data & Privasi, dan kami tanggapi paling lambat 3 x 24 jam.',
-  },
-  {
-    q: 'Apa yang terjadi setelah masa uji coba 15 hari berakhir?',
-    a: 'Anda bisa melanjutkan dengan memilih salah satu paket berlangganan. Tidak ada penagihan otomatis diam-diam — Anda yang memutuskan kapan melanjutkan.',
-  },
-];
 
 export default function LandingPage() {
   return (
@@ -265,20 +223,21 @@ export default function LandingPage() {
           <div className="wrap hero-grid">
             <div className="hero-copy">
               <span className="pill"><span className="dot" /> Untuk <b>Klinik Pratama, Klinik Utama, TPMD &amp; TPMDG</b></span>
-              <h1>Kelola klinik &amp; praktik Anda<br />tanpa <span className="accent">drama administrasi.</span></h1>
+              <h1>Aplikasi SIM Klinik &amp; Rekam Medis Elektronik<br />tanpa <span className="accent">drama administrasi.</span></h1>
               <p className="lead">
-                Rekam medis digital, jadwal, tarif, farmasi, hingga laporan keuangan level investor — satu platform
-                untuk Klinik Pratama, Klinik Utama, dan praktik mandiri dokter maupun dokter gigi di Indonesia.
+                SIM Klinik dan rekam medis elektronik (RME / E-RM) dalam satu platform: rekam medis digital, jadwal,
+                tarif, farmasi, hingga laporan keuangan level investor — untuk Klinik Pratama, Klinik Utama, dan
+                praktik mandiri dokter maupun dokter gigi di Indonesia.
               </p>
               <div className="hero-ctas">
                 <a href={APP_URL} target="_blank" rel="noopener noreferrer" className="btn btn-grad">
-                  Mulai Uji Coba 15 Hari
+                  Mulai Uji Coba 14 Hari
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </a>
                 <a href={DEMO_URL} target="_blank" rel="noopener noreferrer" className="btn btn-ghost">Lihat Demo Aplikasi</a>
               </div>
               <div className="trust-row">
-                <span className="trust-item"><CheckIcon />15 hari gratis, tanpa kartu kredit</span>
+                <span className="trust-item"><CheckIcon />14 hari gratis, tanpa kartu kredit</span>
                 <span className="trust-item"><CheckIcon />Setup aktif &lt; 10 menit</span>
                 <span className="trust-item"><CheckIcon />Mulai dari Rp150rb/bulan</span>
               </div>

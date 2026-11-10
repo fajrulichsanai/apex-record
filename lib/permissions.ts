@@ -5,6 +5,7 @@ export type FeatureKey =
   | 'pasien'
   | 'reservasi'
   | 'kunjungan'
+  | 'farmasi'
   | 'billing'
   | 'operasional'
   | 'share-fee-dokter'
@@ -25,13 +26,19 @@ export type FeatureKey =
   | 'tampilan'
   | 'api'
   | 'data-privasi'
-  | 'konten';
+  | 'konten'
+  | 'satusehat'
+  | 'imunisasi'
+  | 'absensi'
+  | 'payroll'
+  | 'ulang-tahun';
 
 const FULL_ACCESS: FeatureKey[] = [
   'dashboard',
   'pasien',
   'reservasi',
   'kunjungan',
+  'farmasi',
   'billing',
   'operasional',
   'share-fee-dokter',
@@ -50,6 +57,10 @@ const FULL_ACCESS: FeatureKey[] = [
   'tampilan',
   'api',
   'konten',
+  'satusehat',
+  'absensi',
+  'payroll',
+  'ulang-tahun',
 ];
 
 const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
@@ -60,10 +71,13 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
   multi_clinic_owner: ['tampilan'],
   // Data requests (UU PDP) are the clinic owner's to make.
   owner: [...FULL_ACCESS, 'onboarding', 'data-privasi'],
+  // Manajer Cabang mengurus cabangnya dengan hak owner (PRD Multi-Klinik MC-01).
+  manajer_cabang: [...FULL_ACCESS, 'onboarding', 'data-privasi'],
   admin: [
     'pasien',
     'reservasi',
     'kunjungan',
+    'farmasi',
     'billing',
     'operasional',
     'recall-reminder',
@@ -73,16 +87,21 @@ const ROLE_FEATURES: Record<UserRole, FeatureKey[]> = {
     'info-klinik',
     'tarif',
     'referral',
+    'ulang-tahun',
     'langganan',
     'konten',
     'tampilan',
+    'satusehat',
+    'absensi',
   ],
-  dokter: ['pasien', 'reservasi', 'kunjungan', 'informed-consent', 'share-fee-saya', 'tampilan'],
+  dokter: ['pasien', 'reservasi', 'kunjungan', 'farmasi', 'informed-consent', 'share-fee-saya', 'tampilan', 'absensi'],
+  // Perawat: akses sama persis dengan dokter
+  perawat: ['pasien', 'reservasi', 'kunjungan', 'farmasi', 'informed-consent', 'share-fee-saya', 'tampilan', 'absensi'],
   pending: ['tampilan'],
 };
 
 const VIEW_ONLY_FEATURES: Partial<Record<UserRole, FeatureKey[]>> = {
-  admin: ['info-klinik', 'tarif', 'langganan'],
+  admin: ['info-klinik', 'tarif', 'langganan', 'satusehat'],
 };
 
 export function canAccessFeature(role: UserRole | undefined, feature: FeatureKey): boolean {
@@ -102,7 +121,7 @@ export function canSeeHargaModal(role: UserRole | undefined): boolean {
 export function defaultRouteForRole(role: UserRole | undefined): string {
   if (role === 'super_admin') return '/super-admin/dashboard';
   if (role === 'multi_clinic_owner') return '/multi-klinik/dashboard';
-  if (role === 'dokter') return '/list-pasien';
+  if (role === 'dokter' || role === 'perawat') return '/list-pasien';
   if (role === 'admin') return '/list-kunjungan';
   return '/dashboard';
 }

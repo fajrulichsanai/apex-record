@@ -228,7 +228,75 @@
 
 .list-pasien-page .sort-btn .material-symbols-rounded { font-size: 15px; }
 
-.list-pasien-page .patient-list { flex: 1; overflow-y: auto; }
+.list-pasien-page .patient-list { flex: 1; overflow-y: auto; min-height: 0; transition: opacity var(--transition); }
+.list-pasien-page .patient-list.is-refreshing { opacity: .55; pointer-events: none; }
+
+/* The list loads 20 at a time as it scrolls, so on desktop it scrolls inside
+   its own panel (kept in view next to the detail) instead of growing the page. */
+@media (min-width: 901px) {
+  .list-pasien-page .content-area > .panel {
+    position: sticky;
+    top: 16px;
+    align-self: start;
+    max-height: calc(100dvh - 32px);
+  }
+}
+
+.list-pasien-page .list-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 18px;
+  min-height: 24px;
+}
+.list-pasien-page .list-footer-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+.list-pasien-page .list-footer-note.error { color: var(--red); }
+.list-pasien-page .list-more-btn {
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+.list-pasien-page .list-more-btn:hover { background: var(--bg); }
+.list-pasien-page .list-spinner {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  animation: list-pasien-spin .8s linear infinite;
+}
+@keyframes list-pasien-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .list-pasien-page .list-spinner { animation-duration: 2.4s; }
+}
+
+.list-pasien-page .list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+.list-pasien-page .list-empty .material-symbols-rounded { font-size: 32px; }
+.list-pasien-page .list-empty .empty-title { font-weight: 600; color: var(--text-main); font-size: 14px; }
+.list-pasien-page .list-empty .empty-sub { font-size: 12.5px; }
 
 .list-pasien-page .patient-item {
   display: flex;
@@ -1167,3 +1235,32 @@
   --bg: #17160F;
 }
 
+
+/* Riwayat penyakit keluarga (FamilyHistoryEditor) */
+.fh-editor { display: flex; flex-direction: column; gap: 8px; }
+.fh-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.fh-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; font-size: 13px; color: var(--text-main); }
+.fh-code { font-family: ui-monospace, monospace; font-size: 11.5px; padding: 1px 5px; border-radius: 5px; background: var(--bg); border: 1px solid var(--border); color: var(--text-sub); }
+.fh-note, .fh-muted { color: var(--text-muted); font-size: 12px; }
+.fh-remove { border: 0; background: none; font-size: 18px; line-height: 1; color: var(--text-muted); cursor: pointer; padding: 0 4px; }
+.fh-remove:hover { color: var(--red, #C1381F); }
+.fh-add { display: grid; grid-template-columns: 160px 1fr 1fr; gap: 8px; }
+.fh-add select, .fh-add input { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-main); font: inherit; font-size: 13px; }
+.fh-results { list-style: none; margin: 0; padding: 4px; max-height: 220px; overflow-y: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.fh-results li.fh-muted { padding: 8px 10px; }
+.fh-results button { width: 100%; text-align: left; padding: 8px 10px; border: 0; border-radius: 8px; background: none; color: var(--text-main); font: inherit; font-size: 13px; cursor: pointer; }
+.fh-results button:hover, .fh-results button:focus-visible { background: var(--bg); }
+@media (max-width: 640px) { .fh-add { grid-template-columns: 1fr; } }
+
+/* Riwayat obat yang dikonsumsi (MedicationHistoryEditor) */
+.mh-add { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.4fr) auto auto; gap: 8px; align-items: start; }
+.mh-add > input[type="text"] { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-main); font: inherit; font-size: 13px; }
+.mh-active { display: inline-flex; align-items: center; gap: 6px; padding-top: 9px; font-size: 13px; font-weight: 500; color: var(--text-main); white-space: nowrap; }
+.mh-btn { padding: 9px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-main); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.mh-btn:disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 760px) { .mh-add { grid-template-columns: 1fr; } .mh-active { padding-top: 0; } }
+.mh-add .kfa-picker { min-width: 0; }
+.mh-add .kfa-picker input { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-main); font: inherit; font-size: 13px; }
+
+/* Master wilayah tidak tersedia → isian manual */
+.wizard-wilayah-note { font-size: 13px; color: var(--text-sub); }

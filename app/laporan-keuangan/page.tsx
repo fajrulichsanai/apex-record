@@ -36,15 +36,17 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import StatCard from '@/components/laporan/StatCard';
 import TindakanTerlarisTable from '@/components/laporan/TindakanTerlarisTable';
+import ProfitLossStatement from '@/components/laporan/ProfitLossStatement';
 import PaymentDiscountStats from '@/components/laporan/PaymentDiscountStats';
 import VisitDetailTable from '@/components/laporan/VisitDetailTable';
-import { canAccessFeature } from '@/lib/permissions';
+
 import { useAuth } from '@/lib/auth-context';
 import { reportsApi, FinancialReportResponse, PaymentMethod } from '@/lib/reports';
 import { useToast } from '@/lib/toast-context';
 import { exportToExcel } from '@/lib/export-excel';
 import { useChartTheme } from '@/lib/chart-theme';
 import '../styles/laporan.css';
+import { useFeatures } from '@/lib/features-context';
 
 type RangeOption = '7hari' | '30hari' | 'bulanini' | 'custom';
 
@@ -235,6 +237,7 @@ function buildFinancialInsights(report: FinancialReportResponse | null): Insight
 export default function LaporanKeuanganPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
+  const { can } = useFeatures();
   const [range, setRange] = useState<RangeOption>('bulanini');
   const [customFrom, setCustomFrom] = useState('');
   const [customTo, setCustomTo] = useState('');
@@ -244,9 +247,9 @@ export default function LaporanKeuanganPage() {
   const { error: showError } = useToast();
   const chart = useChartTheme();
 
-  const canViewPro = canAccessFeature(user?.role, 'laporan-keuangan-pro');
+  const canViewPro = can('laporan-keuangan-pro');
 
-  const canView = canAccessFeature(user?.role, 'laporan-keuangan');
+  const canView = can('laporan-keuangan');
   const { dateFrom, dateTo } = getDateRange(range, customFrom, customTo);
 
   useEffect(() => {
@@ -518,7 +521,7 @@ export default function LaporanKeuanganPage() {
             variant="expense"
             icon={<FiCreditCard />}
             value={loading ? '...' : formatRupiah(report?.ringkasan.pengeluaran ?? 0)}
-            label="Pengeluaran Operasional"
+            label="Beban (share fee, gaji, operasional)"
           />
           <StatCard
             variant="margin"
@@ -539,6 +542,8 @@ export default function LaporanKeuanganPage() {
             label="Rata-rata Pendapatan / Hari"
           />
         </div>
+
+        {report?.labaRugi && <ProfitLossStatement data={report.labaRugi} />}
 
         <div className="chart-grid">
           <div className="panel chart-panel wide">

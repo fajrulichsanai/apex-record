@@ -4,11 +4,13 @@ import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import FeatureGuard from '@/components/auth/FeatureGuard';
 import ClinicInfoForm from '@/components/clinic/ClinicInfoForm';
+import ClinicSatusehatCard from '@/components/clinic/ClinicSatusehatCard';
 import { clinicApi } from '@/lib/clinic';
 import { useAuth } from '@/lib/auth-context';
 import { isFeatureViewOnly } from '@/lib/permissions';
 import { useSubscriptionGate } from '@/lib/subscription-gate-context';
 import SettingsTabs from '@/components/settings/SettingsTabs';
+import BranchLinkNotice from '@/components/multi-clinic/BranchLinkNotice';
 
 function formatSubscriptionDate(value?: string) {
   if (!value) return '-';
@@ -75,12 +77,18 @@ export default function InfoKlinikPage() {
       <FeatureGuard feature="info-klinik">
         <main className="content">
           <SettingsTabs />
+          <BranchLinkNotice />
           <ClinicInfoForm
             canEdit={!viewOnly}
             fetchClinic={clinicApi.get}
             updateClinic={clinicApi.update}
             uploadLogo={clinicApi.uploadLogo}
-            rightColumnExtra={<SubscriptionCard />}
+            rightColumnExtra={
+              <>
+                <SubscriptionCard />
+                {user?.role === 'owner' && <ClinicSatusehatCard />}
+              </>
+            }
           />
         </main>
       </FeatureGuard>

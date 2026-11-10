@@ -1,0 +1,331 @@
+'use client';
+
+import { useCallback, useEffect, useState } from 'react';
+import { FiRefreshCw } from 'react-icons/fi';
+import { formatDateTime } from '@/components/satusehat/SatusehatShell';
+import { FACILITY_TYPE_LABELS, satusehatAdminApi, type AdminClinicDetail } from '@/lib/satusehat';
+import { featuresApi } from '@/lib/features';
+import { useToast } from '@/lib/toast-context';
+import '@/app/styles/satusehat.css';
+
+interface CheckItem {
+  label: string;
+  ok: boolean;
+  hint: string;
+}
+
+/**
+ * Checklist kesiapan SATUSEHAT satu klinik (PRD UP-09): urutan yang sama
+ * dengan alur Persiapan di sisi klinik, dibaca dari detail integrasinya.
+ */
+function readiness(data: AdminClinicDetail): CheckItem[] {
+  const p = data.profile;
+  const practitioners = data.summary.resources.find((r) => r.resourceType === 'Practitioner');
+  const activeLocations = data.locations.filter((l) => l.active);
+  return [
+    {
+      label: 'Kredensial SATUSEHAT diatur',
+      ok: !!data.credentialSource,
+      hint: 'Isi Client ID, Client Secret, dan Organization ID di menu SATUSEHAT › Konfigurasi klinik.',
+    },
+    {
+      label: 'Organization ID terverifikasi',
+      ok: !!data.verifiedName,
+      hint: 'Uji koneksi di menu Konfigurasi agar nama fasyankes dari SATUSEHAT tampil.',
+    },
+    {
+      label: 'Profil fasyankes lengkap',
+      ok: !!(p?.facilityType && p.line && p.provinceCode && p.cityCode && p.districtCode && p.villageCode),
+      hint: 'Lengkapi jenis fasyankes dan alamat sampai kelurahan di Onboarding SATUSEHAT.',
+    },
+    {
+      label: 'Location (ruangan) terdaftar',
+      ok: activeLocations.some((l) => !!l.satusehatId),
+      hint: 'Daftarkan minimal satu ruangan aktif ke SATUSEHAT di Onboarding.',
+    },
+    {
+      label: 'Semua tenaga kesehatan terhubung',
+      ok: !!practitioners && practitioners.total > 0 && practitioners.synced >= practitioners.total,
+      hint: 'Cari NIK tiap nakes di SATUSEHAT (Pengaturan › Tenaga Kesehatan).',
+    },
+    {
+      label: 'Tidak ada pengiriman gagal 30 hari terakhir',
+      ok: data.recentFailures.length === 0,
+      hint: 'Periksa daftar Kegagalan terbaru di bawah dan kirim ulang dari sisi klinik.',
+    },
+  ];
+}
+
+function ReadinessChecklist({ data }: { data: AdminClinicDetail }) {
+  const items = readiness(data);
+  const done = items.filter((i) => i.ok).length;
+  return (
+    <div className="ss-card ss-checklist">
+      <h2>
+        Kesiapan SATUSEHAT · {done}/{items.length}
+      </h2>
+      <ul>
+        {items.map((i) => (
+          <li key={i.label} className={i.ok ? 'ok' : 'todo'}>
+            <span aria-hidden>{i.ok ? '✔' : '○'}</span>
+            <div>
+              <strong>{i.label}</strong>
+              {!i.ok && <small>{i.hint}</small>}
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Tab SATUSEHAT di detail klinik Super Admin (PRD KL-04): kondisi integrasi satu klinik. */
+export default function SatusehatClinicPanel({ clinicId }: { clinicId: number }) {
+  const id = clinicId;
+  const { showToast } = useToast();
+  const [data, setData] = useState<AdminClinicDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [toggling, setToggling] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      setData(await satusehatAdminApi.clinic(id));
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Gagal memuat detail klinik', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, showToast]);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function toggleIntegration(next: boolean) {
+    const name = data?.clinic.name ?? 'faskes ini';
+    const ok = window.confirm(
+      next
+        ? `Aktifkan integrasi SATUSEHAT untuk ${name}? Kunjungan baru klinik ini akan mulai dikirim otomatis ke SATUSEHAT, dan menunya tampil untuk owner/admin klinik.`
+        : `Nonaktifkan integrasi SATUSEHAT untuk ${name}? Pengiriman otomatis berhenti dan menu SATUSEHAT klinik kembali "segera hadir".`,
+    );
+    if (!ok) return;
+    setToggling(true);
+    try {
+      await featuresApi.setClinicFeature(id, 'satusehat', next);
+      setData((d) => (d ? { ...d, integrationEnabled: next } : d));
+      showToast(next ? 'Integrasi SATUSEHAT diaktifkan' : 'Integrasi SATUSEHAT dinonaktifkan', 'success');
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : 'Gagal menyimpan', 'error');
+    } finally {
+      setToggling(false);
+    }
+  }
+
+  const s = data?.summary;
+  const profile = data?.profile;
+  const address = profile
+    ? [profile.line, profile.villageName, profile.districtName, profile.cityName, profile.provinceName]
+        .filter(Boolean)
+        .join(', ')
+    : '';
+
+  return (
+    <div className="ss-page ss-embedded">
+      <div className="ss-actions">
+        <button type="button" className="ss-btn" onClick={load} disabled={loading}>
+          <FiRefreshCw /> Muat ulang
+        </button>
+      </div>
+      {data && s && <ReadinessChecklist data={data} />}
+
+      {loading && !data ? (
+        <div className="ss-card ss-empty">Memuat...</div>
+      ) : data && s ? (
+        <>
+          <div className="ss-card ss-activation">
+            <div>
+              <h2>
+                Integrasi SATUSEHAT{' '}
+                <span className={`ss-badge ${data.integrationEnabled ? 'synced' : 'pending'}`}>
+                  {data.integrationEnabled ? 'Aktif' : 'Belum diaktifkan'}
+                </span>
+              </h2>
+              <p className="ss-muted">
+                {data.integrationEnabled
+                  ? 'Kunjungan baru klinik ini dikirim otomatis ke SATUSEHAT dan menunya tampil untuk owner/admin.'
+                  : 'Tidak ada pengiriman, token, maupun pencarian ke SATUSEHAT untuk klinik ini. Menunya tampil sebagai "segera hadir". Nyalakan setelah akses SATUSEHAT klinik disetujui.'}
+              </p>
+              {data.integrationEnabled && !data.globalEnabled && (
+                <p className="ss-warn-text">
+                  Saklar global SATUSEHAT masih mati, jadi belum ada yang terkirim. Nyalakan di Pengaturan Platform.
+                </p>
+              )}
+            </div>
+            <button
+              type="button"
+              className={`ss-btn ${data.integrationEnabled ? '' : 'primary'}`}
+              onClick={() => toggleIntegration(!data.integrationEnabled)}
+              disabled={toggling}
+            >
+              {toggling ? 'Menyimpan…' : data.integrationEnabled ? 'Nonaktifkan' : 'Aktifkan untuk faskes ini'}
+            </button>
+          </div>
+
+          <div className="ss-grid">
+            <div className="ss-card">
+              <h2>Koneksi</h2>
+              <dl className="ss-kv">
+                <dt>Kredensial</dt>
+                <dd>
+                  {data.credentialSource === 'env'
+                    ? 'Env server'
+                    : data.credentialSource === 'clinic'
+                      ? 'Milik klinik'
+                      : 'Belum diatur'}
+                </dd>
+                <dt>Environment</dt>
+                <dd>{s.config.environment === 'production' ? 'Production' : 'Sandbox'}</dd>
+                <dt>Organization ID</dt>
+                <dd className="ss-mono">{s.config.organizationId || '-'}</dd>
+                <dt>Nama di SATUSEHAT</dt>
+                <dd>{data.verifiedName ?? 'Belum diverifikasi'}</dd>
+                <dt>Token aktif s/d</dt>
+                <dd>{formatDateTime(s.config.tokenValidUntil)}</dd>
+              </dl>
+            </div>
+            <div className="ss-card">
+              <h2>Profil Fasyankes</h2>
+              <dl className="ss-kv">
+                <dt>Jenis</dt>
+                <dd>{profile?.facilityType ? FACILITY_TYPE_LABELS[profile.facilityType] : '-'}</dd>
+                <dt>Alamat</dt>
+                <dd>{address || '-'}</dd>
+                <dt>Kontak</dt>
+                <dd>{[profile?.phone, profile?.email].filter(Boolean).join(' · ') || '-'}</dd>
+              </dl>
+            </div>
+            <div className="ss-card">
+              <h2>Pengiriman</h2>
+              <dl className="ss-kv">
+                <dt>Berhasil</dt>
+                <dd>{s.syncLogs.success}</dd>
+                <dt>Gagal</dt>
+                <dd>{s.syncLogs.failed}</dd>
+                <dt>Antre</dt>
+                <dd>{s.syncLogs.pending}</dd>
+                <dt>Terakhir</dt>
+                <dd>{formatDateTime(s.syncLogs.lastSyncAt)}</dd>
+              </dl>
+            </div>
+          </div>
+
+          <div>
+            <h2 className="ss-section-title">Data per resource</h2>
+            <div className="ss-grid">
+              {s.resources.map((r) => {
+                const pct = (n: number) => (r.total ? `${(n / r.total) * 100}%` : '0%');
+                return (
+                  <div key={r.resourceType} className="ss-card ss-res">
+                    <div className="ss-res-head">
+                      <strong>{r.label}</strong>
+                      <span className="ss-res-total">{r.total}</span>
+                    </div>
+                    <div className="ss-bar" aria-hidden>
+                      <span className="synced" style={{ width: pct(r.synced) }} />
+                      <span className="pending" style={{ width: pct(r.pending) }} />
+                      <span className="failed" style={{ width: pct(r.failed) }} />
+                    </div>
+                    <div className="ss-res-legend">
+                      <span>✔ {r.synced}</span>
+                      <span>⏳ {r.pending}</span>
+                      <span>✖ {r.failed}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="ss-grid ss-grid-2">
+            <div className="ss-card">
+              <h2>Organization</h2>
+              {data.organizations.length === 0 ? (
+                <p className="ss-muted">Belum ada sub-organisasi.</p>
+              ) : (
+                <ul className="ss-list">
+                  {data.organizations.map((o) => (
+                    <li key={o.id}>
+                      <span>
+                        {o.name} <span className="ss-muted ss-mono">{o.code}</span>
+                        {o.syncError && <span className="err">{o.syncError}</span>}
+                      </span>
+                      <span className={`ss-badge ${o.satusehatId ? 'synced' : o.syncError ? 'failed' : 'pending'}`}>
+                        {o.satusehatId ? 'Terdaftar' : o.syncError ? 'Gagal' : 'Draf'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="ss-card">
+              <h2>Location</h2>
+              {data.locations.length === 0 ? (
+                <p className="ss-muted">Belum ada lokasi.</p>
+              ) : (
+                <ul className="ss-list">
+                  {data.locations.map((l) => (
+                    <li key={l.id}>
+                      <span>
+                        {l.name}
+                        {!l.active && <span className="ss-muted"> (nonaktif)</span>}
+                        {l.syncError && <span className="err">{l.syncError}</span>}
+                      </span>
+                      <span className={`ss-badge ${l.satusehatId ? 'synced' : l.syncError ? 'failed' : 'pending'}`}>
+                        {l.satusehatId ? 'Terdaftar' : l.syncError ? 'Gagal' : 'Belum'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+
+          <div className="ss-card">
+            <h2>Kegagalan terbaru (30 hari)</h2>
+            {data.recentFailures.length === 0 ? (
+              <p className="ss-muted">Tidak ada pengiriman yang gagal.</p>
+            ) : (
+              <div className="ss-table-wrap">
+                <table className="ss-table">
+                  <thead>
+                    <tr>
+                      <th>Waktu</th>
+                      <th>Resource</th>
+                      <th>Pesan</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.recentFailures.map((f) => (
+                      <tr key={f.id}>
+                        <td>{formatDateTime(f.createdAt)}</td>
+                        <td>
+                          {f.resourceType}
+                          <span className="sub">
+                            #{f.localId}
+                            {f.httpStatus ? ` · HTTP ${f.httpStatus}` : ''}
+                          </span>
+                        </td>
+                        <td className="err-cell">{f.errorMessage ?? '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      ) : null}
+    </div>
+  );
+}

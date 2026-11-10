@@ -238,6 +238,7 @@
 .user-mgmt-page .user-action-btn:hover { background: var(--bg); color: var(--text-1); }
 .user-mgmt-page .user-action-btn.edit:hover { border-color: var(--accent); color: var(--accent); }
 .user-mgmt-page .user-action-btn.delete:hover { border-color: var(--danger); color: var(--danger); }
+.user-mgmt-page .user-action-btn.features:hover { border-color: var(--accent); color: var(--accent); }
 .user-mgmt-page .user-action-btn svg { width: 15px; height: 15px; }
 
 .user-mgmt-page .user-action-btn::after {
@@ -431,7 +432,7 @@
 /* ── Modal ── */
 .user-mgmt-page .modal-overlay {
   position: fixed; inset: 0;
-  background: rgba(23,22,15,.4); backdrop-filter: blur(2px);
+  background: rgba(23,22,15,.4); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
   display: flex; align-items: center; justify-content: center;
   z-index: 100;
   opacity: 0; pointer-events: none; transition: opacity .2s;
@@ -623,3 +624,6 @@
 :root[data-theme="dark"] .user-mgmt-page .badge-nonaktif { background: #38362F; }
 :root[data-theme="dark"] .user-mgmt-page .confirmation-icon-wrapper { background: #38362F; }
 :root[data-theme="dark"] .user-mgmt-page .confirmation-buttons .btn-danger:hover:not(:disabled) { background: #C1381F; }
+
+.user-mgmt-page .invite-nakes-hint { margin: 12px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--primary-light); color: var(--text-2); line-height: 1.5; }
+.user-mgmt-page .invite-nakes-link { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; color: var(--accent); cursor: pointer; text-decoration: underline; }

@@ -13,15 +13,33 @@ import CustomSelect from '@/components/form/CustomSelect';
 import VoiceDictationButton from '@/components/form/VoiceDictationButton';
 import SoapNoteView from '@/components/rekam-medis/SoapNoteView';
 import DiagnosisPicker from '@/components/rekam-medis/DiagnosisPicker';
+import SoapTemplatePicker from '@/components/rekam-medis/SoapTemplatePicker';
+import ChiefComplaintPicker, { type ChiefComplaintValue } from '@/components/rekam-medis/ChiefComplaintPicker';
+import SsrmeButton from '@/components/satusehat/SsrmeButton';
 import type { SoapDiagnosis } from '@/lib/terminology';
 import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
+import ClinicalPhotosPanel from '@/components/rekam-medis/ClinicalPhotosPanel';
+import DiagnosticsPanel from '@/components/rekam-medis/DiagnosticsPanel';
+import ReferralPanel from '@/components/rekam-medis/ReferralPanel';
 import InformedConsentPanel from '@/components/rekam-medis/InformedConsentPanel';
 import OdontogramChart from '@/components/odontogram/OdontogramChart';
 import { UPPER_ROW, LOWER_ROW, PERMANENT_TEETH, getToothLayout } from '@/components/odontogram/odontogramData';
 import { encounterApi, EncounterDetail } from '@/lib/encounter';
-import { encounterSoapApi } from '@/lib/encounter-soap';
+import {
+  encounterSoapApi,
+  DISCHARGE_CONDITION_OPTIONS,
+  PROGNOSIS_OPTIONS,
+  type DischargeCondition,
+  type Prognosis,
+} from '@/lib/encounter-soap';
 import type { ToothCondition } from '@/lib/odontogram';
-import { physicalExaminationApi, PhysicalExamination } from '@/lib/physical-examination';
+import {
+  physicalExaminationApi,
+  PhysicalExamination,
+  PSYCHOLOGICAL_STATUS_OPTIONS,
+  PREGNANCY_STATUS_OPTIONS,
+  SMOKING_STATUS_OPTIONS,
+} from '@/lib/physical-examination';
 import { dentalExaminationApi, DentalExamination, ProbingDepthEntry } from '@/lib/dental-examination';
 import { reservationsApi } from '@/lib/reservations';
 import { prescriptionsApi } from '@/lib/prescriptions';
@@ -45,8 +63,10 @@ type SectionId =
   | 'odontogram'
   | 'dental-exam'
   | 'supporting-exam'
+  | 'clinical-photos'
   | 'prescription'
-  | 'soap';
+  | 'soap'
+  | 'referral';
 
 const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
   { id: 'informed-consent', label: 'Informed Consent', icon: 'draw' },
@@ -54,8 +74,10 @@ const SECTIONS: { id: SectionId; label: string; icon: string }[] = [
   { id: 'odontogram', label: 'Odontogram', icon: 'dentistry' },
   { id: 'dental-exam', label: 'Pemeriksaan Gigi Lanjutan', icon: 'cleaning_services' },
   { id: 'supporting-exam', label: 'Pemeriksaan Penunjang', icon: 'image' },
+  { id: 'clinical-photos', label: 'Foto Klinis', icon: 'photo_camera' },
   { id: 'prescription', label: 'Resep Obat', icon: 'prescriptions' },
   { id: 'soap', label: 'Catatan SOAP', icon: 'medical_services' },
+  { id: 'referral', label: 'Rujukan', icon: 'local_hospital' },
 ];
 
 type ExamField =
@@ -98,7 +120,16 @@ type ExamField =
   | 'abdomenAuscultation'
   | 'extremities'
   | 'genitalia'
-  | 'rectal';
+  | 'rectal'
+  | 'psychologicalStatus'
+  | 'psychologicalNote'
+  | 'pregnancyStatus'
+  | 'waistCircumference'
+  | 'headCircumference'
+  | 'gcsTotal'
+  | 'bloodGlucose'
+  | 'smokingStatus'
+  | 'otherFindings';
 
 const NUMERIC_EXAM_FIELDS: ExamField[] = [
   'height',
@@ -110,6 +141,10 @@ const NUMERIC_EXAM_FIELDS: ExamField[] = [
   'respiratoryRate',
   'temperature',
   'oxygenSaturation',
+  'waistCircumference',
+  'headCircumference',
+  'gcsTotal',
+  'bloodGlucose',
 ];
 
 const EMPTY_EXAM: Record<ExamField, string> = {
@@ -153,6 +188,15 @@ const EMPTY_EXAM: Record<ExamField, string> = {
   extremities: '',
   genitalia: '',
   rectal: '',
+  psychologicalStatus: '',
+  psychologicalNote: '',
+  pregnancyStatus: '',
+  waistCircumference: '',
+  headCircumference: '',
+  gcsTotal: '',
+  bloodGlucose: '',
+  smokingStatus: '',
+  otherFindings: '',
 };
 
 function examFromResponse(data: PhysicalExamination | null): Record<ExamField, string> {
@@ -259,8 +303,23 @@ function composeObjectiveFromExam(exam: Record<ExamField, string>, painPointCoun
   const keadaan = [
     exam.generalCondition && `Keadaan umum: ${exam.generalCondition}`,
     exam.consciousness && `Kesadaran: ${exam.consciousness}`,
+    exam.gcsTotal && `GCS ${exam.gcsTotal}`,
     exam.nutritionalStatus && `Status gizi: ${exam.nutritionalStatus}`,
+    exam.psychologicalStatus &&
+      `Status psikologis: ${
+        PSYCHOLOGICAL_STATUS_OPTIONS.find((o) => o.value === exam.psychologicalStatus)?.label ?? exam.psychologicalStatus
+      }${exam.psychologicalNote ? ` (${exam.psychologicalNote})` : ''}`,
+    exam.pregnancyStatus &&
+      `Status kehamilan: ${
+        PREGNANCY_STATUS_OPTIONS.find((o) => o.value === exam.pregnancyStatus)?.label ?? exam.pregnancyStatus
+      }`,
     exam.height && exam.weight && `TB/BB: ${exam.height} cm / ${exam.weight} kg`,
+    exam.waistCircumference && `Lingkar perut: ${exam.waistCircumference} cm`,
+    exam.headCircumference && `Lingkar kepala: ${exam.headCircumference} cm`,
+    exam.smokingStatus &&
+      `Status merokok: ${
+        SMOKING_STATUS_OPTIONS.find((o) => o.value === exam.smokingStatus)?.label ?? exam.smokingStatus
+      }`,
   ].filter(Boolean);
   if (keadaan.length) lines.push(keadaan.join(', '));
 
@@ -274,6 +333,7 @@ function composeObjectiveFromExam(exam: Record<ExamField, string>, painPointCoun
     exam.respiratoryRate && `RR ${exam.respiratoryRate}x/menit`,
     exam.temperature && `Suhu ${exam.temperature}°C`,
     exam.oxygenSaturation && `SpO2 ${exam.oxygenSaturation}%`,
+    exam.bloodGlucose && `GDS ${exam.bloodGlucose} mg/dL`,
   ].filter(Boolean);
   if (vital.length) lines.push(`Tanda vital: ${vital.join(', ')}`);
 
@@ -329,6 +389,7 @@ function composeObjectiveFromExam(exam: Record<ExamField, string>, painPointCoun
     exam.rectal && `Rectal toucher: ${exam.rectal}`,
   ].filter(Boolean);
   if (lainnya.length) lines.push(lainnya.join('; '));
+  if (exam.otherFindings.trim()) lines.push(`Temuan lain: ${exam.otherFindings.trim()}`);
 
   return lines.join('\n');
 }
@@ -562,6 +623,11 @@ export default function RekamMedisPage() {
   // ("bukan tempat isi saja") — Edit switches to the form.
   const [soapMode, setSoapMode] = useState<'view' | 'edit'>('edit');
   const [hasSavedNote, setHasSavedNote] = useState(false);
+  // Data terkode untuk SATUSEHAT (Playbook RME Rawat Jalan)
+  const [chiefComplaint, setChiefComplaint] = useState<ChiefComplaintValue | null>(null);
+  const [educationGiven, setEducationGiven] = useState<'' | 'yes' | 'no'>('');
+  const [dischargeCondition, setDischargeCondition] = useState<DischargeCondition | ''>('');
+  const [prognosis, setPrognosis] = useState<Prognosis | ''>('');
 
   // Plan's follow-up control scheduler — creates a Reservasi automatically
   // on save so a control visit doesn't rely on the doctor remembering to
@@ -608,6 +674,14 @@ export default function RekamMedisPage() {
           setTreatment(note.treatment || '');
           setPlan(note.plan || '');
           setSavedControlPlan(note.controlPlan || '');
+          setChiefComplaint(
+            note.chiefComplaintCode
+              ? { code: note.chiefComplaintCode, display: note.chiefComplaintDisplay || note.chiefComplaintCode }
+              : null,
+          );
+          setEducationGiven(note.educationGiven === true ? 'yes' : note.educationGiven === false ? 'no' : '');
+          setDischargeCondition(note.dischargeCondition || '');
+          setPrognosis(note.prognosis || '');
           setSignature(note.signature || null);
           setSoapUpdatedAt(note.updatedAt || note.createdAt || null);
           setHasSavedNote(true);
@@ -813,6 +887,10 @@ export default function RekamMedisPage() {
         treatment: treatment.trim() || undefined,
         plan: plan.trim() || undefined,
         controlPlan: controlPlanText,
+        chiefComplaintCode: chiefComplaint?.code ?? '',
+        educationGiven: educationGiven === '' ? undefined : educationGiven === 'yes',
+        dischargeCondition: dischargeCondition || undefined,
+        prognosis: prognosis || undefined,
         signature,
       });
       setSoapUpdatedAt(saved?.updatedAt || new Date().toISOString());
@@ -867,11 +945,24 @@ export default function RekamMedisPage() {
                   <div className="rm-patient-name">{detail.patient?.name || '—'}</div>
                   <div className="rm-patient-meta">
                     No. RM {detail.patient?.noRm || '—'} ·{' '}
-                    {detail.practitioner?.name ? `dr. ${detail.practitioner.name}` : 'Dokter belum ditentukan'} ·{' '}
+                    {detail.practitioner?.name
+                      ? /^(dr|drg|ns|apt|bd)\.?\s/i.test(detail.practitioner.name)
+                        ? detail.practitioner.name
+                        : `dr. ${detail.practitioner.name}`
+                      : 'Dokter belum ditentukan'} ·{' '}
                     {statusLabel(detail.status)}
                   </div>
                 </div>
+                <SsrmeButton encounterId={encounterId} />
               </div>
+
+              {detail.canEdit === false && (
+                <div className="rm-readonly-note" role="note">
+                  <span aria-hidden="true" className="material-symbols-rounded">visibility</span>
+                  Mode lihat — kunjungan ini ditangani {detail.practitioner?.name ?? 'dokter lain'}. Anda bisa membaca
+                  riwayatnya, tetapi perubahan hanya oleh dokter penanggung jawab kunjungan ini.
+                </div>
+              )}
 
               <div className="rm-layout">
                 <nav className="rm-sidebar">
@@ -942,11 +1033,69 @@ export default function RekamMedisPage() {
                               />
                             </div>
                             <div className="visit-form-field">
+                              <label>GCS</label>
+                              <div className="rm-input-unit">
+                                <input
+                                  type="number"
+                                  aria-label="GCS"
+                                  value={exam.gcsTotal}
+                                  onChange={setExamField('gcsTotal')}
+                                  placeholder="15"
+                                  min={3}
+                                  max={15}
+                                  disabled={submittingExam}
+                                />
+                                <span className="unit">3–15</span>
+                              </div>
+                            </div>
+                            <div className="visit-form-field">
                               <label>Status Gizi</label>
                               <ExamFindingSelect
                                 value={exam.nutritionalStatus}
                                 onChange={setExamValue('nutritionalStatus')}
                                 options={EXAM_OPTIONS.nutritionalStatus!}
+                                disabled={submittingExam}
+                              />
+                            </div>
+                            <div className="visit-form-field">
+                              <label>Status Psikologis</label>
+                              <CustomSelect
+                                value={exam.psychologicalStatus}
+                                onChange={setExamValue('psychologicalStatus')}
+                                options={[{ value: '', label: 'Belum diisi' }, ...PSYCHOLOGICAL_STATUS_OPTIONS]}
+                                disabled={submittingExam}
+                              />
+                            </div>
+                            {exam.psychologicalStatus && exam.psychologicalStatus !== 'normal' && (
+                              <div className="visit-form-field">
+                                <label>Keterangan Psikologis</label>
+                                <input
+                                  type="text"
+                                  maxLength={255}
+                                  value={exam.psychologicalNote}
+                                  onChange={setExamField('psychologicalNote')}
+                                  placeholder="mis. cemas menjelang tindakan"
+                                  disabled={submittingExam}
+                                />
+                              </div>
+                            )}
+                            {detail?.patient?.gender !== 'male' && (
+                              <div className="visit-form-field">
+                                <label>Status Kehamilan</label>
+                                <CustomSelect
+                                  value={exam.pregnancyStatus}
+                                  onChange={setExamValue('pregnancyStatus')}
+                                  options={[{ value: '', label: 'Belum diisi' }, ...PREGNANCY_STATUS_OPTIONS]}
+                                  disabled={submittingExam}
+                                />
+                              </div>
+                            )}
+                            <div className="visit-form-field">
+                              <label>Status Merokok</label>
+                              <CustomSelect
+                                value={exam.smokingStatus}
+                                onChange={setExamValue('smokingStatus')}
+                                options={[{ value: '', label: 'Belum diisi' }, ...SMOKING_STATUS_OPTIONS]}
                                 disabled={submittingExam}
                               />
                             </div>
@@ -984,6 +1133,36 @@ export default function RekamMedisPage() {
                                 </div>
                               </div>
                             )}
+                            <div className="visit-form-field">
+                              <label>Lingkar Perut</label>
+                              <div className="rm-input-unit">
+                                <input
+                                  type="number"
+                                  aria-label="Lingkar Perut"
+                                  value={exam.waistCircumference}
+                                  onChange={setExamField('waistCircumference')}
+                                  placeholder="80"
+                                  step="0.1"
+                                  disabled={submittingExam}
+                                />
+                                <span className="unit">cm</span>
+                              </div>
+                            </div>
+                            <div className="visit-form-field">
+                              <label>Lingkar Kepala</label>
+                              <div className="rm-input-unit">
+                                <input
+                                  type="number"
+                                  aria-label="Lingkar Kepala"
+                                  value={exam.headCircumference}
+                                  onChange={setExamField('headCircumference')}
+                                  placeholder="34"
+                                  step="0.1"
+                                  disabled={submittingExam}
+                                />
+                                <span className="unit">cm</span>
+                              </div>
+                            </div>
                           </div>
                         </div>
 
@@ -1065,6 +1244,20 @@ export default function RekamMedisPage() {
                                   disabled={submittingExam}
                                 />
                                 <span className="unit">%</span>
+                              </div>
+                            </div>
+                            <div className="visit-form-field">
+                              <label>Gula Darah Sewaktu</label>
+                              <div className="rm-input-unit">
+                                <input
+                                  type="number"
+                                  aria-label="Gula Darah Sewaktu"
+                                  value={exam.bloodGlucose}
+                                  onChange={setExamField('bloodGlucose')}
+                                  placeholder="110"
+                                  disabled={submittingExam}
+                                />
+                                <span className="unit">mg/dL</span>
                               </div>
                             </div>
                           </div>
@@ -1350,6 +1543,27 @@ export default function RekamMedisPage() {
                             </div>
                           </div>
                         </div>
+
+                        <div className="rm-fieldset">
+                          <div className="rm-fieldset-title">
+                            <span aria-hidden="true" className="material-symbols-rounded">edit_note</span>
+                            Temuan Lain
+                          </div>
+                          <div className="visit-form-field">
+                            <label htmlFor="exam-other-findings">
+                              Temuan atau hasil pemeriksaan lain yang tidak ada kolomnya di atas
+                            </label>
+                            <textarea
+                              id="exam-other-findings"
+                              rows={3}
+                              maxLength={2000}
+                              value={exam.otherFindings}
+                              onChange={setExamField('otherFindings')}
+                              placeholder="mis. luka lecet di lutut kanan ± 2 cm, bersih"
+                              disabled={submittingExam}
+                            />
+                          </div>
+                        </div>
                       </div>
 
                       <div className="rm-section-footer">
@@ -1627,10 +1841,24 @@ export default function RekamMedisPage() {
                     <div className="rm-section">
                       <div className="rm-section-heading">
                         <h2>Pemeriksaan Penunjang</h2>
-                        <p>Unggah foto atau hasil rontgen untuk kunjungan ini</p>
+                        <p>Laboratorium, radiologi, serta foto klinis/rontgen kunjungan ini</p>
                       </div>
                       <div className="rm-section-body">
+                        <DiagnosticsPanel encounterId={encounterId} />
+                        <h3 className="rm-subheading">Foto &amp; Rontgen</h3>
                         <SupportingExamPanel encounterId={encounterId} />
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSection === 'clinical-photos' && (
+                    <div className="rm-section">
+                      <div className="rm-section-heading">
+                        <h2>Foto Klinis</h2>
+                        <p>Foto klinis per folder (mis. Behel, atau folder buatan klinik) untuk kontrol ini</p>
+                      </div>
+                      <div className="rm-section-body">
+                        <ClinicalPhotosPanel encounterId={encounterId} />
                       </div>
                     </div>
                   )}
@@ -1655,6 +1883,20 @@ export default function RekamMedisPage() {
                     </div>
                   )}
 
+                  {activeSection === 'referral' && (
+                    <div className="rm-section">
+                      <div className="rm-section-heading rm-view-heading">
+                        <div>
+                          <h2>Rujukan</h2>
+                          <p>Rujuk pasien ke rumah sakit — memakai diagnosis dari Catatan SOAP</p>
+                        </div>
+                      </div>
+                      <div className="rm-section-body">
+                        <ReferralPanel encounterId={encounterId} diagnoses={diagnoses} />
+                      </div>
+                    </div>
+                  )}
+
                   {activeSection === 'soap' && soapMode === 'view' && (
                     <SoapNoteView
                       practitionerName={detail.practitioner?.name}
@@ -1665,6 +1907,10 @@ export default function RekamMedisPage() {
                       treatment={treatment}
                       plan={plan}
                       controlPlan={savedControlPlan}
+                      chiefComplaint={chiefComplaint ? `${chiefComplaint.display} (${chiefComplaint.code})` : undefined}
+                      education={educationGiven === 'yes' ? 'Diberikan' : educationGiven === 'no' ? 'Tidak diberikan' : undefined}
+                      prognosis={PROGNOSIS_OPTIONS.find((o) => o.value === prognosis)?.label}
+                      dischargeCondition={DISCHARGE_CONDITION_OPTIONS.find((o) => o.value === dischargeCondition)?.label}
                       signature={signature}
                       updatedAtLabel={formatExamDate(soapUpdatedAt)}
                       onEdit={() => setSoapMode('edit')}
@@ -1679,6 +1925,19 @@ export default function RekamMedisPage() {
                       </div>
 
                       <div className="rm-section-body">
+                        <SoapTemplatePicker
+                          disabled={submitting}
+                          values={{ subjective, objective, assessment, treatment, plan, diagnoses }}
+                          onApply={(v) => {
+                            setSubjective(v.subjective);
+                            setObjective(v.objective);
+                            setAssessment(v.assessment);
+                            setTreatment(v.treatment);
+                            setPlan(v.plan);
+                            setDiagnoses(v.diagnoses);
+                          }}
+                        />
+
                         <div className="visit-form-field">
                           <label>
                             <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: '15px' }}>
@@ -1706,6 +1965,12 @@ export default function RekamMedisPage() {
                             placeholder="Keluhan/cerita pasien menurut pasien sendiri (opsional)"
                             disabled={submitting}
                           />
+                        </div>
+
+                        <div className="visit-form-field">
+                          <label>Keluhan Utama (SNOMED CT)</label>
+                          <ChiefComplaintPicker value={chiefComplaint} onChange={setChiefComplaint} disabled={submitting} />
+                          <small className="rm-field-hint">Dikirim ke SATUSEHAT sebagai keluhan utama terkode.</small>
                         </div>
 
                         <div className="visit-form-field">
@@ -1766,6 +2031,46 @@ export default function RekamMedisPage() {
                             placeholder="Rencana untuk kunjungan berikutnya (opsional)"
                             disabled={submitting}
                           />
+                        </div>
+
+                        <div className="rm-fieldset">
+                          <div className="rm-fieldset-title">
+                            <span aria-hidden="true" className="material-symbols-rounded">assignment_turned_in</span>
+                            Edukasi, Prognosis &amp; Kondisi Pulang
+                          </div>
+                          <div className="rm-field-grid cols-3">
+                            <div className="visit-form-field">
+                              <label>Edukasi ke Pasien</label>
+                              <CustomSelect
+                                value={educationGiven}
+                                onChange={(v) => setEducationGiven(v as '' | 'yes' | 'no')}
+                                options={[
+                                  { value: '', label: 'Belum diisi' },
+                                  { value: 'yes', label: 'Diberikan' },
+                                  { value: 'no', label: 'Tidak diberikan' },
+                                ]}
+                                disabled={submitting}
+                              />
+                            </div>
+                            <div className="visit-form-field">
+                              <label>Prognosis</label>
+                              <CustomSelect
+                                value={prognosis}
+                                onChange={(v) => setPrognosis(v as Prognosis | '')}
+                                options={[{ value: '', label: 'Belum diisi' }, ...PROGNOSIS_OPTIONS]}
+                                disabled={submitting}
+                              />
+                            </div>
+                            <div className="visit-form-field">
+                              <label>Kondisi Saat Pulang</label>
+                              <CustomSelect
+                                value={dischargeCondition}
+                                onChange={(v) => setDischargeCondition(v as DischargeCondition | '')}
+                                options={[{ value: '', label: 'Belum diisi' }, ...DISCHARGE_CONDITION_OPTIONS]}
+                                disabled={submitting}
+                              />
+                            </div>
+                          </div>
                         </div>
 
                         <div className="rm-fieldset">

@@ -13,12 +13,22 @@ function buildId(): string {
   }
 }
 
+const BUILD_ID = buildId();
+
+/** Cara membaca host permintaan: langsung (Host) atau lewat nginx (X-Forwarded-Host). */
+const HOST_SOURCES = [
+  (value: string) => [{ type: 'host' as const, value }],
+  (value: string) => [{ type: 'header' as const, key: 'x-forwarded-host', value }],
+];
+
 const nextConfig: NextConfig = {
   // The deploy builds into a separate directory and swaps it in just before
   // the restart (see .github/workflows/deploy-vps.yml), so the running server
   // never serves a half-overwritten .next during `npm run build`.
   distDir: process.env.NEXT_DIST_DIR || ".next",
-  deploymentId: buildId(),
+  deploymentId: BUILD_ID,
+  // Ditanam ke bundle browser dan ke /api/version; lihat components/layout/VersionWatcher.tsx.
+  env: { NEXT_PUBLIC_BUILD_ID: BUILD_ID },
   experimental: {
     // Pages here render per-user data fetched on mount; don't let the client
     // router reuse a previously visited page for minutes (default: 5 min).
@@ -26,6 +36,12 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
+      {
+        // Font ikon yang dihost sendiri: nama berkas tidak berubah, tapi isinya
+        // praktis tidak pernah; simpan lama di browser agar tidak diunduh ulang.
+        source: '/fonts/:path*',
+        headers: [{ key: 'Cache-Control', value: 'public, max-age=31536000, immutable' }],
+      },
       {
         // Baseline security headers for every page and the /api proxy. The
         // /api routes are same-origin only now (they carry the session
@@ -36,13 +52,32 @@ const nextConfig: NextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          // Kamera & lokasi hanya untuk halaman ApexRecord sendiri (absensi:
+          // selfie + jarak ke klinik); iframe pihak ketiga tetap diblokir.
+          { key: 'Permissions-Policy', value: 'camera=(self), microphone=(), geolocation=(self)' },
           {
             key: 'Content-Security-Policy',
             value: "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
           },
         ],
       },
+      // Hanya domain utama (apexrecord.my.id) yang boleh bersaing di Google.
+      // Staging dan subdomain aplikasi bertanda noindex supaya tidak menjadi
+      // duplikat; landing page tetap boleh diindeks bila disajikan lewat
+      // app.apexrecord.my.id. Host dibaca dari Host maupun X-Forwarded-Host
+      // (tergantung konfigurasi nginx).
+      // (aturan yang datang belakangan menang untuk header yang sama, jadi
+      // semua noindex ditulis dulu, pengecualian landing sesudahnya)
+      ...HOST_SOURCES.map((has) => ({
+        source: '/:path*',
+        has: has('(staging|app|api)\\.apexrecord\\.my\\.id'),
+        headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }],
+      })),
+      ...HOST_SOURCES.map((has) => ({
+        source: '/landingpage',
+        has: has('app\\.apexrecord\\.my\\.id'),
+        headers: [{ key: 'X-Robots-Tag', value: 'index, follow' }],
+      })),
       {
         // Every page here is auth-gated and renders per-user data, so none
         // of it should sit in a browser/proxy cache — that's what was
@@ -50,7 +85,7 @@ const nextConfig: NextConfig = {
         // build assets under _next/static are excluded: their filename
         // already changes on every deploy, so they're safe to cache
         // indefinitely and shouldn't be forced to revalidate on every load.
-        source: '/((?!_next/static|_next/image|favicon.ico).*)',
+        source: '/((?!_next/static|_next/image|fonts/|favicon.ico).*)',
         headers: [
           {
             key: 'Cache-Control',

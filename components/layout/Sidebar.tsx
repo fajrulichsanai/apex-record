@@ -23,8 +23,20 @@ import {
   FiBox,
   FiBell,
   FiImage,
-} from 'react-icons/fi';
+  FiCloud,
+  FiDatabase,
+  FiList,
+  FiCheckSquare,
+  FiPackage,
+  FiShield,
+  FiClock,
+  FiUserCheck,
+  FiGift,
+  FiFolder } from 'react-icons/fi';
 import './sidebar.css';
+import { useFeatures } from '@/lib/features-context';
+import BranchBanner from '@/components/multi-clinic/BranchBanner';
+import ApprovalNavItem from '@/components/multi-clinic/ApprovalNavItem';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -33,6 +45,8 @@ interface SidebarProps {
 
 interface NavLeaf {
   label: string;
+  /** Nama saat item ini tampil sendirian (grup berisi satu item) */
+  soloLabel?: string;
   icon: React.ReactNode;
   href?: string;
   feature: FeatureKey;
@@ -48,6 +62,7 @@ interface NavGroupDef {
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { can, satusehatPending } = useFeatures();
   const [expandedGroups, setExpandedGroups] = useState<string[]>([]);
   const [collapsed, setCollapsed] = useState(false);
 
@@ -86,6 +101,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       items: [{ label: 'Kunjungan', icon: <FiEdit3 />, href: '/list-kunjungan', feature: 'kunjungan' }],
     },
     {
+      title: 'Farmasi',
+      groupId: 'farmasi',
+      icon: <FiPackage />,
+      items: [{ label: 'Farmasi', icon: <FiPackage />, href: '/farmasi', feature: 'farmasi' }],
+    },
+    {
       title: 'Billing & Kasir',
       groupId: 'billing',
       icon: <FiCreditCard />,
@@ -96,10 +117,25 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       groupId: 'operasional',
       icon: <FiBriefcase />,
       items: [
-        { label: 'Catat Operasional', icon: <FiEdit3 />, href: '/catat-operasional', feature: 'operasional' },
+        { label: 'Pengeluaran', icon: <FiEdit3 />, href: '/catat-operasional', feature: 'operasional' },
         { label: 'Share Fee Dokter', icon: <FiDollarSign />, href: '/share-fee-dokter', feature: 'share-fee-dokter' },
+        { label: 'Penggajian', icon: <FiCreditCard />, href: '/penggajian', feature: 'payroll' },
         { label: 'Share Fee Saya', icon: <FiDollarSign />, href: '/share-fee-saya', feature: 'share-fee-saya' },
         { label: 'Gudang & Stok', icon: <FiBox />, href: '/gudang', feature: 'gudang' },
+      ],
+    },
+    {
+      title: 'Absensi',
+      groupId: 'absensi',
+      icon: <FiClock />,
+      items: [
+        // Pegawai absen; owner tidak absen, hanya melihat kehadiran
+        ...(user?.role === 'admin' || user?.role === 'dokter' || user?.role === 'perawat'
+          ? [{ label: 'Absen Saya', soloLabel: 'Absensi', icon: <FiClock />, href: '/absensi', feature: 'absensi' as FeatureKey }]
+          : []),
+        ...(user?.role === 'owner' || user?.role === 'admin'
+          ? [{ label: 'Kehadiran Pegawai', icon: <FiUserCheck />, href: '/kehadiran', feature: 'absensi' as FeatureKey }]
+          : []),
       ],
     },
     {
@@ -107,16 +143,47 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       groupId: 'laporan',
       icon: <FiBarChart2 />,
       items: [
-        { label: 'Kunjungan', icon: <FiActivity />, href: '/laporan-kunjungan', feature: 'laporan-kunjungan' },
-        { label: 'Keuangan', icon: <FiTrendingUp />, href: '/laporan-keuangan', feature: 'laporan-keuangan' },
+        { label: 'Kunjungan', soloLabel: 'Laporan Kunjungan', icon: <FiActivity />, href: '/laporan-kunjungan', feature: 'laporan-kunjungan' },
+        { label: 'Keuangan', soloLabel: 'Laporan Keuangan', icon: <FiTrendingUp />, href: '/laporan-keuangan', feature: 'laporan-keuangan' },
+      ],
+    },
+    {
+      title: 'Promosi',
+      groupId: 'promosi',
+      icon: <FiGift />,
+      items: [
         { label: 'Referral', icon: <FiUsers />, href: '/referral', feature: 'referral' },
+        { label: 'Ulang Tahun', icon: <FiGift />, href: '/ulang-tahun', feature: 'ulang-tahun' },
       ],
     },
     {
       title: 'Konten',
       groupId: 'konten',
       icon: <FiImage />,
-      items: [{ label: 'Konten', icon: <FiImage />, href: '/konten', feature: 'konten' }],
+      items: [
+        { label: 'Konten', icon: <FiImage />, href: '/konten', feature: 'konten' },
+        // Folder & slot foto klinis (behel, dsb.) yang jadi bahan Konten —
+        // hanya yang berwenang mengatur templatenya, bukan dokter/perawat.
+        ...(user?.role === 'owner' || user?.role === 'admin' || user?.role === 'manajer_cabang'
+          ? [{ label: 'Folder Foto Klinis', icon: <FiFolder />, href: '/folder-foto-klinis', feature: 'konten' as FeatureKey }]
+          : []),
+      ],
+    },
+    {
+      title: 'SATUSEHAT',
+      groupId: 'satusehat',
+      icon: <FiCloud />,
+      items: [
+        { label: 'Ringkasan', icon: <FiGrid />, href: '/satusehat', feature: 'satusehat' },
+        { label: 'Data & Status Sync', icon: <FiDatabase />, href: '/satusehat/data', feature: 'satusehat' },
+        { label: 'Log Sinkronisasi', icon: <FiList />, href: '/satusehat/log', feature: 'satusehat' },
+        { label: 'Verifikasi Profil (KYC)', icon: <FiShield />, href: '/satusehat/kyc', feature: 'satusehat' },
+        ...(user?.role === 'owner' || user?.role === 'multi_clinic_owner' || user?.role === 'super_admin'
+          ? [
+              { label: 'Onboarding', icon: <FiCheckSquare />, href: '/satusehat/onboarding', feature: 'satusehat' as FeatureKey },
+            ]
+          : []),
+      ],
     },
   ];
 
@@ -124,16 +191,30 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const isSettingsActive = SETTINGS_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 
   // Buang item tanpa href/tanpa akses, lalu buang grup yang jadi kosong.
+  // Integrasi SATUSEHAT belum aktif (dalam pengajuan): satu menu "segera" saja,
+  // bukan seluruh submenu yang tidak bisa dipakai.
+  const satusehatTeaser = satusehatPending && canAccessFeature(user?.role, 'satusehat');
   const visibleGroups = groupDefs
     .map((g) => ({
       ...g,
-      items: g.items.filter(
-        (item): item is NavLeaf & { href: string } => !!item.href && canAccessFeature(user?.role, item.feature)
-      ),
+      items:
+        g.groupId === 'satusehat' && satusehatTeaser
+          ? [
+              {
+                label: 'SATUSEHAT',
+                soloLabel: 'SATUSEHAT (segera)',
+                icon: <FiCloud />,
+                href: '/satusehat',
+                feature: 'dashboard' as FeatureKey,
+              },
+            ]
+          : g.items.filter(
+              (item): item is NavLeaf & { href: string } => !!item.href && can(item.feature)
+            ),
     }))
     .filter((g) => g.items.length > 0);
 
-  const canViewDashboard = canAccessFeature(user?.role, 'dashboard');
+  const canViewDashboard = can('dashboard');
 
   return (
     <>
@@ -155,6 +236,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {collapsed ? <FiChevronRight /> : <FiChevronLeft />}
           </button>
         </div>
+
+        <BranchBanner />
 
         <nav className="nav">
           {canViewDashboard && (
@@ -180,11 +263,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 href={group.items[0].href!}
                 className={`nav-item ${pathname === group.items[0].href || pathname.startsWith(`${group.items[0].href}/`) ? 'active' : ''}`}
                 onClick={handleNavItemClick}
-                title={group.items[0].label}
+                title={group.items[0].soloLabel ?? group.items[0].label}
               >
                 <div className="nav-item-left">
                   <span className="nav-icon">{group.items[0].icon}</span>
-                  <span className="nav-label">{group.items[0].label}</span>
+                  <span className="nav-label">{group.items[0].soloLabel ?? group.items[0].label}</span>
                 </div>
               </Link>
             ) : (
@@ -201,6 +284,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               />
             )
           )}
+
+          <ApprovalNavItem pathname={pathname} onClick={handleNavItemClick} />
 
           <Link
             href="/pengaturan"

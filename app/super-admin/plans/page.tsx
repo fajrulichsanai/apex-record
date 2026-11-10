@@ -8,8 +8,10 @@ import type { SubscriptionBillingCycle, SubscriptionPlan, SubscriptionPlanTier }
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 import { formatCurrency, parseCurrency } from '@/lib/format';
-import { useEscapeKey } from '@/lib/a11y';
 import '../../styles/super-admin.css';
+import { formatGb } from '@/lib/storage';
+import { Modal, PageHeader } from '@/components/super-admin/ui';
+import { formatPromoDate, promoSavingPct } from '@/components/subscription/pricing';
 
 interface PlanForm {
   id?: number;
@@ -20,9 +22,18 @@ interface PlanForm {
   tier: '' | SubscriptionPlanTier;
   billingCycle: '' | SubscriptionBillingCycle;
   ownerFee: string;
+  storageGb: string;
+  maxUsers: string;
+  promoPrice: string;
+  promoUntil: string;
+  promoOwnerFee: string;
 }
 
-const EMPTY_FORM: PlanForm = { name: '', durationDays: '', price: '', isActive: true, tier: '', billingCycle: '', ownerFee: '' };
+const EMPTY_FORM: PlanForm = { name: '', durationDays: '', price: '', isActive: true, tier: '', billingCycle: '', ownerFee: '', storageGb: '', maxUsers: '', promoPrice: '', promoUntil: '', promoOwnerFee: '' };
+
+// Bawaan bila paket tidak mengisi jatah storage (cerminan StorageQuotaService).
+const DEFAULT_STORAGE_GB: Record<string, number> = { trial: 0.1, basic: 1, pro: 5, multi_klinik: 5 };
+const DEFAULT_MAX_USERS: Record<string, number> = { trial: 5, basic: 5, pro: 25, multi_klinik: 25 };
 
 const TIER_OPTIONS = [
   { value: '', label: '— Tanpa tier (legacy) —' },
@@ -56,7 +67,6 @@ export default function SuperAdminPlansPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
-  useEscapeKey(() => setModalOpen(false), modalOpen);
   const [form, setForm] = useState<PlanForm>(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const { success, error: showError } = useToast();
@@ -91,6 +101,11 @@ export default function SuperAdminPlansPage() {
       tier: plan.tier || '',
       billingCycle: plan.billingCycle || '',
       ownerFee: plan.ownerFee ? String(plan.ownerFee) : '',
+      storageGb: plan.storageGb != null ? String(plan.storageGb) : '',
+      maxUsers: plan.maxUsers != null ? String(plan.maxUsers) : '',
+      promoPrice: plan.promoPrice != null ? String(Number(plan.promoPrice)) : '',
+      promoUntil: plan.promoUntil ? plan.promoUntil.slice(0, 10) : '',
+      promoOwnerFee: plan.promoOwnerFee != null ? String(Number(plan.promoOwnerFee)) : '',
     });
     setModalOpen(true);
   };
@@ -98,6 +113,15 @@ export default function SuperAdminPlansPage() {
   const handleSubmit = async () => {
     if (!form.name || !form.durationDays || !form.price) {
       showError('Lengkapi semua field');
+      return;
+    }
+    const hasPromo = form.promoPrice !== '' && Number(form.promoPrice) > 0;
+    if (hasPromo && !form.promoUntil) {
+      showError('Isi tanggal akhir promo');
+      return;
+    }
+    if (hasPromo && Number(form.promoPrice) >= Number(form.price)) {
+      showError('Harga promo harus lebih murah dari harga normal');
       return;
     }
     setSubmitting(true);
@@ -110,6 +134,12 @@ export default function SuperAdminPlansPage() {
         tier: form.tier || undefined,
         billingCycle: form.billingCycle || undefined,
         ownerFee: form.ownerFee ? parseCurrency(form.ownerFee) : undefined,
+        storageGb: form.storageGb !== '' ? Number(form.storageGb) : undefined,
+        maxUsers: form.maxUsers !== '' ? Number(form.maxUsers) : undefined,
+        // Kosongkan harga promo untuk menghapus promo.
+        promoPrice: hasPromo ? Number(form.promoPrice) : null,
+        promoUntil: hasPromo ? form.promoUntil : null,
+        promoOwnerFee: hasPromo && form.tier === 'multi_klinik' && form.promoOwnerFee !== '' ? Number(form.promoOwnerFee) : null,
       };
       if (form.id) {
         await subscriptionPlanApi.update(form.id, payload);
@@ -140,18 +170,16 @@ export default function SuperAdminPlansPage() {
   return (
     <SuperAdminLayout>
       <div className="sa-page">
-        <div className="page-header">
-          <div className="page-title-block">
-            <div className="page-title">
-              <h1>Paket Langganan</h1>
-              <span className="badge-count">{plans.length}</span>
-            </div>
-            <p className="page-subtitle">Kelola paket Free Trial, Starter, Pro, dan Multi Klinik untuk siklus bulanan &amp; tahunan.</p>
-          </div>
-          <button type="button" className="btn-primary" onClick={openCreate}>
-            + Tambah Paket
-          </button>
-        </div>
+        <PageHeader
+          title="Paket Langganan"
+          count={plans.length}
+          subtitle="Kelola paket Free Trial, Starter, Pro, dan Multi Klinik. Harga diisi per bulan; klinik memilih lama langganan 1/3/6/12 bulan dengan diskon dari Pengaturan Platform."
+          actions={
+            <button type="button" className="btn-primary" onClick={openCreate}>
+              + Tambah Paket
+            </button>
+          }
+        />
 
         <div className="table-wrap">
           <table className="sa-table">
@@ -162,29 +190,73 @@ export default function SuperAdminPlansPage() {
                 <th>Durasi</th>
                 <th>Harga</th>
                 <th>Fee Owner</th>
+                <th>Storage</th>
+                <th>Akun</th>
                 <th>Status</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={7} className="empty-row">Memuat...</td></tr>
+                <tr><td colSpan={9} className="empty-row">Memuat...</td></tr>
               ) : plans.length === 0 ? (
-                <tr><td colSpan={7} className="empty-row">Belum ada paket langganan.</td></tr>
+                <tr><td colSpan={9} className="empty-row">Belum ada paket langganan.</td></tr>
               ) : (
                 plans.map((plan) => (
                   <tr key={plan.id}>
-                    <td style={{ fontWeight: 600 }}>{plan.name}</td>
+                    <td className="cell-strong">{plan.name}</td>
                     <td>{tierLabel(plan.tier)} · {cycleLabel(plan.billingCycle)}</td>
                     <td>{plan.durationDays} hari</td>
-                    <td>Rp {formatCurrency(plan.price)}</td>
-                    <td>{plan.ownerFee ? `Rp ${formatCurrency(plan.ownerFee)}` : '-'}</td>
+                    <td>
+                      {plan.promoActive ? (
+                        <>
+                          <s className="text-muted">Rp {formatCurrency(plan.price)}</s>
+                          <br />
+                          <strong>Rp {formatCurrency(Number(plan.effectivePrice))}</strong>
+                          <br />
+                          <small>
+                            promo s.d. {formatPromoDate(plan.promoUntil!)} · hemat {promoSavingPct(plan)}%
+                          </small>
+                        </>
+                      ) : (
+                        <>
+                          Rp {formatCurrency(plan.price)}
+                          {plan.promoPrice != null && plan.promoUntil && (
+                            <>
+                              <br />
+                              <small className="text-muted">promo berakhir {formatPromoDate(plan.promoUntil)}</small>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </td>
+                    <td>
+                      {plan.ownerFee ? `Rp ${formatCurrency(plan.ownerFee)}` : '-'}
+                      {plan.promoActive && plan.promoOwnerFee != null && (
+                        <>
+                          <br />
+                          <small className="text-muted">promo Rp {formatCurrency(Number(plan.promoOwnerFee))}</small>
+                        </>
+                      )}
+                    </td>
+                    <td>
+                      {plan.storageGb != null
+                        ? formatGb(Number(plan.storageGb))
+                        : `${formatGb((plan.tier && DEFAULT_STORAGE_GB[plan.tier]) || 1)} (bawaan)`}
+                      {plan.tier === 'multi_klinik' && ' / cabang'}
+                    </td>
+                    <td>
+                      {plan.maxUsers != null
+                        ? `${plan.maxUsers} akun`
+                        : `${(plan.tier && DEFAULT_MAX_USERS[plan.tier]) || 5} akun (bawaan)`}
+                      {plan.tier === 'multi_klinik' && ' / cabang'}
+                    </td>
                     <td>
                       <span className={`tag ${plan.isActive ? 'tag-active' : 'tag-neutral'}`}>
                         {plan.isActive ? 'Aktif' : 'Nonaktif'}
                       </span>
                     </td>
-                    <td style={{ display: 'flex', gap: 8 }}>
+                    <td className="cell-actions">
                       <button type="button" className="btn-outline btn-sm" onClick={() => openEdit(plan)}>
                         Ubah
                       </button>
@@ -203,13 +275,19 @@ export default function SuperAdminPlansPage() {
       </div>
 
       {modalOpen && (
-        <div className="sa-modal-overlay" onClick={() => setModalOpen(false)}>
-          <div className="sa-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="sa-modal-header">
-              <h2>{form.id ? 'Ubah Paket' : 'Tambah Paket'}</h2>
-              <button type="button" className="sa-modal-close" onClick={() => setModalOpen(false)}>&times;</button>
-            </div>
-            <div className="sa-modal-body">
+        <Modal
+          title={form.id ? 'Ubah Paket' : 'Tambah Paket'}
+          onClose={() => setModalOpen(false)}
+          busy={submitting}
+          footer={
+            <>
+              <button type="button" className="btn-outline" onClick={() => setModalOpen(false)}>Batal</button>
+              <button type="button" className="btn-primary" onClick={handleSubmit} disabled={submitting}>
+                {submitting ? 'Menyimpan...' : 'Simpan'}
+              </button>
+            </>
+          }
+        >
               <div className="sa-field">
                 <label>Nama Paket</label>
                 <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Contoh: Bulanan" />
@@ -219,14 +297,46 @@ export default function SuperAdminPlansPage() {
                 <input type="number" value={form.durationDays} onChange={(e) => setForm({ ...form, durationDays: e.target.value })} placeholder="30" />
               </div>
               <div className="sa-field">
-                <label>Harga (Rp) {form.tier === 'multi_klinik' ? '— per klinik' : ''}</label>
+                <label>Harga normal (Rp){form.tier === 'multi_klinik' ? ' — per klinik' : ''}</label>
                 <input
                   type="text"
                   value={formatCurrency(form.price)}
                   onChange={(e) => setForm({ ...form, price: String(parseCurrency(e.target.value)) })}
-                  placeholder="150.000"
+                  placeholder="199.000"
                 />
               </div>
+              <div className="sa-field">
+                <label>Harga promo (Rp, opsional) — tampil dengan harga normal dicoret</label>
+                <input
+                  type="text"
+                  value={form.promoPrice ? formatCurrency(form.promoPrice) : ''}
+                  onChange={(e) => {
+                    const v = parseCurrency(e.target.value);
+                    setForm({ ...form, promoPrice: v ? String(v) : '' });
+                  }}
+                  placeholder="Kosong = tanpa promo"
+                />
+              </div>
+              {form.promoPrice !== '' && form.tier === 'multi_klinik' && (
+                <div className="sa-field">
+                  <label>Biaya admin owner saat promo (Rp, opsional)</label>
+                  <input
+                    type="text"
+                    value={form.promoOwnerFee ? formatCurrency(form.promoOwnerFee) : ''}
+                    onChange={(e) => {
+                      const v = e.target.value.trim() === '' ? '' : String(parseCurrency(e.target.value));
+                      setForm({ ...form, promoOwnerFee: v });
+                    }}
+                    placeholder="Kosong = biaya admin normal"
+                  />
+                </div>
+              )}
+              {form.promoPrice !== '' && (
+                <div className="sa-field">
+                  <label>Promo berlaku s.d. (inklusif)</label>
+                  <input type="date" value={form.promoUntil} onChange={(e) => setForm({ ...form, promoUntil: e.target.value })} />
+                </div>
+              )}
               <div className="sa-field">
                 <label>Tier</label>
                 <CustomSelect
@@ -254,15 +364,31 @@ export default function SuperAdminPlansPage() {
                   />
                 </div>
               )}
-            </div>
-            <div className="sa-modal-footer">
-              <button type="button" className="btn-outline" onClick={() => setModalOpen(false)}>Batal</button>
-              <button type="button" className="btn-primary" onClick={handleSubmit} disabled={submitting}>
-                {submitting ? 'Menyimpan...' : 'Simpan'}
-              </button>
-            </div>
-          </div>
-        </div>
+              <div className="sa-field">
+                <label>Batas akun aktif{form.tier === 'multi_klinik' ? ' per cabang, dihitung bersama' : ''}</label>
+                <input
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={form.maxUsers}
+                  onChange={(e) => setForm({ ...form, maxUsers: e.target.value.replace(/[^0-9]/g, '') })}
+                  placeholder={`Kosong = bawaan ${(form.tier && DEFAULT_MAX_USERS[form.tier]) || 5} akun`}
+                />
+              </div>
+              <div className="sa-field">
+                <label>Jatah storage (GB, boleh desimal){form.tier === 'multi_klinik' ? ' per cabang, dipakai bersama' : ''}</label>
+                <input
+                  type="number"
+                  min={0}
+                  inputMode="decimal"
+                  value={form.storageGb}
+                  step={0.1}
+                  onChange={(e) => setForm({ ...form, storageGb: e.target.value.replace(/[^0-9.]/g, '') })}
+                  placeholder={`Kosong = bawaan ${formatGb((form.tier && DEFAULT_STORAGE_GB[form.tier]) || 1)} (0.1 = 100 MB)`}
+                />
+              </div>
+            
+        </Modal>
       )}
     </SuperAdminLayout>
   );

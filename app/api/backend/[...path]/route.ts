@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { BRANCH_COOKIE } from '@/lib/branch';
 import {
   BACKEND_URL,
   IMPERSONATOR_COOKIE,
@@ -18,11 +19,13 @@ import {
  */
 
 // Endpoints whose JSON response carries `data.accessToken`.
-const TOKEN_ISSUING = new Set(['auth/login', 'auth/refresh']);
+// change-password ends every other session and hands this one a fresh token.
+const TOKEN_ISSUING = new Set(['auth/login', 'auth/refresh', 'auth/change-password']);
 
 // Request headers worth forwarding. Everything else (cookies in particular)
 // stays on this side of the proxy.
-const FORWARD_REQUEST_HEADERS = ['content-type', 'accept', 'accept-language', 'user-agent'];
+// x-device-token: penanda perangkat absensi (lihat lib/attendance.ts)
+const FORWARD_REQUEST_HEADERS = ['content-type', 'accept', 'accept-language', 'user-agent', 'x-device-token'];
 const FORWARD_RESPONSE_HEADERS = [
   'content-type',
   'content-disposition',
@@ -65,6 +68,14 @@ async function proxy(req: NextRequest, ctx: RouteContext) {
 
   const sessionToken = req.cookies.get(SESSION_COOKIE)?.value;
   if (sessionToken) headers.set('authorization', `Bearer ${sessionToken}`);
+
+  // Multi-Klinik Owner inside a branch: the backend acts on that branch
+  // (after checking it belongs to this account). Never for the owner's own
+  // account/branch-list routes, which must run as the owner themselves.
+  const branchId = req.cookies.get(BRANCH_COOKIE)?.value;
+  if (branchId && /^\d+$/.test(branchId) && !/^(auth|multi-clinic)(\/|$)/.test(path)) {
+    headers.set('x-clinic-id', branchId);
+  }
 
   let upstream: Response;
   try {

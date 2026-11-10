@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { routeNeedsBranch } from '@/lib/branch';
 import { useAuth } from '@/lib/auth-context';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
@@ -13,8 +14,9 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
-  const { user, loading } = useAuth();
+  const { user, account, branch, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   useEscapeKey(() => setSidebarOpen(false), sidebarOpen);
 
@@ -29,7 +31,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   }, [loading, user, router]);
 
-  if (loading || !user) {
+  // Multi-Klinik Owner outside a branch: clinic pages have nothing to show
+  // (middleware.ts normally redirects already; this covers a stale cookie).
+  const needsBranch =
+    account?.role === 'multi_clinic_owner' && !branch && routeNeedsBranch(pathname ?? '/');
+  useEffect(() => {
+    if (!loading && needsBranch) router.replace('/multi-klinik/dashboard');
+  }, [loading, needsBranch, router]);
+
+  if (loading || !user || needsBranch) {
     return <div className="dashboard-auth-loading">Memuat…</div>;
   }
 
