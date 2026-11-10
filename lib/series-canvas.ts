@@ -1,5 +1,5 @@
-import type { ContentBackground } from './contents';
-import { DISCLAIMER, STORY_H, STORY_W, THEMES, roundRectPath } from './story-canvas';
+import type { ContentBackground, ContentPhotoFrame } from './contents';
+import { DEFAULT_FRAME, DISCLAIMER, STORY_H, STORY_W, THEMES, placePhoto, roundRectPath } from './story-canvas';
 import type { StoryFonts } from './story-canvas';
 import { mixHex, readableOn, resolveSeriesStyle, seriesRects, type SeriesStyle } from './series-layout';
 
@@ -12,7 +12,12 @@ export interface SeriesPhotoDraw {
   img: HTMLImageElement;
   caption: string;
   blurFace: boolean;
+  /** Posisi/zoom/putar di dalam sel; kosong = penuh (cover) di tengah. */
+  frame?: ContentPhotoFrame | null;
 }
+
+/** Area foto di story; dipakai juga untuk hit-test di editor. */
+export const SERIES_AREA = { x: 60, y: 560, w: 960, h: 1000 };
 
 export interface SeriesStoryData {
   background: ContentBackground;
@@ -31,17 +36,10 @@ export interface SeriesStoryData {
   style?: SeriesStyle | null;
 }
 
-/** Cover-fits an image into a rect, no pan/zoom controls — series photos are laid out automatically. */
-function coverFit(img: HTMLImageElement, x: number, y: number, w: number, h: number) {
-  const k = Math.max(w / img.width, h / img.height);
-  const dw = img.width * k, dh = img.height * k;
-  return { dx: x + (w - dw) / 2, dy: y + (h - dh) / 2, dw, dh };
-}
-
 /**
  * A case series: 3+ photos placed automatically by the chosen arrangement
- * (rows / columns / grid / one big + small) — no manual framing per photo,
- * unlike before/after. Spacing, corner radius, caption style, numbering and
+ * (rows / columns / grid / one big + small); each photo can still be
+ * zoomed, moved, rotated and mirrored inside its cell via `frame`. Spacing, corner radius, caption style, numbering and
  * colours come from `d.style`.
  * `blurFace` applies a uniform blur over that whole photo (no face
  * detection — a deliberate simplification so patients can still be made
@@ -112,7 +110,7 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
   if (d.caption) txt(fit(d.caption, 960, `400 32px ${f.display}`), 60, 500, `400 32px ${f.display}`, T.muted);
 
   // Photos — placed by the chosen arrangement, as many as there are.
-  const rects = seriesRects(d.photos.length, st, { x: 60, y: 560, w: 960, h: 1000 });
+  const rects = seriesRects(d.photos.length, st, SERIES_AREA);
   d.photos.forEach((p, i) => {
     const [x, y, w, h] = rects[i];
     const radius = Math.min(st.radius, w / 2, h / 2);
@@ -123,10 +121,14 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
     g.fillStyle = T.slot;
     g.fillRect(x, y, w, h);
     if (p.img) {
+      g.save();
       if (p.blurFace) g.filter = 'blur(28px)';
-      const { dx, dy, dw, dh } = coverFit(p.img, x, y, w, h);
-      g.drawImage(p.img, dx, dy, dw, dh);
-      g.filter = 'none';
+      const placed = placePhoto(p.img, p.frame ?? DEFAULT_FRAME, [x, y, w, h]).draw;
+      g.translate(placed.cx, placed.cy);
+      g.rotate(placed.angle);
+      if (placed.flip) g.scale(-1, 1);
+      g.drawImage(p.img, -placed.w / 2, -placed.h / 2, placed.w, placed.h);
+      g.restore();
     }
     // Keterangan model "bar": pita selebar foto, di dalam klip sudut foto.
     const label = p.caption.trim();

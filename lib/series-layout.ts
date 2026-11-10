@@ -15,6 +15,8 @@ export interface SeriesStyle {
   captionStyle?: SeriesCaptionStyle;
   captionPosition?: SeriesCaptionPosition;
   showNumbers?: boolean;
+  /** Jumlah kolom untuk susunan Kisi: 0 = otomatis, 1–4 = tetap. */
+  cols?: number;
   /** #rrggbb; kosong = ikut tema Terang/Navy. */
   bgColor?: string;
   accentColor?: string;
@@ -30,6 +32,7 @@ export const DEFAULT_SERIES_STYLE: ResolvedSeriesStyle = {
   captionStyle: 'chip',
   captionPosition: 'top',
   showNumbers: false,
+  cols: 0,
   bgColor: '',
   accentColor: '',
 };
@@ -55,10 +58,14 @@ export function resolveSeriesStyle(s?: SeriesStyle | null): ResolvedSeriesStyle 
     captionStyle: x.captionStyle === 'bar' || x.captionStyle === 'none' || x.captionStyle === 'chip' ? x.captionStyle : d.captionStyle,
     captionPosition: x.captionPosition === 'bottom' ? 'bottom' : d.captionPosition,
     showNumbers: x.showNumbers === true,
+    cols: Number.isFinite(x.cols) ? clamp(Math.round(x.cols as number), 0, 4) : d.cols,
     bgColor: x.bgColor && HEX.test(x.bgColor) ? x.bgColor.toLowerCase() : '',
     accentColor: x.accentColor && HEX.test(x.accentColor) ? x.accentColor.toLowerCase() : '',
   };
 }
+
+/** Kolom otomatis untuk Kisi, dipakai juga untuk menampilkan nilai bawaan di pengaturan. */
+export const autoGridCols = (n: number) => (n <= 1 ? 1 : n <= 4 ? 2 : 3);
 
 export type Rect = [x: number, y: number, w: number, h: number];
 export interface Area { x: number; y: number; w: number; h: number }
@@ -90,7 +97,7 @@ export function seriesRects(count: number, style: ResolvedSeriesStyle, area: Are
     case 'columns':
       return split(area.x, area.w, n, gap).map(([x, w]) => [x, area.y, w, area.h]);
     case 'grid':
-      return gridRects(n, n <= 1 ? 1 : n <= 4 ? 2 : 3, area, gap);
+      return gridRects(n, style.cols > 0 ? Math.min(style.cols, n) : n <= 1 ? 1 : n <= 4 ? 2 : 3, area, gap);
     case 'hero': {
       if (n === 1) return [[area.x, area.y, area.w, area.h]];
       const heroH = Math.round((area.h - gap) * 0.58);
