@@ -111,7 +111,7 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
   if (d.caption) txt(fit(d.caption, 960, `400 32px ${f.display}`), 60, 500 + dy, `400 32px ${f.display}`, T.muted);
 
   // Photos — placed by the chosen arrangement, as many as there are.
-  const rects = seriesRects(d.photos.length, st, seriesArea(st.edgeText));
+  const rects = seriesRects(d.photos.length, st, seriesArea(st.edgeText, st.areaPct));
   d.photos.forEach((p, i) => {
     const [x, y, w, h] = rects[i];
     const radius = Math.min(st.radius, w / 2, h / 2);

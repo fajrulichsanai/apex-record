@@ -677,7 +677,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     }
   };
   // ── Series: ketuk untuk memilih, geser/cubit untuk mengatur isi sel ──────
-  const seriesRectsNow = () => seriesRects(series.draws.length, form.seriesStyle, seriesArea(form.seriesStyle.edgeText));
+  const seriesRectsNow = () => seriesRects(series.draws.length, form.seriesStyle, seriesArea(form.seriesStyle.edgeText, form.seriesStyle.areaPct));
   /** Indeks sel (pada draws) di bawah titik, atau -1. */
   const seriesCellAt = (p: Point) =>
     seriesRectsNow().findIndex(([x, y, w, h]) => p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h);
@@ -1256,6 +1256,16 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                           onChange={(e) => setSeriesStyle({ edgeText: e.target.checked })}
                         />
                         Teks atas &amp; bawah mepet ke tepi (foto lebih luas)
+                      </label>
+                      <label className="kt-zoom">
+                        <span>Tinggi area foto</span>
+                        <input
+                          type="range" min={40} max={100} step={1}
+                          value={form.seriesStyle.areaPct}
+                          onChange={(e) => setSeriesStyle({ areaPct: Number(e.target.value) })}
+                          aria-label="Tinggi area foto"
+                        />
+                        <output className="kt-deg">{form.seriesStyle.areaPct}%</output>
                       </label>
                       <div className="kt-label">Susunan foto</div>
                       <div className="kt-arrange" role="radiogroup" aria-label="Susunan foto rangkaian">

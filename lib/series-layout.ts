@@ -21,6 +21,8 @@ export interface SeriesStyle {
   split?: number;
   /** true = teks atas & bawah mepet ke tepi story, foto mengisi tengah (lebih luas). */
   edgeText?: boolean;
+  /** Tinggi area foto, 40–100 persen dari ruang yang tersedia. */
+  areaPct?: number;
   /** #rrggbb; kosong = ikut tema Terang/Navy. */
   bgColor?: string;
   accentColor?: string;
@@ -39,6 +41,7 @@ export const DEFAULT_SERIES_STYLE: ResolvedSeriesStyle = {
   cols: 0,
   split: 58,
   edgeText: true,
+  areaPct: 100,
   bgColor: '',
   accentColor: '',
 };
@@ -68,6 +71,7 @@ export function resolveSeriesStyle(s?: SeriesStyle | null): ResolvedSeriesStyle 
     captionPosition: x.captionPosition === 'bottom' ? 'bottom' : d.captionPosition,
     showNumbers: x.showNumbers === true,
     edgeText: x.edgeText !== false,
+    areaPct: Number.isFinite(x.areaPct) ? clamp(Math.round(x.areaPct as number), 40, 100) : d.areaPct,
     split: Number.isFinite(x.split) ? clamp(Math.round(x.split as number), 30, 80) : d.split,
     cols: Number.isFinite(x.cols) ? clamp(Math.round(x.cols as number), 0, 4) : d.cols,
     bgColor: x.bgColor && HEX.test(x.bgColor) ? x.bgColor.toLowerCase() : '',
@@ -79,8 +83,12 @@ export function resolveSeriesStyle(s?: SeriesStyle | null): ResolvedSeriesStyle 
 export const autoGridCols = (n: number) => (n <= 1 ? 1 : n <= 4 ? 2 : 3);
 
 /** Area foto di story: mepet (teks di tepi) atau aman-Instagram (bawaan lama). */
-export const seriesArea = (edgeText: boolean): Area =>
-  edgeText ? { x: 60, y: 350, w: 960, h: 1410 } : { x: 60, y: 560, w: 960, h: 1000 };
+export const seriesArea = (edgeText: boolean, areaPct = 100): Area => {
+  const base: Area = edgeText ? { x: 60, y: 350, w: 960, h: 1410 } : { x: 60, y: 560, w: 960, h: 1000 };
+  const h = Math.round((base.h * Math.min(100, Math.max(40, areaPct))) / 100);
+  // Diperkecil: foto tetap di tengah ruang yang tersedia.
+  return { ...base, y: base.y + Math.round((base.h - h) / 2), h };
+};
 
 export type Rect = [x: number, y: number, w: number, h: number];
 export interface Area { x: number; y: number; w: number; h: number }
