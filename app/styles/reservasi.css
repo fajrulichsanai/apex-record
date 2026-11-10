@@ -951,3 +951,18 @@
   .res-week-grid { grid-template-columns: repeat(7, minmax(120px, 1fr)); overflow-x: auto; }
   .res-week-day { min-height: 260px; }
 }
+
+/* Peringatan: pasien sudah punya reservasi aktif. */
+.reservation-dup {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 12px; border-radius: 10px; border: 1.5px solid #f0b429; background: color-mix(in srgb, #f0b429 12%, transparent);
+}
+.reservation-dup-text { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--text-main); }
+.reservation-dup-text span { color: var(--text-sub); }
+.reservation-dup-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.reservation-dup-btn {
+  font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 10px; cursor: pointer;
+  border: 1.5px solid var(--border); background: var(--surface, #fff); color: var(--text-main);
+}
+.reservation-dup-btn.primary { background: var(--primary, #1f2937); border-color: var(--primary, #1f2937); color: #fff; }
+.reservation-dup-btn.on { border-color: #f0b429; background: color-mix(in srgb, #f0b429 25%, transparent); }

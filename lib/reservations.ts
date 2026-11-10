@@ -42,6 +42,8 @@ export interface CreateReservationPayload {
   reservationDate: string;
   jamSlot?: string;
   notes?: string;
+  /** Tetap buat baru walau pasien sudah punya reservasi aktif. */
+  allowDuplicate?: boolean;
 }
 
 export interface UpdateReservationStatusPayload {
@@ -71,6 +73,9 @@ export const reservationsApi = {
     apiClient.get<ReservationListResponse>(
       '/reservations' + (query ? '?' + toQueryString(query) : ''),
     ),
+  /** Reservasi aktif (menunggu/terkonfirmasi, mendatang) milik orang yang sama. */
+  active: (person: { patientId?: number; phone?: string; name?: string }) =>
+    apiClient.get<ReservationItem[]>('/reservations/active?' + toQueryString(person)),
   getOne: (id: number) => apiClient.get<ReservationItem>(`/reservations/${id}`),
   create: (payload: CreateReservationPayload) =>
     apiClient.post<ReservationItem>('/reservations', payload),
