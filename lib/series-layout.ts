@@ -3,7 +3,7 @@
  * mudah diuji; series-canvas.ts hanya menggambar hasilnya.
  */
 
-export type SeriesArrangement = 'rows' | 'columns' | 'grid' | 'hero';
+export type SeriesArrangement = 'rows' | 'columns' | 'grid' | 'hero' | 'heroBottom' | 'heroLeft' | 'heroRight';
 export type SeriesCaptionStyle = 'chip' | 'bar' | 'none';
 export type SeriesCaptionPosition = 'top' | 'bottom';
 
@@ -17,6 +17,8 @@ export interface SeriesStyle {
   showNumbers?: boolean;
   /** Jumlah kolom untuk susunan Kisi: 0 = otomatis, 1–4 = tetap. */
   cols?: number;
+  /** Porsi foto besar (30–80 persen) untuk susunan "Satu besar". */
+  split?: number;
   /** #rrggbb; kosong = ikut tema Terang/Navy. */
   bgColor?: string;
   accentColor?: string;
@@ -33,6 +35,7 @@ export const DEFAULT_SERIES_STYLE: ResolvedSeriesStyle = {
   captionPosition: 'top',
   showNumbers: false,
   cols: 0,
+  split: 58,
   bgColor: '',
   accentColor: '',
 };
@@ -41,7 +44,10 @@ export const SERIES_ARRANGEMENTS: { value: SeriesArrangement; label: string }[] 
   { value: 'rows', label: 'Baris' },
   { value: 'columns', label: 'Kolom' },
   { value: 'grid', label: 'Kisi' },
-  { value: 'hero', label: 'Satu besar' },
+  { value: 'hero', label: 'Besar atas' },
+  { value: 'heroBottom', label: 'Besar bawah' },
+  { value: 'heroLeft', label: 'Besar kiri' },
+  { value: 'heroRight', label: 'Besar kanan' },
 ];
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
@@ -58,6 +64,7 @@ export function resolveSeriesStyle(s?: SeriesStyle | null): ResolvedSeriesStyle 
     captionStyle: x.captionStyle === 'bar' || x.captionStyle === 'none' || x.captionStyle === 'chip' ? x.captionStyle : d.captionStyle,
     captionPosition: x.captionPosition === 'bottom' ? 'bottom' : d.captionPosition,
     showNumbers: x.showNumbers === true,
+    split: Number.isFinite(x.split) ? clamp(Math.round(x.split as number), 30, 80) : d.split,
     cols: Number.isFinite(x.cols) ? clamp(Math.round(x.cols as number), 0, 4) : d.cols,
     bgColor: x.bgColor && HEX.test(x.bgColor) ? x.bgColor.toLowerCase() : '',
     accentColor: x.accentColor && HEX.test(x.accentColor) ? x.accentColor.toLowerCase() : '',
@@ -98,12 +105,26 @@ export function seriesRects(count: number, style: ResolvedSeriesStyle, area: Are
       return split(area.x, area.w, n, gap).map(([x, w]) => [x, area.y, w, area.h]);
     case 'grid':
       return gridRects(n, style.cols > 0 ? Math.min(style.cols, n) : n <= 1 ? 1 : n <= 4 ? 2 : 3, area, gap);
-    case 'hero': {
+    case 'hero':
+    case 'heroBottom': {
       if (n === 1) return [[area.x, area.y, area.w, area.h]];
-      const heroH = Math.round((area.h - gap) * 0.58);
+      const heroH = Math.round((area.h - gap) * (style.split / 100));
+      const restH = area.h - heroH - gap;
       const rest = n - 1;
-      const restArea: Area = { x: area.x, y: area.y + heroH + gap, w: area.w, h: area.h - heroH - gap };
-      return [[area.x, area.y, area.w, heroH], ...gridRects(rest, Math.min(rest, 3), restArea, gap)];
+      const bottom = style.arrangement === 'heroBottom';
+      const heroY = bottom ? area.y + restH + gap : area.y;
+      const restArea: Area = { x: area.x, y: bottom ? area.y : area.y + heroH + gap, w: area.w, h: restH };
+      return [[area.x, heroY, area.w, heroH], ...gridRects(rest, Math.min(rest, 3), restArea, gap)];
+    }
+    case 'heroLeft':
+    case 'heroRight': {
+      if (n === 1) return [[area.x, area.y, area.w, area.h]];
+      const heroW = Math.round((area.w - gap) * (style.split / 100));
+      const restW = area.w - heroW - gap;
+      const right = style.arrangement === 'heroRight';
+      const heroX = right ? area.x + restW + gap : area.x;
+      const restArea: Area = { x: right ? area.x : area.x + heroW + gap, y: area.y, w: restW, h: area.h };
+      return [[heroX, area.y, heroW, area.h], ...gridRects(n - 1, 1, restArea, gap)];
     }
     case 'rows':
     default:

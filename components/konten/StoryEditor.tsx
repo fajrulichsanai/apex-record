@@ -45,7 +45,7 @@ import {
 } from '@/lib/story-canvas';
 import { SERIES_AREA, drawSeriesStory } from '@/lib/series-canvas';
 import { useSeriesPhotos } from '@/lib/use-series-photos';
-import { DEFAULT_SERIES_STYLE, SERIES_ARRANGEMENTS, autoGridCols, resolveSeriesStyle, seriesRects, type ResolvedSeriesStyle } from '@/lib/series-layout';
+import { DEFAULT_SERIES_STYLE, SERIES_ARRANGEMENTS, autoGridCols, resolveSeriesStyle, seriesRects, type ResolvedSeriesStyle, type SeriesArrangement } from '@/lib/series-layout';
 import {
   CONTENT_TEMPLATES,
   REGION_OPTIONS,
@@ -111,11 +111,14 @@ interface Photo {
   img: HTMLImageElement;
 }
 
-const ARRANGEMENT_ICON: Record<'rows' | 'columns' | 'grid' | 'hero', Array<[number, number, number, number]>> = {
+const ARRANGEMENT_ICON: Record<SeriesArrangement, Array<[number, number, number, number]>> = {
   rows: [[4, 4, 32, 8], [4, 16, 32, 8], [4, 28, 32, 8]],
   columns: [[4, 4, 9, 32], [15, 4, 10, 32], [27, 4, 9, 32]],
   grid: [[4, 4, 15, 15], [21, 4, 15, 15], [4, 21, 15, 15], [21, 21, 15, 15]],
-  hero: [[4, 4, 32, 18], [4, 24, 9, 12], [15, 24, 10, 12], [27, 24, 9, 12]],
+  hero: [[4, 4, 32, 18], [4, 24, 15, 12], [21, 24, 15, 12]],
+  heroBottom: [[4, 4, 15, 12], [21, 4, 15, 12], [4, 18, 32, 18]],
+  heroLeft: [[4, 4, 20, 32], [26, 4, 10, 15], [26, 21, 10, 15]],
+  heroRight: [[4, 4, 10, 15], [4, 21, 10, 15], [16, 4, 20, 32]],
 };
 
 const EMPTY_FORM: Form = {
@@ -1265,6 +1268,18 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                           </label>
                         ))}
                       </div>
+                      {form.seriesStyle.arrangement.startsWith('hero') && (
+                        <label className="kt-zoom">
+                          <span>Ukuran foto besar</span>
+                          <input
+                            type="range" min={30} max={80} step={1}
+                            value={form.seriesStyle.split}
+                            onChange={(e) => setSeriesStyle({ split: Number(e.target.value) })}
+                            aria-label="Ukuran foto besar"
+                          />
+                          <output className="kt-deg">{form.seriesStyle.split}%</output>
+                        </label>
+                      )}
                       {form.seriesStyle.arrangement === 'grid' && (
                         <>
                           <div className="kt-label">Kolom kisi</div>
