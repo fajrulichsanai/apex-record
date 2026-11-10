@@ -33,7 +33,6 @@ export default function RecallDueList({ clinicName }: RecallDueListProps) {
   const [filter, setFilter] = useState<FilterValue>('semua');
   const [recalls, setRecalls] = useState<PatientRecall[]>([]);
   const [loading, setLoading] = useState(true);
-  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   const load = async (status?: PatientRecallStatus) => {
     try {
@@ -53,15 +52,12 @@ export default function RecallDueList({ clinicName }: RecallDueListProps) {
   }, [filter]);
 
   const handleUpdateStatus = async (recall: PatientRecall, status: PatientRecallStatus) => {
-    setUpdatingId(recall.id);
     try {
       await patientRecallApi.update(recall.id, { status });
       success('Status recall diperbarui');
       await load(filter === 'semua' ? undefined : filter);
     } catch (err) {
       error(err instanceof ApiError ? err.message : 'Gagal memperbarui status recall');
-    } finally {
-      setUpdatingId(null);
     }
   };
 
@@ -145,24 +141,15 @@ export default function RecallDueList({ clinicName }: RecallDueListProps) {
                             </a>
                           )}
                           {recall.upcomingReservation ? (
-                            <Link
-                              className="btn-row-save"
-                              href={`/reservasi?search=${encodeURIComponent(recall.patient?.phone || '')}`}
-                            >
-                              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: 16 }}>event_available</span>
-                              Lihat Reservasi
+                            <Link className="btn-row-save" href={`/reservasi?reschedule=${recall.upcomingReservation.id}`}>
+                              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: 16 }}>edit_calendar</span>
+                              Ubah Jadwal
                             </Link>
                           ) : (
-                            recall.status !== 'sudah_booking_ulang' && (
-                              <button
-                                type="button"
-                                className="btn-row-save"
-                                disabled={updatingId === recall.id}
-                                onClick={() => handleUpdateStatus(recall, 'sudah_booking_ulang')}
-                              >
-                                Sudah Booking
-                              </button>
-                            )
+                            <Link className="btn-row-save" href={`/reservasi?new=1&patientId=${recall.patientId}`}>
+                              <span aria-hidden="true" className="material-symbols-rounded" style={{ fontSize: 16 }}>event_available</span>
+                              Buat Reservasi
+                            </Link>
                           )}
                         </div>
                       </td>

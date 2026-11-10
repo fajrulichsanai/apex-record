@@ -88,7 +88,9 @@ function ReservasiPageInner() {
   const [dateScope, setDateScope] = useState<DateScope>('all');
   const [customDate, setCustomDate] = useState('');
   const [stats, setStats] = useState<ReservationStats>(EMPTY_STATS);
-  const [showAddModal, setShowAddModal] = useState(false);
+  // Dibuka dari Follow Up Pasien: /reservasi?new=1&patientId=… (buat) atau ?reschedule=ID (ubah jadwal).
+  const [showAddModal, setShowAddModal] = useState(() => searchParams.get('new') === '1');
+  const [addForPatientId] = useState(() => Number(searchParams.get('patientId')) || undefined);
   const [editingReservation, setEditingReservation] = useState<ReservationItem | null>(null);
   const [pageView, setPageView] = useState<'list' | 'calendar'>('list');
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
@@ -97,6 +99,14 @@ function ReservasiPageInner() {
   const [pendingCancellationId, setPendingCancellationId] = useState<number | null>(null);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+
+  useEffect(() => {
+    const id = Number(searchParams.get('reschedule'));
+    if (!id) return;
+    reservationsApi.getOne(id).then(setEditingReservation).catch(() => showError('Reservasi tidak ditemukan'));
+    // Hanya saat halaman dibuka dari tautan.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loadReservations = useCallback(async () => {
     setLoading(true);
@@ -470,7 +480,15 @@ function ReservasiPageInner() {
       </main>
 
       {showAddModal && (
-        <AddReservationModal onClose={() => setShowAddModal(false)} onCreated={handleCreated} />
+        <AddReservationModal
+          initialPatientId={addForPatientId}
+          onClose={() => setShowAddModal(false)}
+          onCreated={handleCreated}
+          onReschedule={(reservation) => {
+            setShowAddModal(false);
+            setEditingReservation(reservation);
+          }}
+        />
       )}
 
       {editingReservation && (

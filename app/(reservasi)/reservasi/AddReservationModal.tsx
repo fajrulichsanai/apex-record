@@ -4,13 +4,17 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import CustomSelect from '@/components/form/CustomSelect';
 import { patientsApi, Patient } from '@/lib/patients';
 import { practitionersApi, Practitioner } from '@/lib/practitioners';
-import { reservationsApi } from '@/lib/reservations';
+import { reservationsApi, type ReservationItem } from '@/lib/reservations';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
 
 interface AddReservationModalProps {
   onClose: () => void;
   onCreated: () => void;
+  /** Pasien yang sudah dipilih (mis. dari Follow Up Pasien). */
+  initialPatientId?: number;
+  /** Pasien sudah punya reservasi: buka form ubah jadwal, bukan buat baru. */
+  onReschedule: (reservation: ReservationItem) => void;
 }
 
 function initialsFromName(name?: string) {
@@ -26,7 +30,12 @@ function initialsFromName(name?: string) {
   );
 }
 
-export default function AddReservationModal({ onClose, onCreated }: AddReservationModalProps) {
+function formatDateId(date: string) {
+  const d = new Date(`${date.slice(0, 10)}T00:00:00`);
+  return Number.isNaN(d.getTime()) ? date : d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+export default function AddReservationModal({ onClose, onCreated, initialPatientId, onReschedule }: AddReservationModalProps) {
   const { error: showError } = useToast();
   const hasLoaded = useRef(false);
   const isMounted = useRef(true);
@@ -36,7 +45,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [patientId, setPatientId] = useState('');
+  const [patientId, setPatientId] = useState(initialPatientId ? String(initialPatientId) : '');
   const [patientName, setPatientName] = useState('');
   const [patientPhone, setPatientPhone] = useState('');
   const [isManualEntry, setIsManualEntry] = useState(false);
@@ -44,6 +53,8 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
   const [reservationDate, setReservationDate] = useState('');
   const [jamSlot, setJamSlot] = useState('');
   const [notes, setNotes] = useState('');
+  const [existing, setExisting] = useState<ReservationItem | null>(null);
+  const [allowDuplicate, setAllowDuplicate] = useState(false);
 
   useEffect(() => {
     isMounted.current = true;
@@ -92,6 +103,42 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
 
   const effectivePhone = isManualEntry ? patientPhone : (selectedPatient?.phone ?? '');
 
+  // Cek dini: pasien yang sudah punya reservasi aktif cukup diubah jadwalnya,
+  // bukan dibuatkan reservasi kedua (penyebab data dobel).
+  const checkPatientId = !isManualEntry && patientId ? Number(patientId) : undefined;
+  const checkPhone = effectivePhone.trim();
+  const checkName = (isManualEntry ? patientName : selectedPatient?.name || '').trim();
+  useEffect(() => {
+    const canCheck = !!checkPatientId || (checkPhone.replace(/\D/g, '').length >= 8 && checkName.length >= 2);
+    let cancelled = false;
+    const timer = setTimeout(
+      () => {
+        if (!canCheck) {
+          setExisting(null);
+          setAllowDuplicate(false);
+          return;
+        }
+        reservationsApi
+          .active({ patientId: checkPatientId, phone: checkPhone || undefined, name: checkName || undefined })
+          .then((list) => {
+            if (cancelled) return;
+            setExisting(list[0] ?? null);
+            setAllowDuplicate(false);
+          })
+          .catch(() => {
+            if (!cancelled) setExisting(null);
+          });
+      },
+      canCheck ? 350 : 0,
+    );
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [checkPatientId, checkPhone, checkName]);
+
+  const blockedByExisting = !!existing && !allowDuplicate;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -107,6 +154,11 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
 
     if (!effectivePhone.trim()) {
       showError('Nomor telepon wajib diisi');
+      return;
+    }
+
+    if (blockedByExisting) {
+      showError('Pasien ini sudah punya reservasi. Ubah jadwalnya, atau pilih "Tetap buat baru".');
       return;
     }
 
@@ -126,6 +178,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
         reservationDate,
         jamSlot: jamSlot || undefined,
         notes: notes.trim() || undefined,
+        allowDuplicate: allowDuplicate || undefined,
       });
       onCreated();
     } catch (err) {
@@ -287,6 +340,32 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
                 </div>
               )}
 
+              {existing && (
+                <div className="reservation-dup" role="alert">
+                  <div className="reservation-dup-text">
+                    <strong>Sudah punya reservasi</strong>
+                    <span>
+                      {formatDateId(existing.reservationDate)}
+                      {existing.jamSlot ? ` · ${existing.jamSlot.slice(0, 5)}` : ''}
+                      {existing.practitioner ? ` · ${existing.practitioner.name}` : ''}
+                    </span>
+                  </div>
+                  <div className="reservation-dup-actions">
+                    <button type="button" className="reservation-dup-btn primary" onClick={() => onReschedule(existing)}>
+                      Ubah jadwal ini
+                    </button>
+                    <button
+                      type="button"
+                      className={`reservation-dup-btn${allowDuplicate ? ' on' : ''}`}
+                      onClick={() => setAllowDuplicate((v) => !v)}
+                      aria-pressed={allowDuplicate}
+                    >
+                      {allowDuplicate ? 'Buat baru ✓' : 'Tetap buat baru'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="reservation-form-row">
                 <div className="reservation-form-group">
                   <label className="reservation-form-label">
@@ -344,7 +423,7 @@ export default function AddReservationModal({ onClose, onCreated }: AddReservati
               <button type="button" className="btn-outline" onClick={onClose} disabled={submitting}>
                 Batal
               </button>
-              <button type="submit" className="btn-primary" disabled={submitting} onClick={handleSubmit}>
+              <button type="submit" className="btn-primary" disabled={submitting || blockedByExisting} onClick={handleSubmit}>
                 {submitting ? 'Menambahkan...' : 'Tambah Reservasi'}
               </button>
             </div>

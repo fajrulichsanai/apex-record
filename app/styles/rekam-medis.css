@@ -878,3 +878,12 @@ button.rx-kfa:hover { filter: brightness(.95); text-decoration: underline; }
 
 .ssrme-guide { margin-top: 8px; padding: 10px 12px; border-radius: 10px; background: var(--info-soft, #DCEAFB); color: var(--text-main, #17160F); font-size: 12.5px; line-height: 1.5; }
 .ssrme-guide ol { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+
+/* Unggah foto langsung ke pasien (tanpa kunjungan). */
+.cp-uploader {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; margin-bottom: 14px;
+  border: 1.5px dashed var(--border); border-radius: 12px; transition: border-color 0.15s, background 0.15s;
+}
+.cp-uploader.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.cp-uploader-where { display: flex; flex-wrap: wrap; gap: 8px; min-width: 200px; }
+.cp-uploader-hint { flex: 1 1 100%; font-size: 12px; color: var(--text-sub); }

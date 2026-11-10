@@ -102,7 +102,7 @@ export const templatesApi = {
   remove: (id: number) => apiClient.delete<void>(`/contents/templates/${id}`),
 };
 
-export type ContentPhotoSource = 'patient_photo' | 'supporting_exam_image';
+export type ContentPhotoSource = 'patient_photo' | 'supporting_exam_image' | 'upload';
 
 export interface PickerPhoto {
   id: number;
@@ -127,10 +127,24 @@ export interface SeriesPhoto {
   id: number;
   contentId: number;
   sourceType: ContentPhotoSource;
-  sourceId: number;
+  /** null untuk foto yang diunggah dari perangkat. */
+  sourceId: number | null;
   sortOrder: number;
   caption: string | null;
   blurFace: boolean;
+  /** Posisi/zoom/putar foto di dalam selnya; null = bawaan. */
+  frame: ContentPhotoFrame | null;
+}
+
+/** Foto klinis pasien yang flag izin kontennya aktif — tampil langsung di Konten. */
+export interface LibraryPhoto {
+  id: number;
+  fileUrl: string;
+  patientId: number;
+  patientName: string;
+  patientNoRm: string;
+  takenAt: string;
+  template?: { id: number; name: string } | null;
 }
 
 export const CONTENT_STATUS_LABEL: Record<ContentStatus, string> = {
@@ -170,6 +184,7 @@ export const contentsApi = {
   photo: (id: number, which: 'before' | 'after' | 'rendered') => fetchImage(`/contents/${id}/photos/${which}`),
   logo: () => fetchImage('/contents/logo'),
   picker: (patientId: number) => apiClient.get<ContentPhotoPicker>(`/contents/picker/${patientId}`),
+  photoLibrary: () => apiClient.get<LibraryPhoto[]>('/contents/photo-library'),
   importPhoto: (sourceType: ContentPhotoSource, sourceId: number) =>
     apiClient.post<{ url: string }>('/contents/import-photo', { sourceType, sourceId }),
 };
@@ -178,7 +193,16 @@ export const seriesPhotosApi = {
   list: (contentId: number) => apiClient.get<SeriesPhoto[]>(`/contents/${contentId}/series-photos`),
   add: (contentId: number, sourceType: ContentPhotoSource, sourceId: number) =>
     apiClient.post<SeriesPhoto>(`/contents/${contentId}/series-photos`, { sourceType, sourceId }),
-  update: (contentId: number, photoId: number, payload: { caption?: string | null; blurFace?: boolean }) =>
+  upload: (contentId: number, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return apiClient.postForm<SeriesPhoto>(`/contents/${contentId}/series-photos/upload`, form);
+  },
+  update: (
+    contentId: number,
+    photoId: number,
+    payload: { caption?: string | null; blurFace?: boolean; frame?: ContentPhotoFrame | null },
+  ) =>
     apiClient.patch<SeriesPhoto>(`/contents/${contentId}/series-photos/${photoId}`, payload),
   remove: (contentId: number, photoId: number) =>
     apiClient.delete<void>(`/contents/${contentId}/series-photos/${photoId}`),

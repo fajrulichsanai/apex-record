@@ -43,8 +43,10 @@ import {
   type StoryFonts,
   type StorySlot,
 } from '@/lib/story-canvas';
-import { drawSeriesStory, type SeriesPhotoDraw } from '@/lib/series-canvas';
-import { DEFAULT_SERIES_STYLE, SERIES_ARRANGEMENTS, resolveSeriesStyle, type ResolvedSeriesStyle } from '@/lib/series-layout';
+import PhotoLibraryPanel from '@/components/konten/PhotoLibraryPanel';
+import { drawSeriesStory } from '@/lib/series-canvas';
+import { useSeriesPhotos } from '@/lib/use-series-photos';
+import { DEFAULT_SERIES_STYLE, SERIES_ARRANGEMENTS, autoGridCols, resolveSeriesStyle, seriesArea, seriesRects, type ResolvedSeriesStyle, type SeriesArrangement } from '@/lib/series-layout';
 import {
   CONTENT_TEMPLATES,
   REGION_OPTIONS,
@@ -110,11 +112,14 @@ interface Photo {
   img: HTMLImageElement;
 }
 
-const ARRANGEMENT_ICON: Record<'rows' | 'columns' | 'grid' | 'hero', Array<[number, number, number, number]>> = {
+const ARRANGEMENT_ICON: Record<SeriesArrangement, Array<[number, number, number, number]>> = {
   rows: [[4, 4, 32, 8], [4, 16, 32, 8], [4, 28, 32, 8]],
   columns: [[4, 4, 9, 32], [15, 4, 10, 32], [27, 4, 9, 32]],
   grid: [[4, 4, 15, 15], [21, 4, 15, 15], [4, 21, 15, 15], [21, 21, 15, 15]],
-  hero: [[4, 4, 32, 18], [4, 24, 9, 12], [15, 24, 10, 12], [27, 24, 9, 12]],
+  hero: [[4, 4, 32, 18], [4, 24, 15, 12], [21, 24, 15, 12]],
+  heroBottom: [[4, 4, 15, 12], [21, 4, 15, 12], [4, 18, 32, 18]],
+  heroLeft: [[4, 4, 20, 32], [26, 4, 10, 15], [26, 21, 10, 15]],
+  heroRight: [[4, 4, 10, 15], [4, 21, 10, 15], [16, 4, 20, 32]],
 };
 
 const EMPTY_FORM: Form = {
@@ -222,7 +227,6 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   const [brand, setBrand] = useState<BrandFields>({ brandName: '', brandSub: '', contactLine: '' });
   const [photos, setPhotos] = useState<Record<StorySlot, Photo | null>>({ before: null, after: null });
   const [frames, setFrames] = useState<Record<StorySlot, ContentPhotoFrame>>({ before: DEFAULT_FRAME, after: DEFAULT_FRAME });
-  const [seriesPhotos, setSeriesPhotos] = useState<SeriesPhotoDraw[]>([]);
   const [pickerSlot, setPickerSlot] = useState<StorySlot | null>(null);
   const [logo, setLogo] = useState<HTMLImageElement | null>(null);
   const [fontsReady, setFontsReady] = useState(false);
@@ -230,8 +234,11 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   const [notFound, setNotFound] = useState(false);
   const [busy, setBusy] = useState<null | 'save' | 'publish' | 'unpublish' | 'delete'>(null);
   const [dirty, setDirty] = useState(false);
-  const [consent, setConsent] = useState(false);
+  const [swapMode, setSwapMode] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const saveRef = useRef<(allowUntitled?: boolean) => Promise<number | null>>(async () => null);
+  const series = useSeriesPhotos(recordId, () => saveRef.current(true), () => setDirty(true));
   const fileInputs = { before: useRef<HTMLInputElement>(null), after: useRef<HTMLInputElement>(null) };
   /** Set when this page created the record, so the URL change doesn't reload it. */
   const createdId = useRef<number | null>(null);
@@ -397,7 +404,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
           title: storyTitle,
           caption,
           logo,
-          photos: seriesPhotos,
+          photos: series.draws,
           style: form.seriesStyle,
         },
         FONTS,
@@ -416,7 +423,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
       },
       FONTS,
     );
-  }, [form, storyTitle, caption, photos, frames, seriesPhotos, logo, fontsReady, loading]);
+  }, [form, storyTitle, caption, photos, frames, series.draws, logo, fontsReady, loading]);
 
   const pickPhoto = async (slot: StorySlot, file: File | undefined) => {
     if (!file) return;
@@ -483,9 +490,9 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     series: form.seriesStyle,
   });
 
-  const contentPayload = (): ContentPayload => ({
+  const contentPayload = (titleOverride?: string): ContentPayload => ({
     templateId: form.templateId,
-    title: form.title.trim(),
+    title: titleOverride ?? form.title.trim(),
     caption: caption.trim(),
     layout: form.layout,
     background: form.background,
@@ -520,8 +527,11 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   };
 
   /** Saves the record; returns its id, or null if it couldn't. */
-  const save = async (): Promise<number | null> => {
-    if (isTemplate ? !form.name.trim() : !form.title.trim()) {
+  const save = async (allowUntitled = false): Promise<number | null> => {
+    // Menambah foto tidak boleh terhambat judul: draft diberi judul sementara yang bisa diganti.
+    const draftTitle = allowUntitled && !isTemplate && !form.title.trim() ? 'Case series' : undefined;
+    if (draftTitle) setForm((prev) => ({ ...prev, title: draftTitle }));
+    if (!draftTitle && (isTemplate ? !form.name.trim() : !form.title.trim())) {
       error(isTemplate ? 'Isi nama tindakan dulu' : 'Isi nama tindakan dulu');
       return null;
     }
@@ -534,7 +544,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
       const saved = recordId ? await templatesApi.update(recordId, templatePayload()) : await templatesApi.create(templatePayload());
       id = saved.id;
     } else {
-      const saved = recordId ? await contentsApi.update(recordId, contentPayload()) : await contentsApi.create(contentPayload());
+      const saved = recordId ? await contentsApi.update(recordId, contentPayload(draftTitle)) : await contentsApi.create(contentPayload(draftTitle));
       setStatus(saved.status);
       id = saved.id;
     }
@@ -546,6 +556,20 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
       window.history.replaceState(null, '', `${base}/${id}`);
     }
     return id;
+  };
+
+  useEffect(() => {
+    saveRef.current = save;
+  });
+
+  const showLibrary = libraryOpen && form.layout === 'series' && !isTemplate;
+  const usedLibraryIds = new Set(
+    series.items.filter((i) => i.photo.sourceType === 'patient_photo' && i.photo.sourceId).map((i) => i.photo.sourceId as number),
+  );
+  const toggleLibraryPhoto = (photoId: number, used: boolean) => {
+    if (!used) return void series.addFromLibrary([{ sourceType: 'patient_photo', sourceId: photoId }]);
+    const index = series.items.findIndex((i) => i.photo.sourceType === 'patient_photo' && i.photo.sourceId === photoId);
+    if (index >= 0) void series.remove(index);
   };
 
   const run = async (kind: NonNullable<typeof busy>, fn: () => Promise<void>) => {
@@ -580,7 +604,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   const onPublish = () =>
     run('publish', async () => {
       if (form.layout === 'series') {
-        if (seriesPhotos.length < 2) {
+        if (series.draws.length < 2) {
           error('Tambah minimal 2 foto dulu');
           return;
         }
@@ -617,7 +641,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
 
   const onDownload = async () => {
     if (form.layout === 'series') {
-      if (seriesPhotos.length < 2) {
+      if (series.draws.length < 2) {
         error('Tambah minimal 2 foto dulu');
         return;
       }
@@ -664,8 +688,89 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
       g.start = new Map(pointers.current);
     }
   };
+  // ── Series: ketuk untuk memilih, geser/cubit untuk mengatur isi sel ──────
+  const seriesRectsNow = () => seriesRects(series.draws.length, form.seriesStyle, seriesArea(form.seriesStyle.edgeText, form.seriesStyle.areaPct));
+  /** Indeks sel (pada draws) di bawah titik, atau -1. */
+  const seriesCellAt = (p: Point) =>
+    seriesRectsNow().findIndex(([x, y, w, h]) => p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h);
+  /** Terapkan perubahan frame ke foto `itemIndex`, dijepit supaya sel tak pernah kosong. */
+  const applySeriesFrame = (itemIndex: number, patch: Partial<ContentPhotoFrame>) => {
+    const di = series.drawIndexOf.indexOf(itemIndex);
+    const draw = series.draws[di];
+    const rect = seriesRectsNow()[di];
+    const next = { ...series.frameOf(itemIndex), ...patch };
+    series.setFrame(itemIndex, draw && rect ? placePhoto(draw.img, next, rect).frame : next);
+  };
+  const seriesWheelRef = useRef<((p: Point, delta: number) => void) | null>(null);
+  useEffect(() => {
+    seriesWheelRef.current = (p, delta) => {
+      const di = seriesCellAt(p);
+      if (di < 0) return;
+      const item = series.drawIndexOf[di];
+      applySeriesFrame(item, { zoom: clampZoom(series.frameOf(item).zoom * Math.exp(-delta * 0.01)) });
+    };
+  });
+  const seriesGesture = useRef<{ item: number; base: ContentPhotoFrame; start: Map<number, Point>; moved: boolean } | null>(null);
+  const seriesDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const p = toStory(e);
+    if (!seriesGesture.current) {
+      const di = seriesCellAt(p);
+      if (di < 0) return;
+      const item = series.drawIndexOf[di];
+      if (swapMode && series.selected !== null && series.selected !== item) {
+        void series.swap(series.selected, item);
+        setSwapMode(false);
+        return;
+      }
+      series.select(item);
+      seriesGesture.current = { item, base: series.frameOf(item), start: new Map(), moved: false };
+    }
+    pointers.current.set(e.pointerId, p);
+    seriesGesture.current.base = series.frameOf(seriesGesture.current.item);
+    seriesGesture.current.start = new Map(pointers.current);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+  const seriesMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    const g = seriesGesture.current;
+    if (!g || !pointers.current.has(e.pointerId)) return;
+    pointers.current.set(e.pointerId, toStory(e));
+    const ids = [...g.start.keys()].filter((id) => pointers.current.has(id)).slice(0, 2);
+    const b = g.base;
+    if (ids.length === 1) {
+      const s0 = g.start.get(ids[0])!;
+      const s1 = pointers.current.get(ids[0])!;
+      if (!g.moved && Math.hypot(s1.x - s0.x, s1.y - s0.y) < 6) return;
+      g.moved = true;
+      applySeriesFrame(g.item, { ox: b.ox + s1.x - s0.x, oy: b.oy + s1.y - s0.y });
+    } else if (ids.length === 2) {
+      const [a0, b0] = ids.map((id) => g.start.get(id)!);
+      const [a1, b1] = ids.map((id) => pointers.current.get(id)!);
+      const m0 = mid(a0, b0);
+      const m1 = mid(a1, b1);
+      const d0 = dist(a0, b0);
+      g.moved = true;
+      applySeriesFrame(g.item, {
+        zoom: clampZoom(b.zoom * (d0 > 0 ? dist(a1, b1) / d0 : 1)),
+        rot: normalizeAngle(snapAngle((b.rot ?? 0) + angle(a1, b1) - angle(a0, b0))),
+        ox: b.ox + m1.x - m0.x,
+        oy: b.oy + m1.y - m0.y,
+      });
+    }
+  };
+  const seriesEnd = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    pointers.current.delete(e.pointerId);
+    const g = seriesGesture.current;
+    if (!g) return;
+    if (pointers.current.size === 0) seriesGesture.current = null;
+    else {
+      g.base = series.frameOf(g.item);
+      g.start = new Map(pointers.current);
+    }
+  };
+
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (isTemplate || form.layout === 'series') return;
+    if (isTemplate) return;
+    if (form.layout === 'series') return seriesDown(e);
     const p = toStory(e);
     if (!gesture.current) {
       const slot = slotAt(form.layout, p.x, p.y);
@@ -681,6 +786,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     e.currentTarget.setPointerCapture(e.pointerId);
   };
   const onPointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (form.layout === 'series') return seriesMove(e);
     const g = gesture.current;
     if (!g || !pointers.current.has(e.pointerId)) return;
     pointers.current.set(e.pointerId, toStory(e));
@@ -706,6 +812,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     }
   };
   const onPointerEnd = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (form.layout === 'series') return seriesEnd(e);
     pointers.current.delete(e.pointerId);
     if (pointers.current.size === 0) gesture.current = null;
     else rebase();
@@ -718,7 +825,15 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     if (!canvas || isTemplate) return;
     const onWheel = (e: WheelEvent) => {
       if (!e.ctrlKey && !e.metaKey) return;
-      if (layoutRef.current === 'series') return;
+      if (layoutRef.current === 'series') {
+        const rs = canvas.getBoundingClientRect();
+        e.preventDefault();
+        seriesWheelRef.current?.(
+          { x: ((e.clientX - rs.left) * STORY_W) / rs.width, y: ((e.clientY - rs.top) * STORY_H) / rs.height },
+          Math.max(-50, Math.min(50, e.deltaY)),
+        );
+        return;
+      }
       const r = canvas.getBoundingClientRect();
       const slot = slotAt(
         layoutRef.current,
@@ -881,12 +996,12 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                   <section className="kt-section">
                     <h2>Foto</h2>
                     <SeriesPhotosEditor
-                      contentId={recordId}
-                      onNeedSave={save}
-                      onPhotosChanged={(photos) => {
-                        setSeriesPhotos(photos);
-                        setDirty(true);
-                      }}
+                      ctl={series}
+                      onFrame={(index, patch) => applySeriesFrame(index, patch)}
+                      swapMode={swapMode}
+                      onSwapMode={setSwapMode}
+                      libraryOpen={libraryOpen}
+                      onToggleLibrary={() => setLibraryOpen((v) => !v)}
                     />
                   </section>
                 )}
@@ -1148,6 +1263,24 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                   {form.layout === 'series' && (
                     <div className="kt-series-style">
                       <h3>Gaya rangkaian</h3>
+                      <label className="kt-check">
+                        <input
+                          type="checkbox"
+                          checked={form.seriesStyle.edgeText}
+                          onChange={(e) => setSeriesStyle({ edgeText: e.target.checked })}
+                        />
+                        Teks atas &amp; bawah mepet ke tepi (foto lebih luas)
+                      </label>
+                      <label className="kt-zoom">
+                        <span>Tinggi area foto</span>
+                        <input
+                          type="range" min={40} max={100} step={1}
+                          value={form.seriesStyle.areaPct}
+                          onChange={(e) => setSeriesStyle({ areaPct: Number(e.target.value) })}
+                          aria-label="Tinggi area foto"
+                        />
+                        <output className="kt-deg">{form.seriesStyle.areaPct}%</output>
+                      </label>
                       <div className="kt-label">Susunan foto</div>
                       <div className="kt-arrange" role="radiogroup" aria-label="Susunan foto rangkaian">
                         {SERIES_ARRANGEMENTS.map(({ value, label }) => (
@@ -1167,6 +1300,36 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                           </label>
                         ))}
                       </div>
+                      {form.seriesStyle.arrangement.startsWith('hero') && (
+                        <label className="kt-zoom">
+                          <span>Ukuran foto besar</span>
+                          <input
+                            type="range" min={30} max={80} step={1}
+                            value={form.seriesStyle.split}
+                            onChange={(e) => setSeriesStyle({ split: Number(e.target.value) })}
+                            aria-label="Ukuran foto besar"
+                          />
+                          <output className="kt-deg">{form.seriesStyle.split}%</output>
+                        </label>
+                      )}
+                      {form.seriesStyle.arrangement === 'grid' && (
+                        <>
+                          <div className="kt-label">Kolom kisi</div>
+                          <div className="kt-choice" role="radiogroup" aria-label="Jumlah kolom kisi">
+                            {[0, 1, 2, 3, 4].map((n) => (
+                              <label key={n} className={form.seriesStyle.cols === n ? 'on' : ''}>
+                                <input
+                                  type="radio"
+                                  name="series-cols"
+                                  checked={form.seriesStyle.cols === n}
+                                  onChange={() => setSeriesStyle({ cols: n })}
+                                />
+                                {n === 0 ? `Otomatis (${autoGridCols(Math.max(1, series.draws.length))})` : `${n} kolom`}
+                              </label>
+                            ))}
+                          </div>
+                        </>
+                      )}
                       <label className="kt-zoom">
                         <span>Jarak foto</span>
                         <input
@@ -1306,13 +1469,9 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
 
                 {!isTemplate && (
                   <section className="kt-section kt-ethics">
-                    <label className="kt-check">
-                      <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-                      Pasien sudah memberi izin tertulis fotonya dipublikasikan, dan wajah/identitasnya tidak terlihat kecuali
-                      atas izinnya.
-                    </label>
                     <p className="kt-hint">
-                      Iklan layanan kesehatan tidak boleh menjanjikan hasil. Tampilkan hasil apa adanya, tanpa edit berlebihan.
+                      Pastikan pasien setuju fotonya dipublikasikan dan identitasnya terlindungi (gunakan Blur bila perlu). Iklan
+                      layanan kesehatan tidak boleh menjanjikan hasil: tampilkan hasil apa adanya, tanpa edit berlebihan.
                     </p>
                   </section>
                 )}
@@ -1333,8 +1492,8 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                         type="button"
                         className="kt-btn primary"
                         onClick={onPublish}
-                        disabled={!!busy || uploading || !consent}
-                        title={consent ? 'Tampilkan di galeri website klinik' : 'Centang izin pasien dulu'}
+                        disabled={!!busy || uploading}
+                        title="Tampilkan di galeri website klinik"
                       >
                         {busy === 'publish' ? 'Menampilkan…' : status === 'published' ? 'Perbarui di website' : 'Tampilkan di website'}
                       </button>
@@ -1377,6 +1536,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
               </form>
 
               <div className="kt-preview">
+                <div className="kt-stage" hidden={showLibrary}>
                 <canvas
                   ref={canvasRef}
                   width={STORY_W}
@@ -1389,7 +1549,27 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                   onPointerUp={onPointerEnd}
                   onPointerCancel={onPointerEnd}
                 />
-                <p className="kt-hint">
+                {form.layout === 'series' && !isTemplate && series.selected !== null && (() => {
+                  const di = series.drawIndexOf.indexOf(series.selected);
+                  const r = di >= 0 ? seriesRectsNow()[di] : null;
+                  if (!r) return null;
+                  return (
+                    <div
+                      className={`kt-sel${swapMode ? ' swap' : ''}`}
+                      style={{ left: `${(r[0] / STORY_W) * 100}%`, top: `${(r[1] / STORY_H) * 100}%`, width: `${(r[2] / STORY_W) * 100}%`, height: `${(r[3] / STORY_H) * 100}%` }}
+                    />
+                  );
+                })()}
+                </div>
+                {showLibrary && (
+                  <PhotoLibraryPanel
+                    usedIds={usedLibraryIds}
+                    busy={series.busy}
+                    onToggle={(photo, used) => toggleLibraryPhoto(photo.id, used)}
+                    onClose={() => setLibraryOpen(false)}
+                  />
+                )}
+                <p className="kt-hint" hidden={showLibrary}>
                   {isTemplate
                     ? 'Pratinjau template — foto diisi per konten.'
                     : '1080 × 1920 px · ukuran story Instagram & WhatsApp'}

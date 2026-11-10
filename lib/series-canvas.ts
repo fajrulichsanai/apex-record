@@ -1,7 +1,7 @@
-import type { ContentBackground } from './contents';
-import { DISCLAIMER, STORY_H, STORY_W, THEMES, roundRectPath } from './story-canvas';
+import type { ContentBackground, ContentPhotoFrame } from './contents';
+import { DEFAULT_FRAME, DISCLAIMER, STORY_H, STORY_W, THEMES, placePhoto, roundRectPath } from './story-canvas';
 import type { StoryFonts } from './story-canvas';
-import { mixHex, readableOn, resolveSeriesStyle, seriesRects, type SeriesStyle } from './series-layout';
+import { mixHex, readableOn, resolveSeriesStyle, seriesArea, seriesRects, type SeriesStyle } from './series-layout';
 
 /** See story-canvas.ts: Safari before 17.4 doesn't implement ctx.letterSpacing. */
 function setTracking(g: CanvasRenderingContext2D, px: number) {
@@ -12,6 +12,8 @@ export interface SeriesPhotoDraw {
   img: HTMLImageElement;
   caption: string;
   blurFace: boolean;
+  /** Posisi/zoom/putar di dalam sel; kosong = penuh (cover) di tengah. */
+  frame?: ContentPhotoFrame | null;
 }
 
 export interface SeriesStoryData {
@@ -31,17 +33,10 @@ export interface SeriesStoryData {
   style?: SeriesStyle | null;
 }
 
-/** Cover-fits an image into a rect, no pan/zoom controls — series photos are laid out automatically. */
-function coverFit(img: HTMLImageElement, x: number, y: number, w: number, h: number) {
-  const k = Math.max(w / img.width, h / img.height);
-  const dw = img.width * k, dh = img.height * k;
-  return { dx: x + (w - dw) / 2, dy: y + (h - dh) / 2, dw, dh };
-}
-
 /**
  * A case series: 3+ photos placed automatically by the chosen arrangement
- * (rows / columns / grid / one big + small) — no manual framing per photo,
- * unlike before/after. Spacing, corner radius, caption style, numbering and
+ * (rows / columns / grid / one big + small); each photo can still be
+ * zoomed, moved, rotated and mirrored inside its cell via `frame`. Spacing, corner radius, caption style, numbering and
  * colours come from `d.style`.
  * `blurFace` applies a uniform blur over that whole photo (no face
  * detection — a deliberate simplification so patients can still be made
@@ -89,12 +84,16 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
   g.fillStyle = T.bg;
   g.fillRect(0, 0, STORY_W, STORY_H);
 
+  // Teks atas/bawah: mepet ke tepi (foto lebih luas) atau di zona aman Instagram.
+  const dy = st.edgeText ? -176 : 0;
+  const footY = st.edgeText ? { dis: 1808, title: 1852, line: 1894 } : { dis: 1612, title: 1690, line: 1736 };
+
   // Header.
   const badgeFont = `500 22px ${f.mono}`;
   let brandX = 60;
   if (d.logo && d.logo.width && d.logo.height) {
     const h = 64, w = Math.min(160, (h * d.logo.width) / d.logo.height);
-    g.drawImage(d.logo, 60, 236, w, h);
+    g.drawImage(d.logo, 60, 236 + dy, w, h);
     brandX = 60 + w + 16;
   }
   g.save();
@@ -103,16 +102,16 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
   const badgeW = d.badge ? g.measureText(d.badge).width + 32 : 0;
   g.restore();
   const brandMax = 1020 - badgeW - brandX;
-  txt(fit(d.brandName.toUpperCase(), brandMax, `700 32px ${f.display}`, 2), brandX, 264, `700 32px ${f.display}`, T.fg, 'left', 2);
-  txt(fit(d.brandSub.toUpperCase(), brandMax, `400 20px ${f.mono}`, 4), brandX, 298, `400 20px ${f.mono}`, T.muted, 'left', 4);
-  txt(d.badge.toUpperCase(), 1020, 280, badgeFont, T.accent, 'right', 6);
+  txt(fit(d.brandName.toUpperCase(), brandMax, `700 32px ${f.display}`, 2), brandX, 264 + dy, `700 32px ${f.display}`, T.fg, 'left', 2);
+  txt(fit(d.brandSub.toUpperCase(), brandMax, `400 20px ${f.mono}`, 4), brandX, 298 + dy, `400 20px ${f.mono}`, T.muted, 'left', 4);
+  txt(d.badge.toUpperCase(), 1020, 280 + dy, badgeFont, T.accent, 'right', 6);
 
   const titleFont = `italic 400 104px ${f.serif}`;
-  txt(fit(d.title || 'Nama tindakan', 960, titleFont), 60, 440, titleFont, T.fg);
-  if (d.caption) txt(fit(d.caption, 960, `400 32px ${f.display}`), 60, 500, `400 32px ${f.display}`, T.muted);
+  txt(fit(d.title || 'Nama tindakan', 960, titleFont), 60, 440 + dy, titleFont, T.fg);
+  if (d.caption) txt(fit(d.caption, 960, `400 32px ${f.display}`), 60, 500 + dy, `400 32px ${f.display}`, T.muted);
 
   // Photos — placed by the chosen arrangement, as many as there are.
-  const rects = seriesRects(d.photos.length, st, { x: 60, y: 560, w: 960, h: 1000 });
+  const rects = seriesRects(d.photos.length, st, seriesArea(st.edgeText, st.areaPct));
   d.photos.forEach((p, i) => {
     const [x, y, w, h] = rects[i];
     const radius = Math.min(st.radius, w / 2, h / 2);
@@ -123,10 +122,14 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
     g.fillStyle = T.slot;
     g.fillRect(x, y, w, h);
     if (p.img) {
+      g.save();
       if (p.blurFace) g.filter = 'blur(28px)';
-      const { dx, dy, dw, dh } = coverFit(p.img, x, y, w, h);
-      g.drawImage(p.img, dx, dy, dw, dh);
-      g.filter = 'none';
+      const placed = placePhoto(p.img, p.frame ?? DEFAULT_FRAME, [x, y, w, h]).draw;
+      g.translate(placed.cx, placed.cy);
+      g.rotate(placed.angle);
+      if (placed.flip) g.scale(-1, 1);
+      g.drawImage(p.img, -placed.w / 2, -placed.h / 2, placed.w, placed.h);
+      g.restore();
     }
     // Keterangan model "bar": pita selebar foto, di dalam klip sudut foto.
     const label = p.caption.trim();
@@ -198,13 +201,13 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
   });
 
   // Footer.
-  if (d.showDisclaimer) txt(DISCLAIMER, 60, 1612, `400 22px ${f.mono}`, T.muted);
+  if (d.showDisclaimer) txt(DISCLAIMER, 60, footY.dis, `400 22px ${f.mono}`, T.muted);
   const handleFont = `italic 400 40px ${f.serif}`;
   g.save();
   g.font = handleFont;
   const handleW = d.handle ? g.measureText(d.handle).width + 32 : 0;
   g.restore();
-  txt(fit(d.contactTitle, 960 - handleW, `500 30px ${f.display}`), 60, 1690, `500 30px ${f.display}`, T.fg);
-  txt(fit(d.contactLine, 960, `400 28px ${f.mono}`), 60, 1736, `400 28px ${f.mono}`, T.muted);
-  txt(d.handle, 1020, 1690, handleFont, T.accent, 'right');
+  txt(fit(d.contactTitle, 960 - handleW, `500 30px ${f.display}`), 60, footY.title, `500 30px ${f.display}`, T.fg);
+  txt(fit(d.contactLine, 960, `400 28px ${f.mono}`), 60, footY.line, `400 28px ${f.mono}`, T.muted);
+  txt(d.handle, 1020, footY.title, handleFont, T.accent, 'right');
 }

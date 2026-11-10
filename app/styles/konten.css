@@ -283,3 +283,84 @@
 .kt-color { display: flex; align-items: center; gap: 8px; }
 .kt-color label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text-sub); }
 .kt-color input[type="color"] { width: 38px; height: 30px; padding: 0; border: 1.5px solid var(--border); border-radius: 8px; background: none; cursor: pointer; }
+
+/* ── Series: tambah foto, daftar, perangkat atur ─────────────────────── */
+.kt-drop {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px;
+  border: 1.5px dashed var(--border); border-radius: 12px; transition: border-color 0.15s, background 0.15s;
+}
+.kt-drop.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.kt-drop .kt-hint { flex: 1 1 160px; margin: 0; }
+.kt-strip { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: thin; }
+.kt-strip-item {
+  position: relative; flex: 0 0 auto; width: 68px; height: 68px; padding: 0; border-radius: 10px; overflow: hidden;
+  border: 2px solid var(--border); background: var(--surface); cursor: pointer;
+}
+.kt-strip-item img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+.kt-strip-item b {
+  position: absolute; left: 4px; top: 4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px;
+  background: rgba(15, 20, 40, 0.65); color: #fff; font-size: 11px; line-height: 20px; text-align: center;
+}
+.kt-strip-item.on { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
+.kt-strip-item.swap { border-style: dashed; border-color: var(--accent); }
+.kt-strip-miss { display: grid; place-items: center; width: 100%; height: 100%; color: var(--text-sub); font-weight: 700; }
+.kt-stools {
+  display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 12px;
+  border: 1.5px solid var(--border); background: var(--surface);
+}
+.kt-stools-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.kt-stools-row strong { margin-right: auto; font-size: 13px; color: var(--text-main); }
+.kt-stool {
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-width: 52px; min-height: 48px; padding: 6px 8px; border-radius: 10px; cursor: pointer;
+  border: 1.5px solid var(--border); background: var(--bg, #fff); color: var(--text-main); font: inherit; font-size: 11px; font-weight: 600;
+}
+.kt-stool svg { width: 17px; height: 17px; }
+.kt-stool:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.kt-stool.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.kt-stool.danger:hover:not(:disabled) { border-color: #d64545; color: #d64545; }
+.kt-stool:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Pustaka foto rekam medis. */
+.kt-lib-search {
+  font: inherit; font-size: 14px; padding: 9px 12px; border-radius: 10px;
+  border: 1.5px solid var(--border); background: var(--surface); color: var(--text-main);
+}
+.kt-lib-search:focus { outline: none; border-color: var(--accent); }
+.kt-lib-img { display: block; aspect-ratio: 4 / 3; background: var(--bg); }
+.kt-lib-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.kt-lib-thumb.on { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
+.kt-lib-check {
+  position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 999px;
+  background: var(--accent); color: #fff;
+}
+.kt-lib-check svg { width: 12px; height: 12px; }
+.kt-picker-folder h3 small { font-weight: 500; color: var(--text-sub); margin-left: 6px; }
+
+/* Preview series: bingkai pilihan di atas canvas (tidak ikut terekspor). */
+.kt-stage { position: relative; width: 100%; }
+.kt-stage canvas { display: block; }
+.kt-sel {
+  position: absolute; pointer-events: none; border-radius: 6px;
+  outline: 3px solid var(--accent); outline-offset: -1px; box-shadow: 0 0 0 9999px rgba(8, 16, 40, 0.0);
+}
+.kt-sel.swap { outline-style: dashed; }
+
+/* Panel pustaka foto rekam medis: menggantikan preview di kolom kanan selama dibuka. */
+.kt-libpanel {
+  display: flex; flex-direction: column; gap: 10px; width: 100%; max-height: calc(100vh - 32px); padding: 14px;
+  border-radius: 18px; border: 1px solid var(--border); background: var(--surface, #fff);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+.kt-libpanel-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.kt-libpanel-head h2 { margin: 0; font-size: 15px; font-weight: 700; color: var(--text-main); }
+.kt-libpanel .kt-hint { margin: 0; }
+.kt-lib-body { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-height: 120px; flex: 1; }
+.kt-lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.kt-lib-thumb {
+  position: relative; display: flex; flex-direction: column; gap: 4px; padding: 0 0 6px; overflow: hidden; cursor: pointer;
+  border-radius: 10px; border: 2px solid var(--border); background: var(--surface, #fff); font: inherit;
+}
+.kt-lib-thumb:hover:not(:disabled) { border-color: var(--accent); }
+.kt-lib-thumb:disabled { opacity: 0.6; cursor: wait; }
+.kt-lib-thumb span:last-child { font-size: 11px; color: var(--text-sub); padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
