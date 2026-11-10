@@ -43,9 +43,9 @@ import {
   type StoryFonts,
   type StorySlot,
 } from '@/lib/story-canvas';
-import { SERIES_AREA, drawSeriesStory } from '@/lib/series-canvas';
+import { drawSeriesStory } from '@/lib/series-canvas';
 import { useSeriesPhotos } from '@/lib/use-series-photos';
-import { DEFAULT_SERIES_STYLE, SERIES_ARRANGEMENTS, autoGridCols, resolveSeriesStyle, seriesRects, type ResolvedSeriesStyle, type SeriesArrangement } from '@/lib/series-layout';
+import { DEFAULT_SERIES_STYLE, SERIES_ARRANGEMENTS, autoGridCols, resolveSeriesStyle, seriesArea, seriesRects, type ResolvedSeriesStyle, type SeriesArrangement } from '@/lib/series-layout';
 import {
   CONTENT_TEMPLATES,
   REGION_OPTIONS,
@@ -677,7 +677,7 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
     }
   };
   // ── Series: ketuk untuk memilih, geser/cubit untuk mengatur isi sel ──────
-  const seriesRectsNow = () => seriesRects(series.draws.length, form.seriesStyle, SERIES_AREA);
+  const seriesRectsNow = () => seriesRects(series.draws.length, form.seriesStyle, seriesArea(form.seriesStyle.edgeText));
   /** Indeks sel (pada draws) di bawah titik, atau -1. */
   const seriesCellAt = (p: Point) =>
     seriesRectsNow().findIndex(([x, y, w, h]) => p.x >= x && p.x <= x + w && p.y >= y && p.y <= y + h);
@@ -1249,6 +1249,14 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                   {form.layout === 'series' && (
                     <div className="kt-series-style">
                       <h3>Gaya rangkaian</h3>
+                      <label className="kt-check">
+                        <input
+                          type="checkbox"
+                          checked={form.seriesStyle.edgeText}
+                          onChange={(e) => setSeriesStyle({ edgeText: e.target.checked })}
+                        />
+                        Teks atas &amp; bawah mepet ke tepi (foto lebih luas)
+                      </label>
                       <div className="kt-label">Susunan foto</div>
                       <div className="kt-arrange" role="radiogroup" aria-label="Susunan foto rangkaian">
                         {SERIES_ARRANGEMENTS.map(({ value, label }) => (

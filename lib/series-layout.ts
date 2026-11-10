@@ -19,6 +19,8 @@ export interface SeriesStyle {
   cols?: number;
   /** Porsi foto besar (30–80 persen) untuk susunan "Satu besar". */
   split?: number;
+  /** true = teks atas & bawah mepet ke tepi story, foto mengisi tengah (lebih luas). */
+  edgeText?: boolean;
   /** #rrggbb; kosong = ikut tema Terang/Navy. */
   bgColor?: string;
   accentColor?: string;
@@ -36,6 +38,7 @@ export const DEFAULT_SERIES_STYLE: ResolvedSeriesStyle = {
   showNumbers: false,
   cols: 0,
   split: 58,
+  edgeText: true,
   bgColor: '',
   accentColor: '',
 };
@@ -64,6 +67,7 @@ export function resolveSeriesStyle(s?: SeriesStyle | null): ResolvedSeriesStyle 
     captionStyle: x.captionStyle === 'bar' || x.captionStyle === 'none' || x.captionStyle === 'chip' ? x.captionStyle : d.captionStyle,
     captionPosition: x.captionPosition === 'bottom' ? 'bottom' : d.captionPosition,
     showNumbers: x.showNumbers === true,
+    edgeText: x.edgeText !== false,
     split: Number.isFinite(x.split) ? clamp(Math.round(x.split as number), 30, 80) : d.split,
     cols: Number.isFinite(x.cols) ? clamp(Math.round(x.cols as number), 0, 4) : d.cols,
     bgColor: x.bgColor && HEX.test(x.bgColor) ? x.bgColor.toLowerCase() : '',
@@ -73,6 +77,10 @@ export function resolveSeriesStyle(s?: SeriesStyle | null): ResolvedSeriesStyle 
 
 /** Kolom otomatis untuk Kisi, dipakai juga untuk menampilkan nilai bawaan di pengaturan. */
 export const autoGridCols = (n: number) => (n <= 1 ? 1 : n <= 4 ? 2 : 3);
+
+/** Area foto di story: mepet (teks di tepi) atau aman-Instagram (bawaan lama). */
+export const seriesArea = (edgeText: boolean): Area =>
+  edgeText ? { x: 60, y: 350, w: 960, h: 1410 } : { x: 60, y: 560, w: 960, h: 1000 };
 
 export type Rect = [x: number, y: number, w: number, h: number];
 export interface Area { x: number; y: number; w: number; h: number }

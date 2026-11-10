@@ -20,7 +20,8 @@ export interface PhotoTemplateGroup {
 export interface PatientPhoto {
   id: number;
   patientId: number;
-  encounterId: number;
+  /** null = diunggah langsung ke pasien, tanpa kunjungan. */
+  encounterId: number | null;
   templateId: number | null;
   fileUrl: string;
   originalName?: string | null;
@@ -80,6 +81,18 @@ export const clinicalPhotosApi = {
     if (originalSizeBytes) form.append('originalSizeBytes', String(originalSizeBytes));
     return apiClient.postForm<PatientPhoto>(`/encounters/${encounterId}/photos`, form);
   },
+
+  /** Langsung ke pasien, tanpa perlu kunjungan. */
+  uploadForPatient: (patientId: number, file: File, templateId?: number, originalSizeBytes?: number) => {
+    const form = new FormData();
+    form.append('photo', file);
+    if (templateId) form.append('templateId', String(templateId));
+    if (originalSizeBytes) form.append('originalSizeBytes', String(originalSizeBytes));
+    return apiClient.postForm<PatientPhoto>(`/patients/${patientId}/photos`, form);
+  },
+
+  removeForPatient: (patientId: number, photoId: number) =>
+    apiClient.delete<void>(`/patients/${patientId}/photos/${photoId}`),
 
   remove: (encounterId: number, photoId: number) =>
     apiClient.delete<void>(`/encounters/${encounterId}/photos/${photoId}`),

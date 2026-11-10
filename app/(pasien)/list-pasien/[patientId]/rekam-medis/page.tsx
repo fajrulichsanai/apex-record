@@ -1,5 +1,6 @@
 'use client';
 
+import PatientPhotoUploader from '@/components/rekam-medis/PatientPhotoUploader';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -480,6 +481,13 @@ export default function PatientRekamMedisPage() {
                             )}
                           </div>
                         </div>
+
+                        <PatientPhotoUploader
+                          patientId={patientId}
+                          onUploaded={() => {
+                            clinicalPhotosApi.galleryForPatient(patientId).then(setGallery).catch(() => {});
+                          }}
+                        />
 
                         {!gallery || gallery.folders.length === 0 ? (
                           <div className="rm-loading">Belum ada foto klinis tercatat.</div>

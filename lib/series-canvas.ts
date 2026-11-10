@@ -1,7 +1,7 @@
 import type { ContentBackground, ContentPhotoFrame } from './contents';
 import { DEFAULT_FRAME, DISCLAIMER, STORY_H, STORY_W, THEMES, placePhoto, roundRectPath } from './story-canvas';
 import type { StoryFonts } from './story-canvas';
-import { mixHex, readableOn, resolveSeriesStyle, seriesRects, type SeriesStyle } from './series-layout';
+import { mixHex, readableOn, resolveSeriesStyle, seriesArea, seriesRects, type SeriesStyle } from './series-layout';
 
 /** See story-canvas.ts: Safari before 17.4 doesn't implement ctx.letterSpacing. */
 function setTracking(g: CanvasRenderingContext2D, px: number) {
@@ -15,9 +15,6 @@ export interface SeriesPhotoDraw {
   /** Posisi/zoom/putar di dalam sel; kosong = penuh (cover) di tengah. */
   frame?: ContentPhotoFrame | null;
 }
-
-/** Area foto di story; dipakai juga untuk hit-test di editor. */
-export const SERIES_AREA = { x: 60, y: 560, w: 960, h: 1000 };
 
 export interface SeriesStoryData {
   background: ContentBackground;
@@ -87,12 +84,16 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
   g.fillStyle = T.bg;
   g.fillRect(0, 0, STORY_W, STORY_H);
 
+  // Teks atas/bawah: mepet ke tepi (foto lebih luas) atau di zona aman Instagram.
+  const dy = st.edgeText ? -176 : 0;
+  const footY = st.edgeText ? { dis: 1808, title: 1852, line: 1894 } : { dis: 1612, title: 1690, line: 1736 };
+
   // Header.
   const badgeFont = `500 22px ${f.mono}`;
   let brandX = 60;
   if (d.logo && d.logo.width && d.logo.height) {
     const h = 64, w = Math.min(160, (h * d.logo.width) / d.logo.height);
-    g.drawImage(d.logo, 60, 236, w, h);
+    g.drawImage(d.logo, 60, 236 + dy, w, h);
     brandX = 60 + w + 16;
   }
   g.save();
@@ -101,16 +102,16 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
   const badgeW = d.badge ? g.measureText(d.badge).width + 32 : 0;
   g.restore();
   const brandMax = 1020 - badgeW - brandX;
-  txt(fit(d.brandName.toUpperCase(), brandMax, `700 32px ${f.display}`, 2), brandX, 264, `700 32px ${f.display}`, T.fg, 'left', 2);
-  txt(fit(d.brandSub.toUpperCase(), brandMax, `400 20px ${f.mono}`, 4), brandX, 298, `400 20px ${f.mono}`, T.muted, 'left', 4);
-  txt(d.badge.toUpperCase(), 1020, 280, badgeFont, T.accent, 'right', 6);
+  txt(fit(d.brandName.toUpperCase(), brandMax, `700 32px ${f.display}`, 2), brandX, 264 + dy, `700 32px ${f.display}`, T.fg, 'left', 2);
+  txt(fit(d.brandSub.toUpperCase(), brandMax, `400 20px ${f.mono}`, 4), brandX, 298 + dy, `400 20px ${f.mono}`, T.muted, 'left', 4);
+  txt(d.badge.toUpperCase(), 1020, 280 + dy, badgeFont, T.accent, 'right', 6);
 
   const titleFont = `italic 400 104px ${f.serif}`;
-  txt(fit(d.title || 'Nama tindakan', 960, titleFont), 60, 440, titleFont, T.fg);
-  if (d.caption) txt(fit(d.caption, 960, `400 32px ${f.display}`), 60, 500, `400 32px ${f.display}`, T.muted);
+  txt(fit(d.title || 'Nama tindakan', 960, titleFont), 60, 440 + dy, titleFont, T.fg);
+  if (d.caption) txt(fit(d.caption, 960, `400 32px ${f.display}`), 60, 500 + dy, `400 32px ${f.display}`, T.muted);
 
   // Photos — placed by the chosen arrangement, as many as there are.
-  const rects = seriesRects(d.photos.length, st, SERIES_AREA);
+  const rects = seriesRects(d.photos.length, st, seriesArea(st.edgeText));
   d.photos.forEach((p, i) => {
     const [x, y, w, h] = rects[i];
     const radius = Math.min(st.radius, w / 2, h / 2);
@@ -200,13 +201,13 @@ export function drawSeriesStory(g: CanvasRenderingContext2D, d: SeriesStoryData,
   });
 
   // Footer.
-  if (d.showDisclaimer) txt(DISCLAIMER, 60, 1612, `400 22px ${f.mono}`, T.muted);
+  if (d.showDisclaimer) txt(DISCLAIMER, 60, footY.dis, `400 22px ${f.mono}`, T.muted);
   const handleFont = `italic 400 40px ${f.serif}`;
   g.save();
   g.font = handleFont;
   const handleW = d.handle ? g.measureText(d.handle).width + 32 : 0;
   g.restore();
-  txt(fit(d.contactTitle, 960 - handleW, `500 30px ${f.display}`), 60, 1690, `500 30px ${f.display}`, T.fg);
-  txt(fit(d.contactLine, 960, `400 28px ${f.mono}`), 60, 1736, `400 28px ${f.mono}`, T.muted);
-  txt(d.handle, 1020, 1690, handleFont, T.accent, 'right');
+  txt(fit(d.contactTitle, 960 - handleW, `500 30px ${f.display}`), 60, footY.title, `500 30px ${f.display}`, T.fg);
+  txt(fit(d.contactLine, 960, `400 28px ${f.mono}`), 60, footY.line, `400 28px ${f.mono}`, T.muted);
+  txt(d.handle, 1020, footY.title, handleFont, T.accent, 'right');
 }
