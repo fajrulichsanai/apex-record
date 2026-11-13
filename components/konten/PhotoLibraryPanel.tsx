@@ -22,6 +22,26 @@ const dayLabel = (iso: string) =>
 const shortDate = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Jakarta' }) : '-';
 
+/** Unduh thumbnail paling banyak 4 sekaligus: foto asli besar, 18 unduhan bersamaan membuat ponsel macet. */
+const MAX_PARALLEL = 4;
+let running = 0;
+const waiting: Array<() => void> = [];
+function limited<T>(task: () => Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const run = () => {
+      running += 1;
+      task()
+        .then(resolve, reject)
+        .finally(() => {
+          running -= 1;
+          waiting.shift()?.();
+        });
+    };
+    if (running < MAX_PARALLEL) run();
+    else waiting.push(run);
+  });
+}
+
 /** Thumbnail yang baru diunduh saat terlihat; gagal muat tampil sebagai kotak kosong yang jelas. */
 function LazyThumb({ photo }: { photo: LibraryPhoto }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -33,7 +53,7 @@ function LazyThumb({ photo }: { photo: LibraryPhoto }) {
     let url: string | null = null;
     let cancelled = false;
     const load = () => {
-      fetchProtectedFileUrl(photo.fileUrl)
+      limited(() => fetchProtectedFileUrl(photo.fileUrl))
         .then((u) => {
           if (cancelled) URL.revokeObjectURL(u);
           else {
