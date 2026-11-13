@@ -86,7 +86,7 @@
 .share-fee-page .stat-icon { width: 44px; height: 44px; border-radius: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .share-fee-page .stat-icon .material-symbols-rounded { font-size: 22px; }
 .share-fee-page .stat-card.rata  .stat-icon { background: var(--info-soft); color: var(--info); }
-.share-fee-page .stat-card.fixed .stat-icon { background: var(--orange-soft); color: var(--orange); }
+.share-fee-page .stat-card.fixed-fee .stat-icon { background: var(--orange-soft); color: var(--orange); }
 .share-fee-page .stat-card.total { background: var(--primary); border-color: transparent; color: #fff; }
 .share-fee-page .stat-card.total .stat-icon { background: rgba(126,217,87,.18); color: var(--accent-solid); }
 .share-fee-page .stat-card.total .stat-label,
@@ -217,10 +217,36 @@
   .share-fee-page .report-layout { grid-template-columns: 1fr; }
   .share-fee-page .dokter-list { max-height: 280px; border-right: none; border-bottom: 1px solid var(--border); }
 }
+/* Tabel konfigurasi fee jadi kartu per tindakan di layar sempit (tanpa geser samping). */
+@media (max-width: 760px) {
+  .share-fee-page .fee-table,
+  .share-fee-page .fee-table tbody,
+  .share-fee-page .fee-table tr,
+  .share-fee-page .fee-table td { display: block; }
+  .share-fee-page .fee-table thead { display: none; }
+  .share-fee-page .fee-table tbody tr {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--border);
+  }
+  .share-fee-page .fee-table tbody tr:last-child { border-bottom: none; }
+  .share-fee-page .fee-table td { padding: 0; border: 0; min-width: 0 !important; }
+  .share-fee-page .fee-table td[data-label]::before {
+    content: attr(data-label); display: block; margin-bottom: 4px;
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted);
+  }
+  .share-fee-page .fee-table td.cell-name { grid-column: 1 / -1; }
+  .share-fee-page .fee-table td.cell-name .tarif-name { font-size: 14.5px; }
+  .share-fee-page .fee-table td.cell-save { display: flex; justify-content: flex-end; align-items: flex-end; }
+  .share-fee-page .fee-table td.cell-save .btn-row-save { width: 100%; padding: 10px 14px; }
+  .share-fee-page .fee-value-input { width: 100%; min-width: 0; }
+  .share-fee-page .fee-input-row { width: 100%; }
+}
 @media (max-width: 600px) {
   .share-fee-page .page-title h1 { font-size: 20px; }
   .share-fee-page .tab-bar { align-self: stretch; }
   .share-fee-page .filter-tab { flex: 1; }
-  .share-fee-page .stat-value { font-size: 18px; }
+  .share-fee-page .stat-value { font-size: 17px; }
+  .share-fee-page .stat-card { padding: 14px; gap: 10px; }
+  .share-fee-page .stat-icon { width: 36px; height: 36px; border-radius: 11px; }
+  .share-fee-page .stat-icon .material-symbols-rounded { font-size: 19px; }
   .share-fee-page .picker-row > div { flex: 1; min-width: 0; }
 }
