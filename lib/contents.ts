@@ -136,15 +136,22 @@ export interface SeriesPhoto {
   frame: ContentPhotoFrame | null;
 }
 
-/** Foto klinis pasien yang flag izin kontennya aktif — tampil langsung di Konten. */
+/** Pasien yang fotonya boleh dipakai di Konten (izin diatur di rekam medis). */
+export interface LibraryPatient {
+  id: number;
+  name: string;
+  noRm: string;
+  photoCount: number;
+  lastAt: string | null;
+}
+
+/** Satu foto pasien di pustaka Konten (klinis atau Pemeriksaan Penunjang). */
 export interface LibraryPhoto {
   id: number;
+  sourceType: Exclude<ContentPhotoSource, 'upload'>;
   fileUrl: string;
-  patientId: number;
-  patientName: string;
-  patientNoRm: string;
   takenAt: string;
-  template?: { id: number; name: string } | null;
+  label: string;
 }
 
 export const CONTENT_STATUS_LABEL: Record<ContentStatus, string> = {
@@ -157,7 +164,7 @@ export const CONTENT_STATUS_LABEL: Record<ContentStatus, string> = {
  * it's drawn on can still be exported). Returns null when there is none.
  */
 async function fetchImage(path: string): Promise<Blob | null> {
-  if (isDemoMode()) return null;
+  if (isDemoMode()) return (await import('./demo/mock-extra')).demoContentImage(path);
   const res = await fetch(apiFileUrl(path), { cache: 'no-store' });
   if (res.status === 404) return null;
   if (!res.ok) throw new ApiError('Gagal memuat gambar', res.status);
@@ -184,7 +191,9 @@ export const contentsApi = {
   photo: (id: number, which: 'before' | 'after' | 'rendered') => fetchImage(`/contents/${id}/photos/${which}`),
   logo: () => fetchImage('/contents/logo'),
   picker: (patientId: number) => apiClient.get<ContentPhotoPicker>(`/contents/picker/${patientId}`),
-  photoLibrary: () => apiClient.get<LibraryPhoto[]>('/contents/photo-library'),
+  photoPatients: (search?: string) =>
+    apiClient.get<LibraryPatient[]>('/contents/photo-patients' + (search ? `?search=${encodeURIComponent(search)}` : '')),
+  patientPhotos: (patientId: number) => apiClient.get<LibraryPhoto[]>(`/contents/photo-library/${patientId}`),
   importPhoto: (sourceType: ContentPhotoSource, sourceId: number) =>
     apiClient.post<{ url: string }>('/contents/import-photo', { sourceType, sourceId }),
 };

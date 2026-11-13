@@ -91,7 +91,7 @@ export default function ShareFeeDokterPage() {
                   <div className="stat-label">Rata-rata Fee Persentase</div>
                 </div>
               </div>
-              <div className="stat-card fixed">
+              <div className="stat-card fixed-fee">
                 <div className="stat-icon">
                   <span aria-hidden="true" className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
                     payments

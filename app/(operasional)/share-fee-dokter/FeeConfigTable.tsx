@@ -127,22 +127,22 @@ export default function FeeConfigTable({ onChanged }: FeeConfigTableProps) {
         <tbody>
           {rows.map((row) => (
             <tr key={row.tarif.id}>
-              <td>
+              <td className="cell-name">
                 <div className="tarif-name">{row.tarif.name}</div>
                 <div className="tarif-kategori">{row.tarif.kategori}</div>
               </td>
-              <td>Rp {(row.tarif.hargaJual || 0).toLocaleString('id-ID')}</td>
-              <td title="Dipotong dari dasar fee persentase">
+              <td data-label="Harga Jual">Rp {(row.tarif.hargaJual || 0).toLocaleString('id-ID')}</td>
+              <td data-label="Biaya Lab" title="Dipotong dari dasar fee persentase">
                 {Number(row.tarif.biayaLab || 0) > 0 ? `Rp ${Number(row.tarif.biayaLab).toLocaleString('id-ID')}` : '-'}
               </td>
-              <td style={{ minWidth: 160 }}>
+              <td data-label="Tipe Fee" style={{ minWidth: 160 }}>
                 <CustomSelect
                   value={row.feeType}
                   onChange={(v) => updateRow(row.tarif.id, { feeType: v as FeeType })}
                   options={FEE_TYPE_OPTIONS}
                 />
               </td>
-              <td>
+              <td data-label="Nilai Fee">
                 <div className="fee-input-row">
                   <input
                     type="number"
@@ -154,7 +154,7 @@ export default function FeeConfigTable({ onChanged }: FeeConfigTableProps) {
                   <span className="fee-suffix">{row.feeType === 'fixed' ? 'Rp' : '%'}</span>
                 </div>
               </td>
-              <td>
+              <td data-label="Aktif">
                 <label className="toggle-switch">
                   <input
                     type="checkbox"
@@ -164,7 +164,7 @@ export default function FeeConfigTable({ onChanged }: FeeConfigTableProps) {
                   <span className="toggle-slider" />
                 </label>
               </td>
-              <td>
+              <td className="cell-save">
                 <button
                   type="button"
                   className="btn-row-save"

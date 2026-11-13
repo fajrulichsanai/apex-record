@@ -105,11 +105,18 @@ export function useSeriesPhotos(
 
   const ensureId = useCallback(async () => {
     if (contentId) return contentId;
-    const id = await onNeedSave();
+    let id: number | null = null;
+    try {
+      id = await onNeedSave();
+    } catch (err) {
+      // Gagal menyimpan draf harus terlihat, bukan membuat foto diam-diam tak masuk.
+      error(err instanceof Error && err.message ? err.message : 'Gagal menyimpan draf konten');
+      return null;
+    }
     // Record baru tidak punya foto di server; jangan muat ulang (menggandakan foto yang sedang ditambah).
     if (id) loadedFor.current = id;
     return id;
-  }, [contentId, onNeedSave]);
+  }, [contentId, onNeedSave, error]);
 
   const append = useCallback(
     async (id: number, photos: SeriesPhoto[]) => {

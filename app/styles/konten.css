@@ -335,7 +335,80 @@
   background: var(--accent); color: #fff;
 }
 .kt-lib-check svg { width: 12px; height: 12px; }
-.kt-picker-folder h3 small { font-weight: 500; color: var(--text-sub); margin-left: 6px; }
+
+/* Preview series: bingkai pilihan di atas canvas (tidak ikut terekspor). */
+.kt-stage { position: relative; width: 100%; }
+.kt-stage canvas { display: block; }
+.kt-sel {
+  position: absolute; pointer-events: none; border-radius: 6px;
+  outline: 3px solid var(--accent); outline-offset: -1px; box-shadow: 0 0 0 9999px rgba(8, 16, 40, 0.0);
+}
+.kt-sel.swap { outline-style: dashed; }
+
+/* Panel pustaka foto rekam medis: menggantikan preview di kolom kanan; layar penuh di ponsel. */
+.kt-libpanel {
+  display: flex; flex-direction: column; gap: 10px; width: 100%; max-height: calc(100vh - 32px); padding: 14px;
+  border-radius: 18px; border: 1px solid var(--border); background: var(--surface, #fff);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+.kt-libpanel-head { display: flex; align-items: center; gap: 8px; }
+.kt-libpanel-title { flex: 1; min-width: 0; }
+.kt-libpanel-title h2 { margin: 0; font-size: 15px; font-weight: 700; color: var(--text-main); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kt-libpanel-title small { color: var(--text-sub); font-size: 12px; }
+.kt-lib-back {
+  display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 999px;
+  border: 1.5px solid var(--border); background: transparent; color: var(--text-main); cursor: pointer;
+}
+.kt-lib-back:hover { border-color: var(--accent); color: var(--accent); }
+.kt-libpanel .kt-hint { margin: 0; }
+.kt-lib-search {
+  font: inherit; font-size: 14px; padding: 10px 12px; border-radius: 10px;
+  border: 1.5px solid var(--border); background: var(--surface); color: var(--text-main);
+}
+.kt-lib-search:focus { outline: none; border-color: var(--accent); }
+.kt-lib-body { display: flex; flex-direction: column; gap: 14px; overflow-y: auto; min-height: 120px; flex: 1; }
+.kt-lib-error {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-radius: 10px;
+  background: var(--red-soft, #fdecec); color: var(--tag-cancel, #b42318); font-size: 13px;
+}
+.kt-lib-patients { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.kt-lib-patients button {
+  display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; border-radius: 12px; cursor: pointer; text-align: left;
+  border: 1.5px solid var(--border); background: var(--surface, #fff); color: var(--text-main); font: inherit;
+}
+.kt-lib-patients button:hover { border-color: var(--accent); }
+.kt-lib-avatar {
+  display: grid; place-items: center; flex: none; width: 38px; height: 38px; border-radius: 10px;
+  background: var(--accent-soft, #e6f4e6); color: var(--accent); font-weight: 700;
+}
+.kt-lib-pinfo { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.kt-lib-pinfo strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kt-lib-pinfo small { font-size: 12px; color: var(--text-sub); }
+.kt-lib-day h3 { margin: 0 0 8px; font-size: 13px; font-weight: 700; color: var(--text-main); }
+.kt-lib-day h3 small { font-weight: 500; color: var(--text-sub); margin-left: 6px; }
+.kt-lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+.kt-lib-thumb {
+  position: relative; display: flex; flex-direction: column; gap: 4px; padding: 0 0 6px; overflow: hidden; cursor: pointer;
+  border-radius: 10px; border: 2px solid var(--border); background: var(--surface, #fff); font: inherit;
+}
+.kt-lib-thumb:hover:not(:disabled) { border-color: var(--accent); }
+.kt-lib-thumb:disabled { opacity: 0.6; cursor: wait; }
+.kt-lib-thumb span:last-child { font-size: 11px; color: var(--text-sub); padding: 0 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kt-lib-thumb.on { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent); }
+.kt-lib-img { display: grid; place-items: center; aspect-ratio: 4 / 3; background: var(--bg); }
+.kt-lib-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.kt-lib-img.failed b { color: var(--text-sub); font-size: 18px; }
+.kt-lib-check {
+  position: absolute; top: 5px; right: 5px; display: grid; place-items: center; width: 20px; height: 20px; border-radius: 999px;
+  background: var(--accent); color: #fff;
+}
+.kt-lib-check svg { width: 12px; height: 12px; }
+@media (max-width: 900px) {
+  .kt-libpanel {
+    position: fixed; inset: 0; z-index: 60; height: 100dvh; max-height: none; border-radius: 0; border: 0; padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+  }
+  .kt-lib-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 
 /* Preview series: bingkai pilihan di atas canvas (tidak ikut terekspor). */
 .kt-stage { position: relative; width: 100%; }

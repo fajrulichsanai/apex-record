@@ -27,6 +27,7 @@ import {
   type ContentStatus,
   type ContentTemplatePayload,
   type ContentTemplateRecord,
+  type LibraryPhoto,
   type PickerPhoto,
 } from '@/lib/contents';
 import {
@@ -43,7 +44,7 @@ import {
   type StoryFonts,
   type StorySlot,
 } from '@/lib/story-canvas';
-import PhotoLibraryPanel from '@/components/konten/PhotoLibraryPanel';
+import PhotoLibraryPanel, { libraryKey } from '@/components/konten/PhotoLibraryPanel';
 import { drawSeriesStory } from '@/lib/series-canvas';
 import { useSeriesPhotos } from '@/lib/use-series-photos';
 import { DEFAULT_SERIES_STYLE, SERIES_ARRANGEMENTS, autoGridCols, resolveSeriesStyle, seriesArea, seriesRects, type ResolvedSeriesStyle, type SeriesArrangement } from '@/lib/series-layout';
@@ -563,12 +564,12 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
   });
 
   const showLibrary = libraryOpen && form.layout === 'series' && !isTemplate;
-  const usedLibraryIds = new Set(
-    series.items.filter((i) => i.photo.sourceType === 'patient_photo' && i.photo.sourceId).map((i) => i.photo.sourceId as number),
+  const usedLibraryKeys = new Set(
+    series.items.filter((i) => i.photo.sourceType !== 'upload' && i.photo.sourceId).map((i) => `${i.photo.sourceType}:${i.photo.sourceId}`),
   );
-  const toggleLibraryPhoto = (photoId: number, used: boolean) => {
-    if (!used) return void series.addFromLibrary([{ sourceType: 'patient_photo', sourceId: photoId }]);
-    const index = series.items.findIndex((i) => i.photo.sourceType === 'patient_photo' && i.photo.sourceId === photoId);
+  const toggleLibraryPhoto = (photo: LibraryPhoto, used: boolean) => {
+    if (!used) return void series.addFromLibrary([{ sourceType: photo.sourceType, sourceId: photo.id }]);
+    const index = series.items.findIndex((i) => `${i.photo.sourceType}:${i.photo.sourceId}` === libraryKey(photo));
     if (index >= 0) void series.remove(index);
   };
 
@@ -1563,9 +1564,9 @@ export default function StoryEditor({ mode }: { mode: EditorMode }) {
                 </div>
                 {showLibrary && (
                   <PhotoLibraryPanel
-                    usedIds={usedLibraryIds}
+                    usedKeys={usedLibraryKeys}
                     busy={series.busy}
-                    onToggle={(photo, used) => toggleLibraryPhoto(photo.id, used)}
+                    onToggle={toggleLibraryPhoto}
                     onClose={() => setLibraryOpen(false)}
                   />
                 )}

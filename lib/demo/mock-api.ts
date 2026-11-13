@@ -4,6 +4,7 @@ import type {
   FinancialReportResponse,
   VisitReportResponse,
 } from '../reports';
+import { extraRoutes, kontenDemo } from './mock-extra';
 import {
   DEMO_CLINIC_ID,
   DOCTOR_FEE_PERCENT,
@@ -1099,6 +1100,10 @@ export async function demoRequest<T>(path: string, options: RequestInit = {}): P
   const method = (options.method || 'GET').toUpperCase();
   const url = new URL(path, 'http://demo.local');
 
+  // Konten: dibuat bisa dicoba (draf, foto, urutan) di memori selama tab terbuka.
+  const konten = await kontenDemo(method, url, options);
+  if (konten !== undefined) return structuredClone(konten) as T;
+
   // Marking notifications read is harmless and keeps the bell usable.
   if (method !== 'GET' && !/^\/notifications\/(read-all|\d+\/read)$/.test(url.pathname)) {
     throw new ApiError(DEMO_READ_ONLY_MESSAGE, 403, 'DEMO_READ_ONLY');
@@ -1108,7 +1113,7 @@ export async function demoRequest<T>(path: string, options: RequestInit = {}): P
   // A short, realistic delay so loading states render as they would live.
   await new Promise((r) => setTimeout(r, 120));
 
-  for (const [pattern, handler] of routes) {
+  for (const [pattern, handler] of [...extraRoutes, ...routes]) {
     const match = url.pathname.match(pattern);
     if (match) return structuredClone(handler(match, url.searchParams)) as T;
   }

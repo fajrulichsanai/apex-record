@@ -28,6 +28,7 @@ export function resolveFileUrl(url: string | null | undefined): string | null {
  * (`URL.revokeObjectURL`) once done.
  */
 export async function fetchProtectedFileUrl(path: string): Promise<string> {
+  if (isDemoMode()) return (await import('./demo/mock-extra')).demoFileUrl(path);
   const res = await fetch(apiFileUrl(path));
   if (!res.ok) {
     throw new ApiError('Gagal memuat file', res.status);
