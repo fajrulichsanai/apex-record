@@ -164,7 +164,7 @@ export const CONTENT_STATUS_LABEL: Record<ContentStatus, string> = {
  * it's drawn on can still be exported). Returns null when there is none.
  */
 async function fetchImage(path: string): Promise<Blob | null> {
-  if (isDemoMode()) return null;
+  if (isDemoMode()) return (await import('./demo/mock-extra')).demoContentImage(path);
   const res = await fetch(apiFileUrl(path), { cache: 'no-store' });
   if (res.status === 404) return null;
   if (!res.ok) throw new ApiError('Gagal memuat gambar', res.status);
