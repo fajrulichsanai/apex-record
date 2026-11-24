@@ -1,5 +1,6 @@
 'use client';
 
+import RmNavToggle, { useRmNavLayout } from '@/components/rekam-medis/RmNavToggle';
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -598,6 +599,7 @@ export default function RekamMedisPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<SectionId>('physical-exam');
+  const [navLayout, setNavLayout] = useRmNavLayout();
 
   const [exam, setExam] = useState<Record<ExamField, string>>(EMPTY_EXAM);
   const [examUpdatedAt, setExamUpdatedAt] = useState<string | null>(null);
@@ -989,7 +991,7 @@ export default function RekamMedisPage() {
                 </div>
               )}
 
-              <div className="rm-layout">
+              <div className={`rm-layout${navLayout === 'top' ? ' nav-top' : ''}`}>
                 <nav className="rm-sidebar">
                   <div className="rm-sidebar-title">Rekam Medis</div>
                   {SECTIONS.map((s) => (
@@ -1003,6 +1005,7 @@ export default function RekamMedisPage() {
                       {s.label}
                     </button>
                   ))}
+                  <RmNavToggle layout={navLayout} onChange={setNavLayout} />
                 </nav>
 
                 <div className="rm-content">

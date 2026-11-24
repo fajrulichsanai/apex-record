@@ -1,5 +1,6 @@
 'use client';
 
+import RmNavToggle, { useRmNavLayout } from '@/components/rekam-medis/RmNavToggle';
 import PatientPhotoUploader from '@/components/rekam-medis/PatientPhotoUploader';
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -88,6 +89,7 @@ export default function PatientRekamMedisPage() {
   const patientId = Number(params.patientId);
 
   const [activeSection, setActiveSection] = useState<SectionId>('soap');
+  const [navLayout, setNavLayout] = useRmNavLayout();
   const [patient, setPatient] = useState<Patient | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -220,7 +222,7 @@ export default function PatientRekamMedisPage() {
                 </div>
               </div>
 
-              <div className="rm-layout">
+              <div className={`rm-layout${navLayout === 'top' ? ' nav-top' : ''}`}>
                 <nav className="rm-sidebar">
                   <div className="rm-sidebar-title">Rekam Medis</div>
                   {SECTIONS.map((s) => (
@@ -234,6 +236,7 @@ export default function PatientRekamMedisPage() {
                       {s.label}
                     </button>
                   ))}
+                  <RmNavToggle layout={navLayout} onChange={setNavLayout} />
                 </nav>
 
                 <div className="rm-content">

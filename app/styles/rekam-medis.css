@@ -887,3 +887,29 @@ button.rx-kfa:hover { filter: brightness(.95); text-decoration: underline; }
 .cp-uploader.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .cp-uploader-where { display: flex; flex-wrap: wrap; gap: 8px; min-width: 200px; }
 .cp-uploader-hint { flex: 1 1 100%; font-size: 12px; color: var(--text-sub); }
+
+/* Tombol letak menu: di samping (bawaan) atau di atas sebagai tab. */
+.rm-nav-toggle { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; padding: 10px 6px 2px; border-top: 1px solid var(--border); }
+.rm-nav-toggle-label { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 0 4px; }
+.rm-nav-toggle-btns { display: flex; gap: 4px; padding: 3px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); }
+.rm-nav-toggle-btns button {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 7px 8px; border: none; border-radius: 999px;
+  background: none; color: var(--text-sub); font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; min-height: 34px;
+}
+.rm-nav-toggle-btns button .material-symbols-rounded { font-size: 16px; }
+.rm-nav-toggle-btns button.on { background: var(--primary); color: #fff; }
+.rm-nav-toggle-btns button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.rm-layout.nav-top { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.rm-layout.nav-top .rm-sidebar {
+  position: sticky; top: 12px; z-index: 5; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 8px;
+  box-shadow: var(--shadow-card);
+}
+.rm-layout.nav-top .rm-sidebar-title { display: none; }
+.rm-layout.nav-top .rm-sidebar-item { flex: 0 0 auto; white-space: nowrap; padding: 9px 12px; }
+.rm-layout.nav-top .rm-nav-toggle { flex: 0 0 auto; flex-direction: row; align-items: center; margin: 0 0 0 auto; padding: 0 0 0 10px; border-top: none; border-left: 1px solid var(--border); }
+.rm-layout.nav-top .rm-nav-toggle-label { display: none; }
+@media (max-width: 860px) {
+  /* Layar sempit: menu selalu berupa tab di atas, tombolnya tidak diperlukan. */
+  .rm-nav-toggle { display: none; }
+}
