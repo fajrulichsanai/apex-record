@@ -407,7 +407,46 @@ const clinicalPhoto = (patientId: number, i: number) => {
   };
 };
 
+const PN = ['(-)', '(+)'];
+const demoQ = (key: string, label: string, section: 'S' | 'O' | 'A' | 'Tr' | 'P', options: string[], multi = false) => ({ key, label, section, options, multi });
+const EXAM = [
+  ['sondasi', 'Sondasi', PN], ['palpasi', 'Palpasi', PN], ['perkusi', 'Perkusi', PN], ['druk', 'Druk (tekan)', PN],
+  ['termal', 'Termal', ['(-)', 'Dingin (+) cepat hilang', 'Dingin (+) bertahan lama', 'Panas (+)']],
+  ['bengkak', 'Pembengkakan gingiva', PN], ['fistula', 'Fistula', PN], ['mobility', 'Mobility', ['Derajat 0', 'Derajat 1', 'Derajat 2', 'Derajat 3']],
+] as const;
+const EXAM_TEXT = EXAM.map(([k, l]) => `${l.replace(' (tekan)', '')} : {${k}}`).join('\n');
+/** Dua template contoh dengan pertanyaan cepat, supaya demo "Pakai template" tidak kosong. */
+const demoPresets = [
+  {
+    key: 'tindakan-tambal-gigi', name: 'Tambal gigi', category: 'Tindakan · Konservasi',
+    subjective: 'Pasien mengeluhkan gigi {gigi} berlubang. Keluhan: {keluhan}.',
+    objective: `Gigi {gigi}: karies {kedalaman}\n${EXAM_TEXT}`,
+    assessment: 'Karies {kedalaman} gigi {gigi}.',
+    treatment: 'Preparasi kavitas, etsa & bonding, tumpatan {bahan} gigi {gigi}, finishing, polishing, cek oklusi.',
+    plan: 'Jangan makan keras 1 jam. Kontrol bila ngilu menetap.',
+    diagnoses: [{ system: 'icd10', code: 'K02.1', display: 'Caries of dentine', nameId: 'Karies dentin', primary: true }],
+    questions: [
+      demoQ('keluhan', 'Keluhan', 'S', ['Ngilu terkena dingin', 'Ngilu terkena manis', 'Makanan sering tersangkut', 'Nyeri spontan'], true),
+      demoQ('kedalaman', 'Kedalaman karies', 'O', ['email', 'dentin', 'dentin dalam (profunda)']),
+      ...EXAM.map(([k, l, o]) => demoQ(k, l, 'O', [...o])),
+      demoQ('bahan', 'Bahan tumpatan', 'Tr', ['resin komposit', 'GIC', 'amalgam']),
+    ],
+  },
+  {
+    key: 'tindakan-insersi-behel', name: 'Insersi behel', category: 'Tindakan · Ortodonti',
+    subjective: 'Pasien ingin merapikan giginya.',
+    objective: 'EO : mandibula protrusif 2 mm\nIO\nAnterior edge to edge\nMissing : 0\nHubungan molar klas 1',
+    assessment: 'Maloklusi Angle Dewey klas 1 tipe 3.',
+    treatment: 'Perawatan ortho cekat\nBracket : P2 ke P2 RA RB\nBuccal Tube : 16 26 36 46\nWire : RA 12 RB 12',
+    plan: 'Kontrol 21 hari.',
+    diagnoses: [{ system: 'icd10', code: 'K07.4', display: 'Dentofacial anomaly, unspecified', nameId: 'Maloklusi', primary: true }],
+    questions: [],
+  },
+];
+
 export const extraRoutes: [RegExp, Handler][] = [
+  [/^\/settings\/soap-templates\/presets$/, () => demoPresets],
+  [/^\/settings\/soap-templates$/, () => []],
   [
     /^\/patients\/(\d+)\/photos$/,
     (m) => ({

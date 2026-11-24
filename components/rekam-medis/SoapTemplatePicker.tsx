@@ -5,7 +5,16 @@ import { useEscapeKey } from '@/lib/a11y';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
 import { ApiError } from '@/lib/api-client';
-import { fillTemplate, soapTemplateApi, type SoapPreset, type SoapTemplate, type SoapTemplateBody } from '@/lib/soap-templates';
+import {
+  fillTemplate,
+  optionLabel,
+  soapTemplateApi,
+  type SoapAnswers,
+  type SoapPreset,
+  type SoapQuestion,
+  type SoapTemplate,
+  type SoapTemplateBody,
+} from '@/lib/soap-templates';
 import type { SoapDiagnosis } from '@/lib/terminology';
 import './SoapTemplatePicker.css';
 
@@ -18,7 +27,9 @@ export interface SoapValues {
   diagnoses: SoapDiagnosis[];
 }
 
-type Item = { id: string; name: string; group: string; body: SoapTemplateBody; own?: SoapTemplate };
+type Item = { id: string; name: string; group: string; body: SoapTemplateBody; own?: SoapTemplate; questions?: SoapQuestion[] };
+
+const SECTION_LABEL: Record<SoapQuestion['section'], string> = { S: 'S/ Subjective', O: 'O/ Objective', A: 'A/ Assessment', Tr: 'Tr/ Tindakan', P: 'P/ Plan' };
 
 /** Gabungkan diagnosis template ke daftar yang sudah ada tanpa duplikat. */
 export function mergeDiagnoses(current: SoapDiagnosis[], incoming: SoapDiagnosis[] | null | undefined): SoapDiagnosis[] {
@@ -52,6 +63,7 @@ export default function SoapTemplatePicker({
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Item | null>(null);
   const [gigi, setGigi] = useState('');
+  const [answers, setAnswers] = useState<SoapAnswers>({});
   const [mode, setMode] = useState<'replace' | 'append'>('replace');
   const [saveName, setSaveName] = useState('');
   const [saveShared, setSaveShared] = useState(false);
@@ -77,7 +89,7 @@ export default function SoapTemplatePicker({
       body: t,
       own: t,
     }));
-    const builtin: Item[] = presets.map((p) => ({ id: p.key, name: p.name, group: `Bawaan · ${p.category}`, body: p }));
+    const builtin: Item[] = presets.map((p) => ({ id: p.key, name: p.name, group: `Bawaan · ${p.category}`, body: p, questions: p.questions }));
     const q = query.trim().toLowerCase();
     const all = [...own, ...builtin];
     return q
@@ -100,6 +112,18 @@ export default function SoapTemplatePicker({
         (selected.body[k as keyof SoapTemplateBody] as string | null | undefined)?.includes('{gigi}'),
       )
     : false;
+  const questions = selected?.questions ?? [];
+  const fill = (t: string | null | undefined) => fillTemplate(t, gigi, answers, questions);
+  const choose = (item: Item) => {
+    setSelected(item);
+    setAnswers({});
+  };
+  const toggleAnswer = (q: SoapQuestion, label: string) =>
+    setAnswers((prev) => {
+      const cur = prev[q.key] ?? [];
+      const next = cur.includes(label) ? cur.filter((x) => x !== label) : q.multi ? [...cur, label] : [label];
+      return { ...prev, [q.key]: next };
+    });
   const hasContent = [values.subjective, values.objective, values.assessment, values.treatment, values.plan].some((v) => v.trim());
 
   const apply = () => {
@@ -107,11 +131,11 @@ export default function SoapTemplatePicker({
     const b = selected.body;
     const join = (cur: string, add: string) => (mode === 'append' && cur.trim() ? `${cur.trim()}\n${add}`.trim() : add || cur);
     onApply({
-      subjective: join(values.subjective, fillTemplate(b.subjective, gigi)),
-      objective: join(values.objective, fillTemplate(b.objective, gigi)),
-      assessment: join(values.assessment, fillTemplate(b.assessment, gigi)),
-      treatment: join(values.treatment, fillTemplate(b.treatment, gigi)),
-      plan: join(values.plan, fillTemplate(b.plan, gigi)),
+      subjective: join(values.subjective, fill(b.subjective)),
+      objective: join(values.objective, fill(b.objective)),
+      assessment: join(values.assessment, fill(b.assessment)),
+      treatment: join(values.treatment, fill(b.treatment)),
+      plan: join(values.plan, fill(b.plan)),
       diagnoses: mergeDiagnoses(values.diagnoses, b.diagnoses),
     });
     success(`Template "${selected.name}" dipakai — periksa & sesuaikan sebelum disimpan`);
@@ -202,7 +226,7 @@ export default function SoapTemplatePicker({
                         <div className="stp-group">{group}</div>
                         {list.map((i) => (
                           <div key={i.id} className={`stp-item ${selected?.id === i.id ? 'active' : ''}`}>
-                            <button type="button" className="stp-item-main" onClick={() => setSelected(i)}>
+                            <button type="button" className="stp-item-main" onClick={() => choose(i)}>
                               <span className="stp-item-name">{i.name}</span>
                               <span className="stp-codes">
                                 {(i.body.diagnoses ?? []).map((d) => (
@@ -246,13 +270,53 @@ export default function SoapTemplatePicker({
                           />
                         </label>
                       )}
+                      {questions.length > 0 && (
+                        <div className="stp-quick">
+                          <div className="stp-quick-title">Pertanyaan cepat — tekan jawabannya, catatan tersusun sendiri</div>
+                          {(['S', 'O', 'A', 'Tr', 'P'] as const).map((section) => {
+                            const list = questions.filter((q) => q.section === section);
+                            if (list.length === 0) return null;
+                            return (
+                              <div key={section} className="stp-quick-group">
+                                <div className="stp-quick-section">{SECTION_LABEL[section]}</div>
+                                {list.map((q) => (
+                                  <div key={q.key} className="stp-q">
+                                    <span className="stp-q-label">
+                                      {q.label}
+                                      {q.multi && <small> (boleh lebih dari satu)</small>}
+                                    </span>
+                                    <div className="stp-chips" role={q.multi ? 'group' : 'radiogroup'} aria-label={q.label}>
+                                      {q.options.map((o) => {
+                                        const label = optionLabel(o);
+                                        const on = (answers[q.key] ?? []).includes(label);
+                                        return (
+                                          <button
+                                            key={label}
+                                            type="button"
+                                            className={`stp-chip${on ? ' on' : ''}`}
+                                            aria-pressed={on}
+                                            onClick={() => toggleAnswer(q, label)}
+                                          >
+                                            {label}
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {questions.length > 0 && <div className="stp-quick-title stp-preview-title">Hasil catatan (periksa lalu pakai)</div>}
                       {(['subjective', 'objective', 'assessment', 'treatment', 'plan'] as const).map((k) =>
                         selected.body[k] ? (
                           <div key={k} className="stp-sec">
                             <div className="stp-sec-label">
                               {{ subjective: 'S', objective: 'O', assessment: 'A', treatment: 'Tindakan', plan: 'P' }[k]}
                             </div>
-                            <p>{fillTemplate(selected.body[k], gigi)}</p>
+                            <p style={{ whiteSpace: 'pre-line' }}>{fill(selected.body[k])}</p>
                           </div>
                         ) : null,
                       )}
@@ -316,7 +380,7 @@ export default function SoapTemplatePicker({
               </button>
               {open === 'pick' ? (
                 <button type="button" className="stp-btn primary" disabled={!selected} onClick={apply}>
-                  Pakai template
+                  {questions.length > 0 ? 'Buat catatan' : 'Pakai template'}
                 </button>
               ) : (
                 <button type="button" className="stp-btn primary" disabled={busy} onClick={save}>
