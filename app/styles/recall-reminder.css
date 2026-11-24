@@ -163,3 +163,10 @@
 :root[data-theme="dark"] .recall-page .btn-row-save:hover { background: rgba(62,142,54,.35); }
 :root[data-theme="dark"] .recall-page .btn-wa { background: rgba(37,211,102,.18); }
 :root[data-theme="dark"] .recall-page .btn-wa:hover { background: rgba(37,211,102,.3); }
+
+/* Jenis kontrol: empat warna yang mudah dibedakan. */
+.recall-page .tag.kind-kunjungan { background: var(--info-soft, #dceafb); color: var(--info, #1d5fae); }
+.recall-page .tag.kind-behel { background: #efe3fa; color: #6a3fa0; }
+.recall-page .tag.kind-saluran_akar { background: var(--orange-soft, #fceacb); color: var(--orange, #8a5a00); }
+.recall-page .tag.kind-perawatan { background: var(--accent-soft, #e3f3da); color: var(--accent-ink, #2b6b22); }
+.recall-page .kind-bar { flex-wrap: wrap; }

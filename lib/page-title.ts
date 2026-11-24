@@ -35,7 +35,7 @@ const TITLES: [string, string][] = [
   ['/laporan-keuangan', 'Laporan Keuangan'],
   ['/laporan-kunjungan', 'Laporan Kunjungan'],
   ['/catat-operasional', 'Pengeluaran'],
-  ['/recall-reminder', 'Recall Pasien'],
+  ['/recall-reminder', 'Follow Up Pasien'],
   ['/share-fee-dokter', 'Jasa Dokter'],
   ['/penggajian', 'Penggajian'],
   ['/share-fee-saya', 'Jasa Saya'],

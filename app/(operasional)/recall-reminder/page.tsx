@@ -58,7 +58,7 @@ export default function RecallReminderPage() {
               <div className="page-title">
                 <h1>Follow Up Pasien</h1>
               </div>
-              <p className="page-subtitle">Pasien yang sudah waktunya kontrol kembali, dijadwalkan otomatis dari tindakan yang punya interval recall.</p>
+              <p className="page-subtitle">Semua kontrol pasien dalam satu daftar: kontrol kunjungan (dari jadwal kontrol di SOAP), kontrol behel, kontrol perawatan saluran akar, dan kontrol perawatan lain (dari interval per tindakan).</p>
             </div>
           </div>
 

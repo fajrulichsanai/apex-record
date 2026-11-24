@@ -889,27 +889,39 @@ const routes: [RegExp, Handler][] = [
     const date = q.get('date');
     return list(rows.filter((r) => !date || r.reservationDate === date), q, 20);
   }],
-  [/^\/patient-recalls$/, (_m, q) =>
-    list(
-      demoPatients.slice(0, 25).map((p, i) => ({
-        id: i + 1,
-        clinicId: DEMO_CLINIC_ID,
-        patientId: p.id,
-        tarifId: 2,
-        billingItemId: null,
-        dueDate: toDateStr(new Date(demoToday.getTime() + (i - 8) * 86400000)),
-        status: i % 3 === 0 ? ('sudah_dihubungi' as const) : ('belum_dihubungi' as const),
-        contactedAt: null,
-        contactedBy: null,
-        notes: null,
-        createdAt: now(),
-        patient: { id: p.id, name: p.name, phone: p.phone, noRm: p.noRm },
-        tarif: { id: 2, name: 'Scaling (Pembersihan Karang Gigi)' },
-        upcomingReservation: null,
-      })).filter((r) => !q.get('status') || r.status === q.get('status')),
+  [/^\/patient-recalls$/, (_m, q) => {
+    // Empat jenis kontrol bergantian supaya tampilan Follow Up terlihat lengkap.
+    const KINDS = [
+      { kind: 'kunjungan' as const, tarif: null as { id: number; name: string } | null },
+      { kind: 'behel' as const, tarif: { id: 9, name: 'Kontrol Behel' } },
+      { kind: 'saluran_akar' as const, tarif: { id: 6, name: 'Perawatan Saluran Akar' } },
+      { kind: 'perawatan' as const, tarif: { id: 2, name: 'Scaling (Pembersihan Karang Gigi)' } },
+    ];
+    return list(
+      demoPatients.slice(0, 28).map((p, i) => {
+        const k = KINDS[i % KINDS.length];
+        return {
+          id: i + 1,
+          clinicId: DEMO_CLINIC_ID,
+          patientId: p.id,
+          tarifId: k.tarif?.id ?? null,
+          billingItemId: null,
+          kind: k.kind,
+          dueDate: toDateStr(new Date(demoToday.getTime() + (i - 8) * 86400000)),
+          status: i % 5 === 0 ? ('sudah_booking_ulang' as const) : i % 3 === 0 ? ('sudah_dihubungi' as const) : ('belum_dihubungi' as const),
+          contactedAt: null,
+          contactedBy: null,
+          notes: null,
+          createdAt: now(),
+          patient: { id: p.id, name: p.name, phone: p.phone, noRm: p.noRm },
+          tarif: k.tarif,
+          upcomingReservation: null,
+        };
+      }).filter((r) => (!q.get('status') || r.status === q.get('status')) && (!q.get('kind') || r.kind === q.get('kind'))),
       q,
       20,
-    )],
+    );
+  }],
   [/^\/recall-intervals$/, () => [
     { id: 1, clinicId: DEMO_CLINIC_ID, tarifId: 2, intervalDays: 180, tarif: { id: 2, name: 'Scaling (Pembersihan Karang Gigi)' } },
     { id: 2, clinicId: DEMO_CLINIC_ID, tarifId: 9, intervalDays: 30, tarif: { id: 9, name: 'Kontrol Behel' } },

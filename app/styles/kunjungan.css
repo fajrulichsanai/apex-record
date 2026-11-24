@@ -1183,3 +1183,5 @@
 }
 
 .kunjungan-page .backlog-item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.rm-soap-sub { font-weight: 500; color: var(--text-sub); margin-left: 2px; }

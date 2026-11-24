@@ -3,11 +3,19 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ApiError } from '@/lib/api-client';
-import { patientRecallApi, type PatientRecall, type PatientRecallStatus } from '@/lib/recall';
+import {
+  RECALL_KIND_LABEL,
+  RECALL_KINDS,
+  patientRecallApi,
+  type PatientRecall,
+  type PatientRecallStatus,
+  type RecallKind,
+} from '@/lib/recall';
 import { useToast } from '@/lib/toast-context';
 import { waLink } from '@/lib/utils/whatsapp';
 
 type FilterValue = 'semua' | PatientRecallStatus;
+type KindFilter = 'semua' | RecallKind;
 
 function formatDate(value: string) {
   return new Date(`${value}T00:00:00`).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -31,13 +39,14 @@ interface RecallDueListProps {
 export default function RecallDueList({ clinicName }: RecallDueListProps) {
   const { success, error } = useToast();
   const [filter, setFilter] = useState<FilterValue>('semua');
+  const [kindFilter, setKindFilter] = useState<KindFilter>('semua');
   const [recalls, setRecalls] = useState<PatientRecall[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = async (status?: PatientRecallStatus) => {
+  const load = async (status?: PatientRecallStatus, kind?: RecallKind) => {
     try {
       setLoading(true);
-      const res = await patientRecallApi.list({ status, limit: 100 });
+      const res = await patientRecallApi.list({ status, kind, limit: 100 });
       setRecalls(res.data);
     } catch (err) {
       error(err instanceof ApiError ? err.message : 'Gagal memuat daftar recall');
@@ -47,22 +56,31 @@ export default function RecallDueList({ clinicName }: RecallDueListProps) {
   };
 
   useEffect(() => {
-    load(filter === 'semua' ? undefined : filter);
+    load(filter === 'semua' ? undefined : filter, kindFilter === 'semua' ? undefined : kindFilter);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [filter, kindFilter]);
 
   const handleUpdateStatus = async (recall: PatientRecall, status: PatientRecallStatus) => {
     try {
       await patientRecallApi.update(recall.id, { status });
       success('Status recall diperbarui');
-      await load(filter === 'semua' ? undefined : filter);
+      await load(filter === 'semua' ? undefined : filter, kindFilter === 'semua' ? undefined : kindFilter);
     } catch (err) {
       error(err instanceof ApiError ? err.message : 'Gagal memperbarui status recall');
     }
   };
 
-  const waText = (recall: PatientRecall) =>
-    `Halo Kak ${recall.patient?.name ?? ''}, sudah waktunya kontrol ${recall.tarif?.name ?? ''} di ${clinicName ?? 'klinik kami'}. Mau dijadwalkan kapan?`;
+  const waText = (recall: PatientRecall) => {
+    const what =
+      recall.kind === 'behel'
+        ? 'kontrol behel'
+        : recall.kind === 'saluran_akar'
+          ? 'kontrol perawatan saluran akar'
+          : recall.kind === 'kunjungan' || !recall.tarif?.name
+            ? 'kontrol setelah kunjungan terakhir'
+            : `kontrol ${recall.tarif.name}`;
+    return `Halo Kak ${recall.patient?.name ?? ''}, sudah waktunya ${what} di ${clinicName ?? 'klinik kami'}. Mau dijadwalkan kapan?`;
+  };
 
   return (
     <>
@@ -79,6 +97,17 @@ export default function RecallDueList({ clinicName }: RecallDueListProps) {
         <button type="button" className={`filter-tab ${filter === 'sudah_booking_ulang' ? 'active' : ''}`} onClick={() => setFilter('sudah_booking_ulang')}>
           Sudah Booking Ulang
         </button>
+      </div>
+
+      <div className="tab-bar kind-bar" style={{ marginBottom: 4 }} aria-label="Jenis kontrol">
+        <button type="button" className={`filter-tab ${kindFilter === 'semua' ? 'active' : ''}`} onClick={() => setKindFilter('semua')}>
+          Semua jenis
+        </button>
+        {RECALL_KINDS.map((k) => (
+          <button key={k} type="button" className={`filter-tab ${kindFilter === k ? 'active' : ''}`} onClick={() => setKindFilter(k)}>
+            {RECALL_KIND_LABEL[k]}
+          </button>
+        ))}
       </div>
 
       <div className="panel">
@@ -103,6 +132,7 @@ export default function RecallDueList({ clinicName }: RecallDueListProps) {
               <thead>
                 <tr>
                   <th>Pasien</th>
+                  <th>Jenis Kontrol</th>
                   <th>Tindakan</th>
                   <th>Jatuh Tempo</th>
                   <th>Status</th>
@@ -119,7 +149,10 @@ export default function RecallDueList({ clinicName }: RecallDueListProps) {
                         <div className="tarif-name">{recall.patient?.name ?? `Pasien #${recall.patientId}`}</div>
                         {recall.patient?.noRm && <div className="tarif-kategori">{recall.patient.noRm}</div>}
                       </td>
-                      <td>{recall.tarif?.name ?? '-'}</td>
+                      <td>
+                        <span className={`tag kind-${recall.kind ?? 'perawatan'}`}>{RECALL_KIND_LABEL[recall.kind ?? 'perawatan']}</span>
+                      </td>
+                      <td>{recall.tarif?.name ?? '—'}</td>
                       <td className={overdue ? 'overdue' : undefined}>{formatDate(recall.dueDate)}</td>
                       <td>
                         <span className={`tag ${cls}`}>{label}</span>

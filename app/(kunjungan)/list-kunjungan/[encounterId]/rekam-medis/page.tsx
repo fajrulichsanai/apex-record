@@ -14,7 +14,6 @@ import VoiceDictationButton from '@/components/form/VoiceDictationButton';
 import SoapNoteView from '@/components/rekam-medis/SoapNoteView';
 import DiagnosisPicker from '@/components/rekam-medis/DiagnosisPicker';
 import SoapTemplatePicker from '@/components/rekam-medis/SoapTemplatePicker';
-import ChiefComplaintPicker, { type ChiefComplaintValue } from '@/components/rekam-medis/ChiefComplaintPicker';
 import SsrmeButton from '@/components/satusehat/SsrmeButton';
 import type { SoapDiagnosis } from '@/lib/terminology';
 import SupportingExamPanel from '@/components/rekam-medis/SupportingExamPanel';
@@ -42,6 +41,7 @@ import {
 } from '@/lib/physical-examination';
 import { dentalExaminationApi, DentalExamination, ProbingDepthEntry } from '@/lib/dental-examination';
 import { reservationsApi } from '@/lib/reservations';
+import { RECALL_KIND_LABEL, RECALL_KINDS, patientRecallApi, suggestRecallKind, type RecallKind } from '@/lib/recall';
 import { prescriptionsApi } from '@/lib/prescriptions';
 import { ApiError } from '@/lib/api-client';
 import { useToast } from '@/lib/toast-context';
@@ -257,17 +257,28 @@ const CONTROL_OPTIONS = [
   { value: '3d', label: 'Kontrol 3 Hari Lagi' },
   { value: '1w', label: 'Kontrol 1 Minggu Lagi' },
   { value: '2w', label: 'Kontrol 2 Minggu Lagi' },
+  { value: '3w', label: 'Kontrol 3 Minggu Lagi' },
   { value: '1m', label: 'Kontrol 1 Bulan Lagi' },
   { value: 'custom', label: 'Pilih Tanggal Sendiri' },
 ];
 
-const CONTROL_OPTION_DAYS: Record<string, number> = { '3d': 3, '1w': 7, '2w': 14, '1m': 30 };
+const CONTROL_OPTION_DAYS: Record<string, number> = { '3d': 3, '1w': 7, '2w': 14, '3w': 21, '1m': 30 };
 
 // Same WIB-vs-UTC pitfall as the "today" filter elsewhere in this app —
 // shift to WIB before reading calendar fields so a control date computed
 // late at night doesn't land a day early.
 function wibToday(): Date {
   return new Date(Date.now() + 7 * 60 * 60 * 1000);
+}
+
+/** "Kontrol 21 hari" / "kontrol 3 minggu" di Plan (mis. dari template) -> pilihan kontrol. */
+function controlOptionFromPlan(plan: string): string | null {
+  const m = plan.match(/kontrol\s+(\d+)\s*(hari|minggu|bulan)/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  const days = m[2].toLowerCase() === 'hari' ? n : m[2].toLowerCase() === 'minggu' ? n * 7 : n * 30;
+  const found = Object.entries(CONTROL_OPTION_DAYS).find(([, d]) => d === days);
+  return found ? found[0] : null;
 }
 
 function computeControlDate(option: string): string {
@@ -624,7 +635,8 @@ export default function RekamMedisPage() {
   const [soapMode, setSoapMode] = useState<'view' | 'edit'>('edit');
   const [hasSavedNote, setHasSavedNote] = useState(false);
   // Data terkode untuk SATUSEHAT (Playbook RME Rawat Jalan)
-  const [chiefComplaint, setChiefComplaint] = useState<ChiefComplaintValue | null>(null);
+  // Keluhan utama terkode tidak lagi diisi di form SOAP (sudah ada di S/); nilai lama tetap dibawa saat menyimpan.
+  const [chiefComplaint, setChiefComplaint] = useState<{ code: string; display: string } | null>(null);
   const [educationGiven, setEducationGiven] = useState<'' | 'yes' | 'no'>('');
   const [dischargeCondition, setDischargeCondition] = useState<DischargeCondition | ''>('');
   const [prognosis, setPrognosis] = useState<Prognosis | ''>('');
@@ -633,6 +645,8 @@ export default function RekamMedisPage() {
   // on save so a control visit doesn't rely on the doctor remembering to
   // book it separately afterward.
   const [controlOption, setControlOption] = useState('none');
+  const [controlKind, setControlKind] = useState<RecallKind>('kunjungan');
+  const controlKindTouched = useRef(false);
   const [controlDate, setControlDate] = useState('');
   const [controlReservationCreated, setControlReservationCreated] = useState(false);
   const effectiveControlDate = controlOption === 'custom' ? controlDate : computeControlDate(controlOption);
@@ -735,6 +749,11 @@ export default function RekamMedisPage() {
   const setProbingValue = (toothNumber: number, side: 'buccal' | 'lingual') => (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
     setProbingDepths((prev) => prev.map((row) => (row.toothNumber === toothNumber ? { ...row, [side]: value } : row)));
+  };
+
+  const handleControlKindChange = (value: string) => {
+    controlKindTouched.current = true;
+    setControlKind(value as RecallKind);
   };
 
   const handleControlOptionChange = (value: string) => {
@@ -906,8 +925,14 @@ export default function RekamMedisPage() {
             patientName: detail.patient.name,
             practitionerId: detail.practitioner?.id,
             reservationDate: effectiveControlDate,
-            notes: 'Kontrol lanjutan dari hasil pemeriksaan',
+            notes: `${RECALL_KIND_LABEL[controlKind]} — lanjutan dari pemeriksaan`,
+            // Kontrol memang janji baru setelah kunjungan ini; jangan terblokir reservasi kunjungan hari ini.
+            allowDuplicate: true,
           });
+          // Satu daftar Follow Up untuk semua jenis kontrol; gagal mencatat tidak membatalkan reservasi.
+          await patientRecallApi
+            .create({ patientId: detail.patient.id, dueDate: effectiveControlDate, kind: controlKind, booked: true })
+            .catch(() => undefined);
           setControlReservationCreated(true);
           success(`Reservasi kontrol otomatis dibuat untuk ${formatDateOnly(effectiveControlDate)}`);
         } catch (rErr) {
@@ -1907,7 +1932,6 @@ export default function RekamMedisPage() {
                       treatment={treatment}
                       plan={plan}
                       controlPlan={savedControlPlan}
-                      chiefComplaint={chiefComplaint ? `${chiefComplaint.display} (${chiefComplaint.code})` : undefined}
                       education={educationGiven === 'yes' ? 'Diberikan' : educationGiven === 'no' ? 'Tidak diberikan' : undefined}
                       prognosis={PROGNOSIS_OPTIONS.find((o) => o.value === prognosis)?.label}
                       dischargeCondition={DISCHARGE_CONDITION_OPTIONS.find((o) => o.value === dischargeCondition)?.label}
@@ -1935,6 +1959,10 @@ export default function RekamMedisPage() {
                             setTreatment(v.treatment);
                             setPlan(v.plan);
                             setDiagnoses(v.diagnoses);
+                            // Template yang menulis "Kontrol 21 hari" langsung mengisi jadwal kontrol.
+                            const fromPlan = controlOptionFromPlan(v.plan);
+                            if (fromPlan && controlOption === 'none') handleControlOptionChange(fromPlan);
+                            if (!controlKindTouched.current) setControlKind(suggestRecallKind(`${v.treatment} ${v.plan}`));
                           }}
                         />
 
@@ -1956,7 +1984,7 @@ export default function RekamMedisPage() {
 
                         <div className="visit-form-field">
                           <label>
-                            Subjective
+                            S/ <span className="rm-soap-sub">Subjective</span>
                             <VoiceDictationButton value={subjective} onChange={setSubjective} disabled={submitting} />
                           </label>
                           <textarea
@@ -1968,14 +1996,8 @@ export default function RekamMedisPage() {
                         </div>
 
                         <div className="visit-form-field">
-                          <label>Keluhan Utama (SNOMED CT)</label>
-                          <ChiefComplaintPicker value={chiefComplaint} onChange={setChiefComplaint} disabled={submitting} />
-                          <small className="rm-field-hint">Dikirim ke SATUSEHAT sebagai keluhan utama terkode.</small>
-                        </div>
-
-                        <div className="visit-form-field">
                           <label>
-                            Objective
+                            O/ <span className="rm-soap-sub">Objective</span>
                             <VoiceDictationButton value={objective} onChange={setObjective} disabled={submitting} />
                           </label>
                           <textarea
@@ -1988,7 +2010,7 @@ export default function RekamMedisPage() {
 
                         <div className="visit-form-field">
                           <label>
-                            Assessment
+                            A/ <span className="rm-soap-sub">Assessment</span>
                             <VoiceDictationButton value={assessment} onChange={setAssessment} disabled={submitting} />
                           </label>
                           <textarea
@@ -2004,7 +2026,7 @@ export default function RekamMedisPage() {
                         <div className="rm-fieldset">
                           <div className="rm-fieldset-title">
                             <span aria-hidden="true" className="material-symbols-rounded">clinical_notes</span>
-                            Treatment — tindakan pada kunjungan ini
+                            Tr/ <span className="rm-soap-sub">Treatment — tindakan pada kunjungan ini</span>
                           </div>
                           <div className="visit-form-field">
                             <label>
@@ -2022,7 +2044,7 @@ export default function RekamMedisPage() {
 
                         <div className="visit-form-field">
                           <label>
-                            Plan
+                            P/ <span className="rm-soap-sub">Plan</span>
                             <VoiceDictationButton value={plan} onChange={setPlan} disabled={submitting} />
                           </label>
                           <textarea
@@ -2106,12 +2128,23 @@ export default function RekamMedisPage() {
                                 <div className="rm-bmi-badge">{formatDateOnly(effectiveControlDate)}</div>
                               </div>
                             )}
+                            {controlOption !== 'none' && (
+                              <div className="visit-form-field">
+                                <label>Jenis Kontrol</label>
+                                <CustomSelect
+                                  value={controlKind}
+                                  onChange={handleControlKindChange}
+                                  options={RECALL_KINDS.map((k) => ({ value: k, label: RECALL_KIND_LABEL[k] }))}
+                                  disabled={submitting}
+                                />
+                              </div>
+                            )}
                           </div>
                           {controlOption !== 'none' && (
                             <p className={`rm-control-hint${controlReservationCreated ? ' done' : ''}`}>
                               {controlReservationCreated
                                 ? `✓ Reservasi kontrol sudah dibuat untuk ${formatDateOnly(effectiveControlDate)}`
-                                : 'Reservasi kontrol akan dibuat otomatis di modul Reservasi saat Catatan SOAP ini disimpan.'}
+                                : 'Reservasi kontrol dibuat otomatis dan tercatat di Follow Up Pasien saat Catatan SOAP ini disimpan.'}
                             </p>
                           )}
                         </div>
