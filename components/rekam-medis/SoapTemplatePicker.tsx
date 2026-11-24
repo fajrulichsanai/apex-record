@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useEscapeKey } from '@/lib/a11y';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/lib/toast-context';
@@ -69,7 +70,12 @@ export default function SoapTemplatePicker({
   const [saveShared, setSaveShared] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  useEscapeKey(() => setOpen(null), open !== null);
+  // Panel template ada di samping form (bukan dialog): diketik/diisi sambil terbuka, tidak memakai Esc.
+  useEscapeKey(() => setOpen(null), open === 'save');
+  const [dock, setDock] = useState<HTMLElement | null>(null);
+  useEffect(() => {
+    setDock(document.getElementById('soap-dock'));
+  }, []);
 
   useEffect(() => {
     if (open !== 'pick') return;
@@ -179,10 +185,159 @@ export default function SoapTemplatePicker({
 
   const canEdit = (t: SoapTemplate) => user?.role === 'owner' || t.createdBy === user?.id;
 
+  const picker = (
+    <aside className="stp-dock" aria-label="Pilih template SOAP">
+      <div className="stp-head">
+        <h3>Template SOAP</h3>
+        <button type="button" className="stp-close" aria-label="Tutup panel template" onClick={() => setOpen(null)}>
+          <span aria-hidden="true" className="material-symbols-rounded">close</span>
+        </button>
+      </div>
+
+      <div className="stp-dock-body">
+        {!selected ? (
+          <div className="stp-pick">
+            <input
+              className="stp-input"
+              placeholder="Cari template, diagnosis, atau kode (mis. K04)"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            <div className="stp-list">
+              {groups.length === 0 && <p className="stp-muted">Template tidak ditemukan.</p>}
+              {groups.map(([group, list]) => (
+                <div key={group}>
+                  <div className="stp-group">{group}</div>
+                  {list.map((i) => (
+                    <div key={i.id} className="stp-item">
+                      <button type="button" className="stp-item-main" onClick={() => choose(i)}>
+                        <span className="stp-item-name">{i.name}</span>
+                        <span className="stp-codes">
+                          {(i.body.diagnoses ?? []).map((d) => (
+                            <span key={`${d.system}-${d.code}`} className={`stp-code ${d.system}`}>
+                              {d.system === 'icd10' ? 'ICD-10' : 'SNOMED'} {d.code}
+                            </span>
+                          ))}
+                        </span>
+                      </button>
+                      {i.own && canEdit(i.own) && (
+                        <button type="button" className="stp-del" aria-label={`Hapus template ${i.name}`} onClick={() => remove(i.own!)}>
+                          <span aria-hidden="true" className="material-symbols-rounded">delete</span>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="stp-preview">
+            <div className="stp-chosen">
+              <button type="button" className="stp-back" onClick={() => setSelected(null)}>
+                <span aria-hidden="true" className="material-symbols-rounded">arrow_back</span>
+                Ganti template
+              </button>
+              <strong>{selected.name}</strong>
+            </div>
+            {usesGigi && (
+              <label className="stp-field">
+                <span>Nomor gigi (mengganti {'{gigi}'})</span>
+                <input
+                  className="stp-input"
+                  placeholder="mis. 36 atau 46, 47"
+                  value={gigi}
+                  maxLength={40}
+                  inputMode="numeric"
+                  onChange={(e) => setGigi(e.target.value)}
+                />
+              </label>
+            )}
+            {questions.length > 0 && (
+              <div className="stp-quick">
+                <div className="stp-quick-title">Pertanyaan cepat — tekan jawabannya, catatan tersusun sendiri</div>
+                {(['S', 'O', 'A', 'Tr', 'P'] as const).map((section) => {
+                  const list = questions.filter((q) => q.section === section);
+                  if (list.length === 0) return null;
+                  return (
+                    <div key={section} className="stp-quick-group">
+                      <div className="stp-quick-section">{SECTION_LABEL[section]}</div>
+                      {list.map((q) => (
+                        <div key={q.key} className="stp-q">
+                          <span className="stp-q-label">
+                            {q.label}
+                            {q.multi && <small> (boleh lebih dari satu)</small>}
+                          </span>
+                          <div className="stp-chips" role={q.multi ? 'group' : 'radiogroup'} aria-label={q.label}>
+                            {q.options.map((o) => {
+                              const label = optionLabel(o);
+                              const on = (answers[q.key] ?? []).includes(label);
+                              return (
+                                <button key={label} type="button" className={`stp-chip${on ? ' on' : ''}`} aria-pressed={on} onClick={() => toggleAnswer(q, label)}>
+                                  {label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+            {questions.length > 0 && <div className="stp-quick-title stp-preview-title">Hasil catatan (periksa lalu pakai)</div>}
+            {(['subjective', 'objective', 'assessment', 'treatment', 'plan'] as const).map((k) =>
+              selected.body[k] ? (
+                <div key={k} className="stp-sec">
+                  <div className="stp-sec-label">{{ subjective: 'S/', objective: 'O/', assessment: 'A/', treatment: 'Tr/', plan: 'P/' }[k]}</div>
+                  <p style={{ whiteSpace: 'pre-line' }}>{fill(selected.body[k])}</p>
+                </div>
+              ) : null,
+            )}
+            {(selected.body.diagnoses ?? []).length > 0 && (
+              <div className="stp-sec">
+                <div className="stp-sec-label">Dx</div>
+                <ul className="stp-dx">
+                  {(selected.body.diagnoses ?? []).map((d) => (
+                    <li key={`${d.system}-${d.code}`}>
+                      <strong>{d.code}</strong> {d.nameId ? `${d.nameId} · ` : ''}
+                      <span className="stp-muted">{d.display}</span>
+                      {d.primary && <span className="stp-primary">utama</span>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {hasContent && (
+              <div className="stp-mode" role="radiogroup" aria-label="Cara mengisi">
+                <label>
+                  <input type="radio" checked={mode === 'replace'} onChange={() => setMode('replace')} /> Ganti isi SOAP
+                </label>
+                <label>
+                  <input type="radio" checked={mode === 'append'} onChange={() => setMode('append')} /> Tambahkan di bawah isi
+                </label>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="stp-foot">
+        <button type="button" className="stp-btn" onClick={() => setOpen(null)}>
+          Tutup
+        </button>
+        <button type="button" className="stp-btn primary" disabled={!selected} onClick={apply}>
+          {questions.length > 0 ? 'Buat catatan' : 'Pakai template'}
+        </button>
+      </div>
+    </aside>
+  );
+
   return (
     <>
       <div className="stp-bar">
-        <button type="button" className="stp-btn primary" disabled={disabled} onClick={() => setOpen('pick')}>
+        <button type="button" className={`stp-btn primary${open === 'pick' ? ' active' : ''}`} disabled={disabled} onClick={() => setOpen(open === 'pick' ? null : 'pick')} aria-pressed={open === 'pick'}>
           <span aria-hidden="true" className="material-symbols-rounded">auto_awesome</span>
           Pakai template
         </button>
@@ -190,7 +345,7 @@ export default function SoapTemplatePicker({
           type="button"
           className="stp-btn"
           disabled={disabled || !hasContent}
-          onClick={() => setOpen('save')}
+          onClick={() => setOpen(open === 'save' ? null : 'save')}
           title={hasContent ? undefined : 'Isi SOAP dulu untuk disimpan sebagai template'}
         >
           <span aria-hidden="true" className="material-symbols-rounded">bookmark_add</span>
@@ -199,198 +354,40 @@ export default function SoapTemplatePicker({
         <span className="stp-hint">Template mengisi S/O/A/P, tindakan, serta diagnosis ICD-10 &amp; SNOMED CT.</span>
       </div>
 
-      {open && (
-        <div className="stp-overlay" onClick={(e) => e.target === e.currentTarget && setOpen(null)}>
-          <div className="stp-modal" role="dialog" aria-modal="true" aria-label={open === 'pick' ? 'Pilih template SOAP' : 'Simpan template SOAP'}>
-            <div className="stp-head">
-              <h3>{open === 'pick' ? 'Pilih template SOAP' : 'Simpan sebagai template'}</h3>
-              <button type="button" className="stp-close" aria-label="Tutup" onClick={() => setOpen(null)}>
-                <span aria-hidden="true" className="material-symbols-rounded">close</span>
-              </button>
-            </div>
-
-            {open === 'pick' ? (
-              <div className="stp-body">
-                <div className="stp-pick">
-                  <input
-                    className="stp-input"
-                    placeholder="Cari template, diagnosis, atau kode (mis. K04)"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    autoFocus
-                  />
-                  <div className="stp-list">
-                    {groups.length === 0 && <p className="stp-muted">Template tidak ditemukan.</p>}
-                    {groups.map(([group, list]) => (
-                      <div key={group}>
-                        <div className="stp-group">{group}</div>
-                        {list.map((i) => (
-                          <div key={i.id} className={`stp-item ${selected?.id === i.id ? 'active' : ''}`}>
-                            <button type="button" className="stp-item-main" onClick={() => choose(i)}>
-                              <span className="stp-item-name">{i.name}</span>
-                              <span className="stp-codes">
-                                {(i.body.diagnoses ?? []).map((d) => (
-                                  <span key={`${d.system}-${d.code}`} className={`stp-code ${d.system}`}>
-                                    {d.system === 'icd10' ? 'ICD-10' : 'SNOMED'} {d.code}
-                                  </span>
-                                ))}
-                              </span>
-                            </button>
-                            {i.own && canEdit(i.own) && (
-                              <button
-                                type="button"
-                                className="stp-del"
-                                aria-label={`Hapus template ${i.name}`}
-                                onClick={() => remove(i.own!)}
-                              >
-                                <span aria-hidden="true" className="material-symbols-rounded">delete</span>
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="stp-preview">
-                  {!selected ? (
-                    <p className="stp-muted">Pilih template di kiri untuk melihat isinya.</p>
-                  ) : (
-                    <>
-                      {usesGigi && (
-                        <label className="stp-field">
-                          <span>Nomor gigi (mengganti {'{gigi}'})</span>
-                          <input
-                            className="stp-input"
-                            placeholder="mis. 36 atau 46, 47"
-                            value={gigi}
-                            maxLength={40}
-                            onChange={(e) => setGigi(e.target.value)}
-                          />
-                        </label>
-                      )}
-                      {questions.length > 0 && (
-                        <div className="stp-quick">
-                          <div className="stp-quick-title">Pertanyaan cepat — tekan jawabannya, catatan tersusun sendiri</div>
-                          {(['S', 'O', 'A', 'Tr', 'P'] as const).map((section) => {
-                            const list = questions.filter((q) => q.section === section);
-                            if (list.length === 0) return null;
-                            return (
-                              <div key={section} className="stp-quick-group">
-                                <div className="stp-quick-section">{SECTION_LABEL[section]}</div>
-                                {list.map((q) => (
-                                  <div key={q.key} className="stp-q">
-                                    <span className="stp-q-label">
-                                      {q.label}
-                                      {q.multi && <small> (boleh lebih dari satu)</small>}
-                                    </span>
-                                    <div className="stp-chips" role={q.multi ? 'group' : 'radiogroup'} aria-label={q.label}>
-                                      {q.options.map((o) => {
-                                        const label = optionLabel(o);
-                                        const on = (answers[q.key] ?? []).includes(label);
-                                        return (
-                                          <button
-                                            key={label}
-                                            type="button"
-                                            className={`stp-chip${on ? ' on' : ''}`}
-                                            aria-pressed={on}
-                                            onClick={() => toggleAnswer(q, label)}
-                                          >
-                                            {label}
-                                          </button>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      {questions.length > 0 && <div className="stp-quick-title stp-preview-title">Hasil catatan (periksa lalu pakai)</div>}
-                      {(['subjective', 'objective', 'assessment', 'treatment', 'plan'] as const).map((k) =>
-                        selected.body[k] ? (
-                          <div key={k} className="stp-sec">
-                            <div className="stp-sec-label">
-                              {{ subjective: 'S', objective: 'O', assessment: 'A', treatment: 'Tindakan', plan: 'P' }[k]}
-                            </div>
-                            <p style={{ whiteSpace: 'pre-line' }}>{fill(selected.body[k])}</p>
-                          </div>
-                        ) : null,
-                      )}
-                      {(selected.body.diagnoses ?? []).length > 0 && (
-                        <div className="stp-sec">
-                          <div className="stp-sec-label">Diagnosis</div>
-                          <ul className="stp-dx">
-                            {(selected.body.diagnoses ?? []).map((d) => (
-                              <li key={`${d.system}-${d.code}`}>
-                                <strong>{d.code}</strong> {d.nameId ? `${d.nameId} · ` : ''}
-                                <span className="stp-muted">{d.display}</span>
-                                {d.primary && <span className="stp-primary">utama</span>}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {hasContent && (
-                        <div className="stp-mode" role="radiogroup" aria-label="Cara mengisi">
-                          <label>
-                            <input type="radio" checked={mode === 'replace'} onChange={() => setMode('replace')} /> Ganti isi SOAP
-                          </label>
-                          <label>
-                            <input type="radio" checked={mode === 'append'} onChange={() => setMode('append')} /> Tambahkan di bawah isi
-                          </label>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="stp-body single">
-                <label className="stp-field">
-                  <span>Nama template</span>
-                  <input
-                    className="stp-input"
-                    placeholder="mis. Tambal komposit kelas I"
-                    maxLength={100}
-                    value={saveName}
-                    onChange={(e) => setSaveName(e.target.value)}
-                    autoFocus
-                  />
-                </label>
-                {user?.role === 'owner' && (
-                  <label className="stp-check">
-                    <input type="checkbox" checked={saveShared} onChange={(e) => setSaveShared(e.target.checked)} />
-                    Bagikan ke semua dokter di klinik
-                  </label>
-                )}
-                <p className="stp-muted">
-                  Isi S/O/A/P, tindakan, dan {values.diagnoses.length} diagnosis saat ini disimpan. Tip: tulis {'{gigi}'} di teks agar nomor
-                  gigi bisa diisi setiap kali template dipakai.
-                </p>
-              </div>
-            )}
-
-            <div className="stp-foot">
-              <button type="button" className="stp-btn" onClick={() => setOpen(null)}>
-                Batal
-              </button>
-              {open === 'pick' ? (
-                <button type="button" className="stp-btn primary" disabled={!selected} onClick={apply}>
-                  {questions.length > 0 ? 'Buat catatan' : 'Pakai template'}
-                </button>
-              ) : (
-                <button type="button" className="stp-btn primary" disabled={busy} onClick={save}>
-                  {busy ? 'Menyimpan…' : 'Simpan template'}
-                </button>
-              )}
-            </div>
+      {open === 'save' && (
+        <div className="stp-save" role="group" aria-label="Simpan sebagai template">
+          <label className="stp-field">
+            <span>Nama template</span>
+            <input
+              className="stp-input"
+              placeholder="mis. Tambal komposit kelas I"
+              maxLength={100}
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+            />
+          </label>
+          {user?.role === 'owner' && (
+            <label className="stp-check">
+              <input type="checkbox" checked={saveShared} onChange={(e) => setSaveShared(e.target.checked)} />
+              Bagikan ke semua dokter di klinik
+            </label>
+          )}
+          <p className="stp-muted">
+            Isi S/O/A/P, tindakan, dan {values.diagnoses.length} diagnosis saat ini disimpan. Tip: tulis {'{gigi}'} di teks agar nomor gigi bisa
+            diisi setiap kali template dipakai.
+          </p>
+          <div className="stp-save-actions">
+            <button type="button" className="stp-btn" onClick={() => setOpen(null)}>
+              Batal
+            </button>
+            <button type="button" className="stp-btn primary" disabled={busy} onClick={save}>
+              {busy ? 'Menyimpan…' : 'Simpan template'}
+            </button>
           </div>
         </div>
       )}
+
+      {open === 'pick' && (dock ? createPortal(picker, dock) : picker)}
     </>
   );
 }

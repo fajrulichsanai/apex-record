@@ -1942,6 +1942,7 @@ export default function RekamMedisPage() {
                   )}
 
                   {activeSection === 'soap' && soapMode === 'edit' && (
+                    <div className="rm-soap-layout">
                     <form onSubmit={handleSaveSoap} className="rm-section">
                       <div className="rm-section-heading">
                         <h2>Catatan SOAP</h2>
@@ -2174,6 +2175,8 @@ export default function RekamMedisPage() {
                         </button>
                       </div>
                     </form>
+                    <div id="soap-dock" className="rm-soap-dock" />
+                    </div>
                   )}
                 </div>
               </div>
